@@ -93,7 +93,7 @@ const defaultPlans: ServicePlan[] = [
   {
     id: 'plan-ent',
     code: 'ENTERPRISE',
-    name: 'Gói BUSINESS',
+    name: 'Gói ENTERPRISE',
     targetAudience: 'Trường Đại học, Cao đẳng, Học viện và Doanh nghiệp đào tạo',
     monthlyPriceVnd: 25000, // tính theo đầu học viên / tháng
     annualPriceVnd: 250000,
@@ -196,16 +196,16 @@ export default function AdminPlansPage() {
 
               {/* Pricing strip */}
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 mb-5">
-                <div className="text-xl font-extrabold text-slate-900 font-mono">
+                <div className="text-xl font-extrabold text-slate-900">
                   {plan.monthlyPriceVnd === 0
                     ? '0 VNĐ'
                     : `${plan.monthlyPriceVnd.toLocaleString('vi-VN')} đ`}
-                  <span className="text-xs font-normal text-slate-500 font-sans">
+                  <span className="text-xs font-normal text-slate-500">
                     {plan.code === 'ENTERPRISE' ? ' / học viên / tháng' : ' / tháng'}
                   </span>
                 </div>
                 {plan.annualPriceVnd > 0 && (
-                  <div className="text-[11px] text-emerald-600 font-semibold mt-0.5 font-mono">
+                  <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
                     Gói năm: {plan.annualPriceVnd.toLocaleString('vi-VN')} đ
                   </div>
                 )}
@@ -215,7 +215,7 @@ export default function AdminPlansPage() {
               <div className="space-y-2 mb-5 text-xs">
                 <div className="flex items-center justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Hạn mức AI credits:</span>
-                  <span className="font-bold text-slate-900 font-mono">
+                  <span className="font-bold text-slate-900">
                     {plan.monthlyAiGradingQuota >= 10000
                       ? 'Theo hạn mức trường'
                       : `${plan.monthlyAiGradingQuota.toLocaleString('vi-VN')} credits / tháng`}
@@ -292,7 +292,7 @@ export default function AdminPlansPage() {
                         monthlyPriceVnd: Number(e.target.value),
                       })
                     }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
                   />
                 </div>
 
@@ -309,7 +309,7 @@ export default function AdminPlansPage() {
                         annualPriceVnd: Number(e.target.value),
                       })
                     }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
                   />
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function AdminPlansPage() {
                       monthlyAiGradingQuota: Number(e.target.value),
                     })
                   }
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
                 />
               </div>
 

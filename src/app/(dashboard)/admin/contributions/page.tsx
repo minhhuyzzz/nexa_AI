@@ -121,7 +121,7 @@ export default function AdminContributionsPage() {
               Thẩm Định Đề Thi Đóng Góp Từ Cộng Đồng
             </h1>
             <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-              Chờ thẩm định: <strong className="font-mono tabular-nums text-amber-900">{countPending}</strong> đề bài
+              Chờ thẩm định: <strong className="font-semibold text-amber-900">{countPending}</strong> đề bài
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -360,7 +360,7 @@ export default function AdminContributionsPage() {
                           <div className="font-semibold text-slate-900 truncate">
                             {file.name}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono">
+                          <div className="text-[10px] text-slate-400">
                             {file.size}
                           </div>
                         </div>

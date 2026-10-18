@@ -105,7 +105,7 @@ export function AdminSidebar() {
                       />
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
                       {!isCollapsed && item.badge && (
-                        <span className="ml-auto text-[10px] font-bold font-mono px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                           {item.badge}
                         </span>
                       )}

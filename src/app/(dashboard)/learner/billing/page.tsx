@@ -136,7 +136,7 @@ export default function LearnerBillingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900 font-mono">0 đ</span>
+              <span className="text-3xl font-bold text-slate-900">0 đ</span>
               <span className="text-xs text-slate-500 ml-1">/ vĩnh viễn</span>
             </div>
 
@@ -192,7 +192,7 @@ export default function LearnerBillingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900 font-mono">69.000 đ</span>
+              <span className="text-3xl font-bold text-slate-900">69.000 đ</span>
               <span className="text-xs text-slate-500 ml-1">/ tháng</span>
             </div>
 
@@ -258,7 +258,7 @@ export default function LearnerBillingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900 font-mono">199.000 đ</span>
+              <span className="text-3xl font-bold text-slate-900">199.000 đ</span>
               <span className="text-xs text-slate-500 ml-1">/ tháng</span>
             </div>
 
@@ -322,7 +322,7 @@ export default function LearnerBillingPage() {
                   <td className="py-3 font-bold text-slate-900 font-mono">NEXA-ORD-8842</td>
                   <td className="py-3">Hôm nay, 17:45</td>
                   <td className="py-3 font-medium text-slate-900">{upgradePlanName} • 1 Tháng</td>
-                  <td className="py-3 font-bold text-slate-900 font-mono">{upgradeAmount}.000 đ</td>
+                  <td className="py-3 font-bold text-slate-900">{upgradeAmount}.000 đ</td>
                   <td className="py-3">VietQR</td>
                   <td className="py-3 text-right">
                     <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold text-[11px]">
@@ -336,7 +336,7 @@ export default function LearnerBillingPage() {
                 <td className="py-3 text-slate-800 font-mono">NEXA-INIT-001</td>
                 <td className="py-3">15/09/2026</td>
                 <td className="py-3">Gói FREE</td>
-                <td className="py-3 font-mono">0 đ</td>
+                <td className="py-3">0 đ</td>
                 <td className="py-3">Tạo tài khoản</td>
                 <td className="py-3 text-right">
                   <span className="text-slate-500 font-medium text-[11px]">Hoàn thành</span>
@@ -419,7 +419,7 @@ export default function LearnerBillingPage() {
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                     <span className="text-slate-500">Số tài khoản:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 font-mono">0987654321</span>
+                      <span className="font-bold text-slate-800">0987654321</span>
                       <button
                         onClick={() => handleCopy('0987654321', 'acc')}
                         className="text-sky-600 hover:text-sky-700 text-[11px] font-semibold"
@@ -431,7 +431,7 @@ export default function LearnerBillingPage() {
 
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                     <span className="text-slate-500">Số tiền:</span>
-                    <span className="font-bold text-slate-900 text-sm font-mono">{upgradeAmount}.000 đ</span>
+                    <span className="font-bold text-slate-900 text-sm">{upgradeAmount}.000 đ</span>
                   </div>
 
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-sky-50/70 border border-sky-100">

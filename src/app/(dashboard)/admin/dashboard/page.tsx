@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
         {quickStats.map((stat, idx) => (
           <div key={idx} className={`p-2 ${idx > 0 ? 'border-l border-slate-200/60' : ''}`}>
             <div className="text-[11px] text-slate-500 mb-0.5">{stat.label}</div>
-            <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{stat.value}</div>
+            <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
             <div className="text-[10px] text-slate-400">{stat.sub}</div>
           </div>
         ))}

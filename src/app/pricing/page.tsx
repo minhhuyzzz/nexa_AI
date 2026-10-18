@@ -210,9 +210,9 @@ const plans: Plan[] = [
     },
   },
   {
-    id: 'business',
-    name: 'Gói BUSINESS',
-    badge: 'TỔ CHỨC',
+    id: 'enterprise',
+    name: 'Gói ENTERPRISE',
+    badge: 'DOANH NGHIỆP',
     info: 'Giải pháp khảo thí và chuẩn hóa diện rộng cho trường đại học, viện nghiên cứu và doanh nghiệp.',
     price: {
       monthly: 0,
@@ -380,7 +380,7 @@ export default function PricingPage() {
                   {/* Pricing Display */}
                   <div className="pb-5 mb-5 border-b border-slate-100">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono tabular-nums">
+                      <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                         {formatPrice(plan)}
                       </span>
                       <span className="text-xs font-medium text-slate-500">
@@ -389,7 +389,7 @@ export default function PricingPage() {
                     </div>
 
                     {frequency === 'yearly' && plan.price.yearly > 0 && (
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
+                      <div className="text-[11px] text-slate-500 mt-1 font-medium">
                         Thu {plan.price.yearly.toLocaleString('vi-VN')} đ / năm
                       </div>
                     )}
@@ -512,7 +512,7 @@ export default function PricingPage() {
                   <th className="py-3 px-3 font-semibold text-slate-700">Gói FREE</th>
                   <th className="py-3 px-3 font-semibold text-slate-700">Gói PLUS</th>
                   <th className="py-3 px-3 font-semibold text-sky-700 bg-sky-50/50">Gói PRO</th>
-                  <th className="py-3 px-3 font-semibold text-slate-900">Gói BUSINESS</th>
+                  <th className="py-3 px-3 font-semibold text-slate-900">Gói ENTERPRISE</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

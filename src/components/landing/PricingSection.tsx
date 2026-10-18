@@ -95,9 +95,9 @@ const landingPlans: PlanSummary[] = [
     ctaHref: '/register?plan=pro',
   },
   {
-    id: 'business',
-    name: 'Gói BUSINESS',
-    badge: 'TỔ CHỨC',
+    id: 'enterprise',
+    name: 'Gói ENTERPRISE',
+    badge: 'DOANH NGHIỆP',
     desc: 'Giải pháp chuẩn hóa diện rộng cho trường đại học và tổ chức.',
     monthlyPrice: 0,
     yearlyPrice: 0,
@@ -219,7 +219,7 @@ export function PricingSection() {
                 {/* Price */}
                 <div className="pb-4 mb-5 border-b border-slate-100">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight tabular-nums">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                       {formatPrice(plan)}
                     </span>
                     <span className="text-xs font-medium text-slate-500">

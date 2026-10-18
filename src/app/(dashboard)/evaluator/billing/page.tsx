@@ -77,7 +77,7 @@ export default function EvaluatorBillingPage() {
         <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>AI credits chấm Rubric</span>
-            <span className="font-bold text-slate-900 font-mono">45 / 1.000</span>
+            <span className="font-bold text-slate-900">45 / 1.000</span>
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
             <div className="bg-sky-600 h-2 rounded-full" style={{ width: '4.5%' }} />
@@ -88,7 +88,7 @@ export default function EvaluatorBillingPage() {
         <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Nhóm lớp hoạt động</span>
-            <span className="font-bold text-slate-900 font-mono">3 / Không giới hạn</span>
+            <span className="font-bold text-slate-900">3 / Không giới hạn</span>
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
             <div className="bg-emerald-600 h-2 rounded-full" style={{ width: '25%' }} />
@@ -130,7 +130,7 @@ export default function EvaluatorBillingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900 font-mono">0 đ</span>
+              <span className="text-3xl font-bold text-slate-900">0 đ</span>
               <span className="text-xs text-slate-500 ml-1">/ vĩnh viễn</span>
             </div>
 
@@ -181,7 +181,7 @@ export default function EvaluatorBillingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900 font-mono">69.000 đ</span>
+              <span className="text-3xl font-bold text-slate-900">69.000 đ</span>
               <span className="text-xs text-slate-500 ml-1">/ tháng</span>
             </div>
 
@@ -242,7 +242,7 @@ export default function EvaluatorBillingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900 font-mono">199.000 đ</span>
+              <span className="text-3xl font-bold text-slate-900">199.000 đ</span>
               <span className="text-xs text-slate-500 ml-1">/ tháng</span>
             </div>
 
@@ -342,7 +342,7 @@ export default function EvaluatorBillingPage() {
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                     <span className="text-slate-500">Số tài khoản:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 font-mono">0987654321 • MBBank</span>
+                      <span className="font-bold text-slate-800">0987654321 • MBBank</span>
                       <button
                         onClick={() => handleCopy('0987654321', 'acc')}
                         className="text-sky-600 hover:text-sky-700 text-[11px] font-semibold"
@@ -354,7 +354,7 @@ export default function EvaluatorBillingPage() {
 
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                     <span className="text-slate-500">Số tiền:</span>
-                    <span className="font-bold text-slate-900 text-sm font-mono">{upgradeAmount}.000 đ</span>
+                    <span className="font-bold text-slate-900 text-sm">{upgradeAmount}.000 đ</span>
                   </div>
 
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-sky-50/70 border border-sky-100">

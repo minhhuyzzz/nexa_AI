@@ -74,7 +74,7 @@ export default function LearnerContributeOverviewPage() {
               Quản Lý Đề Thi &amp; Sáng Kiến Đóng Góp
             </h1>
             <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-              Tổng đề đã đóng góp: <strong className="font-mono tabular-nums text-slate-900">{contributions.length}</strong>
+              Tổng đề đã đóng góp: <strong className="font-semibold text-slate-900">{contributions.length}</strong>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -266,7 +266,7 @@ export default function LearnerContributeOverviewPage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>ĐÃ ĐƯỢC HỘI ĐỒNG THẨM ĐỊNH PHÊ DUYỆT</span>
                   </div>
-                  <span className="font-mono text-emerald-700 font-bold text-[11px]">
+                  <span className="text-emerald-700 font-bold text-[11px]">
                     +100 ĐIỂM THƯỞNG
                   </span>
                 </div>
@@ -366,7 +366,7 @@ export default function LearnerContributeOverviewPage() {
                           <div className="font-semibold text-slate-900 truncate">
                             {file.name}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono">
+                          <div className="text-[10px] text-slate-400">
                             {file.size}
                           </div>
                         </div>
