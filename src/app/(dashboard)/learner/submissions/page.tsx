@@ -1,0 +1,657 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import Link from 'next/link';
+import {
+  CheckSquare,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  Filter,
+  ArrowRight,
+  RotateCcw,
+  FileText,
+  Upload,
+  Link as LinkIcon,
+  ChevronRight,
+  ChevronDown,
+  X,
+  UploadCloud,
+  Trash2,
+  Paperclip,
+  Check,
+  Table,
+  FileArchive,
+  Image as ImageIcon,
+  Send,
+} from 'lucide-react';
+
+interface AssignmentItem {
+  id: string;
+  title: string;
+  groupName: string;
+  groupShortCode: string;
+  groupAvatarBg: string;
+  dueDate: string;
+  dueDayOfWeek: string;
+  dateKey: string; // YYYY-MM-DD
+  status: 'upcoming' | 'overdue' | 'completed';
+  submittedAt?: string;
+  score?: number;
+  maxScore?: number;
+  instructions: string;
+  allowedFormats: string;
+  evaluatorFeedback?: string;
+  submittedFile?: {
+    name: string;
+    size: string;
+  };
+  studentNote?: string;
+}
+
+const initialAssignments: AssignmentItem[] = [
+  {
+    id: 'asm-01',
+    title: 'Cổng nộp bài tập LT Web: Phân tích và cấu trúc dữ liệu - Tuần 10',
+    groupName: 'Tin học ứng dụng & Năng lực số - Nhóm 03',
+    groupShortCode: 'TH',
+    groupAvatarBg: 'bg-sky-600',
+    dueDate: '28 thg 10',
+    dueDayOfWeek: 'thứ ba',
+    dateKey: '2026-10-28',
+    status: 'upcoming',
+    instructions:
+      'Các em hoàn thiện bảng tính phân tích dữ liệu khảo sát và nộp tệp .xlsx kèm biểu đồ trực quan hóa. Đặt tên file theo cú pháp: BT_Tuan10_HoTen_MSSV.xlsx.',
+    allowedFormats: 'Excel (.xlsx), PDF (.pdf)',
+  },
+  {
+    id: 'asm-02',
+    title: 'Thực hành Prompt Engineering & Thiết kế trợ lý AI văn bản',
+    groupName: 'Kỹ năng làm việc cùng AI & Tự động hóa',
+    groupShortCode: 'AI',
+    groupAvatarBg: 'bg-emerald-600',
+    dueDate: '24 thg 10',
+    dueDayOfWeek: 'thứ sáu',
+    dateKey: '2026-10-24',
+    status: 'overdue',
+    submittedAt: '14/10/2026 10:15',
+    score: 68,
+    maxScore: 100,
+    instructions:
+      'Thiết kế hệ thống Prompt đa bước (RTCO). Cần bổ sung ảnh chụp màn hình log đối soát kết quả trích xuất lỗi do AI tạo ra.',
+    allowedFormats: 'Tài liệu Word / PDF / Link Notion',
+    evaluatorFeedback:
+      'Sản phẩm minh chứng chưa có phần đối soát kết quả trích xuất lỗi. Vui lòng bổ sung ảnh chụp log và nộp lại trước hạn chót.',
+    submittedFile: {
+      name: 'BaoCao_Prompting_TranMinhHuy.pdf',
+      size: '1.2 MB',
+    },
+  },
+  {
+    id: 'asm-03',
+    title: 'Cổng nộp bài tập thực hành: Xác thực 2 yếu tố (2FA) & Bảo vệ thiết bị',
+    groupName: 'An toàn Thông tin & Bảo vệ Dữ liệu Cá nhân',
+    groupShortCode: 'AT',
+    groupAvatarBg: 'bg-amber-600',
+    dueDate: '20 thg 10',
+    dueDayOfWeek: 'thứ hai',
+    dateKey: '2026-10-20',
+    status: 'completed',
+    submittedAt: '20/10/2026 16:47',
+    score: 90,
+    maxScore: 100,
+    instructions:
+      'Cấu hình ứng dụng Authenticator, chụp ảnh màn hình xác nhận kích hoạt thành công và giải trình cách bảo vệ 10 mã dự phòng.',
+    allowedFormats: 'Tệp PDF (.pdf)',
+    evaluatorFeedback: 'Thao tác chuẩn xác, tài liệu giải trình mạch lạc, đạt chuẩn an toàn thông tin.',
+    submittedFile: {
+      name: 'MinhChung_2FA_TranMinhHuy.pdf',
+      size: '2.4 MB',
+    },
+  },
+  {
+    id: 'asm-04',
+    title: 'Xử lý, làm sạch và phân tích tập dữ liệu khảo sát 500 mẫu',
+    groupName: 'Xử lý & Trực quan hóa Dữ liệu Bảng tính K20E',
+    groupShortCode: 'DL',
+    groupAvatarBg: 'bg-slate-700',
+    dueDate: '14 thg 10',
+    dueDayOfWeek: 'thứ tư',
+    dateKey: '2026-10-14',
+    status: 'completed',
+    submittedAt: '14/10/2026 12:58',
+    score: 82,
+    maxScore: 100,
+    instructions:
+      'Sử dụng các hàm XLOOKUP, INDEX/MATCH và tạo Pivot Table tổng hợp doanh thu theo từng phân khúc khách hàng.',
+    allowedFormats: 'Excel (.xlsx)',
+    evaluatorFeedback: 'Biểu đồ trực quan hóa tốt, đạt chuẩn năng lực dữ liệu.',
+    submittedFile: {
+      name: 'TapDuLieu_KhaoSat_Cleaned.xlsx',
+      size: '3.1 MB',
+    },
+  },
+];
+
+export default function LearnerSubmissionsPage() {
+  const [assignments, setAssignments] = useState<AssignmentItem[]>(initialAssignments);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'overdue' | 'completed'>('upcoming');
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedAssignment, setSelectedAssignment] = useState<AssignmentItem | null>(null);
+
+  // Submission Form State inside Drawer
+  const [stagedFile, setStagedFile] = useState<{ name: string; size: string } | null>(null);
+  const [studentNote, setStudentNote] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessTurnIn, setIsSuccessTurnIn] = useState(false);
+  const [isResubmittingMode, setIsResubmittingMode] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Filter items
+  const filteredList = assignments.filter((item) => {
+    const matchesTab = item.status === activeTab;
+    const matchesDate = !selectedDate || item.dateKey === selectedDate;
+    return matchesTab && matchesDate;
+  });
+
+  // Group by date
+  const groupedByDate: Record<string, AssignmentItem[]> = {};
+  filteredList.forEach((item) => {
+    const key = `${item.dueDate} ${item.dueDayOfWeek}`;
+    if (!groupedByDate[key]) groupedByDate[key] = [];
+    groupedByDate[key].push(item);
+  });
+
+  const countUpcoming = assignments.filter((a) => a.status === 'upcoming').length;
+  const countOverdue = assignments.filter((a) => a.status === 'overdue').length;
+  const countCompleted = assignments.filter((a) => a.status === 'completed').length;
+
+  const handleOpenAssignment = (item: AssignmentItem) => {
+    setSelectedAssignment(item);
+    setStagedFile(null);
+    setStudentNote(item.studentNote || '');
+    setIsSuccessTurnIn(false);
+    setIsResubmittingMode(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    let sizeStr = '';
+    if (file.size < 1048576) {
+      sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+    } else {
+      sizeStr = (file.size / 1048576).toFixed(1) + ' MB';
+    }
+
+    setStagedFile({
+      name: file.name,
+      size: sizeStr,
+    });
+  };
+
+  const handleTurnIn = () => {
+    if (!selectedAssignment || !stagedFile) return;
+
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      const now = new Date();
+      const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(
+        now.getMonth() + 1
+      ).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(
+        2,
+        '0'
+      )}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const updatedAssignment: AssignmentItem = {
+        ...selectedAssignment,
+        status: 'completed',
+        submittedAt: timeStr,
+        submittedFile: stagedFile,
+        studentNote: studentNote.trim() || undefined,
+      };
+
+      setAssignments((prev) =>
+        prev.map((a) => (a.id === selectedAssignment.id ? updatedAssignment : a))
+      );
+
+      setSelectedAssignment(updatedAssignment);
+      setIsSubmitting(false);
+      setIsSuccessTurnIn(true);
+      setIsResubmittingMode(false);
+    }, 700);
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+      return <Table className="w-4 h-4 text-emerald-600" />;
+    }
+    if (['zip', 'rar', '7z'].includes(ext || '')) {
+      return <FileArchive className="w-4 h-4 text-amber-600" />;
+    }
+    if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext || '')) {
+      return <ImageIcon className="w-4 h-4 text-purple-600" />;
+    }
+    return <FileText className="w-4 h-4 text-sky-600" />;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header - Microsoft Teams Style */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              QUẢN LÝ NHIỆM VỤ
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Nhiệm Vụ &amp; Cổng Nộp Bài
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Theo dõi thời hạn bài tập được giao từ các lớp học, nộp tệp bài làm và nhận phản hồi đánh giá năng lực từ giảng viên.
+          </p>
+        </div>
+
+        {/* Date Filter */}
+        <div className="flex items-center gap-2 text-xs">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-2.5 py-1.5 rounded-md border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
+          />
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedDate('')}
+              className="text-xs text-slate-400 hover:text-slate-600 underline"
+            >
+              Xóa lọc
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Teams Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
+        <button
+          onClick={() => setActiveTab('upcoming')}
+          className={`px-3 py-1.5 rounded-md transition-colors ${
+            activeTab === 'upcoming'
+              ? 'bg-slate-900 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Sắp tới ({countUpcoming})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('overdue')}
+          className={`px-3 py-1.5 rounded-md transition-colors ${
+            activeTab === 'overdue'
+              ? 'bg-amber-600 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Quá hạn / Cần nộp lại ({countOverdue})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`px-3 py-1.5 rounded-md transition-colors ${
+            activeTab === 'completed'
+              ? 'bg-slate-900 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Đã hoàn thành ({countCompleted})
+        </button>
+      </div>
+
+      {/* Grouped List by Date */}
+      <div className="space-y-6">
+        {Object.keys(groupedByDate).length === 0 ? (
+          <div className="py-16 text-center text-xs text-slate-400">
+            Không có nhiệm vụ nào trong mục này.
+          </div>
+        ) : (
+          Object.entries(groupedByDate).map(([dateLabel, items]) => (
+            <div key={dateLabel} className="space-y-2">
+              {/* Date Header */}
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="font-extrabold">
+                  {dateLabel.split(' ')[0]} {dateLabel.split(' ')[1]} {dateLabel.split(' ')[2]}
+                </span>
+                <span className="text-slate-400 font-normal">{dateLabel.split(' ')[3]}</span>
+              </div>
+
+              {/* Items in this date */}
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleOpenAssignment(item)}
+                    className="p-3.5 rounded-md border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Class Initial Badge */}
+                      <div
+                        className={`w-9 h-9 rounded-md ${item.groupAvatarBg} text-white font-bold flex items-center justify-center shrink-0 tracking-wider shadow-inner text-xs`}
+                      >
+                        {item.groupShortCode}
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm hover:text-sky-600 transition-colors leading-snug">
+                          {item.title}
+                        </h3>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {item.groupName}
+                          {item.submittedAt && (
+                            <span className="text-slate-400 ml-2">
+                              &bull; Đã gửi vào {item.submittedAt}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Pill on the Right */}
+                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                      {item.status === 'completed' ? (
+                        <div className="flex items-center gap-2">
+                          {item.score !== undefined && (
+                            <span className="font-bold text-slate-900 text-xs">
+                              {item.score}/{item.maxScore}đ
+                            </span>
+                          )}
+                          <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-[11px] border border-emerald-200/80 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Đã nộp bài
+                          </span>
+                        </div>
+                      ) : item.status === 'overdue' ? (
+                        <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-semibold text-[11px] border border-amber-200/80 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-amber-600" />
+                          Cần bổ sung
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px] border border-slate-200">
+                          Chưa nộp bài
+                        </span>
+                      )}
+
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Assignment Detail Drawer / Modal (Teams Style with File Turn-in) */}
+      {selectedAssignment && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-xl space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
+            {/* Top Bar with Back and Status */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <button
+                onClick={() => setSelectedAssignment(null)}
+                className="text-slate-500 hover:text-slate-800 font-semibold inline-flex items-center gap-1 text-xs"
+              >
+                &larr; Quay lại danh sách
+              </button>
+
+              <div className="text-[11px]">
+                {selectedAssignment.submittedAt ? (
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Đã nộp bài vào {selectedAssignment.submittedAt}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-medium">Chưa nộp bài</span>
+                )}
+              </div>
+            </div>
+
+            {/* Success notification banner after turning in */}
+            {isSuccessTurnIn && (
+              <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold text-xs">
+                    Nộp bài thành công! Giảng viên đã nhận được tệp bài làm của bạn.
+                  </span>
+                </div>
+                <span className="text-[10px] text-emerald-700 font-mono">
+                  Đã chuyển sang mục &ldquo;Đã hoàn thành&rdquo;
+                </span>
+              </div>
+            )}
+
+            {/* Title & Metadata */}
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  {selectedAssignment.title}
+                </h2>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] uppercase text-slate-400 font-semibold">
+                    Điểm số
+                  </div>
+                  <div className="text-sm font-bold text-slate-900">
+                    {selectedAssignment.score !== undefined
+                      ? `${selectedAssignment.score}/${selectedAssignment.maxScore}đ`
+                      : 'Chưa chấm'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 mt-1">
+                Lớp: <span className="font-semibold text-slate-700">{selectedAssignment.groupName}</span>
+                <span className="mx-2">&bull;</span>
+                Hạn chót: <span className="font-semibold text-slate-700">{selectedAssignment.dueDate} {selectedAssignment.dueDayOfWeek}</span>
+              </div>
+            </div>
+
+            {/* Teacher Instructions */}
+            <div className="p-4 rounded-md bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="font-bold text-slate-800 text-xs">
+                Hướng dẫn làm bài từ giảng viên:
+              </div>
+              <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                {selectedAssignment.instructions}
+              </p>
+              <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-200/60">
+                <span className="font-semibold text-slate-700">Định dạng chấp nhận:</span> {selectedAssignment.allowedFormats}
+              </div>
+            </div>
+
+            {/* Teacher Feedback (if already evaluated) */}
+            {selectedAssignment.evaluatorFeedback && (
+              <div className="p-3.5 rounded-md bg-sky-50/40 border border-sky-200/80 space-y-1">
+                <div className="font-bold text-sky-900 text-xs">
+                  Nhận xét đánh giá từ Giảng viên:
+                </div>
+                <p className="text-slate-700 leading-relaxed italic">
+                  &ldquo;{selectedAssignment.evaluatorFeedback}&rdquo;
+                </p>
+              </div>
+            )}
+
+            {/* SUBMITTED WORK SECTION (If completed and not currently re-submitting) */}
+            {selectedAssignment.submittedFile && !isResubmittingMode && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-slate-800 text-xs">
+                    Công việc của tôi đã nộp:
+                  </div>
+                  <button
+                    onClick={() => setIsResubmittingMode(true)}
+                    className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold underline inline-flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Nộp lại tệp bài khác</span>
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-md border border-slate-200 bg-white flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {getFileIcon(selectedAssignment.submittedFile.name)}
+                    <div>
+                      <div className="font-semibold text-slate-900">
+                        {selectedAssignment.submittedFile.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {selectedAssignment.submittedFile.size} &bull; Đã xác thực lưu trữ máy chủ NEXA
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                    Đã nộp thành công
+                  </span>
+                </div>
+
+                {selectedAssignment.studentNote && (
+                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200/70 text-[11px] text-slate-600">
+                    <span className="font-semibold text-slate-700">Ghi chú gửi kèm:</span> {selectedAssignment.studentNote}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* FILE UPLOAD & TURN-IN SECTION (When upcoming, overdue, or re-submitting) */}
+            {(selectedAssignment.status === 'upcoming' ||
+              selectedAssignment.status === 'overdue' ||
+              isResubmittingMode ||
+              !selectedAssignment.submittedFile) && (
+              <div className="space-y-4 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                    Đính kèm tệp bài làm của bạn
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Tối đa 25MB (Excel, Word, PDF, ZIP)
+                  </span>
+                </div>
+
+                {/* Staged file preview or Upload Button */}
+                {stagedFile ? (
+                  <div className="p-3.5 rounded-md border border-sky-200 bg-sky-50/40 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      {getFileIcon(stagedFile.name)}
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {stagedFile.name}
+                        </div>
+                        <div className="text-[10px] text-sky-700">
+                          {stagedFile.size} &bull; Sẵn sàng nộp
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStagedFile(null)}
+                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Hủy chọn tệp này"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-5 rounded-md border-2 border-dashed border-slate-200 hover:border-sky-500 bg-slate-50/60 hover:bg-sky-50/30 transition-all text-center cursor-pointer space-y-1.5"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.docx,.doc,.pdf,.zip,.rar,.png,.jpg"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                    <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center mx-auto text-sky-600 shadow-2xs">
+                      <UploadCloud className="w-4 h-4" />
+                    </div>
+                    <div className="text-xs font-semibold text-slate-800">
+                      Chọn tệp bài làm từ máy tính
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Nhấp vào đây để chọn tệp {selectedAssignment.allowedFormats}
+                    </p>
+                  </div>
+                )}
+
+                {/* Optional Note to Evaluator */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Ghi chú gửi giảng viên (tùy chọn):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Em đã cập nhật lại Pivot Table ở Sheet 2 theo đúng hướng dẫn..."
+                    value={studentNote}
+                    onChange={(e) => setStudentNote(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Action buttons */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setSelectedAssignment(null);
+                  setIsResubmittingMode(false);
+                }}
+                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
+              >
+                Đóng
+              </button>
+
+              {(selectedAssignment.status === 'upcoming' ||
+                selectedAssignment.status === 'overdue' ||
+                isResubmittingMode ||
+                !selectedAssignment.submittedFile) ? (
+                <button
+                  type="button"
+                  onClick={handleTurnIn}
+                  disabled={!stagedFile || isSubmitting}
+                  className={`px-5 py-2 rounded-md font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs ${
+                    selectedAssignment.status === 'overdue'
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                      : 'bg-sky-600 hover:bg-sky-700 text-white'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isSubmitting ? (
+                    <span>Đang nộp bài...</span>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>
+                        {selectedAssignment.status === 'overdue'
+                          ? 'Nộp bổ sung bài làm'
+                          : isResubmittingMode
+                          ? 'Xác nhận nộp lại bài'
+                          : 'Nộp bài ngay (Turn in)'}
+                      </span>
+                    </>
+                  )}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

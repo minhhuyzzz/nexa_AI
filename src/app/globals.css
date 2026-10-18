@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --primary: #0284c7;
+    --primary-foreground: #ffffff;
+    --secondary: #f8fafc;
+    --secondary-foreground: #0f172a;
+    --accent: #f0f9ff;
+    --accent-foreground: #0369a1;
+    --destructive: #e11d48;
+    --destructive-foreground: #ffffff;
+    --ring: #0284c7;
+    --radius: 6px;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Custom Slim Scrollbar to eliminate layout shift and look refined */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+}
