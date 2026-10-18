@@ -110,7 +110,7 @@ export default function NewContributionPage() {
       </div>
 
       {/* Header */}
-      <div className="pb-4 border-b border-slate-200/80">
+      <div className="pb-2">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">

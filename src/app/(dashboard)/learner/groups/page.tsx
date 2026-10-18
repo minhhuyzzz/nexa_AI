@@ -25,7 +25,7 @@ export default function LearnerGroupsPage() {
   return (
     <div className="space-y-6">
       {/* Top Header - Microsoft Teams Style */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />

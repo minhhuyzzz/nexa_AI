@@ -119,8 +119,6 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="h-10 w-px bg-slate-200 hidden sm:block" />
-
           {/* Activity Days - Energetic Amber Streak */}
           <div>
             <div className="flex items-center gap-1 text-[11px] text-slate-700 font-semibold mb-1.5">
@@ -167,7 +165,7 @@ export default function LearnerDashboardPage() {
           <div className="text-2xl font-bold text-slate-900">4</div>
         </div>
 
-        <div className="py-1 sm:border-l sm:border-slate-200/60 sm:pl-6">
+        <div className="py-1 sm:pl-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
             <Compass className="w-4 h-4 text-slate-400" />
             <span>Miền đạt chuẩn</span>
@@ -175,7 +173,7 @@ export default function LearnerDashboardPage() {
           <div className="text-2xl font-bold text-slate-900">4/5</div>
         </div>
 
-        <div className="py-1 sm:border-l sm:border-slate-200/60 sm:pl-6">
+        <div className="py-1 sm:pl-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
             <Trophy className="w-4 h-4 text-sky-600" />
             <span>Điểm tích luỹ</span>
@@ -183,7 +181,7 @@ export default function LearnerDashboardPage() {
           <div className="text-2xl font-bold text-sky-600">240</div>
         </div>
 
-        <div className="py-1 sm:border-l sm:border-slate-200/60 sm:pl-6">
+        <div className="py-1 sm:pl-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
             <Award className="w-4 h-4 text-slate-400" />
             <span>Chứng chỉ đã cấp</span>
@@ -194,7 +192,7 @@ export default function LearnerDashboardPage() {
 
       {/* 3. Spider / Radar Chart Section with Clean AI Diagnostic Insights */}
       <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-100 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-6 gap-2">
           <div>
             <h2 className="text-base font-bold text-slate-900">
               Sơ đồ năng lực 5 miền chính
@@ -221,7 +219,7 @@ export default function LearnerDashboardPage() {
           {/* AI Diagnostic Summary (6 cols) - Replaces the 5 redundant progress cards */}
           <div className="lg:col-span-6 space-y-4">
             <div className="p-4 rounded-md bg-slate-50 border border-slate-200/80 space-y-3 text-xs">
-              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+              <div className="flex items-center justify-between pb-2">
                 <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
                   Đánh giá chẩn đoán AI
                 </span>
@@ -325,7 +323,7 @@ export default function LearnerDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Learning Pathway Card */}
         <div className="lg:col-span-2 p-6 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between pb-2 mb-4">
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-900">
                 Lộ trình học tập tiếp theo
@@ -387,7 +385,7 @@ export default function LearnerDashboardPage() {
         {/* Leaderboard Preview & Quick PIN trigger */}
         <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-2 mb-4">
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                 <h3 className="text-sm font-bold text-slate-900">Bảng xếp hạng tuần</h3>
@@ -425,7 +423,7 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-slate-100 text-center">
+          <div className="pt-3 mt-3 text-center">
             <button
               onClick={() => setShowPinModal(true)}
               className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1.5 transition-colors"

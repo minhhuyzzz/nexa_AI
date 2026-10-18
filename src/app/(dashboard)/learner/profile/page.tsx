@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import {
@@ -28,7 +28,7 @@ export default function LearnerProfilePage() {
   return (
     <div className="max-w-4xl space-y-8">
       {/* Page Header */}
-      <div className="pb-6 border-b border-slate-200/80">
+      <div className="pb-2">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Cài đặt tài khoản & Hồ sơ cá nhân
         </h1>

@@ -62,7 +62,7 @@ export default function AssessmentDetailPage() {
         {/* Left Column: Product Information & Specifications (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           {/* Header Title Area */}
-          <div className="space-y-3 pb-6 border-b border-slate-200/80">
+          <div className="space-y-3 pb-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700">
                 {assessment.domainName}
