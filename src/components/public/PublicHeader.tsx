@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -14,10 +14,37 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
   const pathname = usePathname();
   const currentPath = activePath || pathname;
   const [scrolled, setScrolled] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    let lastScrollY = window.scrollY;
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      const currentScrollY = window.scrollY;
+
+      // Kiểm tra trạng thái cuộn khỏi đỉnh trang
+      setScrolled(currentScrollY > 20);
+
+      // Nếu đang ở gần đỉnh trang: luôn hiển thị
+      if (currentScrollY <= 60) {
+        setVisible(true);
+        lastScrollY = currentScrollY;
+        return;
+      }
+
+      // Bỏ qua các chuyển động cuộn quá nhỏ để tránh giật giao diện
+      const scrollDelta = currentScrollY - lastScrollY;
+      if (Math.abs(scrollDelta) < 6) return;
+
+      if (scrollDelta > 0) {
+        // Kéo xuống -> ẩn thanh điều hướng
+        setVisible(false);
+      } else {
+        // Kéo lên -> hiển thị lại thanh điều hướng
+        setVisible(true);
+      }
+
+      lastScrollY = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -35,7 +62,9 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${
+        visible ? 'translate-y-0' : '-translate-y-full pointer-events-none'
+      } ${
         scrolled
           ? 'bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs'
           : 'bg-white/40 md:bg-transparent border-b border-transparent'
