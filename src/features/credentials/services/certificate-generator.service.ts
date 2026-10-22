@@ -46,7 +46,7 @@ export class CertificateGeneratorService {
       maxScore: Number(input.maxScore.toFixed(2)),
       competencyLevel: input.competencyLevel,
       issuedAt: input.issuedAt.toISOString(),
-      framework: 'EU DigComp 2.2 / ND 13/2023/ND-CP',
+      framework: 'EU DigComp 3.0 / ND 13/2023/ND-CP',
     });
 
     const contentHash = crypto
@@ -139,7 +139,7 @@ export class CertificateGeneratorService {
     });
 
     const standardRef =
-      'Standardized under EU DigComp 2.2 Framework & Vietnam Decree 13/2023/ND-CP';
+      'Standardized under EU DigComp 3.0 Framework & Vietnam Decree 13/2023/ND-CP';
     page.drawText(standardRef, {
       x: width / 2 - (fontHelvetica.widthOfTextAtSize(standardRef, 9) / 2),
       y: height - 126,

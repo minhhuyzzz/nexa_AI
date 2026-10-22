@@ -125,12 +125,36 @@ export async function POST(
     }
 
     const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
-    const isPassed = percentage >= Number(assessment.passing_score);
-    const pointsAwarded = Number(assessment.point_reward) || 50;
+    // Điểm bài thi quy đổi theo Thang điểm 10 chuẩn Việt Nam (0.0 - 10.0)
+    const scoreOn10 = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) / 10 : 0;
+    // Chuẩn đạt: scoreOn10 >= 7.0 (tương đương >= 70%)
+    const isPassed = scoreOn10 >= 7.0;
 
     // 5. Create or Update submission record in database
     let activeSubmissionId = submissionId;
 
+    // Cơ chế chống farm lặp: Mỗi bài thi đạt chuẩn chỉ được cộng +10 điểm tích lũy 1 lần duy nhất cho mỗi học viên
+    let pointsAwarded = 0;
+    if (isPassed) {
+      let previousQuery = supabase
+        .from('assessment_submissions')
+        .select('id')
+        .eq('assessment_id', assessmentId)
+        .eq('user_id', user.id)
+        .eq('is_passed', true);
+
+      if (activeSubmissionId) {
+        previousQuery = previousQuery.neq('id', activeSubmissionId);
+      }
+
+      const { data: previousPassed } = await previousQuery.limit(1);
+
+      if (!previousPassed || previousPassed.length === 0) {
+        pointsAwarded = 10;
+      }
+    }
+
+    // 5. Create or Update submission record in database
     if (activeSubmissionId) {
       await supabase
         .from('assessment_submissions')
@@ -177,21 +201,23 @@ export async function POST(
 
     await supabase.from('submission_answers').insert(answersWithSubId);
 
-    // 7. Award points (+50 điểm point) to candidate profile
-    const { data: currentProfile } = await supabase
-      .from('profiles')
-      .select('points')
-      .eq('id', user.id)
-      .single();
+    // 7. Award points (+10 điểm tích lũy mở chứng chỉ) to candidate profile
+    if (pointsAwarded > 0) {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('points')
+        .eq('id', user.id)
+        .single();
 
-    const currentPoints = currentProfile?.points || 0;
-    await supabase
-      .from('profiles')
-      .update({
-        points: currentPoints + pointsAwarded,
-        avg_competency_score: Number(percentage.toFixed(2)),
-      })
-      .eq('id', user.id);
+      const currentPoints = currentProfile?.points || 0;
+      await supabase
+        .from('profiles')
+        .update({
+          points: currentPoints + pointsAwarded,
+          avg_competency_score: Number(percentage.toFixed(2)),
+        })
+        .eq('id', user.id);
+    }
 
     const executionTimeMs = (performance.now() - startTime).toFixed(2);
 
@@ -200,9 +226,11 @@ export async function POST(
       submissionId: activeSubmissionId,
       totalScore,
       maxScore,
-      percentage: Number(percentage.toFixed(2)),
+      scoreOn10,
+      percentage: Number(percentage.toFixed(1)),
       pointsAwarded,
       isPassed,
+      passingScore: 7.0,
       executionTimeMs: `${executionTimeMs}ms`,
     });
   } catch (err) {

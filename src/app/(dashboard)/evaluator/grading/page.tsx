@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   CheckSquare,
   User,
@@ -125,179 +126,6 @@ export default function EvaluatorGradingPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [activeAiEval, setActiveAiEval] = useState<AIEvaluationData | null>(null);
 
-  const mockEvaluatorSubmissions: CandidateSubmission[] = [
-    {
-      id: 'sub-eval-01',
-      userId: 'usr-1',
-      candidateName: 'Trần Minh Huy',
-      candidateEmail: 'minhhuy@nexa.edu.vn',
-      assessmentTitle: 'Khảo Sát Thực Hành Năng Lực Dữ Liệu & An Toàn Số',
-      passingScore: 70,
-      status: 'SUBMITTED',
-      totalScore: 78,
-      maxScore: 100,
-      percentage: 78,
-      isPassed: true,
-      submittedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-      timeSpentSeconds: 2450,
-      items: [
-        {
-          id: 'ans-01',
-          itemId: 'item-01',
-          itemType: 'PRACTICAL_TASK',
-          orderIndex: 1,
-          prompt: 'Phân tích bảng dữ liệu khảo sát an toàn thông tin của 1.200 nhân sự và đề xuất 3 giải pháp cải thiện mức độ tuân thủ quy chuẩn số trong tổ chức.',
-          maxPoints: 40,
-          textResponse: 'Em đã tiến hành làm sạch 1.200 bản ghi dữ liệu khảo sát, phát hiện 18% nhân viên chưa kích hoạt xác thực 2 bước (2FA) và 24% sử dụng cùng mật khẩu cho nhiều dịch vụ. Đề xuất 3 giải pháp trọng tâm: (1) Bắt buộc kích hoạt 2FA qua ứng dụng Authenticator chuyên dụng; (2) Tổ chức diễn tập tình huống lừa đảo qua email (Phishing Simulation) định kỳ mỗi quý; (3) Triển khai giải pháp sao lưu dữ liệu tự động có mã hóa đám mây AES-256.',
-          evidenceUrl: 'https://storage.nexa.edu.vn/evidence/bao-cao-phan-tich-minhhuy.pdf',
-          scoreAwarded: 0,
-          autoGraded: false,
-          rubric: {
-            id: 'rub-01',
-            title: 'Tiêu chí đánh giá phân tích dữ liệu & giải pháp số',
-            description: 'Đánh giá tính chuẩn xác của dữ liệu và tính khả thi của giải pháp đề xuất',
-            criteria: [
-              {
-                id: 'crit-01',
-                name: 'Kỹ năng trích xuất & làm sạch dữ liệu',
-                weightPercent: 40,
-                maxPoints: 16,
-                levels: [
-                  { id: 'lvl-1a', level_name: 'Xuất sắc', score_percent: 100, description: 'Phân tích thấu đáo, số liệu minh chứng rõ ràng và chính xác.' },
-                  { id: 'lvl-1b', level_name: 'Đạt yêu cầu', score_percent: 75, description: 'Có phân tích số liệu nhưng chưa phân loại đa chiều.' },
-                  { id: 'lvl-1c', level_name: 'Cần hoàn thiện', score_percent: 40, description: 'Chưa chỉ rõ căn cứ số liệu phân tích.' },
-                ],
-              },
-              {
-                id: 'crit-02',
-                name: 'Tính khả thi & tính cấp thiết của giải pháp',
-                weightPercent: 40,
-                maxPoints: 16,
-                levels: [
-                  { id: 'lvl-2a', level_name: 'Xuất sắc', score_percent: 100, description: 'Giải pháp thực tế, có lộ trình và công cụ triển khai cụ thể.' },
-                  { id: 'lvl-2b', level_name: 'Đạt yêu cầu', score_percent: 75, description: 'Giải pháp hợp lý nhưng còn mang tính khái quát.' },
-                  { id: 'lvl-2c', level_name: 'Cần hoàn thiện', score_percent: 40, description: 'Giải pháp chưa bám sát vấn đề thực tế phát hiện.' },
-                ],
-              },
-              {
-                id: 'crit-03',
-                name: 'Độ chuẩn xác trong an toàn thông tin',
-                weightPercent: 20,
-                maxPoints: 8,
-                levels: [
-                  { id: 'lvl-3a', level_name: 'Xuất sắc', score_percent: 100, description: 'Nắm vững kiến thức bảo mật 2FA, mã hóa AES và phòng chống lừa đảo.' },
-                  { id: 'lvl-3b', level_name: 'Đạt yêu cầu', score_percent: 75, description: 'Khái niệm bảo mật đúng nhưng chưa đề xuất biện pháp kỹ thuật sâu.' },
-                  { id: 'lvl-3c', level_name: 'Cần hoàn thiện', score_percent: 40, description: 'Còn nhầm lẫn giữa các chuẩn an toàn thông tin.' },
-                ],
-              },
-            ],
-          },
-          aiEvaluation: null,
-        },
-      ],
-    },
-    {
-      id: 'sub-eval-02',
-      userId: 'usr-2',
-      candidateName: 'Nguyễn Thị Thuý An',
-      candidateEmail: 'thuyan.nguyen@nexa.edu.vn',
-      assessmentTitle: 'Ứng Dụng Trí Tuệ Nhân Tạo & Kỹ Năng Prompt Engineering',
-      passingScore: 70,
-      status: 'SUBMITTED',
-      totalScore: 82,
-      maxScore: 100,
-      percentage: 82,
-      isPassed: true,
-      submittedAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-      timeSpentSeconds: 1820,
-      items: [
-        {
-          id: 'ans-02',
-          itemId: 'item-02',
-          itemType: 'PRACTICAL_TASK',
-          orderIndex: 1,
-          prompt: 'Thiết kế chuỗi Prompt (Prompt Chain) gồm 3 bước để tự động hóa xử lý văn bản hành chính và trích xuất bảng danh mục trách nhiệm.',
-          maxPoints: 50,
-          textResponse: 'Chuỗi Prompt 3 bước được thiết kế:\n- Bước 1 (System Context): Định hình vai trò Chuyên gia phân tích chính sách, yêu cầu đọc văn bản và lập tóm tắt 3 ý cốt lõi.\n- Bước 2 (Entity Extraction): Yêu cầu lọc các phòng ban chịu trách nhiệm chính kèm mốc thời hạn hoàn thành theo định dạng JSON chuẩn.\n- Bước 3 (Validation & Refine): Yêu cầu AI tự phản biện chéo xem có phòng ban nào bị sót trách nhiệm theo điều khoản thi hành hay không.',
-          evidenceUrl: 'https://storage.nexa.edu.vn/evidence/prompt-chain-demo.json',
-          scoreAwarded: 0,
-          autoGraded: false,
-          rubric: {
-            id: 'rub-02',
-            title: 'Tiêu chí đánh giá kỹ năng Prompt Chain',
-            description: 'Đánh giá cấu trúc prompt, tính kiểm soát kết quả và khả năng giảm ảo giác AI',
-            criteria: [
-              {
-                id: 'crit-p1',
-                name: 'Cấu trúc chuỗi logic và vai trò hệ thống',
-                weightPercent: 50,
-                maxPoints: 25,
-                levels: [
-                  { id: 'lvl-p1a', level_name: 'Xuất sắc', score_percent: 100, description: 'Phân tách bước rành mạch, kiểm soát ngữ cảnh tốt.' },
-                  { id: 'lvl-p1b', level_name: 'Đạt yêu cầu', score_percent: 75, description: 'Có cấu trúc đa bước nhưng chuyển giao biến số chưa tối ưu.' },
-                  { id: 'lvl-p1c', level_name: 'Cần hoàn thiện', score_percent: 40, description: 'Chỉ dừng lại ở 1 prompt đơn giản.' },
-                ],
-              },
-              {
-                id: 'crit-p2',
-                name: 'Cơ chế kiểm soát ảo giác & định dạng chuẩn',
-                weightPercent: 50,
-                maxPoints: 25,
-                levels: [
-                  { id: 'lvl-p2a', level_name: 'Xuất sắc', score_percent: 100, description: 'Có bước tự kiểm tra chéo và định dạng đầu ra chuẩn xác.' },
-                  { id: 'lvl-p2b', level_name: 'Đạt yêu cầu', score_percent: 75, description: 'Có định dạng đầu ra nhưng thiếu khâu tự kiểm tra.' },
-                  { id: 'lvl-p2c', level_name: 'Cần hoàn thiện', score_percent: 40, description: 'Chưa có biện pháp ngăn chặn sai lệch dữ liệu.' },
-                ],
-              },
-            ],
-          },
-          aiEvaluation: null,
-        },
-      ],
-    },
-    {
-      id: 'sub-eval-03',
-      userId: 'usr-3',
-      candidateName: 'Đỗ Quốc Bảo',
-      candidateEmail: 'baodq@nexa.edu.vn',
-      assessmentTitle: 'Khảo Sát Thực Hành Năng Lực Dữ Liệu & An Toàn Số',
-      passingScore: 70,
-      status: 'EVALUATED',
-      totalScore: 92,
-      maxScore: 100,
-      percentage: 92,
-      isPassed: true,
-      submittedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-      timeSpentSeconds: 2100,
-      items: [
-        {
-          id: 'ans-03',
-          itemId: 'item-01',
-          itemType: 'PRACTICAL_TASK',
-          orderIndex: 1,
-          prompt: 'Phân tích bảng dữ liệu khảo sát an toàn thông tin của 1.200 nhân sự và đề xuất 3 giải pháp cải thiện mức độ tuân thủ quy chuẩn số trong tổ chức.',
-          maxPoints: 40,
-          textResponse: 'Đã hoàn thành phân tích biểu đồ Pareto về nguyên nhân rủi ro, phân loại thành 3 nhóm cấp thiết: mật khẩu yếu, không cập nhật phần mềm, và nhấp link lạ. Đề xuất chính sách Zero-Trust và bộ lọc DNS bảo mật.',
-          evidenceUrl: 'https://storage.nexa.edu.vn/evidence/bao-cao-doquocbao.pdf',
-          scoreAwarded: 38,
-          autoGraded: false,
-          rubric: null,
-          aiEvaluation: {
-            totalScore: 38,
-            maxScore: 40,
-            confidenceScore: 0.95,
-            confidenceFlag: 'GREEN',
-            evidenceQuote: 'Đã hoàn thành phân tích biểu đồ Pareto về nguyên nhân rủi ro',
-            strengths: 'Phương pháp phân tích bài bản, ứng dụng mô hình Zero-Trust rất chuẩn xác.',
-            weaknesses: 'Nên bổ sung dự trù ngân sách triển khai bộ lọc DNS.',
-            feedback: 'Bài làm xuất sắc, thể hiện năng lực chuyên môn cao và tư duy dữ liệu sắc bén.',
-            criterionScores: [],
-          },
-        },
-      ],
-    },
-  ];
-
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -305,20 +133,16 @@ export default function EvaluatorGradingPage() {
       const res = await fetch('/api/evaluator/submissions');
       if (res.ok) {
         const data = await res.json();
-        const list = data.submissions || [];
-        setSubmissions(list.length > 0 ? list : mockEvaluatorSubmissions);
+        const list: CandidateSubmission[] = data.submissions || [];
+        setSubmissions(list);
         if (list.length > 0 && !selectedSubId) {
           setSelectedSubId(list[0].id);
-        } else if (!selectedSubId) {
-          setSelectedSubId(mockEvaluatorSubmissions[0].id);
         }
       } else {
-        setSubmissions(mockEvaluatorSubmissions);
-        if (!selectedSubId) setSelectedSubId(mockEvaluatorSubmissions[0].id);
+        setSubmissions([]);
       }
     } catch {
-      setSubmissions(mockEvaluatorSubmissions);
-      if (!selectedSubId) setSelectedSubId(mockEvaluatorSubmissions[0].id);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }
@@ -591,6 +415,26 @@ export default function EvaluatorGradingPage() {
       </div>
 
       {/* Filter and Candidate Selector Row */}
+      {submissions.length === 0 && !loading ? (
+        <div className="p-16 text-center bg-white rounded-md border border-slate-200">
+          <CheckSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
+          <h3 className="text-base font-semibold text-slate-900 mb-1">
+            Chưa có bài nộp nào cần thẩm định
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
+            Hiện tại chưa có học viên nào nộp bài thực hành hoặc bài tập tự luận trong các đợt khảo thí của bạn. Khi có bài làm mới gửi về, hệ thống sẽ tự động cập nhật danh sách tại đây để bạn chấm điểm thủ công hoặc hỗ trợ gợi ý từ AI.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/evaluator/exams"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
+            >
+              <span>Xem danh mục đề thi</span>
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </Link>
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Left Submissions List Column */}
         <div className="lg:col-span-1 space-y-3">
@@ -1120,6 +964,7 @@ export default function EvaluatorGradingPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

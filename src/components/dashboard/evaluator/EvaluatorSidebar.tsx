@@ -20,17 +20,16 @@ import {
   CreditCard,
 } from 'lucide-react';
 
-const mainNavItems = [
-  { name: 'Tổng quan', href: '/evaluator/dashboard', icon: Home },
-  { name: 'Chấm bài', href: '/evaluator/grading', icon: CheckSquare },
-  { name: 'Phòng thi trực tiếp', href: '/evaluator/live-room', icon: Radio },
-  { name: 'Báo cáo & Thống kê', href: '/evaluator/analytics', icon: BarChart3 },
+const assessmentNavItems = [
+  { name: 'Tổng quan', href: '/evaluator/dashboard', icon: Home, exact: true },
+  { name: 'Lớp học & Học viên', href: '/evaluator/groups', icon: Users, exact: false },
+  { name: 'Phòng thi trực tiếp', href: '/evaluator/live-room', icon: Radio, exact: false },
 ];
 
 const resourceNavItems = [
-  { name: 'Lớp học & Học viên', href: '/evaluator/groups', icon: Users },
-  { name: 'Ngân hàng câu hỏi', href: '/evaluator/item-bank', icon: Database },
-  { name: 'Đề thi', href: '/evaluator/exams', icon: FileCheck },
+  { name: 'Ngân hàng câu hỏi', href: '/evaluator/item-bank', icon: Database, exact: false },
+  { name: 'Đề thi', href: '/evaluator/exams', icon: FileCheck, exact: false },
+  { name: 'Báo cáo & Thống kê', href: '/evaluator/analytics', icon: BarChart3, exact: false },
 ];
 
 export function EvaluatorSidebar() {
@@ -41,13 +40,13 @@ export function EvaluatorSidebar() {
   return (
     <>
       <aside
-        className={`border-r border-slate-200 bg-white flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 ${
+        className={`border-r border-slate-200 dark:border-zinc-850 bg-white dark:bg-black flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
         <div>
           {/* Brand header */}
-          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100">
+          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-850">
             <Link
               href="/evaluator/dashboard"
               className="flex items-center gap-2 overflow-hidden"
@@ -58,7 +57,7 @@ export function EvaluatorSidebar() {
 
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-zinc-200 dark:hover:bg-zinc-850 transition-colors"
               title={isCollapsed ? 'Mở rộng menu' : 'Thu nhỏ menu'}
             >
               {isCollapsed ? (
@@ -87,13 +86,15 @@ export function EvaluatorSidebar() {
           <nav className="p-3 space-y-5">
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-semibold">
                   Khảo thí
                 </div>
               )}
               <div className="space-y-1">
-                {mainNavItems.map((item) => {
-                  const isActive = pathname === item.href;
+                {assessmentNavItems.map((item) => {
+                  const isActive = item.exact
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href);
                   const Icon = item.icon;
                   return (
                     <Link
@@ -104,12 +105,12 @@ export function EvaluatorSidebar() {
                         isCollapsed ? 'justify-center' : ''
                       } ${
                         isActive
-                          ? 'bg-slate-100 text-slate-900 font-semibold'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          ? 'bg-slate-100 text-slate-900 font-semibold dark:bg-zinc-850 dark:text-zinc-100'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-900'
                       }`}
                     >
                       <Icon
-                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900 dark:text-sky-400' : 'text-slate-400 dark:text-zinc-500'}`}
                         strokeWidth={1.75}
                       />
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -121,13 +122,15 @@ export function EvaluatorSidebar() {
 
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                  Quản trị tài nguyên
+                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-semibold">
+                  Tài nguyên &amp; Báo cáo
                 </div>
               )}
               <div className="space-y-1">
                 {resourceNavItems.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
+                  const isActive = item.exact
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href);
                   const Icon = item.icon;
                   return (
                     <Link
@@ -138,12 +141,12 @@ export function EvaluatorSidebar() {
                         isCollapsed ? 'justify-center' : ''
                       } ${
                         isActive
-                          ? 'bg-slate-100 text-slate-900 font-semibold'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          ? 'bg-slate-100 text-slate-900 font-semibold dark:bg-zinc-850 dark:text-zinc-100'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-900'
                       }`}
                     >
                       <Icon
-                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900 dark:text-sky-400' : 'text-slate-400 dark:text-zinc-500'}`}
                         strokeWidth={1.75}
                       />
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -156,17 +159,17 @@ export function EvaluatorSidebar() {
         </div>
 
         {/* Bottom Section */}
-        <div className="p-3 border-t border-slate-100 space-y-2">
+        <div className="p-3 border-t border-slate-100 dark:border-zinc-850 space-y-2">
           <button
             onClick={() => setShowFeedback(true)}
             title="Đóng góp ý kiến cho NEXA"
-            className={`w-full flex items-center gap-2.5 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-xs text-slate-700 transition-colors ${
+            className={`w-full flex items-center gap-2.5 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 dark:bg-zinc-900/60 dark:hover:bg-zinc-850 dark:border-zinc-800 text-xs text-slate-700 dark:text-zinc-300 transition-colors ${
               isCollapsed ? 'justify-center' : ''
             }`}
           >
-            <MessageSquare className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
+            <MessageSquare className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" strokeWidth={1.75} />
             {!isCollapsed && (
-              <span className="font-medium text-slate-800">Đóng góp ý kiến</span>
+              <span className="font-medium text-slate-800 dark:text-zinc-200">Đóng góp ý kiến</span>
             )}
           </button>
         </div>

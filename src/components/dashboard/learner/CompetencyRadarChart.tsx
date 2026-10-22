@@ -16,11 +16,11 @@ interface CompetencyRadarChartProps {
 }
 
 const defaultDomains: DomainScore[] = [
-  { code: 'D1', name: 'Thông tin & Dữ liệu', score: 85, target: 70 },
-  { code: 'D2', name: 'Giao tiếp & Hợp tác', score: 78, target: 70 },
-  { code: 'D3', name: 'Sáng tạo Nội dung số', score: 62, target: 70 },
-  { code: 'D4', name: 'An toàn & Bảo mật', score: 90, target: 70 },
-  { code: 'D5', name: 'Giải quyết Vấn đề', score: 70, target: 70 },
+  { code: 'D1', name: 'Thông tin & Dữ liệu', score: 0, target: 70 },
+  { code: 'D2', name: 'Giao tiếp & Hợp tác', score: 0, target: 70 },
+  { code: 'D3', name: 'Sáng tạo Nội dung số', score: 0, target: 70 },
+  { code: 'D4', name: 'An toàn & Bảo mật', score: 0, target: 70 },
+  { code: 'D5', name: 'Giải quyết Vấn đề', score: 0, target: 70 },
 ];
 
 export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarChartProps) {
@@ -126,7 +126,7 @@ export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarC
             key={idx}
             points={points}
             fill="none"
-            stroke="#E2E8F0"
+            className="stroke-slate-200 dark:stroke-zinc-800"
             strokeWidth={idx === 4 ? '1.5' : '1'}
             strokeDasharray={idx === 4 ? undefined : '2,2'}
           />
@@ -138,9 +138,9 @@ export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarC
           return (
             <text
               key={lvl}
-              x={centerX + 5}
-              y={lvl === 1.0 ? yPos + 11 : yPos - 2}
-              className="text-[9px] fill-slate-400 font-medium select-none"
+              x={centerX + 6}
+              y={yPos - 3}
+              className="text-[9px] fill-slate-400 dark:fill-zinc-500 font-medium select-none"
             >
               {Math.round(lvl * 100)}%
             </text>
@@ -157,7 +157,7 @@ export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarC
               y1={centerY}
               x2={x}
               y2={y}
-              stroke="#E2E8F0"
+              className="stroke-slate-200 dark:stroke-zinc-800"
               strokeWidth="1"
             />
           );
@@ -167,36 +167,48 @@ export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarC
         <polygon
           points={targetPolygon}
           fill="none"
-          stroke="#94A3B8"
+          className="stroke-slate-400 dark:stroke-zinc-600"
           strokeWidth="1.25"
           strokeDasharray="4,3"
           opacity={0.7}
         />
 
         {/* Learner Score Polygon */}
-        <polygon
-          points={scorePolygon}
-          fill="rgba(2, 132, 199, 0.14)"
-          stroke="#0284C7"
-          strokeWidth="2"
-        />
+        {!data.every((d) => (d.score ?? 0) === 0) ? (
+          <polygon
+            points={scorePolygon}
+            fill="rgba(2, 132, 199, 0.18)"
+            stroke="#0284C7"
+            strokeWidth="2"
+          />
+        ) : (
+          <circle
+            cx={centerX}
+            cy={centerY}
+            r="3.5"
+            className="fill-sky-600 stroke-white stroke-2"
+          />
+        )}
 
         {/* Points and Standardized Clean Labels */}
         {data.map((d, i) => {
+          const isZero = (d.score ?? 0) === 0;
           const pt = getPoint(i, d.score / 100);
           const cfg = getLabelConfig(i);
 
           return (
             <g key={d.code}>
-              {/* Vertex circle */}
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r="4.5"
-                className="fill-sky-600 stroke-white stroke-2"
-              >
-                <title>{`${d.name}: ${d.score}%`}</title>
-              </circle>
+              {/* Vertex circle (only when not all zero or non-zero) */}
+              {!isZero && (
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="4.5"
+                  className="fill-sky-600 stroke-white dark:stroke-zinc-900 stroke-2"
+                >
+                  <title>{`${d.name}: ${d.score}%`}</title>
+                </circle>
+              )}
 
               {/* Domain Name */}
               <text
@@ -204,18 +216,18 @@ export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarC
                 y={cfg.titleY}
                 textAnchor={cfg.anchor}
                 dominantBaseline="central"
-                className="text-[11px] font-sans fill-slate-800 font-semibold"
+                className="text-[11px] font-sans fill-slate-800 dark:fill-zinc-200 font-semibold"
               >
                 {d.name}
               </text>
 
-              {/* Standardized Percentage Only - Removed descriptors like 'Thành thạo', 'Đạt chuẩn' */}
+              {/* Standardized Percentage Only */}
               <text
                 x={cfg.x}
                 y={cfg.scoreY}
                 textAnchor={cfg.anchor}
                 dominantBaseline="central"
-                className="text-[11px] font-sans fill-sky-600 font-bold"
+                className="text-[11px] font-sans fill-sky-600 dark:fill-sky-400 font-bold"
               >
                 {d.score}%
               </text>
@@ -225,14 +237,14 @@ export function CompetencyRadarChart({ data = defaultDomains }: CompetencyRadarC
       </svg>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mt-3 text-xs text-slate-500">
+      <div className="flex items-center gap-6 mt-3 text-xs text-slate-500 dark:text-zinc-400">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-0.5 bg-sky-600 rounded-full" />
-          <span className="text-slate-700 font-medium">Năng lực thực tế</span>
+          <span className="w-3 h-0.5 bg-sky-600 dark:bg-sky-400 rounded-full" />
+          <span className="text-slate-700 dark:text-zinc-200 font-medium">Năng lực thực tế</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-0.5 border-t border-dashed border-slate-400" />
-          <span className="text-slate-500">Chuẩn mục tiêu (70%)</span>
+          <span className="w-3 h-0.5 border-t border-dashed border-slate-400 dark:border-zinc-600" />
+          <span className="text-slate-500 dark:text-zinc-400">Chuẩn mục tiêu (70%)</span>
         </div>
       </div>
     </div>

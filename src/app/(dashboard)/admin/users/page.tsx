@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Users,
   Search,
@@ -15,6 +15,8 @@ import {
   Building,
   Mail,
   Calendar,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 
 interface UserRecord {
@@ -28,74 +30,34 @@ interface UserRecord {
   assessmentsTaken: number;
 }
 
-const mockUsers: UserRecord[] = [
-  {
-    id: 'usr-001',
-    displayName: 'Nguyễn Văn An',
-    email: 'vanan@gmail.com',
-    role: 'LEARNER',
-    organization: 'ĐHQG Hà Nội',
-    status: 'ACTIVE',
-    joinedAt: '15/09/2026',
-    assessmentsTaken: 4,
-  },
-  {
-    id: 'usr-002',
-    displayName: 'TS. Nguyễn Văn Hùng',
-    email: 'hung.nv@vnu.edu.vn',
-    role: 'EVALUATOR',
-    organization: 'Khoa CNTT - ĐHQG Hà Nội',
-    status: 'ACTIVE',
-    joinedAt: '01/09/2026',
-    assessmentsTaken: 12,
-  },
-  {
-    id: 'usr-003',
-    displayName: 'ThS. Trần Thu Trang',
-    email: 'trang.tt@nexa.edu.vn',
-    role: 'EVALUATOR',
-    organization: 'Học viện Đổi mới Sáng tạo NEXA',
-    status: 'ACTIVE',
-    joinedAt: '05/09/2026',
-    assessmentsTaken: 8,
-  },
-  {
-    id: 'usr-004',
-    displayName: 'Lê Hoàng Nam',
-    email: 'hoangnam@gmail.com',
-    role: 'LEARNER',
-    organization: 'Đại học Kinh tế Quốc dân',
-    status: 'ACTIVE',
-    joinedAt: '20/09/2026',
-    assessmentsTaken: 3,
-  },
-  {
-    id: 'usr-005',
-    displayName: 'Đặng Tuấn Kiệt',
-    email: 'tuankiet@enterprise.vn',
-    role: 'LEARNER',
-    organization: 'Tập đoàn Công nghệ Viễn thông',
-    status: 'LOCKED',
-    joinedAt: '12/09/2026',
-    assessmentsTaken: 1,
-  },
-  {
-    id: 'usr-006',
-    displayName: 'Quản trị viên Hệ thống NEXA',
-    email: 'admin@nexa.edu.vn',
-    role: 'ADMIN',
-    organization: 'Ban Điều Hành NEXA',
-    status: 'ACTIVE',
-    joinedAt: '01/08/2026',
-    assessmentsTaken: 0,
-  },
-];
-
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserRecord[]>(mockUsers);
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
+  const [updating, setUpdating] = useState(false);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const json = await res.json();
+        setUsers(json.users || []);
+      } else {
+        setUsers([]);
+      }
+    } catch {
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const filteredUsers = users.filter((u) => {
     const matchSearch =
@@ -116,12 +78,31 @@ export default function AdminUsersPage() {
     );
   };
 
-  const handleChangeRole = (userId: string, newRole: UserRecord['role']) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-    );
-    if (editingUser) {
-      setEditingUser({ ...editingUser, role: newRole });
+  const handleChangeRole = async (userId: string, newRole: UserRecord['role']) => {
+    try {
+      setUpdating(true);
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        console.error('Error updating role:', json.error);
+        return;
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+      if (editingUser) {
+        setEditingUser({ ...editingUser, role: newRole });
+      }
+    } catch (err) {
+      console.error('Failed to change role:', err);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -145,7 +126,7 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="flex items-center gap-3 text-xs">
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-semibold">
+          <div className="px-3.5 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-semibold">
             Tổng tài khoản: <span className="text-sky-600">{users.length}</span>
           </div>
         </div>
@@ -163,7 +144,7 @@ export default function AdminUsersPage() {
             placeholder="Tìm theo tên, email, đơn vị..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
           />
         </div>
 
@@ -177,7 +158,7 @@ export default function AdminUsersPage() {
             <button
               key={tab.id}
               onClick={() => setRoleFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 roleFilter === tab.id
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-600 hover:bg-slate-100'
@@ -190,103 +171,135 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-xs">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-slate-200/80 bg-slate-50/50 text-slate-500 text-[11px] font-semibold">
-              <th className="py-3 px-4">NGƯỜI DÙNG</th>
-              <th className="py-3 px-4">VAI TRÒ</th>
-              <th className="py-3 px-4">ĐƠN VỊ / TỔ CHỨC</th>
-              <th className="py-3 px-4">TRẠNG THÁI</th>
-              <th className="py-3 px-4">NGÀY THAM GIA</th>
-              <th className="py-3 px-4 text-right">THAO TÁC</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filteredUsers.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
-                <td className="py-3.5 px-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 uppercase shrink-0">
-                      {u.displayName[0] || 'U'}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900">{u.displayName}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">{u.email}</div>
-                    </div>
-                  </div>
-                </td>
-
-                <td className="py-3.5 px-4">
-                  {u.role === 'ADMIN' ? (
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-slate-900 text-white">
-                      ADMIN
-                    </span>
-                  ) : u.role === 'EVALUATOR' ? (
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">
-                      Đánh giá viên
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                      Học viên
-                    </span>
-                  )}
-                </td>
-
-                <td className="py-3.5 px-4 text-slate-600">{u.organization}</td>
-
-                <td className="py-3.5 px-4">
-                  {u.status === 'ACTIVE' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                      Hoạt động
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                      Đã khóa
-                    </span>
-                  )}
-                </td>
-
-                <td className="py-3.5 px-4 text-slate-400 text-[11px]">{u.joinedAt}</td>
-
-                <td className="py-3.5 px-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => setEditingUser(u)}
-                      className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors"
-                    >
-                      Phân quyền
-                    </button>
-
-                    <button
-                      onClick={() => handleToggleStatus(u.id)}
-                      className={`p-1.5 rounded-lg border text-xs transition-colors ${
-                        u.status === 'ACTIVE'
-                          ? 'border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200'
-                          : 'border-emerald-200 text-emerald-700 bg-emerald-50'
-                      }`}
-                      title={u.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                    >
-                      {u.status === 'ACTIVE' ? (
-                        <Lock className="w-3.5 h-3.5" />
-                      ) : (
-                        <Unlock className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-                </td>
+      <div className="border border-slate-200/80 rounded-md overflow-hidden bg-white shadow-xs">
+        {loading ? (
+          <div className="py-16 text-center text-slate-500 space-y-3">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto text-sky-600" />
+            <p className="text-xs">Đang tải danh sách tài khoản từ Supabase...</p>
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="py-16 px-4 text-center max-w-sm mx-auto space-y-3">
+            <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto">
+              <Users className="w-6 h-6" strokeWidth={1.75} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Không tìm thấy tài khoản nào</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {searchQuery || roleFilter !== 'ALL'
+                  ? 'Không có kết quả phù hợp với bộ lọc hiện tại. Thử đổi từ khóa hoặc bộ lọc vai trò.'
+                  : 'Hệ thống chưa ghi nhận tài khoản người dùng nào trong cơ sở dữ liệu.'}
+              </p>
+            </div>
+            {(searchQuery || roleFilter !== 'ALL') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setRoleFilter('ALL');
+                }}
+                className="px-3.5 py-1.5 rounded-md border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors"
+              >
+                Đặt lại bộ lọc
+              </button>
+            )}
+          </div>
+        ) : (
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200/80 bg-slate-50/50 text-slate-500 text-[11px] font-semibold">
+                <th className="py-3 px-4">NGƯỜI DÙNG</th>
+                <th className="py-3 px-4">VAI TRÒ</th>
+                <th className="py-3 px-4">ĐƠN VỊ / TỔ CHỨC</th>
+                <th className="py-3 px-4">TRẠNG THÁI</th>
+                <th className="py-3 px-4">NGÀY THAM GIA</th>
+                <th className="py-3 px-4 text-right">THAO TÁC</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredUsers.map((u) => (
+                <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-3.5 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 uppercase shrink-0">
+                        {u.displayName[0] || 'U'}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-900">{u.displayName}</div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">{u.email}</div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="py-3.5 px-4">
+                    {u.role === 'ADMIN' ? (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-slate-900 text-white">
+                        ADMIN
+                      </span>
+                    ) : u.role === 'EVALUATOR' ? (
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">
+                        Đánh giá viên
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                        Học viên
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="py-3.5 px-4 text-slate-600">{u.organization}</td>
+
+                  <td className="py-3.5 px-4">
+                    {u.status === 'ACTIVE' ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                        Hoạt động
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                        Đã khóa
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="py-3.5 px-4 text-slate-400 text-[11px] font-mono">{u.joinedAt}</td>
+
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setEditingUser(u)}
+                        className="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors"
+                      >
+                        Phân quyền
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleStatus(u.id)}
+                        className={`p-1.5 rounded-md border text-xs transition-colors ${
+                          u.status === 'ACTIVE'
+                            ? 'border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200'
+                            : 'border-emerald-200 text-emerald-700 bg-emerald-50'
+                        }`}
+                        title={u.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                      >
+                        {u.status === 'ACTIVE' ? (
+                          <Lock className="w-3.5 h-3.5" />
+                        ) : (
+                          <Unlock className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Edit Role Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full shadow-lg space-y-4 text-slate-900 text-xs">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-slate-900 text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-sm font-bold text-slate-900">
                 Phân Quyền Vai Trò Người Dùng
@@ -319,7 +332,7 @@ export default function AdminUsersPage() {
                 <div
                   key={opt.role}
                   onClick={() => handleChangeRole(editingUser.id, opt.role)}
-                  className={`p-3 rounded-xl border cursor-pointer transition-colors ${
+                  className={`p-3 rounded-md border cursor-pointer transition-colors ${
                     editingUser.role === opt.role
                       ? 'border-sky-600 bg-sky-50/30 font-semibold'
                       : 'border-slate-200 hover:bg-slate-50'
@@ -334,7 +347,7 @@ export default function AdminUsersPage() {
             <div className="pt-3 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setEditingUser(null)}
-                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-colors"
+                className="px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-colors"
               >
                 Hoàn tất
               </button>

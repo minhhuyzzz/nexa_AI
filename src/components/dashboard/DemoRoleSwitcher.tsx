@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -29,9 +29,9 @@ export function DemoRoleSwitcher() {
   return (
     <div className="fixed bottom-4 right-4 z-50 bg-white border border-slate-300 rounded-md shadow-md p-2.5 max-w-sm text-xs font-sans">
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 gap-4">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-800">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 font-mono">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>CHẾ ĐỘ TRẢI NGHIỆM (TEST MODE)</span>
+          <span>TÀI KHOẢN THẬT (REAL AUTH)</span>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -44,7 +44,7 @@ export function DemoRoleSwitcher() {
           <Link
             href="/api/auth/demo?action=clear"
             className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition-colors"
-            title="Thoát chế độ trải nghiệm về Trang chủ"
+            title="Đăng xuất về Trang chủ"
           >
             <X className="w-3.5 h-3.5" strokeWidth={1.75} />
           </Link>
@@ -55,6 +55,7 @@ export function DemoRoleSwitcher() {
         {/* Learner Switch */}
         <Link
           href="/api/auth/demo?role=LEARNER"
+          title="learner@nexa.edu.vn (Nexa@2026)"
           className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors border ${
             isLearner
               ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-xs'
@@ -68,6 +69,7 @@ export function DemoRoleSwitcher() {
         {/* Evaluator Switch */}
         <Link
           href="/api/auth/demo?role=EVALUATOR"
+          title="evaluator@nexa.edu.vn (Nexa@2026)"
           className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors border ${
             isEvaluator
               ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-xs'
@@ -81,6 +83,7 @@ export function DemoRoleSwitcher() {
         {/* Admin Switch */}
         <Link
           href="/api/auth/demo?role=ADMIN"
+          title="admin@nexa.edu.vn (Nexa@2026)"
           className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors border ${
             isAdmin
               ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-xs'

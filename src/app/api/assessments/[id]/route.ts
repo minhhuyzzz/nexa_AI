@@ -20,12 +20,17 @@ export async function GET(
     }
 
     // 2. Fetch assessment details
-    const { data: assessment, error: assessmentError } = await supabase
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let query = supabase
       .from('assessments')
       .select('id, title, description, duration_minutes, passing_score, point_reward')
-      .eq('id', id)
-      .eq('is_published', true)
-      .single();
+      .eq('is_published', true);
+
+    if (isUUID) {
+      query = query.eq('id', id);
+    }
+
+    const { data: assessment, error: assessmentError } = await query.limit(1).maybeSingle();
 
     if (assessmentError || !assessment) {
       return NextResponse.json(
@@ -55,7 +60,7 @@ export async function GET(
           order_index
         )
       `)
-      .eq('assessment_id', id)
+      .eq('assessment_id', assessment.id)
       .order('order_index', { ascending: true });
 
     if (itemsError) {

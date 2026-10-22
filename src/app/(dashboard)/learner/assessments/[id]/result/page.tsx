@@ -60,21 +60,26 @@ export default async function AssessmentResultPage({
   }
 
   const { data: submissions } = await submissionQuery;
-  const submission = (submissions && submissions.length > 0) ? submissions[0] : {
-    id: submissionId || 'sub-mock-01',
-    total_score: 85,
-    max_score: 100,
-    percentage: 85,
-    points_awarded: 50,
-    is_passed: true,
-    time_spent_seconds: 765,
-    submitted_at: new Date().toISOString(),
-    assessments: {
-      title: 'Đánh giá Năng lực Số Tổng quát - Chuẩn NEXA',
-      passing_score: 70,
-      duration_minutes: 15,
-    },
-  };
+  const submission = (submissions && submissions.length > 0) ? submissions[0] : null;
+
+  if (!submission) {
+    return (
+      <div className="p-12 text-center rounded-md border border-slate-200 bg-white max-w-md mx-auto my-12">
+        <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">Chưa có kết quả bài nộp</h3>
+        <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+          Bạn chưa thực hiện hoặc chưa nộp bài khảo thí này. Hãy bắt đầu làm bài để ghi nhận kết quả và điểm năng lực số.
+        </p>
+        <Link
+          href={`/learner/take/${assessmentId}`}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+        >
+          <span>Làm bài khảo thí ngay</span>
+          <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+        </Link>
+      </div>
+    );
+  }
 
   // 2. Fetch answer details with questions and options
   const { data: dbAnswers } = await supabase
@@ -108,52 +113,7 @@ export default async function AssessmentResultPage({
     `)
     .eq('submission_id', submission.id);
 
-  const mockAnswers = [
-    {
-      id: 'ans-1',
-      item_id: 'q-1',
-      score_awarded: 20,
-      is_correct: true,
-      selected_option_id: 'opt-2',
-      text_response: null,
-      evidence_url: null,
-      assessment_items: {
-        id: 'q-1',
-        prompt: 'Để phòng tránh các cuộc tấn công lừa đảo (Phishing) qua thư điện tử trong môi trường làm việc số, biện pháp nào sau đây là quan trọng và hiệu quả nhất?',
-        points: 20,
-        type: 'MCQ',
-        order_index: 1,
-        competencies: { skill_code: '4.1', title: 'Bảo vệ thiết bị & danh tính số' },
-        item_options: [
-          { id: 'opt-1', content: 'Chỉ kiểm tra tên hiển thị người gửi', is_correct: false, explanation: 'Tên hiển thị có thể bị kẻ gian giả mạo dễ dàng.' },
-          { id: 'opt-2', content: 'Kiểm tra kỹ tên miền người gửi (Domain), không nhấp vào liên kết lạ và kích hoạt xác thực 2 bước', is_correct: true, explanation: 'Chính xác! Kiểm tra Domain và xác thực 2 bước là 2 lớp bảo vệ căn bản nhất.' },
-        ],
-      },
-    },
-    {
-      id: 'ans-2',
-      item_id: 'q-2',
-      score_awarded: 20,
-      is_correct: true,
-      selected_option_id: 'opt-6',
-      text_response: null,
-      evidence_url: null,
-      assessment_items: {
-        id: 'q-2',
-        prompt: 'Khi sử dụng các công cụ trí tuệ nhân tạo (AI) để hỗ trợ viết báo cáo hoặc phân tích dữ liệu, nguyên tắc đạo đức và an toàn số nào cần tuân thủ?',
-        points: 20,
-        type: 'MCQ',
-        order_index: 2,
-        competencies: { skill_code: '3.2', title: 'Sáng tạo & hợp tác cùng AI' },
-        item_options: [
-          { id: 'opt-5', content: 'Đưa toàn bộ dữ liệu nội bộ mật lên AI', is_correct: false, explanation: 'Vi phạm nghiêm trọng an toàn dữ liệu nội bộ.' },
-          { id: 'opt-6', content: 'Chủ động kiểm chứng nguồn số liệu, khử dữ liệu định danh (PII) và chịu trách nhiệm về nội dung xuất bản', is_correct: true, explanation: 'Chính xác! Người dùng luôn là người chịu trách nhiệm cuối cùng về kết quả sử dụng AI.' },
-        ],
-      },
-    },
-  ];
-
-  const answers = (dbAnswers && dbAnswers.length > 0) ? dbAnswers : mockAnswers;
+  const answers = dbAnswers || [];
 
   // 3. Fetch any existing AI evaluations for this submission
   const { data: aiEvaluations } = await supabase
@@ -198,6 +158,9 @@ export default async function AssessmentResultPage({
   };
 
   const isPassed = submission.is_passed;
+  const scoreOn10 = submission.max_score > 0
+    ? Math.round((submission.total_score / submission.max_score) * 100) / 10
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -205,7 +168,7 @@ export default async function AssessmentResultPage({
       <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span
                 className={`w-2 h-2 rounded-full ${
                   isPassed ? 'bg-emerald-600' : 'bg-rose-600'
@@ -215,9 +178,18 @@ export default async function AssessmentResultPage({
                 {isPassed ? 'ĐẠT CHUẨN NĂNG LỰC SỐ' : 'CẦN TIẾP TỤC BỒI DƯỠNG'}
               </span>
               <span className="text-xs text-slate-400">|</span>
-              <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                +{submission.points_awarded} pts
+              <span className="text-xs font-semibold text-slate-700">
+                Chuẩn đạt: ≥ 7.0 / 10.0
               </span>
+              {submission.points_awarded > 0 && (
+                <>
+                  <span className="text-xs text-slate-400">|</span>
+                  <span className="text-xs text-[#92400E] bg-[#FEF3C7] px-2 py-0.5 rounded border border-[#FDE68A] font-semibold font-mono flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff9a27]" />
+                    +{submission.points_awarded}đ tích lũy mở chứng chỉ
+                  </span>
+                </>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               {/* @ts-expect-error assessment join */}
@@ -230,17 +202,17 @@ export default async function AssessmentResultPage({
 
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <div className="text-xs text-slate-500 mb-0.5">TỔNG ĐIỂM ĐẠT ĐƯỢC</div>
-              <div className="text-3xl font-bold text-slate-900 tracking-tight">
-                {submission.total_score}{' '}
-                <span className="text-base font-normal text-slate-400">/ {submission.max_score}</span>
+              <div className="text-xs text-slate-500 mb-0.5">ĐIỂM BÀI THI (THANG 10)</div>
+              <div className="text-3xl font-bold text-slate-900 tracking-tight font-mono">
+                {scoreOn10.toFixed(1)}{' '}
+                <span className="text-base font-normal text-slate-400">/ 10.0</span>
               </div>
             </div>
 
             <div className="text-right pl-6 border-l border-slate-200">
-              <div className="text-xs text-slate-500 mb-0.5">TỶ LỆ CHÍNH XÁC</div>
+              <div className="text-xs text-slate-500 mb-0.5">TỶ LỆ QUY ĐỔI</div>
               <div
-                className={`text-3xl font-bold tracking-tight ${
+                className={`text-3xl font-bold tracking-tight font-mono ${
                   isPassed ? 'text-sky-600' : 'text-rose-600'
                 }`}
               >

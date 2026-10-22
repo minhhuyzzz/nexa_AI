@@ -94,14 +94,14 @@ const defaultPlans: ServicePlan[] = [
     id: 'plan-ent',
     code: 'ENTERPRISE',
     name: 'Gói ENTERPRISE',
-    targetAudience: 'Trường Đại học, Cao đẳng, Học viện và Doanh nghiệp đào tạo',
-    monthlyPriceVnd: 25000, // tính theo đầu học viên / tháng
+    targetAudience: 'Tổ chức, Doanh nghiệp, Tập đoàn và Đơn vị đào tạo quy mô lớn',
+    monthlyPriceVnd: 25000, // tính theo đầu người học / tháng
     annualPriceVnd: 250000,
     monthlyAiGradingQuota: 10000,
     monthlyAssessmentsQuota: 'UNLIMITED',
     features: [
-      'Toàn bộ sinh viên được nâng cấp gói Pro',
-      'Giảng viên dùng trọn bộ công cụ khảo thí',
+      'Toàn bộ người học nội bộ được kích hoạt đầy đủ tính năng Pro',
+      'Chuyên gia & Người đánh giá dùng trọn bộ công cụ khảo thí',
       'Tùy biến khung năng lực số riêng',
       'Tạo ngân hàng đề thi và học liệu riêng',
       'Tích hợp đăng nhập một lần và LMS',
@@ -149,7 +149,7 @@ export default function AdminPlansPage() {
       </div>
 
       {toastMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
           <span className="font-medium">{toastMessage}</span>
         </div>
@@ -160,9 +160,9 @@ export default function AdminPlansPage() {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className={`p-6 rounded-xl border bg-white flex flex-col justify-between transition-all ${
+            className={`p-6 rounded-md border bg-white flex flex-col justify-between transition-all ${
               plan.code === 'PRO'
-                ? 'border-sky-600 shadow-md ring-1 ring-sky-600/30'
+                ? 'border-sky-600 shadow-xs ring-1 ring-sky-600/30'
                 : 'border-slate-200 hover:border-slate-300'
             }`}
           >
@@ -184,9 +184,9 @@ export default function AdminPlansPage() {
 
                 <button
                   onClick={() => setEditingPlan(plan)}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium inline-flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium inline-flex items-center gap-1 transition-colors"
                 >
-                  <Edit2 className="w-3 h-3" />
+                  <Edit2 className="w-3 h-3" strokeWidth={1.75} />
                   <span>Sửa giá</span>
                 </button>
               </div>
@@ -195,7 +195,7 @@ export default function AdminPlansPage() {
               <p className="text-xs text-slate-500 mb-4 min-h-[2rem]">{plan.targetAudience}</p>
 
               {/* Pricing strip */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 mb-5">
+              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200/80 mb-5">
                 <div className="text-xl font-extrabold text-slate-900">
                   {plan.monthlyPriceVnd === 0
                     ? '0 VNĐ'
@@ -250,7 +250,7 @@ export default function AdminPlansPage() {
       {/* Edit Plan Modal */}
       {editingPlan && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-md w-full shadow-lg space-y-4 text-slate-900 text-xs">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-slate-900 text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-sm font-bold text-slate-900">
                 Điều Chỉnh Giá &amp; Hạn Mức Gói
@@ -259,7 +259,7 @@ export default function AdminPlansPage() {
                 onClick={() => setEditingPlan(null)}
                 className="text-slate-400 hover:text-slate-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
 
@@ -274,7 +274,7 @@ export default function AdminPlansPage() {
                   onChange={(e) =>
                     setEditingPlan({ ...editingPlan, name: e.target.value })
                   }
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
                 />
               </div>
 
@@ -292,7 +292,7 @@ export default function AdminPlansPage() {
                         monthlyPriceVnd: Number(e.target.value),
                       })
                     }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
                   />
                 </div>
 
@@ -309,7 +309,7 @@ export default function AdminPlansPage() {
                         annualPriceVnd: Number(e.target.value),
                       })
                     }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
                   />
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function AdminPlansPage() {
                       monthlyAiGradingQuota: Number(e.target.value),
                     })
                   }
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
                 />
               </div>
 
@@ -335,13 +335,13 @@ export default function AdminPlansPage() {
                 <button
                   type="button"
                   onClick={() => setEditingPlan(null)}
-                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors"
+                  className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors"
                 >
                   Lưu thay đổi
                 </button>

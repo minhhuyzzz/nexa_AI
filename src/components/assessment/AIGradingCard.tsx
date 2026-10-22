@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import {
@@ -155,7 +155,7 @@ export function AIGradingCard({
                 <span>MINH CHỨNG TRÍCH DẪN TỪ BÀI LÀM:</span>
               </div>
               <p className="text-slate-800 italic leading-relaxed pl-5 border-l-2 border-sky-600">
-                "{evaluation.evidenceQuote}"
+                &ldquo;{evaluation.evidenceQuote}&rdquo;
               </p>
             </div>
           )}
@@ -217,7 +217,7 @@ export function AIGradingCard({
                     </p>
                     {crit.evidenceQuote && (
                       <p className="text-slate-500 italic text-[11px] pl-3 border-l-2 border-slate-300">
-                        "{crit.evidenceQuote}"
+                        &ldquo;{crit.evidenceQuote}&rdquo;
                       </p>
                     )}
                   </div>

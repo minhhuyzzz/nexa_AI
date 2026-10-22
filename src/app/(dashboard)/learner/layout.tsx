@@ -8,7 +8,7 @@ export default function LearnerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex bg-white text-slate-900">
+    <div className="dashboard-shell min-h-screen flex bg-white text-slate-900 transition-colors">
       <LearnerSidebar />
       <div className="flex-1 flex flex-col min-w-0 bg-white">
         <LearnerTopbar />

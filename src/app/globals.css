@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --color-warm-accent: #ff9a27;
+  --color-warm-light: #fef3c7;
+  --color-warm-border: #fde68a;
+  --color-warm-foreground: #92400e;
+}
+
 @layer base {
   :root {
     --background: #ffffff;
@@ -18,10 +29,38 @@
     --secondary-foreground: #0f172a;
     --accent: #f0f9ff;
     --accent-foreground: #0369a1;
+    --warm-accent: #ff9a27;
+    --warm-light: #fef3c7;
+    --warm-border: #fde68a;
+    --warm-foreground: #92400e;
     --destructive: #e11d48;
     --destructive-foreground: #ffffff;
     --ring: #0284c7;
     --radius: 6px;
+  }
+
+  .dark {
+    --background: #000000;
+    --foreground: #f4f4f5;
+    --muted: #18181b;
+    --muted-foreground: #a1a1aa;
+    --card: #09090b;
+    --card-foreground: #f4f4f5;
+    --popover: #09090b;
+    --popover-foreground: #f4f4f5;
+    --border: #27272a;
+    --input: #27272a;
+    --primary: #0284c7;
+    --primary-foreground: #ffffff;
+    --secondary: #18181b;
+    --secondary-foreground: #f4f4f5;
+    --accent: #121214;
+    --accent-foreground: #38bdf8;
+    --warm-accent: #ff9a27;
+    --warm-light: #291805;
+    --warm-border: #78350f;
+    --warm-foreground: #fbbf24;
+    --ring: #0284c7;
   }
 
   * {
@@ -33,11 +72,106 @@
     scrollbar-gutter: stable;
   }
 
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Sleek Pure Black Dark Mode Overrides - STRICTLY FOR DASHBOARD SHELL ONLY */
+  html.dark .dashboard-shell {
+    background-color: #000000 !important;
+    color: #f4f4f5 !important;
+  }
+
+  html.dark .dashboard-shell aside {
+    background-color: #000000 !important;
+    border-color: #27272a !important;
+  }
+
+  html.dark .dashboard-shell .bg-white {
+    background-color: #09090b !important;
+  }
+
+  html.dark .dashboard-shell .bg-slate-50 {
+    background-color: #000000 !important;
+  }
+
+  html.dark .dashboard-shell .bg-slate-100 {
+    background-color: #18181b !important;
+  }
+
+  html.dark .dashboard-shell .bg-slate-200 {
+    background-color: #27272a !important;
+  }
+
+  html.dark .dashboard-shell .bg-slate-900 {
+    background-color: #18181b !important;
+    color: #f4f4f5 !important;
+    border-color: #27272a !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-900 {
+    color: #f4f4f5 !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-800 {
+    color: #e4e4e7 !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-700 {
+    color: #d4d4d8 !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-600 {
+    color: #a1a1aa !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-500 {
+    color: #71717a !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-400 {
+    color: #52525b !important;
+  }
+
+  html.dark .dashboard-shell .border-slate-200,
+  html.dark .dashboard-shell .border-slate-200\/80,
+  html.dark .dashboard-shell .border-slate-200\/90,
+  html.dark .dashboard-shell .border-slate-200\/70,
+  html.dark .dashboard-shell .border-slate-200\/60,
+  html.dark .dashboard-shell .border-slate-100 {
+    border-color: #26262a !important;
+  }
+
+  html.dark .dashboard-shell .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  html.dark .dashboard-shell .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #26262a !important;
+  }
+
+  html.dark .dashboard-shell .hover\:bg-slate-50:hover {
+    background-color: #18181b !important;
+  }
+
+  html.dark .dashboard-shell .hover\:bg-slate-100:hover {
+    background-color: #27272a !important;
+  }
+
+  html.dark .dashboard-shell .hover\:bg-slate-800:hover {
+    background-color: #27272a !important;
+  }
+
+  html.dark .dashboard-shell input,
+  html.dark .dashboard-shell textarea,
+  html.dark .dashboard-shell select {
+    background-color: #121214 !important;
+    color: #f4f4f5 !important;
+    border-color: #27272a !important;
   }
 
   /* Custom Slim Scrollbar to eliminate layout shift and look refined */
@@ -62,5 +196,17 @@
   * {
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
+  }
+
+  html.dark ::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+  }
+
+  html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
+  }
+
+  html.dark * {
+    scrollbar-color: #3f3f46 transparent;
   }
 }

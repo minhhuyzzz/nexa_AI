@@ -1,0 +1,47 @@
+name: NEXA Quality Gates & CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Lint, Type Check & Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://rfbudggycfhbzgxhytlo.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder' }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'dummy_test_key' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Gate 1 - Code Linting
+        run: npm run lint
+
+      - name: Gate 2 - TypeScript Strict Type Check
+        run: npm run typecheck
+
+      - name: Gate 3 - Vitest Unit & Schema Tests
+        run: npm run test
+
+      - name: Gate 4 - Next.js Production Build
+        run: npm run build

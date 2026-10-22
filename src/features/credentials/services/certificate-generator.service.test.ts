@@ -7,7 +7,7 @@ describe('CertificateGeneratorService (Dual SHA-256 & QR Vector PDF)', () => {
       credentialId: 'e0000000-0000-0000-0000-000000000001',
       credentialCode: 'NX-2024-TEST01',
       candidateName: 'Nguyễn Văn An',
-      assessmentTitle: 'Bài Đánh Giá Năng Lực Số Chuẩn Hóa DigComp 2.2',
+      assessmentTitle: 'Bài Đánh Giá Năng Lực Số Chuẩn Hóa DigComp 3.0',
       scorePercentage: 88.5,
       totalScore: 88.5,
       maxScore: 100,

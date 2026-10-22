@@ -89,7 +89,7 @@ export default function NewContributionPage() {
       return <FileArchive className="w-4 h-4 text-amber-600" />;
     }
     if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext || '')) {
-      return <ImageIcon className="w-4 h-4 text-purple-600" />;
+      return <ImageIcon className="w-4 h-4 text-sky-600" strokeWidth={1.75} />;
     }
     return <FileText className="w-4 h-4 text-sky-600" />;
   };
@@ -249,10 +249,10 @@ export default function NewContributionPage() {
                 onChange={(e) => setDifficulty(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md text-xs focus:bg-white focus:outline-none"
               >
-                <option value="FOUNDATION">Cơ bản (Foundation)</option>
-                <option value="INTERMEDIATE">Trung cấp (Intermediate)</option>
-                <option value="ADVANCED">Nâng cao (Advanced)</option>
-                <option value="EXPERT">Chuyên gia (Expert)</option>
+                <option value="BASIC">Basic</option>
+                <option value="INTERMEDIATE">Intermediate</option>
+                <option value="ADVANCED">Advanced</option>
+                <option value="HIGHLY_ADVANCED">Highly Advanced</option>
               </select>
             </div>
           </div>

@@ -16,8 +16,8 @@ BEGIN
     VALUES (
         'NEXA_CORE_FRAMEWORK_V1',
         'Khung Năng lực Số Chuẩn Toàn diện',
-        '1.0',
-        'Khung tiêu chuẩn năng lực số chuẩn hóa theo EU DigComp 2.2 và định hướng Việt Nam.',
+        '3.0',
+        'Khung tiêu chuẩn năng lực số chuẩn hóa theo EU DigComp 3.0 và định hướng Việt Nam.',
         'ACTIVE',
         TRUE
     )

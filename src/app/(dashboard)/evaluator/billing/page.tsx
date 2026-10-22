@@ -74,7 +74,7 @@ export default function EvaluatorBillingPage() {
 
       {/* Quota & Resource Usage Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs space-y-2">
+        <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>AI credits chấm Rubric</span>
             <span className="font-bold text-slate-900">45 / 1.000</span>
@@ -85,7 +85,7 @@ export default function EvaluatorBillingPage() {
           <div className="text-[11px] text-slate-400">Còn lại 955 credits trong tháng này</div>
         </div>
 
-        <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs space-y-2">
+        <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Nhóm lớp hoạt động</span>
             <span className="font-bold text-slate-900">3 / Không giới hạn</span>
@@ -96,7 +96,7 @@ export default function EvaluatorBillingPage() {
           <div className="text-[11px] text-slate-400">Tổng số 85 học viên đã ghi danh</div>
         </div>
 
-        <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs space-y-2">
+        <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Xuất dữ liệu nghiên cứu</span>
             <span className="font-bold text-emerald-600">Sẵn sàng 26 biến số</span>
@@ -112,7 +112,7 @@ export default function EvaluatorBillingPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Plan 1: Free */}
         <div
-          className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
+          className={`p-6 rounded-md border flex flex-col justify-between transition-all ${
             currentPlan === 'free'
               ? 'border-slate-300 bg-white shadow-xs'
               : 'border-slate-200 bg-slate-50/50'
@@ -136,15 +136,15 @@ export default function EvaluatorBillingPage() {
 
             <ul className="space-y-3 text-xs text-slate-600 mb-6">
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>1 nhóm lớp tối đa 15 học viên</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>1 phòng thi trực tiếp mã PIN</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>Bàn chấm điểm thủ công</span>
               </li>
               <li className="flex items-center gap-2.5 text-slate-400">
@@ -155,7 +155,7 @@ export default function EvaluatorBillingPage() {
 
           <button
             disabled
-            className="w-full py-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-500 cursor-default bg-slate-50"
+            className="w-full py-2.5 rounded-md border border-slate-200 text-xs font-semibold text-slate-500 cursor-default bg-slate-50"
           >
             {currentPlan === 'free' ? 'Gói hiện tại' : 'Gói cơ bản'}
           </button>
@@ -163,7 +163,7 @@ export default function EvaluatorBillingPage() {
 
         {/* Plan 2: Plus */}
         <div
-          className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
+          className={`p-6 rounded-md border flex flex-col justify-between transition-all ${
             currentPlan === 'plus'
               ? 'border-emerald-500 bg-emerald-50/10 shadow-xs ring-1 ring-emerald-500/20'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-xs'
@@ -187,19 +187,19 @@ export default function EvaluatorBillingPage() {
 
             <ul className="space-y-3 text-xs text-slate-700 mb-6">
               <li className="flex items-center gap-2.5 font-medium">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>3 nhóm lớp tối đa 50 học viên mỗi lớp</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>3 phòng thi trực tiếp đồng thời</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>100 AI credits hỗ trợ chấm bài thực hành</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>Xuất bảng điểm Excel và CSV</span>
               </li>
             </ul>
@@ -208,7 +208,7 @@ export default function EvaluatorBillingPage() {
           <button
             onClick={() => handleOpenUpgrade('plus')}
             disabled={currentPlan === 'plus'}
-            className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all shadow-xs ${
+            className={`w-full py-2.5 rounded-md text-xs font-semibold transition-all shadow-xs ${
               currentPlan === 'plus'
                 ? 'bg-slate-100 text-slate-700 border border-slate-200 cursor-default'
                 : 'bg-slate-900 hover:bg-slate-800 text-white'
@@ -220,13 +220,13 @@ export default function EvaluatorBillingPage() {
 
         {/* Plan 3: Pro */}
         <div
-          className={`p-6 rounded-xl border flex flex-col justify-between transition-all relative ${
+          className={`p-6 rounded-md border flex flex-col justify-between transition-all relative ${
             currentPlan === 'pro'
               ? 'border-sky-500 bg-sky-50/10 shadow-xs ring-1 ring-sky-500/20'
-              : 'border-sky-300 bg-white shadow-md ring-1 ring-sky-500/30'
+              : 'border-sky-300 bg-white shadow-xs ring-1 ring-sky-500/30'
           }`}
         >
-          <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-sky-600 text-white text-[11px] font-bold shadow-xs">
+          <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-md bg-sky-600 text-white text-[11px] font-bold shadow-xs">
             ĐANG SỬ DỤNG
           </div>
 
@@ -248,23 +248,23 @@ export default function EvaluatorBillingPage() {
 
             <ul className="space-y-3 text-xs text-slate-700 mb-6">
               <li className="flex items-center gap-2.5 font-semibold text-sky-800">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Không giới hạn số lớp và học viên</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Không giới hạn phòng thi trực tiếp</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Bàn chấm Split-view chuyên nghiệp</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>1.000 AI credits chấm gợi ý bài làm</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Xuất dữ liệu nghiên cứu 26 biến số</span>
               </li>
             </ul>
@@ -272,7 +272,7 @@ export default function EvaluatorBillingPage() {
 
           <button
             onClick={() => handleOpenUpgrade('pro')}
-            className="w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
+            className="w-full py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
           >
             Gia hạn gói PRO qua VietQR
           </button>
@@ -282,7 +282,7 @@ export default function EvaluatorBillingPage() {
       {/* Payment Modal */}
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-md w-full p-6 text-slate-900 space-y-5">
+          <div className="bg-white rounded-md border border-slate-200 shadow-xs max-w-md w-full p-6 text-slate-900 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center">

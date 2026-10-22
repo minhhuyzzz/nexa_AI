@@ -21,10 +21,11 @@ import {
   ArrowRight,
   Check,
 } from 'lucide-react';
-import { initialContributions, ContributionItem } from '@/data/mock-contributions';
+import { useEffect } from 'react';
+import type { ContributionItem } from '@/types/contributions';
 
 export default function AdminContributionsPage() {
-  const [contributions, setContributions] = useState<ContributionItem[]>(initialContributions);
+  const [contributions, setContributions] = useState<ContributionItem[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'needs_revision'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ContributionItem | null>(null);
@@ -32,6 +33,15 @@ export default function AdminContributionsPage() {
   // Review action modal state
   const [reviewFeedback, setReviewFeedback] = useState('');
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('nexa_contributions');
+      if (stored) {
+        setContributions(JSON.parse(stored));
+      }
+    } catch {}
+  }, []);
 
   // Filter items
   const filteredList = contributions.filter((item) => {
@@ -67,9 +77,11 @@ export default function AdminContributionsPage() {
         'Đề xuất tình huống đạt chuẩn Khung năng lực số NEXA. Đã được phê duyệt và cộng +100 điểm thưởng.',
     };
 
-    setContributions((prev) =>
-      prev.map((c) => (c.id === selectedItem.id ? updated : c))
-    );
+    setContributions((prev) => {
+      const next = prev.map((c) => (c.id === selectedItem.id ? updated : c));
+      localStorage.setItem('nexa_contributions', JSON.stringify(next));
+      return next;
+    });
     setSelectedItem(updated);
     setActionSuccessMsg('Đã phê duyệt đề thi thành công! Học viên được cộng +100 điểm thưởng.');
   };
@@ -100,7 +112,7 @@ export default function AdminContributionsPage() {
       return <FileArchive className="w-4 h-4 text-amber-600 shrink-0" />;
     }
     if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext || '')) {
-      return <ImageIcon className="w-4 h-4 text-purple-600 shrink-0" />;
+      return <ImageIcon className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />;
     }
     return <FileText className="w-4 h-4 text-sky-600 shrink-0" />;
   };
@@ -283,7 +295,7 @@ export default function AdminContributionsPage() {
       {/* ADMIN REVIEW DRAWER / MODAL */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-xl space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-sm space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
             {/* Top Bar */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <button

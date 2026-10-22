@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   FileCheck,
@@ -13,181 +13,304 @@ import {
   MoreVertical,
   Calendar,
   Layers,
+  Loader2,
+  HelpCircle,
+  X,
+  Check,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface ExamItem {
   id: string;
   title: string;
-  domain: string;
+  description: string;
   durationMinutes: number;
   passingScore: number;
-  questionCount: {
-    mcq: number;
-    scenario: number;
-    practical: number;
-    evidence: number;
-  };
-  assignedGroups: string[];
-  status: 'active' | 'draft' | 'archived';
+  pointReward: number;
+  isPublished: boolean;
+  createdAt: string;
 }
 
-const mockExams: ExamItem[] = [
-  {
-    id: 'ex-01',
-    title: 'Khảo sát năng lực số cơ bản & văn phòng thông minh',
-    domain: 'D1: Thông tin & Dữ liệu',
-    durationMinutes: 45,
-    passingScore: 70,
-    questionCount: { mcq: 15, scenario: 3, practical: 1, evidence: 1 },
-    assignedGroups: ['DHQG24'],
-    status: 'active',
-  },
-  {
-    id: 'ex-02',
-    title: 'Đánh giá kỹ năng ứng dụng AI và Tự động hóa công việc',
-    domain: 'D3: Sáng tạo Nội dung số',
-    durationMinutes: 60,
-    passingScore: 75,
-    questionCount: { mcq: 10, scenario: 4, practical: 2, evidence: 1 },
-    assignedGroups: ['AI-PRO8', 'DHQG24'],
-    status: 'active',
-  },
-  {
-    id: 'ex-03',
-    title: 'Kiểm tra thực hành an toàn thông tin & bảo vệ danh tính số',
-    domain: 'D4: An toàn & Bảo mật',
-    durationMinutes: 30,
-    passingScore: 80,
-    questionCount: { mcq: 12, scenario: 2, practical: 1, evidence: 0 },
-    assignedGroups: [],
-    status: 'draft',
-  },
-];
-
 export default function EvaluatorExamsPage() {
-  const [exams, setExams] = useState<ExamItem[]>(mockExams);
+  const supabase = createClient();
+  const [exams, setExams] = useState<ExamItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form states
   const [newTitle, setNewTitle] = useState('');
-  const [newDomain, setNewDomain] = useState('D1: Thông tin & Dữ liệu');
+  const [newDescription, setNewDescription] = useState('');
   const [newDuration, setNewDuration] = useState(45);
   const [newPassingScore, setNewPassingScore] = useState(70);
+  const [newPoints, setNewPoints] = useState(50);
 
-  const handleCreateExam = (e: React.FormEvent) => {
+  const fetchExams = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('assessments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching assessments:', error);
+      } else if (data) {
+        const mapped: ExamItem[] = data.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          description: a.description || 'Bài khảo thí chuẩn hóa năng lực số theo khung DigComp 3.0.',
+          durationMinutes: a.duration_minutes || 45,
+          passingScore: Number(a.passing_score) || 70,
+          pointReward: a.point_reward || 50,
+          isPublished: a.is_published ?? true,
+          createdAt: new Date(a.created_at).toLocaleDateString('vi-VN'),
+        }));
+        setExams(mapped);
+      }
+    } catch (err) {
+      console.error('Unexpected error loading exams:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchExams();
+  }, [fetchExams]);
+
+  const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    const newEx: ExamItem = {
-      id: `ex-${Date.now()}`,
-      title: newTitle.trim(),
-      domain: newDomain,
-      durationMinutes: Number(newDuration),
-      passingScore: Number(newPassingScore),
-      questionCount: { mcq: 10, scenario: 3, practical: 1, evidence: 1 },
-      assignedGroups: [],
-      status: 'active',
-    };
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('assessments').insert({
+        title: newTitle.trim(),
+        description: newDescription.trim() || 'Bài khảo thí chuẩn hóa năng lực số theo khung DigComp 3.0.',
+        duration_minutes: Number(newDuration),
+        passing_score: Number(newPassingScore),
+        point_reward: Number(newPoints),
+        is_published: true,
+      });
 
-    setExams((prev) => [newEx, ...prev]);
-    setShowCreateModal(false);
-    setNewTitle('');
+      if (!error) {
+        setShowCreateModal(false);
+        setNewTitle('');
+        setNewDescription('');
+        await fetchExams();
+      } else {
+        console.error('Error creating assessment:', error);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTogglePublish = async (id: string, currentStatus: boolean) => {
+    await supabase
+      .from('assessments')
+      .update({ is_published: !currentStatus })
+      .eq('id', id);
+    await fetchExams();
   };
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              QUẢN TRỊ ĐỀ THI &amp; BÀI KHẢO THÍ
+            </span>
+          </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Bộ đề đánh giá & Đợt khảo thí
+            Danh Mục Đề Thi Chuẩn Hóa
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Thiết kế bài kiểm tra đa hình thức, cấu hình điểm chuẩn đạt và giao cho các nhóm lớp.
+          <p className="text-xs text-slate-500 mt-1">
+            Thiết kế bài kiểm tra đa hình thức, thiết lập điểm chuẩn và phân bổ bài thi cho các nhóm học viên.
           </p>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium transition-colors shadow-xs"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Tạo bộ đề mới</span>
+          <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>Tạo đề thi mới</span>
         </button>
       </div>
 
-      {/* Create Exam Modal */}
+      {/* Exam Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
+            <p className="text-xs">Đang tải danh sách bài khảo thí từ CSDL Supabase...</p>
+          </div>
+        ) : exams.length === 0 ? (
+          <div className="col-span-full p-12 text-center rounded-md border border-slate-200 bg-white">
+            <HelpCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Chưa có đề thi nào</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+              Bạn chưa tạo bài khảo thí nào. Hãy bấm nút dưới đây để thiết lập đề thi đầu tiên.
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>Tạo đề thi mới</span>
+            </button>
+          </div>
+        ) : (
+          exams.map((exam) => (
+            <div
+              key={exam.id}
+              className="rounded-md border border-slate-200 bg-white p-5 flex flex-col justify-between hover:border-slate-300 transition-all shadow-xs"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                    ID: {exam.id.slice(0, 8)}
+                  </span>
+                  <button
+                    onClick={() => handleTogglePublish(exam.id, exam.isPublished)}
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors ${
+                      exam.isPublished
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    }`}
+                  >
+                    {exam.isPublished ? 'Đang kích hoạt' : 'Bản nháp'}
+                  </button>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                    {exam.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                    {exam.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 py-2 border-y border-slate-100 text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                    <span>{exam.durationMinutes} phút</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckSquare className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                    <span>Điểm đạt: {exam.passingScore}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-mono text-[11px]">
+                  Tạo ngày: {exam.createdAt}
+                </span>
+                <Link
+                  href={`/evaluator/live-room?assessmentId=${exam.id}`}
+                  className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 font-semibold"
+                >
+                  <span>Mở phòng thi</span>
+                  <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                </Link>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-md w-full shadow-lg space-y-4 text-slate-900">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full space-y-4 text-slate-900 shadow-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <FileCheck className="w-4 h-4 text-sky-600" />
-                Tạo Bộ Đề Khảo Thí Mới
+                <Plus className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+                Tạo Đề Thi Khảo Thí Mới
               </h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-xs"
+                className="text-slate-400 hover:text-slate-600"
               >
-                Đóng
+                <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
 
             <form onSubmit={handleCreateExam} className="space-y-4 text-xs">
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  Tiêu đề bộ đề:
+                  Tên bài khảo thí / Đề thi:
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: Đánh giá tư duy số & Phân tích dữ liệu"
+                  placeholder="Ví dụ: Đánh giá Năng lực Số cơ bản & Văn phòng thông minh"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
                 />
               </div>
 
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  Miền năng lực trọng tâm:
+                  Mô tả bài khảo thí:
                 </label>
-                <select
-                  value={newDomain}
-                  onChange={(e) => setNewDomain(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
-                >
-                  <option value="D1: Thông tin & Dữ liệu">Miền 1: Thông tin và Dữ liệu số</option>
-                  <option value="D2: Giao tiếp & Hợp tác">Miền 2: Giao tiếp và Hợp tác số</option>
-                  <option value="D3: Sáng tạo Nội dung số">Miền 3: Sáng tạo Nội dung số</option>
-                  <option value="D4: An toàn & Bảo mật">Miền 4: An toàn và Bảo mật số</option>
-                  <option value="D5: Giải quyết Vấn đề">Miền 5: Giải quyết Vấn đề số</option>
-                </select>
+                <textarea
+                  rows={2}
+                  placeholder="Mô tả mục tiêu và nội dung chuẩn đầu ra..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">
                     Thời lượng (phút):
                   </label>
                   <input
                     type="number"
-                    min={15}
+                    min={10}
                     max={180}
                     value={newDuration}
                     onChange={(e) => setNewDuration(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
                   />
                 </div>
+
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">
-                    Chuẩn đạt (%):
+                    Điểm đạt (%):
                   </label>
                   <input
                     type="number"
-                    min={50}
+                    min={40}
                     max={100}
                     value={newPassingScore}
                     onChange={(e) => setNewPassingScore(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    Điểm thưởng:
+                  </label>
+                  <input
+                    type="number"
+                    min={10}
+                    max={200}
+                    value={newPoints}
+                    onChange={(e) => setNewPoints(Number(e.target.value))}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
                   />
                 </div>
               </div>
@@ -196,111 +319,23 @@ export default function EvaluatorExamsPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50"
                 >
-                  Tạo bộ đề
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
+                  <span>Lưu đề thi</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="text-xs text-slate-500 mb-1">Tổng số bộ đề</div>
-          <div className="text-2xl font-bold text-slate-900">{exams.length}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Sẵn sàng khảo thí</div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="text-xs text-slate-500 mb-1">Hình thức câu hỏi hỗ trợ</div>
-          <div className="text-2xl font-bold text-sky-600">4 / 4</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Trắc nghiệm, Tình huống, Thực hành, Minh chứng</div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="text-xs text-slate-500 mb-1">Lượt thí sinh đã làm</div>
-          <div className="text-2xl font-bold text-emerald-600">70</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Tỷ lệ đạt chuẩn 84%</div>
-        </div>
-      </div>
-
-      {/* Exam Sets List */}
-      <div className="space-y-4">
-        <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
-          Danh sách bộ đề
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          {exams.map((exam) => (
-            <div
-              key={exam.id}
-              className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs space-y-4"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
-                      {exam.domain}
-                    </span>
-                    <span
-                      className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                        exam.status === 'active'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {exam.status === 'active' ? 'Đang kích hoạt' : 'Bản nháp'}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900">{exam.title}</h3>
-                </div>
-
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="text-right">
-                    <div className="text-[10px] text-slate-400">Thời gian</div>
-                    <div className="font-bold text-slate-800">{exam.durationMinutes} phút</div>
-                  </div>
-                  <div className="text-right border-l border-slate-200 pl-4">
-                    <div className="text-[10px] text-slate-400">Chuẩn đạt</div>
-                    <div className="font-bold text-slate-800">{exam.passingScore}/100</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Composition */}
-              <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600">
-                <div className="flex items-center gap-4">
-                  <span>Trắc nghiệm: <strong className="text-slate-900">{exam.questionCount.mcq}</strong></span>
-                  <span>Tình huống: <strong className="text-slate-900">{exam.questionCount.scenario}</strong></span>
-                  <span>Thực hành: <strong className="text-slate-900">{exam.questionCount.practical}</strong></span>
-                  <span>Minh chứng: <strong className="text-slate-900">{exam.questionCount.evidence}</strong></span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-400">
-                    Đã giao cho {exam.assignedGroups.length} nhóm
-                  </span>
-                  <Link
-                    href={`/evaluator/live-room`}
-                    className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium transition-colors"
-                  >
-                    Mở phòng thi ngay
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

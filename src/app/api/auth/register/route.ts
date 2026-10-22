@@ -3,14 +3,17 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 const registerSchema = z.object({
-  fullName: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự'),
+  fullName: z.string().min(2, 'Vui lòng nhập tên người dùng muốn hiển thị'),
+  username: z
+    .string()
+    .min(3, 'Tên tài khoản phải có ít nhất 3 ký tự')
+    .max(24, 'Tên tài khoản tối đa 24 ký tự')
+    .regex(/^[a-z0-9_]+$/, 'Tên tài khoản chỉ được chứa chữ thường không dấu, số và dấu gạch dưới (_)'),
   email: z.string().email('Địa chỉ email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  confirmPassword: z.string().min(1, 'Vui lòng xác nhận lại mật khẩu'),
   role: z.enum(['LEARNER', 'EVALUATOR'], {
     errorMap: () => ({ message: 'Vai trò chỉ được chọn LEARNER hoặc EVALUATOR' }),
-  }),
-  consentNd13: z.literal(true, {
-    errorMap: () => ({ message: 'Bạn bắt buộc phải đồng ý với Nghị định 13/2023/NĐ-CP' }),
   }),
 });
 
@@ -26,71 +29,60 @@ export async function POST(request: Request) {
       );
     }
 
-    const { fullName, email, password, role } = validated.data;
-    const supabase = await createClient();
+    const { fullName, username, email, password, confirmPassword, role } = validated.data;
 
-    // 1. Sign up user via Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          role,
-        },
-      },
-    });
-
-    if (authError || !authData.user) {
+    if (password !== confirmPassword) {
       return NextResponse.json(
-        { error: authError?.message || 'Đăng ký tài khoản thất bại' },
+        { error: 'Mật khẩu xác nhận không khớp' },
         { status: 400 }
       );
     }
 
-    const userId = authData.user.id;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = username.trim().toLowerCase();
+    const supabase = await createClient();
 
-    // 2. Insert profile record into public.profiles
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: userId,
-      email,
-      full_name: fullName,
-      role,
-      plan_tier: 'FREE',
-      credits: 3,
-      points: 0,
-      rank_tier: 'NOVICE',
-      avg_competency_score: 0.0,
+    // Call stored procedure to register new user securely
+    const { data: userId, error: rpcError } = await supabase.rpc('register_new_user', {
+      p_email: cleanEmail,
+      p_username: cleanUsername,
+      p_full_name: fullName.trim(),
+      p_password: password,
+      p_role: role,
     });
 
-    if (profileError) {
+    if (rpcError) {
+      const msg = rpcError.message || '';
+      if (msg.includes('email') || msg.includes('địa chỉ')) {
+        return NextResponse.json(
+          { error: 'Địa chỉ email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.' },
+          { status: 400 }
+        );
+      }
+      if (msg.includes('tài khoản') || msg.includes('username')) {
+        return NextResponse.json(
+          { error: 'Tên tài khoản này đã có người đăng ký. Vui lòng chọn tên khác.' },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: 'Lỗi khởi tạo hồ sơ người dùng: ' + profileError.message },
-        { status: 500 }
+        { error: rpcError.message || 'Đăng ký tài khoản không thành công' },
+        { status: 400 }
       );
     }
 
-    // 3. Log consent under ND13/2023
-    await supabase.from('consent_logs').insert({
-      user_id: userId,
-      consent_version: 'ND13_V1',
-      is_granted: true,
-      user_agent: request.headers.get('user-agent') || 'unknown',
+    // Automatically sign in the new user to issue session cookies
+    await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
     });
-
-    // 4. If evaluator, also create pending evaluator_profile
-    if (role === 'EVALUATOR') {
-      await supabase.from('evaluator_profiles').insert({
-        user_id: userId,
-        status: 'PENDING',
-      });
-    }
 
     const redirectUrl = role === 'LEARNER' ? '/learner/dashboard' : '/evaluator/dashboard';
 
     return NextResponse.json({
       success: true,
       message: 'Đăng ký tài khoản thành công',
+      userId,
       redirectUrl,
     });
   } catch (err) {

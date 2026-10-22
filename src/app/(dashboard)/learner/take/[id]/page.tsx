@@ -47,94 +47,6 @@ interface AssessmentData {
   point_reward: number;
 }
 
-const defaultMockQuestions: Question[] = [
-  {
-    id: 'q-mock-1',
-    prompt: 'Để phòng tránh các cuộc tấn công lừa đảo (Phishing) qua thư điện tử trong môi trường làm việc số, biện pháp nào sau đây là quan trọng và hiệu quả nhất?',
-    points: 20,
-    type: 'MCQ',
-    order_index: 1,
-    difficulty_level: 'INTERMEDIATE',
-    competency_id: 'comp-4.1',
-    competencies: {
-      skill_code: '4.1',
-      title: 'Bảo vệ thiết bị & danh tính số',
-    },
-    options: [
-      { id: 'opt-1', content: 'Chỉ kiểm tra tên hiển thị của người gửi trên hộp thư đến', order_index: 1 },
-      { id: 'opt-2', content: 'Kiểm tra kỹ tên miền người gửi (Domain), không nhấp vào liên kết lạ và kích hoạt xác thực 2 bước', order_index: 2 },
-      { id: 'opt-3', content: 'Tắt phần mềm diệt virus để tránh bị chặn thư gửi đến', order_index: 3 },
-      { id: 'opt-4', content: 'Chuyển tiếp ngay email cho toàn bộ nhân sự công ty để hỏi ý kiến', order_index: 4 },
-    ],
-  },
-  {
-    id: 'q-mock-2',
-    prompt: 'Khi sử dụng các công cụ trí tuệ nhân tạo (AI) để hỗ trợ viết báo cáo hoặc phân tích dữ liệu, nguyên tắc đạo đức và an toàn số nào cần tuân thủ?',
-    points: 20,
-    type: 'MCQ',
-    order_index: 2,
-    difficulty_level: 'INTERMEDIATE',
-    competency_id: 'comp-3.2',
-    competencies: {
-      skill_code: '3.2',
-      title: 'Sáng tạo & hợp tác cùng AI',
-    },
-    options: [
-      { id: 'opt-5', content: 'Đưa toàn bộ dữ liệu nội bộ và thông tin cá nhân khách hàng lên AI mà không cần ẩn danh', order_index: 1 },
-      { id: 'opt-6', content: 'Chủ động kiểm chứng nguồn số liệu, khử dữ liệu định danh (PII) và chịu trách nhiệm về nội dung xuất bản', order_index: 2 },
-      { id: 'opt-7', content: 'Sao chép nguyên văn văn bản do AI tạo ra và không cần đối soát lại', order_index: 3 },
-      { id: 'opt-8', content: 'Tin tưởng tuyệt đối vào độ chính xác 100% của câu trả lời từ AI', order_index: 4 },
-    ],
-  },
-  {
-    id: 'q-mock-3',
-    prompt: 'Tình huống: Một nhân viên mới trong phòng ban vô tình đăng tải bảng tính chứa thông tin liên lạc của 500 khách hàng lên một trang chia sẻ tài liệu công khai. Bạn là người đầu tiên phát hiện sự việc. Hãy trình bày quy trình 3 bước bạn sẽ thực hiện ngay lập tức để giảm thiểu rủi ro.',
-    points: 25,
-    type: 'SCENARIO',
-    order_index: 3,
-    difficulty_level: 'ADVANCED',
-    competency_id: 'comp-4.2',
-    competencies: {
-      skill_code: '4.2',
-      title: 'Bảo vệ dữ liệu cá nhân & quyền riêng tư',
-    },
-    options: [],
-  },
-  {
-    id: 'q-mock-4',
-    prompt: 'Khi chia sẻ một tập tin bảng tính nội bộ trên nền tảng đám mây (Google Drive / OneDrive) cho nhóm dự án, thiết lập quyền truy cập nào sau đây là chuẩn mực an toàn?',
-    points: 15,
-    type: 'MCQ',
-    order_index: 4,
-    difficulty_level: 'BASIC',
-    competency_id: 'comp-2.2',
-    competencies: {
-      skill_code: '2.2',
-      title: 'Chia sẻ thông tin và dữ liệu số',
-    },
-    options: [
-      { id: 'opt-9', content: 'Chia sẻ ở chế độ "Bất kỳ ai có đường liên kết đều có quyền chỉnh sửa"', order_index: 1 },
-      { id: 'opt-10', content: 'Chỉ chia sẻ cho các địa chỉ email cụ thể trong nhóm với quyền hạn tương ứng (Xem / Nhận xét / Chỉnh sửa)', order_index: 2 },
-      { id: 'opt-11', content: 'Đăng tải đường liên kết lên mạng xã hội công khai để đồng nghiệp dễ tìm', order_index: 3 },
-      { id: 'opt-12', content: 'Gán quyền quản trị viên cao nhất cho tất cả các đối tác bên ngoài', order_index: 4 },
-    ],
-  },
-  {
-    id: 'q-mock-5',
-    prompt: 'Thực hành Prompt Engineering: Viết một câu lệnh prompt ngắn gọn, có bối cảnh và yêu cầu định dạng cụ thể để hướng dẫn trợ lý AI trích xuất 3 rủi ro bảo mật chính từ một email cảnh báo.',
-    points: 20,
-    type: 'PRACTICAL_TASK',
-    order_index: 5,
-    difficulty_level: 'INTERMEDIATE',
-    competency_id: 'comp-5.2',
-    competencies: {
-      skill_code: '5.2',
-      title: 'Ứng dụng công nghệ giải quyết vấn đề',
-    },
-    options: [],
-  },
-];
-
 export default function AssessmentTakePage({
   params,
 }: {
@@ -155,16 +67,16 @@ export default function AssessmentTakePage({
   const [evidenceUrls, setEvidenceUrls] = useState<Record<string, string>>({});
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(900); // 15 mins default
+  const [timeRemaining, setTimeRemaining] = useState<number>(900);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [lastSaved, setLastSaved] = useState<string>('Vừa xong');
 
-  // 1. Fetch Assessment & Questions with seamless mock fallback
   useEffect(() => {
     async function loadAssessment() {
       try {
         setLoading(true);
+        setError(null);
         const res = await fetch(`/api/assessments/${assessmentId}`);
         const data = await res.json();
 
@@ -173,17 +85,7 @@ export default function AssessmentTakePage({
           setQuestions(data.items);
           setTimeRemaining(data.assessment.duration_minutes * 60);
         } else {
-          // Seamless prototype fallback
-          setAssessment({
-            id: assessmentId,
-            title: 'Đánh giá Năng lực Số Tổng quát - Chuẩn NEXA',
-            description: 'Khảo sát năng lực thực tế theo chuẩn 5 miền năng lực số.',
-            duration_minutes: 15,
-            passing_score: 70,
-            point_reward: 50,
-          });
-          setQuestions(defaultMockQuestions);
-          setTimeRemaining(15 * 60);
+          setError(data.error || 'Bài khảo thí không có câu hỏi hợp lệ hoặc chưa được kích hoạt');
         }
 
         // Restore any local draft
@@ -211,17 +113,7 @@ export default function AssessmentTakePage({
           } catch {}
         }
       } catch (err) {
-        // Fallback to mock on any network or parsing error
-        setAssessment({
-          id: assessmentId,
-          title: 'Đánh giá Năng lực Số Tổng quát - Chuẩn NEXA',
-          description: 'Khảo sát năng lực thực tế theo chuẩn 5 miền năng lực số.',
-          duration_minutes: 15,
-          passing_score: 70,
-          point_reward: 50,
-        });
-        setQuestions(defaultMockQuestions);
-        setTimeRemaining(15 * 60);
+        setError(err instanceof Error ? err.message : 'Lỗi kết nối khi tải đề thi');
       } finally {
         setLoading(false);
       }
@@ -722,7 +614,7 @@ export default function AssessmentTakePage({
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-md border border-slate-200 shadow-lg max-w-md w-full p-6">
+          <div className="bg-white rounded-md border border-slate-200 shadow-sm max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-700 shrink-0">
                 <ShieldCheck className="w-5 h-5" strokeWidth={1.75} />

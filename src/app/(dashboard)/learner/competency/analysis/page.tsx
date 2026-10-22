@@ -18,6 +18,8 @@ import {
   TrendingUp,
   RefreshCw,
   Zap,
+  GraduationCap,
+  ExternalLink,
 } from 'lucide-react';
 import {
   RadarDataItem,
@@ -264,14 +266,14 @@ function CompetencyAnalysisContent() {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-              BÁO CÁO PHÂN TÍCH NĂNG LỰC SỐ CHUYÊN SÂU (AI DIGCOMP)
+              BÁO CÁO PHÂN TÍCH NĂNG LỰC SỐ CHUYÊN SÂU
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Chẩn đoán Khoảng trống Năng lực &amp; Lộ trình 4 Bước
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Đánh giá đa chiều theo 5 Miền năng lực số DigComp 2.2 và định hướng lộ trình học tập cá nhân hóa.
+            Đánh giá đa chiều theo 5 Miền năng lực số và định hướng lộ trình học tập cá nhân hóa.
           </p>
         </div>
 
@@ -302,7 +304,7 @@ function CompetencyAnalysisContent() {
               Kích hoạt Phân tích Năng lực AI theo Yêu cầu
             </h2>
             <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              Hệ thống tuân thủ nguyên tắc On-Demand AI: Chỉ gọi AI khi bạn bấm nút. AI sẽ đối soát toàn bộ kết quả bài làm của bạn qua 5 Miền DigComp 2.2, chỉ rõ các kỹ năng dưới 60% và tạo lập lộ trình học liệu 4 bước.
+              Hệ thống tuân thủ nguyên tắc On-Demand AI: Chỉ gọi AI khi bạn bấm nút. AI sẽ đối soát toàn bộ kết quả bài làm của bạn qua 5 Miền năng lực cốt lõi, chỉ rõ các kỹ năng dưới 60% và tạo lập lộ trình học liệu 4 bước.
             </p>
           </div>
 
@@ -342,8 +344,8 @@ function CompetencyAnalysisContent() {
                   <h3 className="text-sm font-bold text-slate-900">
                     Biểu đồ Radar 5 Miền Năng lực
                   </h3>
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                    DIGCOMP 2.2
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                    5 MIỀN NĂNG LỰC
                   </span>
                 </div>
                 {renderRadarChart(analysis.radarData)}
@@ -373,13 +375,19 @@ function CompetencyAnalysisContent() {
               {/* Level Badge Card */}
               <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <div className="text-xs text-slate-500 mb-1">CẤP ĐỘ NĂNG LỰC SỐ TỔNG THỂ</div>
+                  <div className="text-xs text-slate-500 mb-1 font-mono uppercase">
+                    PROFICIENCY LEVEL
+                  </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold tracking-tight text-slate-900">
-                      {analysis.overallLevel}
+                    <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
+                      {analysis.overallLevel === 'FOUNDATION'
+                        ? 'Basic'
+                        : analysis.overallLevel === 'HIGHLY_SPECIALIZED'
+                        ? 'Highly Advanced'
+                        : analysis.overallLevel}
                     </span>
                     <span className="px-2.5 py-1 rounded bg-sky-50 text-sky-700 border border-sky-200 text-xs font-semibold">
-                      Chuẩn Khung Năng lực Số Việt Nam
+                      Chuẩn Năng Lực Số
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-2 leading-relaxed">
@@ -501,6 +509,83 @@ function CompetencyAnalysisContent() {
               </div>
             )}
           </div>
+
+          {/* App 6: AI-Recommended Remediation Courses */}
+          {(() => {
+            const coursesToDisplay = analysis.recommendedCourses || [];
+
+            return (
+              <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <GraduationCap className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+                      <h3 className="text-sm font-bold text-slate-900">
+                        Khóa Học &amp; Chuyên Đề Bồi Dưỡng Đề Xuất Bởi AI
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Được AI chọn lọc trực tiếp từ kho học liệu chuẩn hóa để giải quyết các khoảng trống năng lực số đã phát hiện.
+                    </p>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded bg-sky-50 text-sky-700 border border-sky-200 font-semibold self-start sm:self-auto font-mono">
+                    {coursesToDisplay.length} KHÓA HỌC PHÙ HỢP
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {coursesToDisplay.map((course) => (
+                    <div
+                      key={course.id}
+                      className="p-4 rounded-md border border-slate-200 bg-white hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 font-mono">
+                            Kỹ năng {course.competencyId}
+                          </span>
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                            {course.level}
+                          </span>
+                        </div>
+
+                        <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug line-clamp-2">
+                          {course.title}
+                        </h4>
+
+                        <div className="text-[11px] text-slate-500 mb-2 flex items-center justify-between">
+                          <span>{course.provider}</span>
+                          <span className="font-mono">{course.durationMinutes} phút</span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed mb-2">
+                          {course.description}
+                        </p>
+
+                        <div className="p-2 rounded bg-slate-50 border border-slate-100 text-[11px] text-slate-700 leading-snug">
+                          <span className="font-semibold text-sky-700">Lý do đề xuất: </span>
+                          {course.recommendationReason}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          {course.format}
+                        </span>
+                        <Link
+                          href={course.actionUrl || `/learner/learning-path?courseId=${course.id}`}
+                          className="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
+                        >
+                          Vào học ngay
+                          <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* App 5: 4-Step Actionable Learning Pathway */}
           <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs space-y-4">

@@ -46,45 +46,6 @@ export default function EvaluatorLiveRoomPage() {
   const [creating, setCreating] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const mockFallbackRooms: ExamRoom[] = [
-    {
-      id: 'room-01',
-      roomCode: '849201',
-      title: 'Khảo sát Năng lực Số Sinh viên K48 - ĐHQG',
-      assessmentId: 'asm-01',
-      assessmentTitle: 'Đánh Giá Năng Lực Số Chuẩn Quốc Gia',
-      durationMinutes: 45,
-      roomMode: 'OPEN',
-      isActive: true,
-      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-      participantCount: 38,
-    },
-    {
-      id: 'room-02',
-      roomCode: '623190',
-      title: 'Thực hành Prompt Engineering & Tự động hoá',
-      assessmentId: 'asm-02',
-      assessmentTitle: 'Kỹ Năng Làm Việc Với Trí Tuệ Nhân Tạo',
-      durationMinutes: 60,
-      roomMode: 'GROUP_ONLY',
-      isActive: true,
-      createdAt: new Date(Date.now() - 3600000 * 8).toISOString(),
-      participantCount: 26,
-    },
-    {
-      id: 'room-03',
-      roomCode: '190452',
-      title: 'Kiểm tra Chuyên đề An toàn Thông tin Số',
-      assessmentId: 'asm-03',
-      assessmentTitle: 'Bảo Mật 2 Lớp & Phòng Chống Lừa Đảo',
-      durationMinutes: 30,
-      roomMode: 'OPEN',
-      isActive: false,
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      participantCount: 45,
-    },
-  ];
-
   const fetchRooms = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -92,13 +53,12 @@ export default function EvaluatorLiveRoomPage() {
       const res = await fetch('/api/evaluator/rooms');
       if (res.ok) {
         const data = await res.json();
-        const list = data.rooms || [];
-        setRooms(list.length > 0 ? list : mockFallbackRooms);
+        setRooms(data.rooms || []);
       } else {
-        setRooms(mockFallbackRooms);
+        setRooms([]);
       }
     } catch {
-      setRooms(mockFallbackRooms);
+      setRooms([]);
     } finally {
       setLoading(false);
     }
@@ -131,42 +91,11 @@ export default function EvaluatorLiveRoomPage() {
         setNewTitle('');
         await fetchRooms();
       } else {
-        // Prototype simulation
-        const generatedPin = Math.floor(100000 + Math.random() * 900000).toString();
-        const newRoom: ExamRoom = {
-          id: `room-${Date.now()}`,
-          roomCode: generatedPin,
-          title: newTitle,
-          assessmentId: newAssessmentId,
-          assessmentTitle: 'Đánh Giá Năng Lực Số Chuẩn Quốc Gia',
-          durationMinutes: 45,
-          roomMode: newMode,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          participantCount: 0,
-        };
-        setRooms((prev) => [newRoom, ...prev]);
-        setShowCreateModal(false);
-        setNewTitle('');
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Không thể tạo phòng thi trên hệ thống.');
       }
     } catch {
-      // Prototype fallback
-      const generatedPin = Math.floor(100000 + Math.random() * 900000).toString();
-      const newRoom: ExamRoom = {
-        id: `room-${Date.now()}`,
-        roomCode: generatedPin,
-        title: newTitle,
-        assessmentId: newAssessmentId,
-        assessmentTitle: 'Đánh Giá Năng Lực Số Chuẩn Quốc Gia',
-        durationMinutes: 45,
-        roomMode: newMode,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        participantCount: 0,
-      };
-      setRooms((prev) => [newRoom, ...prev]);
-      setShowCreateModal(false);
-      setNewTitle('');
+      setError('Đã xảy ra lỗi kết nối khi tạo phòng thi. Vui lòng thử lại.');
     } finally {
       setCreating(false);
     }
@@ -232,7 +161,7 @@ export default function EvaluatorLiveRoomPage() {
       {/* Create Room Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full shadow-lg space-y-4">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Radio className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
@@ -271,7 +200,7 @@ export default function EvaluatorLiveRoomPage() {
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
                 >
                   <option value="a0000000-0000-0000-0000-000000000001">
-                    Đề Benchmark Khảo Thí Năng Lực Số Chuẩn Hóa DigComp 2.2 (12 Câu)
+                    Đề Benchmark Khảo Thí Năng Lực Số Chuẩn Hóa (12 Câu)
                   </option>
                 </select>
               </div>
@@ -408,7 +337,7 @@ export default function EvaluatorLiveRoomPage() {
                     <button
                       onClick={() => setQrModalRoom(room)}
                       className="px-3 py-1.5 rounded-md bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
-                      title="Mở màn hình chiếu mã QR cho sinh viên quét"
+                      title="Mở màn hình chiếu mã QR cho thí sinh quét"
                     >
                       <QrCode className="w-3.5 h-3.5" strokeWidth={1.75} />
                       Chiếu QR
@@ -449,9 +378,9 @@ export default function EvaluatorLiveRoomPage() {
       {/* QR Code Classroom Projection Modal */}
       {qrModalRoom && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-lg w-full text-center shadow-2xl space-y-6">
+          <div className="bg-white rounded-md border border-slate-200 p-8 max-w-lg w-full text-center space-y-6">
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
                 <span>PHÒNG THI ĐANG MỞ • {qrModalRoom.participantCount} THÍ SINH ĐÃ VÀO</span>
               </div>
@@ -464,7 +393,7 @@ export default function EvaluatorLiveRoomPage() {
             </div>
 
             {/* QR Code Display */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 inline-block shadow-inner">
+            <div className="p-4 bg-slate-50 rounded-md border border-slate-200 inline-block shadow-xs">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
                   `https://nexa.edu.vn/learner/live-pin?code=${qrModalRoom.roomCode}`
@@ -472,7 +401,7 @@ export default function EvaluatorLiveRoomPage() {
                 alt="QR Code Phòng thi"
                 width={240}
                 height={240}
-                className="rounded-lg mx-auto"
+                className="rounded-md mx-auto"
               />
             </div>
 
@@ -481,7 +410,7 @@ export default function EvaluatorLiveRoomPage() {
               <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
                 HOẶC NHẬP MÃ PIN 6 SỐ
               </div>
-              <div className="text-4xl font-extrabold tracking-widest text-sky-600">
+              <div className="text-4xl font-extrabold tracking-widest text-sky-600 font-mono">
                 {qrModalRoom.roomCode.slice(0, 3)} {qrModalRoom.roomCode.slice(3)}
               </div>
               <div className="text-xs text-slate-500">
@@ -493,15 +422,15 @@ export default function EvaluatorLiveRoomPage() {
             <div className="pt-2 flex items-center justify-center gap-3">
               <button
                 onClick={() => handleCopyLink(qrModalRoom.roomCode)}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
               >
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
                 <span>Sao chép đường dẫn thi</span>
               </button>
 
               <button
                 onClick={() => setQrModalRoom(null)}
-                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                className="px-5 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
               >
                 Đóng màn chiếu
               </button>

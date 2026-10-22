@@ -71,6 +71,7 @@ export async function POST(request: Request) {
           weaknesses: existingAnalysis.weaknesses,
           pedagogicalFeedback: existingAnalysis.pedagogical_feedback,
           learningPathway: existingAnalysis.learning_pathway,
+          recommendedCourses: (existingAnalysis as { recommended_courses?: unknown }).recommended_courses || [],
           modelName: existingAnalysis.model_name,
         },
       });
@@ -285,6 +286,7 @@ export async function POST(request: Request) {
         weaknesses: aiOutput.weaknesses,
         pedagogicalFeedback: aiOutput.pedagogicalFeedback,
         learningPathway: aiOutput.learningPathway,
+        recommendedCourses: aiOutput.recommendedCourses,
         modelName: adapter.defaultModel,
       },
       creditsRemaining: remainingCredits,
@@ -338,6 +340,7 @@ export async function GET(request: Request) {
         weaknesses: analysis.weaknesses,
         pedagogicalFeedback: analysis.pedagogical_feedback,
         learningPathway: analysis.learning_pathway,
+        recommendedCourses: (analysis as { recommended_courses?: unknown }).recommended_courses || [],
         modelName: analysis.model_name,
       },
     });

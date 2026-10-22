@@ -17,6 +17,9 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // Public pages are always in light mode
+    document.documentElement.classList.remove('dark');
+
     let lastScrollY = window.scrollY;
 
     const handleScroll = () => {
@@ -53,11 +56,53 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { href: '/', label: 'Trang chủ' },
-    { href: '/framework', label: 'Khung năng lực' },
-    { href: '/pricing', label: 'Bảng giá' },
-    { href: '/faq', label: 'Hướng dẫn' },
+  const frameworkDomains = [
+    {
+      title: 'Tìm kiếm, đánh giá & quản lý thông tin',
+      skills: [
+        'Duyệt, tìm kiếm và lọc dữ liệu, thông tin',
+        'Đánh giá dữ liệu, thông tin và nội dung số',
+        'Quản lý dữ liệu, thông tin và nội dung số',
+      ],
+    },
+    {
+      title: 'Giao tiếp & hợp tác',
+      skills: [
+        'Tương tác qua công nghệ số',
+        'Chia sẻ qua công nghệ số',
+        'Tham gia công dân qua công nghệ số',
+        'Hợp tác qua công nghệ số',
+        'Chuẩn mực ứng xử và văn hóa số',
+        'Quản lý danh tính số',
+      ],
+    },
+    {
+      title: 'Sáng tạo nội dung số',
+      skills: [
+        'Phát triển nội dung số',
+        'Tích hợp và tái cấu trúc nội dung số',
+        'Bản quyền và giấy phép',
+        'Tư duy tính toán và lập trình',
+      ],
+    },
+    {
+      title: 'An toàn & trách nhiệm',
+      skills: [
+        'Bảo vệ thiết bị',
+        'Bảo vệ dữ liệu cá nhân & riêng tư',
+        'Hỗ trợ sức khỏe tinh thần và thể chất',
+        'Tác động môi trường của công nghệ số',
+      ],
+    },
+    {
+      title: 'Nhận diện & giải quyết vấn đề',
+      skills: [
+        'Xác định & giải quyết sự cố kỹ thuật',
+        'Nhận diện nhu cầu & giải pháp công nghệ',
+        'Giải pháp sáng tạo bằng công nghệ số',
+        'Nhận diện & bồi dưỡng năng lực số',
+      ],
+    },
   ];
 
   return (
@@ -80,22 +125,79 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
         {/* Center: Navigation Menu */}
         <nav className="hidden md:flex items-center gap-8 text-xs font-medium">
-          {navLinks.map((link) => {
-            const isActive = currentPath === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`transition-colors py-1 ${
-                  isActive
-                    ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          <Link
+            href="/"
+            className={`transition-colors py-1 ${
+              currentPath === '/'
+                ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Trang chủ
+          </Link>
+
+          {/* Khung năng lực với Menu xổ ra các Miền và Kỹ năng thành phần */}
+          <div className="relative group py-2">
+            <Link
+              href="/framework"
+              className={`transition-colors py-1 inline-flex items-center gap-1 ${
+                currentPath === '/framework'
+                  ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                  : 'text-slate-600 group-hover:text-slate-900'
+              }`}
+            >
+              <span>Khung năng lực</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-700 transition-transform group-hover:rotate-180" />
+            </Link>
+
+            {/* Mega Dropdown Panel */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[920px] max-w-[95vw] hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="bg-white rounded-md border border-slate-200 shadow-lg p-5 text-slate-900">
+                <div className="grid grid-cols-5 divide-x divide-slate-100">
+                  {frameworkDomains.map((domain) => (
+                    <div key={domain.title} className="px-3.5 first:pl-0 last:pr-0 flex flex-col">
+                      <div className="text-xs font-semibold text-slate-900 pb-2.5 border-b border-slate-100 min-h-[44px] flex items-start leading-snug">
+                        {domain.title}
+                      </div>
+                      <div className="space-y-2 pt-2.5 flex-1">
+                        {domain.skills.map((skill) => (
+                          <div
+                            key={skill}
+                            className="flex items-start gap-1.5 text-[11px] text-slate-600 hover:text-sky-700 leading-snug cursor-default select-none transition-colors group/item"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-slate-300 group-hover/item:bg-sky-500 shrink-0 mt-1.5 transition-colors" />
+                            <span>{skill}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Link
+            href="/pricing"
+            className={`transition-colors py-1 ${
+              currentPath === '/pricing'
+                ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Bảng giá
+          </Link>
+
+          <Link
+            href="/faq"
+            className={`transition-colors py-1 ${
+              currentPath === '/faq'
+                ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Hướng dẫn
+          </Link>
         </nav>
 
         {/* Right: Actions & Demo */}
@@ -107,30 +209,39 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
               <span>Test Dashboard</span>
               <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
-            <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 hidden group-hover:block z-50">
-              <div className="px-3 py-1 text-[10px] text-slate-400 border-b border-slate-100 uppercase font-semibold">
-                Trải nghiệm không cần đăng nhập
+            <div className="absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-md shadow-md py-1.5 hidden group-hover:block z-50">
+              <div className="px-3 py-1 text-[10px] text-slate-400 border-b border-slate-100 uppercase font-semibold font-mono">
+                3 Tài khoản thật (Real Auth)
               </div>
               <Link
                 href="/api/auth/demo?role=LEARNER"
-                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
-                <User className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-                <span>Học viên (Learner)</span>
+                <User className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900">Học viên</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">learner@nexa.edu.vn</div>
+                </div>
               </Link>
               <Link
                 href="/api/auth/demo?role=EVALUATOR"
-                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
-                <Award className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-                <span>Chuyên gia (Evaluator)</span>
+                <Award className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900">Chuyên gia</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">evaluator@nexa.edu.vn</div>
+                </div>
               </Link>
               <Link
                 href="/api/auth/demo?role=ADMIN"
-                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
-                <Shield className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-                <span>Quản trị viên (Admin)</span>
+                <Shield className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900">Quản trị viên</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">admin@nexa.edu.vn</div>
+                </div>
               </Link>
             </div>
           </div>

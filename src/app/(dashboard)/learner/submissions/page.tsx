@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   CheckSquare,
   Clock,
@@ -25,6 +26,9 @@ import {
   FileArchive,
   Image as ImageIcon,
   Send,
+  GraduationCap,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 
 interface AssignmentItem {
@@ -50,95 +54,82 @@ interface AssignmentItem {
   studentNote?: string;
 }
 
-const initialAssignments: AssignmentItem[] = [
-  {
-    id: 'asm-01',
-    title: 'Cổng nộp bài tập LT Web: Phân tích và cấu trúc dữ liệu - Tuần 10',
-    groupName: 'Tin học ứng dụng & Năng lực số - Nhóm 03',
-    groupShortCode: 'TH',
-    groupAvatarBg: 'bg-sky-600',
-    dueDate: '28 thg 10',
-    dueDayOfWeek: 'thứ ba',
-    dateKey: '2026-10-28',
-    status: 'upcoming',
-    instructions:
-      'Các em hoàn thiện bảng tính phân tích dữ liệu khảo sát và nộp tệp .xlsx kèm biểu đồ trực quan hóa. Đặt tên file theo cú pháp: BT_Tuan10_HoTen_MSSV.xlsx.',
-    allowedFormats: 'Excel (.xlsx), PDF (.pdf)',
-  },
-  {
-    id: 'asm-02',
-    title: 'Thực hành Prompt Engineering & Thiết kế trợ lý AI văn bản',
-    groupName: 'Kỹ năng làm việc cùng AI & Tự động hóa',
-    groupShortCode: 'AI',
-    groupAvatarBg: 'bg-emerald-600',
-    dueDate: '24 thg 10',
-    dueDayOfWeek: 'thứ sáu',
-    dateKey: '2026-10-24',
-    status: 'overdue',
-    submittedAt: '14/10/2026 10:15',
-    score: 68,
-    maxScore: 100,
-    instructions:
-      'Thiết kế hệ thống Prompt đa bước (RTCO). Cần bổ sung ảnh chụp màn hình log đối soát kết quả trích xuất lỗi do AI tạo ra.',
-    allowedFormats: 'Tài liệu Word / PDF / Link Notion',
-    evaluatorFeedback:
-      'Sản phẩm minh chứng chưa có phần đối soát kết quả trích xuất lỗi. Vui lòng bổ sung ảnh chụp log và nộp lại trước hạn chót.',
-    submittedFile: {
-      name: 'BaoCao_Prompting_TranMinhHuy.pdf',
-      size: '1.2 MB',
-    },
-  },
-  {
-    id: 'asm-03',
-    title: 'Cổng nộp bài tập thực hành: Xác thực 2 yếu tố (2FA) & Bảo vệ thiết bị',
-    groupName: 'An toàn Thông tin & Bảo vệ Dữ liệu Cá nhân',
-    groupShortCode: 'AT',
-    groupAvatarBg: 'bg-amber-600',
-    dueDate: '20 thg 10',
-    dueDayOfWeek: 'thứ hai',
-    dateKey: '2026-10-20',
-    status: 'completed',
-    submittedAt: '20/10/2026 16:47',
-    score: 90,
-    maxScore: 100,
-    instructions:
-      'Cấu hình ứng dụng Authenticator, chụp ảnh màn hình xác nhận kích hoạt thành công và giải trình cách bảo vệ 10 mã dự phòng.',
-    allowedFormats: 'Tệp PDF (.pdf)',
-    evaluatorFeedback: 'Thao tác chuẩn xác, tài liệu giải trình mạch lạc, đạt chuẩn an toàn thông tin.',
-    submittedFile: {
-      name: 'MinhChung_2FA_TranMinhHuy.pdf',
-      size: '2.4 MB',
-    },
-  },
-  {
-    id: 'asm-04',
-    title: 'Xử lý, làm sạch và phân tích tập dữ liệu khảo sát 500 mẫu',
-    groupName: 'Xử lý & Trực quan hóa Dữ liệu Bảng tính K20E',
-    groupShortCode: 'DL',
-    groupAvatarBg: 'bg-slate-700',
-    dueDate: '14 thg 10',
-    dueDayOfWeek: 'thứ tư',
-    dateKey: '2026-10-14',
-    status: 'completed',
-    submittedAt: '14/10/2026 12:58',
-    score: 82,
-    maxScore: 100,
-    instructions:
-      'Sử dụng các hàm XLOOKUP, INDEX/MATCH và tạo Pivot Table tổng hợp doanh thu theo từng phân khúc khách hàng.',
-    allowedFormats: 'Excel (.xlsx)',
-    evaluatorFeedback: 'Biểu đồ trực quan hóa tốt, đạt chuẩn năng lực dữ liệu.',
-    submittedFile: {
-      name: 'TapDuLieu_KhaoSat_Cleaned.xlsx',
-      size: '3.1 MB',
-    },
-  },
-];
-
 export default function LearnerSubmissionsPage() {
-  const [assignments, setAssignments] = useState<AssignmentItem[]>(initialAssignments);
+  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'overdue' | 'completed'>('upcoming');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentItem | null>(null);
+
+  const fetchRealAssignments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAssignments([]);
+        return;
+      }
+
+      // Fetch enrolled rooms and any associated assessment submissions
+      const { data: participants } = await supabase
+        .from('room_participants')
+        .select(`
+          id,
+          joined_at,
+          status,
+          exam_rooms (
+            id,
+            room_code,
+            title,
+            scheduled_end,
+            assessments (
+              id,
+              title
+            )
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (!participants || participants.length === 0) {
+        setAssignments([]);
+        return;
+      }
+
+      const mapped: AssignmentItem[] = participants.map((p: any) => {
+        const room = p.exam_rooms;
+        const rawAssessment = Array.isArray(room?.assessments) ? room?.assessments[0] : room?.assessments;
+        const isDone = p.status === 'SUBMITTED';
+        const endDate = room?.scheduled_end ? new Date(room.scheduled_end) : new Date();
+        const isOverdue = !isDone && endDate < new Date();
+
+        return {
+          id: p.id,
+          title: room?.title || rawAssessment?.title || 'Nhiệm vụ nhóm',
+          groupName: `Nhóm mã PIN: ${room?.room_code || 'Chung'}`,
+          groupShortCode: (room?.title || 'NV').slice(0, 2).toUpperCase(),
+          groupAvatarBg: 'bg-sky-600',
+          dueDate: `${endDate.getDate()} thg ${endDate.getMonth() + 1}`,
+          dueDayOfWeek: `thứ ${endDate.getDay() === 0 ? 'CN' : endDate.getDay() + 1}`,
+          dateKey: endDate.toISOString().split('T')[0],
+          status: isDone ? 'completed' : isOverdue ? 'overdue' : 'upcoming',
+          instructions: 'Hoàn thành bài đánh giá hoặc nộp minh chứng theo yêu cầu của người đánh giá.',
+          allowedFormats: 'PDF (.pdf), Word (.docx), Excel (.xlsx)',
+        };
+      });
+
+      setAssignments(mapped);
+    } catch (err) {
+      console.error('Error fetching real assignments:', err);
+      setAssignments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRealAssignments();
+  }, [fetchRealAssignments]);
 
   // Submission Form State inside Drawer
   const [stagedFile, setStagedFile] = useState<{ name: string; size: string } | null>(null);
@@ -234,7 +225,7 @@ export default function LearnerSubmissionsPage() {
       return <FileArchive className="w-4 h-4 text-amber-600" />;
     }
     if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext || '')) {
-      return <ImageIcon className="w-4 h-4 text-purple-600" />;
+      return <ImageIcon className="w-4 h-4 text-sky-600" strokeWidth={1.75} />;
     }
     return <FileText className="w-4 h-4 text-sky-600" />;
   };
@@ -254,7 +245,7 @@ export default function LearnerSubmissionsPage() {
             Nhiệm Vụ &amp; Cổng Nộp Bài
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Theo dõi thời hạn bài tập được giao từ các lớp học, nộp tệp bài làm và nhận phản hồi đánh giá năng lực từ giảng viên.
+            Theo dõi thời hạn bài tập được giao từ các nhóm đánh giá, nộp tệp bài làm và nhận phản hồi đánh giá năng lực từ người đánh giá.
           </p>
         </div>
 
@@ -316,9 +307,31 @@ export default function LearnerSubmissionsPage() {
 
       {/* Grouped List by Date */}
       <div className="space-y-6">
-        {Object.keys(groupedByDate).length === 0 ? (
-          <div className="py-16 text-center text-xs text-slate-400">
-            Không có nhiệm vụ nào trong mục này.
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
+            <p className="text-xs">Đang tải danh sách bài tập...</p>
+          </div>
+        ) : Object.keys(groupedByDate).length === 0 ? (
+          <div className="p-12 text-center rounded-md border border-slate-200 bg-white shadow-xs">
+            <CheckSquare className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">
+              Không có bài tập nào cần nộp
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 leading-relaxed">
+              {activeTab === 'upcoming'
+                ? 'Hiện tại bạn không có bài tập nào sắp đến hạn. Khi tham gia các nhóm học tập và được giao bài tập, hạn nộp sẽ hiển thị tại đây.'
+                : activeTab === 'overdue'
+                ? 'Bạn không có bài tập nào bị quá hạn.'
+                : 'Bạn chưa có bài nộp nào hoàn thành trong các nhóm học tập.'}
+            </p>
+            <Link
+              href="/learner/groups"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-medium hover:bg-sky-700 transition-colors shadow-xs"
+            >
+              <span>Vào Nhóm của tôi</span>
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </Link>
           </div>
         ) : (
           Object.entries(groupedByDate).map(([dateLabel, items]) => (
@@ -400,7 +413,7 @@ export default function LearnerSubmissionsPage() {
       {/* Assignment Detail Drawer / Modal (Teams Style with File Turn-in) */}
       {selectedAssignment && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-xl space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-sm space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
             {/* Top Bar with Back and Status */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <button
@@ -428,7 +441,7 @@ export default function LearnerSubmissionsPage() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="font-semibold text-xs">
-                    Nộp bài thành công! Giảng viên đã nhận được tệp bài làm của bạn.
+                    Nộp bài thành công! Người đánh giá đã nhận được tệp bài làm của bạn.
                   </span>
                 </div>
                 <span className="text-[10px] text-emerald-700 font-mono">
@@ -462,10 +475,10 @@ export default function LearnerSubmissionsPage() {
               </div>
             </div>
 
-            {/* Teacher Instructions */}
+            {/* Evaluator Instructions */}
             <div className="p-4 rounded-md bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="font-bold text-slate-800 text-xs">
-                Hướng dẫn làm bài từ giảng viên:
+                Hướng dẫn làm bài từ người đánh giá:
               </div>
               <p className="text-slate-600 leading-relaxed whitespace-pre-line">
                 {selectedAssignment.instructions}
@@ -475,15 +488,48 @@ export default function LearnerSubmissionsPage() {
               </div>
             </div>
 
-            {/* Teacher Feedback (if already evaluated) */}
+            {/* Evaluator Feedback (if already evaluated) */}
             {selectedAssignment.evaluatorFeedback && (
               <div className="p-3.5 rounded-md bg-sky-50/40 border border-sky-200/80 space-y-1">
                 <div className="font-bold text-sky-900 text-xs">
-                  Nhận xét đánh giá từ Giảng viên:
+                  Nhận xét đánh giá từ Người đánh giá:
                 </div>
                 <p className="text-slate-700 leading-relaxed italic">
                   &ldquo;{selectedAssignment.evaluatorFeedback}&rdquo;
                 </p>
+              </div>
+            )}
+
+            {/* Course Recommendation Banner (When score is below 70) */}
+            {selectedAssignment.score !== undefined && selectedAssignment.score < 70 && (
+              <div className="p-3.5 rounded-md bg-amber-50/70 border border-amber-200 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                    <GraduationCap className="w-4 h-4 text-amber-600" strokeWidth={1.75} />
+                    <span>Đề xuất chuyên đề bồi dưỡng nâng cao điểm số</span>
+                  </div>
+                  <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white text-amber-800 border border-amber-200">
+                    Điểm: {selectedAssignment.score}/100đ
+                  </span>
+                </div>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Kết quả bài thi này của bạn đạt dưới chuẩn (&lt; 70đ). Hệ thống đề xuất bạn hoàn thành khóa học thực hành sau để bổ khuyết tiêu chí này.
+                </p>
+                <div className="pt-1 flex items-center justify-between gap-2">
+                  <Link
+                    href="/learner/learning-path?courseId=CRS-402"
+                    className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold inline-flex items-center gap-1 transition-colors shadow-xs"
+                  >
+                    <span>Vào học khóa bồi dưỡng</span>
+                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  </Link>
+                  <Link
+                    href="/learner/competency/analysis"
+                    className="text-[11px] text-sky-600 hover:underline font-medium"
+                  >
+                    Xem chẩn đoán AI toàn diện
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -593,7 +639,7 @@ export default function LearnerSubmissionsPage() {
                 {/* Optional Note to Evaluator */}
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                    Ghi chú gửi giảng viên (tùy chọn):
+                    Ghi chú gửi người đánh giá (tùy chọn):
                   </label>
                   <input
                     type="text"

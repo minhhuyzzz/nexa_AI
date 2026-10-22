@@ -21,10 +21,18 @@ import {
   ArrowRight,
   Download,
 } from 'lucide-react';
-import { initialContributions, ContributionItem } from '@/data/mock-contributions';
+import { ContributionItem } from '@/types/contributions';
 
 export default function LearnerContributeOverviewPage() {
-  const [contributions, setContributions] = useState<ContributionItem[]>(initialContributions);
+  const [contributions, setContributions] = useState<ContributionItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('nexa_community_contributions');
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
+    return [];
+  });
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'needs_revision'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ContributionItem | null>(null);
@@ -53,7 +61,7 @@ export default function LearnerContributeOverviewPage() {
       return <FileArchive className="w-4 h-4 text-amber-600 shrink-0" />;
     }
     if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext || '')) {
-      return <ImageIcon className="w-4 h-4 text-purple-600 shrink-0" />;
+      return <ImageIcon className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />;
     }
     return <FileText className="w-4 h-4 text-sky-600 shrink-0" />;
   };
@@ -243,7 +251,7 @@ export default function LearnerContributeOverviewPage() {
       {/* DETAIL DRAWER / MODAL */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-xl space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-sm space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
             {/* Top Bar */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <button

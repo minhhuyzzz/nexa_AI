@@ -63,7 +63,7 @@ function LivePinContent() {
           Tham Gia Phòng Thi Trực Tiếp
         </h1>
         <p className="text-xs text-slate-500">
-          Nhập mã PIN 6 số do giảng viên khảo thí cung cấp để bắt đầu làm bài.
+          Nhập mã PIN 6 số do chuyên gia khảo thí cung cấp để bắt đầu làm bài.
         </p>
       </div>
 

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- NEXA ASSESSMENT SEED 02: BENCHMARK 10-MCQ ASSESSMENT (DIGCOMP 2.2)
+-- NEXA ASSESSMENT SEED 02: BENCHMARK 10-MCQ ASSESSMENT (DIGCOMP 3.0)
 -- ==============================================================================
 
 DO $$

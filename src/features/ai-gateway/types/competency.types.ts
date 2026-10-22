@@ -70,8 +70,22 @@ export const PathwayStepSchema = z.object({
   recommendedSkillCode: z.string(),
 });
 
+export const RecommendedCourseSchema = z.object({
+  id: z.string(),
+  competencyId: z.string(),
+  domainCode: z.string(),
+  title: z.string(),
+  provider: z.string(),
+  durationMinutes: z.number(),
+  level: z.enum(['Basic', 'Intermediate', 'Advanced', 'Highly Advanced']),
+  format: z.string(),
+  description: z.string(),
+  actionUrl: z.string(),
+  recommendationReason: z.string(),
+});
+
 export const CompetencyAnalysisOutputSchema = z.object({
-  overallLevel: z.enum(['FOUNDATION', 'INTERMEDIATE', 'ADVANCED', 'HIGHLY_SPECIALIZED']),
+  overallLevel: z.enum(['BASIC', 'FOUNDATION', 'INTERMEDIATE', 'ADVANCED', 'HIGHLY_ADVANCED', 'HIGHLY_SPECIALIZED']),
   overallSummary: z.string(),
   radarData: z.array(RadarDataItemSchema).length(5),
   skillGaps: z.array(SkillGapSchema),
@@ -79,9 +93,11 @@ export const CompetencyAnalysisOutputSchema = z.object({
   weaknesses: z.string(),
   pedagogicalFeedback: z.string(),
   learningPathway: z.array(PathwayStepSchema).length(4),
+  recommendedCourses: z.array(RecommendedCourseSchema).default([]),
 });
 
 export type RadarDataItem = z.infer<typeof RadarDataItemSchema>;
 export type SkillGap = z.infer<typeof SkillGapSchema>;
 export type PathwayStep = z.infer<typeof PathwayStepSchema>;
+export type RecommendedCourse = z.infer<typeof RecommendedCourseSchema>;
 export type CompetencyAnalysisOutput = z.infer<typeof CompetencyAnalysisOutputSchema>;

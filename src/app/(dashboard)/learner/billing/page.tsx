@@ -71,7 +71,7 @@ export default function LearnerBillingPage() {
       </div>
 
       {/* Current Subscription Status */}
-      <div className="p-6 rounded-xl border border-slate-200 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="text-xs text-slate-500">Gói tài khoản hiện tại</div>
           <div className="flex items-center gap-3">
@@ -106,9 +106,9 @@ export default function LearnerBillingPage() {
         {currentPlan === 'free' && (
           <button
             onClick={() => handleOpenUpgrade('pro')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs shrink-0"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs shrink-0"
           >
-            <Sparkles className="w-4 h-4 text-sky-200" />
+            <Sparkles className="w-4 h-4 text-sky-200" strokeWidth={1.75} />
             <span>Nâng cấp lên PRO ngay</span>
           </button>
         )}
@@ -118,7 +118,7 @@ export default function LearnerBillingPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Plan 1: Free */}
         <div
-          className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
+          className={`p-6 rounded-md border flex flex-col justify-between transition-all ${
             currentPlan === 'free'
               ? 'border-slate-300 bg-white shadow-xs'
               : 'border-slate-200 bg-slate-50/50'
@@ -174,7 +174,7 @@ export default function LearnerBillingPage() {
 
         {/* Plan 2: Plus */}
         <div
-          className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
+          className={`p-6 rounded-md border flex flex-col justify-between transition-all ${
             currentPlan === 'plus'
               ? 'border-emerald-500 bg-emerald-50/10 shadow-xs ring-1 ring-emerald-500/20'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-xs'
@@ -198,23 +198,23 @@ export default function LearnerBillingPage() {
 
             <ul className="space-y-3 text-xs text-slate-700 mb-6">
               <li className="flex items-center gap-2.5 font-medium">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>Toàn bộ quyền lợi của gói FREE</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>Mở thêm bài thi tình huống thực tế</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>100 AI credits phân tích và gợi ý lộ trình</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>Đánh giá lại kỹ năng sau khi học</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
                 <span>Chứng chỉ</span>
               </li>
             </ul>
@@ -223,7 +223,7 @@ export default function LearnerBillingPage() {
           <button
             onClick={() => handleOpenUpgrade('plus')}
             disabled={currentPlan === 'plus'}
-            className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all shadow-xs ${
+            className={`w-full py-2.5 rounded-md text-xs font-semibold transition-all shadow-xs ${
               currentPlan === 'plus'
                 ? 'bg-slate-100 text-slate-700 border border-slate-200 cursor-default'
                 : 'bg-slate-900 hover:bg-slate-800 text-white'
@@ -235,14 +235,14 @@ export default function LearnerBillingPage() {
 
         {/* Plan 3: Pro */}
         <div
-          className={`p-6 rounded-xl border flex flex-col justify-between transition-all relative ${
+          className={`p-6 rounded-md border flex flex-col justify-between transition-all relative ${
             currentPlan === 'pro'
               ? 'border-sky-500 bg-sky-50/10 shadow-xs ring-1 ring-sky-500/20'
-              : 'border-sky-300 bg-white shadow-md ring-1 ring-sky-500/30'
+              : 'border-sky-300 bg-white shadow-xs ring-1 ring-sky-500/30'
           }`}
         >
           {/* Badge */}
-          <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-sky-600 text-white text-[11px] font-bold shadow-xs">
+          <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-md bg-sky-600 text-white text-[11px] font-bold shadow-xs">
             KHUYÊN DÙNG
           </div>
 
@@ -264,23 +264,23 @@ export default function LearnerBillingPage() {
 
             <ul className="space-y-3 text-xs text-slate-700 mb-6">
               <li className="flex items-center gap-2.5 font-semibold text-sky-800">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Mở khóa toàn bộ đề thi chuyên sâu</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Làm đề Prompt AI, xử lý dữ liệu và nộp tệp</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>1.000 AI credits phân tích chi tiết và lập lộ trình</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Chứng chỉ</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-sky-600 shrink-0" />
+                <Check className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <span>Huy hiệu Pro và ưu tiên xếp hạng</span>
               </li>
             </ul>
@@ -289,7 +289,7 @@ export default function LearnerBillingPage() {
           <button
             onClick={() => handleOpenUpgrade('pro')}
             disabled={currentPlan === 'pro'}
-            className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all shadow-xs ${
+            className={`w-full py-2.5 rounded-md text-xs font-semibold transition-all shadow-xs ${
               currentPlan === 'pro'
                 ? 'bg-slate-100 text-slate-700 border border-slate-200 cursor-default'
                 : 'bg-sky-600 hover:bg-sky-700 text-white'
@@ -301,7 +301,7 @@ export default function LearnerBillingPage() {
       </div>
 
       {/* Transaction History Mock */}
-      <div className="p-6 rounded-xl border border-slate-200 bg-white shadow-xs space-y-4">
+      <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs space-y-4">
         <h3 className="text-sm font-bold text-slate-900">Lịch sử giao dịch VietQR</h3>
 
         <div className="overflow-x-auto">
@@ -326,7 +326,7 @@ export default function LearnerBillingPage() {
                   <td className="py-3">VietQR</td>
                   <td className="py-3 text-right">
                     <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold text-[11px]">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.75} />
                       <span>Thành công</span>
                     </span>
                   </td>
@@ -350,7 +350,7 @@ export default function LearnerBillingPage() {
       {/* Interactive VietQR Payment Modal */}
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-md w-full p-6 text-slate-900 space-y-5">
+          <div className="bg-white rounded-md border border-slate-200 shadow-sm max-w-md w-full p-6 text-slate-900 space-y-5">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">

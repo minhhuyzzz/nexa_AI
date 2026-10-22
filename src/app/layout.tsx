@@ -1,5 +1,5 @@
-﻿import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import type { Metadata } from 'next';
+import { Inter, JetBrains_Mono, Alex_Brush, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
 const inter = Inter({
@@ -9,8 +9,21 @@ const inter = Inter({
 });
 
 const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
+const alexBrush = Alex_Brush({
+  weight: '400',
   subsets: ['latin'],
-  variable: '--',
+  variable: '--font-script',
+  display: 'swap',
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-serif',
   display: 'swap',
 });
 
@@ -25,8 +38,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="font-sans min-h-screen bg-white text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-900">
+    <html
+      lang="vi"
+      suppressHydrationWarning
+      className={`${inter.variable} ${jetbrainsMono.variable} ${alexBrush.variable} ${playfairDisplay.variable}`}
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                // Dark mode is STRICTLY for dashboard routes (/learner, /evaluator, /admin)
+                var p = window.location.pathname;
+                var isDashboard = p.startsWith('/learner') || p.startsWith('/evaluator') || p.startsWith('/admin');
+                if (isDashboard) {
+                  var saved = localStorage.getItem('nexa_theme');
+                  if (saved === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body suppressHydrationWarning className="font-sans min-h-screen bg-white text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-900">
         {children}
       </body>
     </html>

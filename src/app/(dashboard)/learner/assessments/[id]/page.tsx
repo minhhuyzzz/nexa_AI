@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -19,18 +19,92 @@ import {
   Lock,
   Building,
   Check,
+  Loader2,
 } from 'lucide-react';
-import { mockAssessments } from '@/data/mock-assessments';
+import { createClient } from '@/lib/supabase/client';
+
+interface AssessmentDetail {
+  id: string;
+  title: string;
+  description: string;
+  domainName: string;
+  duration_minutes: number;
+  passing_score: number;
+  pointReward: number;
+  questionCount: number;
+  formats: {
+    mcq: number;
+    scenario: number;
+    practicalFile: number;
+  };
+}
 
 export default function AssessmentDetailPage() {
+  const supabase = createClient();
   const params = useParams();
   const router = useRouter();
   const testId = params.id as string;
 
-  const assessment =
-    mockAssessments.find((a) => a.id === testId) || mockAssessments[0];
-
+  const [assessment, setAssessment] = useState<AssessmentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const fetchAssessmentDetail = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch assessment
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId);
+      let query = supabase.from('assessments').select('*');
+      if (isUUID) {
+        query = query.eq('id', testId);
+      } else {
+        // Fallback for non-uuid like asm-01 -> fetch benchmark
+        query = query.limit(1);
+      }
+
+      const { data: asm, error: asmError } = await query.maybeSingle();
+
+      if (asmError || !asm) {
+        setAssessment(null);
+        return;
+      }
+
+      // 2. Fetch items count
+      const { data: items } = await supabase
+        .from('assessment_items')
+        .select('id, type')
+        .eq('assessment_id', asm.id);
+
+      const itemsList = items || [];
+      const mcqCount = itemsList.filter((i) => i.type === 'MCQ').length;
+      const scenarioCount = itemsList.filter((i) => i.type === 'SCENARIO').length;
+      const practicalCount = itemsList.filter((i) => i.type === 'DIGITAL_EVIDENCE' || i.type === 'PRACTICAL_TASK' || i.type === 'PRACTICAL_FILE').length;
+
+      setAssessment({
+        id: asm.id,
+        title: asm.title,
+        description: asm.description || 'Bài khảo thí chuẩn hóa năng lực số toàn diện theo khung DigComp 3.0.',
+        domainName: 'Đa Miền Năng Lực Số',
+        duration_minutes: asm.duration_minutes || 30,
+        passing_score: Number(asm.passing_score) || 70,
+        pointReward: asm.point_reward || 50,
+        questionCount: itemsList.length,
+        formats: {
+          mcq: mcqCount,
+          scenario: scenarioCount,
+          practicalFile: practicalCount,
+        },
+      });
+    } catch (err) {
+      console.error('Error loading assessment detail:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, testId]);
+
+  useEffect(() => {
+    fetchAssessmentDetail();
+  }, [fetchAssessmentDetail]);
 
   const handleShare = () => {
     if (typeof window !== 'undefined') {
@@ -40,6 +114,34 @@ export default function AssessmentDetailPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
+        <p className="text-xs">Đang tải thông tin chi tiết bài khảo thí...</p>
+      </div>
+    );
+  }
+
+  if (!assessment) {
+    return (
+      <div className="p-12 text-center rounded-md border border-slate-200 bg-white max-w-md mx-auto my-12">
+        <HelpCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">Không tìm thấy bài khảo thí</h3>
+        <p className="text-xs text-slate-500 mb-4">
+          Bài kiểm tra bạn đang tìm không tồn tại hoặc đã được chuyển vào kho lưu trữ.
+        </p>
+        <Link
+          href="/learner/assessments"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>Về danh mục bài khảo thí</span>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb Navigation */}
@@ -48,7 +150,7 @@ export default function AssessmentDetailPage() {
           href="/learner/assessments"
           className="hover:text-slate-900 inline-flex items-center gap-1 font-medium transition-colors"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
           <span>Danh sách bài khảo thí</span>
         </Link>
         <span>/</span>
@@ -64,23 +166,20 @@ export default function AssessmentDetailPage() {
           {/* Header Title Area */}
           <div className="space-y-3 pb-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700">
                 {assessment.domainName}
               </span>
 
-              {assessment.isPro ? (
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Yêu cầu gói Pro
-                </span>
-              ) : (
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Miễn phí cho cộng đồng
-                </span>
-              )}
+              <span className="text-[11px] font-mono font-medium px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
+                {assessment.questionCount} câu hỏi
+              </span>
+
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Khảo thí chuẩn hóa
+              </span>
 
               <span className="text-[11px] font-mono text-slate-400">
-                ID: {assessment.id.toUpperCase()}
+                Mã: {assessment.id.slice(0, 8).toUpperCase()}
               </span>
             </div>
 
@@ -93,36 +192,36 @@ export default function AssessmentDetailPage() {
             </p>
           </div>
 
-          {/* Section: Learning Outcomes (Chuẩn đầu ra được chứng nhận) */}
-          <div className="p-5 rounded-md border border-slate-200 bg-white space-y-3">
+          {/* Section: Learning Outcomes */}
+          <div className="p-5 rounded-md border border-slate-200 bg-white space-y-3 shadow-xs">
             <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Award className="w-4 h-4 text-sky-600" />
+              <Award className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
               <span>Chuẩn Năng Lực Đầu Ra Được Đo Lường</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-600">
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                 <span>Nhận diện và phân loại rủi ro đạo đức, bản quyền nội dung số</span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                 <span>Kỹ năng đặt câu lệnh đa thành phần (Context, Task, Output)</span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                 <span>Phương pháp Fact-checking và kiểm chứng chéo số liệu</span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                 <span>Thao tác bảo vệ dữ liệu cá nhân và kích hoạt bảo mật 2FA</span>
               </div>
             </div>
           </div>
 
-          {/* Section: Exam Structure Breakdown (Bảng cấu trúc đề thi) */}
-          <div className="p-5 rounded-md border border-slate-200 bg-white space-y-3">
+          {/* Section: Exam Structure Breakdown */}
+          <div className="p-5 rounded-md border border-slate-200 bg-white space-y-3 shadow-xs">
             <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-sky-600" />
+              <FileText className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
               <span>Cấu Trúc &amp; Phân Bổ Câu Hỏi Khảo Thí</span>
             </h2>
 
@@ -130,42 +229,37 @@ export default function AssessmentDetailPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-semibold">
-                    <th className="py-2.5 px-3">HÌNH THỨC CÂU HỎI</th>
+                    <th className="py-2.5 px-3">DẠNG BÀI</th>
                     <th className="py-2.5 px-3">SỐ LƯỢNG</th>
-                    <th className="py-2.5 px-3">PHƯƠNG THỨC ĐÁNH GIÁ</th>
+                    <th className="py-2.5 px-3">ĐÁNH GIÁ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td className="py-2.5 px-3 font-medium text-slate-900">
-                      Trắc nghiệm khách quan (MCQ)
-                    </td>
-                    <td className="py-2.5 px-3">{assessment.formats.mcq} câu</td>
-                    <td className="py-2.5 px-3 text-emerald-700">Chấm tự động tức thì (0.01s)</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-3 font-medium text-slate-900">
-                      Xử lý tình huống (Scenario)
-                    </td>
-                    <td className="py-2.5 px-3">{assessment.formats.scenario} câu</td>
-                    <td className="py-2.5 px-3 text-slate-600">Phán đoán &amp; Phân tích nhận định</td>
-                  </tr>
+                  {assessment.formats.mcq > 0 && (
+                    <tr>
+                      <td className="py-2.5 px-3 font-medium text-slate-900">
+                        Trắc nghiệm
+                      </td>
+                      <td className="py-2.5 px-3 font-mono">{assessment.formats.mcq} câu</td>
+                      <td className="py-2.5 px-3 text-emerald-700 font-medium">Tự động (0.01s)</td>
+                    </tr>
+                  )}
+                  {assessment.formats.scenario > 0 && (
+                    <tr>
+                      <td className="py-2.5 px-3 font-medium text-slate-900">
+                        Tình huống
+                      </td>
+                      <td className="py-2.5 px-3 font-mono">{assessment.formats.scenario} câu</td>
+                      <td className="py-2.5 px-3 text-slate-600">Kế hoạch ứng phó</td>
+                    </tr>
+                  )}
                   {assessment.formats.practicalFile > 0 && (
                     <tr>
                       <td className="py-2.5 px-3 font-medium text-slate-900">
-                        Thực hành nộp tệp tin
+                        Thực hành
                       </td>
-                      <td className="py-2.5 px-3">{assessment.formats.practicalFile} bài</td>
-                      <td className="py-2.5 px-3 text-sky-700">Chấm Rubric (AI hoặc Giảng viên)</td>
-                    </tr>
-                  )}
-                  {assessment.formats.digitalLink > 0 && (
-                    <tr>
-                      <td className="py-2.5 px-3 font-medium text-slate-900">
-                        Nộp liên kết số (GitHub/Figma)
-                      </td>
-                      <td className="py-2.5 px-3">{assessment.formats.digitalLink} bài</td>
-                      <td className="py-2.5 px-3 text-sky-700">Chấm Rubric sản phẩm số</td>
+                      <td className="py-2.5 px-3 font-mono">{assessment.formats.practicalFile} bài</td>
+                      <td className="py-2.5 px-3 text-sky-700">Thẩm định Rubric (AI / Chuyên gia)</td>
                     </tr>
                   )}
                 </tbody>
@@ -174,14 +268,14 @@ export default function AssessmentDetailPage() {
           </div>
 
           {/* Section: Regulations & Grading Rules */}
-          <div className="p-5 rounded-md border border-slate-200 bg-white space-y-3 text-xs">
+          <div className="p-5 rounded-md border border-slate-200 bg-white space-y-3 text-xs shadow-xs">
             <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-sky-600" />
+              <ShieldCheck className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
               <span>Quy Chế Làm Bài &amp; Cơ Chế Đánh Giá</span>
             </h2>
             <div className="space-y-2 text-slate-600 leading-relaxed">
               <p>
-                &bull; <strong>Thời gian làm bài:</strong> Đồng hồ đếm ngược {assessment.duration_minutes} phút sẽ bắt đầu ngay khi bạn bấm nút &ldquo;Làm bài đánh giá&rdquo;. Hệ thống tự động lưu từng câu trả lời khi bạn thao tác.
+                &bull; <strong>Thời gian làm bài:</strong> Đồng hồ đếm ngược {assessment.duration_minutes} phút sẽ bắt đầu ngay khi bạn bấm nút &ldquo;Bắt đầu làm bài thi&rdquo;. Hệ thống tự động lưu từng câu trả lời khi bạn thao tác.
               </p>
               <p>
                 &bull; <strong>Cơ chế chấm điểm:</strong> Điểm trắc nghiệm được tính tức thì ngay sau khi bạn bấm &ldquo;Nộp bài&rdquo;. Đối với phần thực hành nộp tệp hoặc nộp liên kết, bạn có thể chủ động bấm nút <em>&ldquo;Chấm bài thực hành bằng AI&rdquo;</em> để nhận kết quả phân tích Rubric ngay lập tức.
@@ -193,102 +287,58 @@ export default function AssessmentDetailPage() {
           </div>
         </div>
 
-        {/* Right Column: Sticky E-Commerce Style Action Box (4 cols) */}
+        {/* Right Column: Action Box (4 cols) */}
         <div className="lg:col-span-4 sticky top-6 space-y-4">
-          <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-5 text-xs">
-            {/* Price / Plan Tier */}
-            <div className="pb-4 border-b border-slate-100">
-              <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                GÓI KHẢO THÍ
+          <div className="p-6 rounded-md border border-slate-200 bg-white space-y-5 shadow-xs">
+            <div className="space-y-3 pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Hình thức bài khảo thí</span>
+                <span className="font-semibold text-slate-800">Trực tuyến</span>
               </div>
-              <div className="text-2xl font-extrabold text-slate-900">
-                {assessment.isPro ? 'Gói Cá Nhân Pro' : 'Miễn Phí'}
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Thang điểm bài thi</span>
+                <span className="font-semibold text-slate-800 font-mono">10.0 điểm</span>
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                {assessment.isPro
-                  ? 'Dành cho thành viên Pro hoặc sinh viên lớp liên kết'
-                  : 'Mở tự do cho toàn bộ người học'}
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Thời gian giới hạn</span>
+                <span className="font-semibold text-slate-800 font-mono">{assessment.duration_minutes} phút</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Điểm đạt chuẩn</span>
+                <span className="font-semibold text-slate-800 font-mono">≥ 7.0 / 10.0 ({assessment.passing_score}%)</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Thưởng đạt chuẩn</span>
+                <span className="font-semibold text-emerald-700 font-mono">+10 điểm tích lũy</span>
               </div>
             </div>
 
-            {/* Quick Metrics Spec List */}
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  Thời lượng làm bài:
-                </span>
-                <span className="font-bold text-slate-900">
-                  {assessment.duration_minutes} phút
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-slate-400" />
-                  Điểm chuẩn đạt:
-                </span>
-                <span className="font-bold text-slate-900">
-                  &ge; {assessment.passing_score}%
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                  Điểm thưởng hồ sơ:
-                </span>
-                <span className="font-bold text-emerald-600">
-                  +{assessment.point_reward} điểm
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                  Chứng nhận số:
-                </span>
-                <span className="font-semibold text-slate-900">
-                  Mã QR + Hash SHA-256
-                </span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-2 space-y-2">
               <Link
                 href={`/learner/take/${assessment.id}`}
-                className="w-full py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs transition-colors shadow-xs"
               >
-                <span>Làm bài đánh giá ngay</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>Bắt đầu làm bài thi ngay</span>
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
               </Link>
 
               <button
                 type="button"
                 onClick={handleShare}
-                className="w-full py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs inline-flex items-center justify-center gap-1.5 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-xs"
               >
                 {copiedLink ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700 font-semibold">Đã chép link</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
+                    <span className="text-emerald-700">Đã sao chép liên kết</span>
                   </>
                 ) : (
                   <>
-                    <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Chia sẻ bài đánh giá</span>
+                    <Share2 className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+                    <span>Chia sẻ bài khảo thí</span>
                   </>
                 )}
               </button>
-            </div>
-
-            {/* Guarantee Note */}
-            <div className="p-3 rounded-md bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
-              <div className="font-semibold text-slate-700 mb-0.5">
-                Thẩm định học thuật:
-              </div>
-              Được bảo trợ bởi Hội đồng Chuyên môn NEXA và Khoa CNTT - ĐHQG Hà Nội.
             </div>
           </div>
         </div>

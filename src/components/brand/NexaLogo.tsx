@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 
 interface NexaLogoProps {
   variant?: 'dark' | 'white' | 'icon' | 'accent';
@@ -30,9 +30,17 @@ export function NexaLogo({
   const isAccent = variant === 'accent';
 
   // Primary facet colors
-  const primaryFill = isWhite ? '#FFFFFF' : isAccent ? '#0284C7' : '#0F172A';
-  const shadowFill = isWhite ? '#94A3B8' : isAccent ? '#0369A1' : '#334155';
-  const textColor = isWhite ? 'text-white' : 'text-slate-900';
+  const primaryClass = isWhite
+    ? 'fill-white'
+    : isAccent
+    ? 'fill-sky-600'
+    : 'fill-slate-900 dark:fill-white';
+  const shadowClass = isWhite
+    ? 'fill-slate-400'
+    : isAccent
+    ? 'fill-sky-700'
+    : 'fill-slate-600 dark:fill-zinc-400';
+  const textColor = isWhite ? 'text-white' : 'text-slate-900 dark:text-white';
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
@@ -49,38 +57,38 @@ export function NexaLogo({
         {/* Front Face */}
         <polygon
           points="18,36 36,33 26,76 8,79"
-          fill={primaryFill}
+          className={primaryClass}
         />
         {/* Top/Side Extrusion Facet */}
         <polygon
           points="8,79 26,76 34,84 16,87"
-          fill={shadowFill}
+          className={shadowClass}
         />
         <polygon
           points="18,36 26,34 36,33 28,35"
-          fill={shadowFill}
+          className={shadowClass}
         />
 
         {/* Right Chevron & Diagonal 3D Ribbon */}
         {/* Top Horizontal Hook */}
         <polygon
           points="52,28 88,24 88,30 54,34"
-          fill={primaryFill}
+          className={primaryClass}
         />
         {/* Main Folding Ribbon (Diagonal Down-stroke) */}
         <polygon
           points="52,28 66,31 46,75 32,72"
-          fill={primaryFill}
+          className={primaryClass}
         />
         {/* Lower Right Fold / Return */}
         <polygon
           points="46,75 72,71 72,77 46,81"
-          fill={primaryFill}
+          className={primaryClass}
         />
         {/* Inner 3D Extruded Shadow Facet */}
         <polygon
           points="54,34 66,31 46,75 34,78"
-          fill={shadowFill}
+          className={shadowClass}
         />
       </svg>
 

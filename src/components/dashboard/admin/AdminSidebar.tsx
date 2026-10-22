@@ -32,7 +32,7 @@ const mainNavItems = [
 const managementNavItems = [
   { name: 'Quản lý người dùng', href: '/admin/users', icon: Users },
   { name: 'Gói dịch vụ & Giá', href: '/admin/plans', icon: CreditCard },
-  { name: 'Tổ chức & Trường học', href: '/admin/organizations', icon: Building2 },
+  { name: 'Tổ chức & Doanh nghiệp', href: '/admin/organizations', icon: Building2 },
   { name: 'Duyệt chuyên gia', href: '/admin/evaluators', icon: UserCheck },
   { name: 'Bảo mật & Nhật ký', href: '/admin/compliance', icon: ShieldCheck },
   { name: 'Cài đặt hệ thống', href: '/admin/settings', icon: Settings },
@@ -46,13 +46,13 @@ export function AdminSidebar() {
   return (
     <>
       <aside
-        className={`border-r border-slate-200 bg-white flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 ${
+        className={`border-r border-slate-200 dark:border-zinc-850 bg-white dark:bg-black flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
         <div>
           {/* Brand */}
-          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100">
+          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-850">
             <Link
               href="/admin/dashboard"
               className="flex items-center gap-2 overflow-hidden"
@@ -63,7 +63,7 @@ export function AdminSidebar() {
 
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-zinc-200 dark:hover:bg-zinc-850 transition-colors"
               title={isCollapsed ? 'Mở rộng menu' : 'Thu nhỏ menu'}
             >
               {isCollapsed ? (
@@ -78,7 +78,7 @@ export function AdminSidebar() {
           <nav className="p-3 space-y-5 mt-2">
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-semibold">
                   Hệ thống
                 </div>
               )}
@@ -95,17 +95,17 @@ export function AdminSidebar() {
                         isCollapsed ? 'justify-center' : ''
                       } ${
                         isActive
-                          ? 'bg-slate-100 text-slate-900 font-semibold'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          ? 'bg-slate-100 text-slate-900 font-semibold dark:bg-zinc-850 dark:text-zinc-100'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-900'
                       }`}
                     >
                       <Icon
-                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900 dark:text-sky-400' : 'text-slate-400 dark:text-zinc-500'}`}
                         strokeWidth={1.75}
                       />
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
                       {!isCollapsed && item.badge && (
-                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80">
                           {item.badge}
                         </span>
                       )}
@@ -117,7 +117,7 @@ export function AdminSidebar() {
 
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                <div className="px-3 mb-2 text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-semibold">
                   Quản trị
                 </div>
               )}
@@ -134,12 +134,12 @@ export function AdminSidebar() {
                         isCollapsed ? 'justify-center' : ''
                       } ${
                         isActive
-                          ? 'bg-slate-100 text-slate-900 font-semibold'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          ? 'bg-slate-100 text-slate-900 font-semibold dark:bg-zinc-850 dark:text-zinc-100'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-900'
                       }`}
                     >
                       <Icon
-                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900 dark:text-sky-400' : 'text-slate-400 dark:text-zinc-500'}`}
                         strokeWidth={1.75}
                       />
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -152,27 +152,27 @@ export function AdminSidebar() {
         </div>
 
         {/* Bottom Section */}
-        <div className="p-3 border-t border-slate-100 space-y-2">
+        <div className="p-3 border-t border-slate-100 dark:border-zinc-850 space-y-2">
           {!isCollapsed && (
-            <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200/80 text-xs">
-              <div className="flex items-center justify-between text-slate-700 font-medium mb-0.5">
+            <div className="p-2.5 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-xs">
+              <div className="flex items-center justify-between text-slate-700 dark:text-zinc-300 font-medium mb-0.5">
                 <span>Hạ tầng AI</span>
-                <span className="text-emerald-600 font-semibold text-[11px]">Sẵn sàng</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">Sẵn sàng</span>
               </div>
-              <div className="text-[11px] text-slate-500">Gemini 2.5 Flash / Pro</div>
+              <div className="text-[11px] text-slate-500 dark:text-zinc-400">Gemini 2.5 Flash / Pro</div>
             </div>
           )}
 
           <button
             onClick={() => setShowFeedback(true)}
             title="Đóng góp ý kiến cho NEXA"
-            className={`w-full flex items-center gap-2.5 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-xs text-slate-700 transition-colors ${
+            className={`w-full flex items-center gap-2.5 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 dark:bg-zinc-900/60 dark:hover:bg-zinc-850 dark:border-zinc-800 text-xs text-slate-700 dark:text-zinc-300 transition-colors ${
               isCollapsed ? 'justify-center' : ''
             }`}
           >
-            <MessageSquare className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
+            <MessageSquare className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" strokeWidth={1.75} />
             {!isCollapsed && (
-              <span className="font-medium text-slate-800">Đóng góp ý kiến</span>
+              <span className="font-medium text-slate-800 dark:text-zinc-200">Đóng góp ý kiến</span>
             )}
           </button>
         </div>

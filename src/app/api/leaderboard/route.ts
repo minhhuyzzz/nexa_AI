@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { getRedisClient } from '@/lib/redis/client';
+
+export const dynamic = 'force-dynamic';
 
 export interface LeaderboardEntry {
   rank: number;
@@ -65,24 +68,12 @@ export async function GET() {
       .limit(100);
 
     if (error) {
-      console.warn('Supabase profiles query error, returning prototype fallback data:', error.message);
-      const mockLeaderboard: LeaderboardEntry[] = [
-        { rank: 1, userId: 'usr-1', displayName: 'Nguyễn V. An', avatarUrl: null, points: 1420, rankTier: 'ELITE', avgScore: 94.5, role: 'LEARNER', specialization: 'Khoa học máy tính' },
-        { rank: 2, userId: 'usr-2', displayName: 'Trần T. Mai', avatarUrl: null, points: 1280, rankTier: 'ELITE', avgScore: 91.2, role: 'LEARNER', specialization: 'Sư phạm Tin học' },
-        { rank: 3, userId: 'usr-3', displayName: 'Lê H. Nam', avatarUrl: null, points: 1150, rankTier: 'SPECIALIST', avgScore: 88.0, role: 'LEARNER', specialization: 'Kinh tế số' },
-        { rank: 4, userId: 'usr-4', displayName: 'Đỗ Q. Bảo', avatarUrl: null, points: 980, rankTier: 'SPECIALIST', avgScore: 85.5, role: 'LEARNER', specialization: 'Hệ thống thông tin' },
-        { rank: 5, userId: 'usr-5', displayName: 'Phạm M. Thư', avatarUrl: null, points: 920, rankTier: 'SPECIALIST', avgScore: 83.0, role: 'LEARNER', specialization: 'Thương mại điện tử' },
-        { rank: 6, userId: 'usr-6', displayName: 'Hoàng V. Đức', avatarUrl: null, points: 840, rankTier: 'PRACTITIONER', avgScore: 79.5, role: 'LEARNER', specialization: 'Công nghệ thông tin' },
-        { rank: 7, userId: 'usr-7', displayName: 'Vũ T. Lan', avatarUrl: null, points: 760, rankTier: 'PRACTITIONER', avgScore: 76.0, role: 'LEARNER', specialization: 'Quản trị kinh doanh' },
-        { rank: 8, userId: 'usr-8', displayName: 'Đặng T. Hùng', avatarUrl: null, points: 690, rankTier: 'PRACTITIONER', avgScore: 73.5, role: 'LEARNER', specialization: 'Khoa học dữ liệu' },
-        { rank: 9, userId: 'usr-9', displayName: 'Bùi N. Ánh', avatarUrl: null, points: 580, rankTier: 'NOVICE', avgScore: 68.0, role: 'LEARNER', specialization: 'Truyền thông đa phương tiện' },
-        { rank: 10, userId: 'usr-10', displayName: 'Ngô V. Khang', avatarUrl: null, points: 510, rankTier: 'NOVICE', avgScore: 64.0, role: 'LEARNER', specialization: 'Kỹ thuật phần mềm' },
-      ];
+      console.error('Supabase profiles query error:', error.message);
       return NextResponse.json({
         cached: false,
         fetchTimeMs: Number((performance.now() - startTime).toFixed(2)),
-        total: mockLeaderboard.length,
-        leaderboard: mockLeaderboard,
+        total: 0,
+        leaderboard: [],
       });
     }
 
@@ -107,6 +98,67 @@ export async function GET() {
       }
     }
 
+    // 4. Calculate current user rank if authenticated
+    let currentUserRank: {
+      rank: number;
+      userId: string;
+      displayName: string;
+      avatarUrl: string | null;
+      points: number;
+    } | null = null;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      let effectiveUserId = user?.id;
+      if (!effectiveUserId) {
+        const cookieStore = await cookies();
+        const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
+        if (process.env.NODE_ENV !== 'production' || demoRole === 'LEARNER') {
+          effectiveUserId = '11111111-1111-1111-1111-111111111111';
+        }
+      }
+
+      if (effectiveUserId) {
+        const foundIndex = leaderboard.findIndex((item) => item.userId === effectiveUserId);
+        if (foundIndex !== -1) {
+          currentUserRank = {
+            rank: foundIndex + 1,
+            userId: effectiveUserId,
+            displayName: leaderboard[foundIndex].displayName,
+            avatarUrl: leaderboard[foundIndex].avatarUrl,
+            points: leaderboard[foundIndex].points,
+          };
+        } else {
+          const { data: myProfile } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, points')
+            .eq('id', effectiveUserId)
+            .single();
+
+          if (myProfile) {
+            const { count } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact', head: true })
+              .eq('role', 'LEARNER')
+              .gt('points', myProfile.points || 0);
+
+            currentUserRank = {
+              rank: (count ?? 0) + 1,
+              userId: myProfile.id,
+              displayName: formatDisplayName(myProfile.full_name),
+              avatarUrl: myProfile.avatar_url,
+              points: myProfile.points || 0,
+            };
+          }
+        }
+      }
+    } catch {
+      // Non-blocking for unauthenticated requests
+    }
+
     const fetchTimeMs = Number((performance.now() - startTime).toFixed(2));
 
     return NextResponse.json({
@@ -114,6 +166,7 @@ export async function GET() {
       fetchTimeMs,
       total: leaderboard.length,
       leaderboard,
+      currentUserRank,
     });
   } catch (err) {
     console.error('Unexpected error in leaderboard:', err);
