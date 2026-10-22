@@ -19,6 +19,7 @@ import {
   X,
   Loader2,
   HelpCircle,
+  Eye,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -33,6 +34,8 @@ interface QuestionItem {
   rubricWeight: number;
   isNexaStandard: boolean;
   sampleAnswerCriteria: string;
+  rubricGuide?: string | null;
+  options?: Array<{ id: string; content: string; is_correct: boolean; explanation?: string | null }>;
 }
 
 interface CompetencyOption {
@@ -75,6 +78,7 @@ export default function EvaluatorItemBankPage() {
   const [activeType, setActiveType] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [clonedId, setClonedId] = useState<string | null>(null);
+  const [showAnswerKeys, setShowAnswerKeys] = useState(true);
 
   // Add question modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -83,7 +87,6 @@ export default function EvaluatorItemBankPage() {
   const [newType, setNewType] = useState('MCQ');
   const [selectedCompetencyId, setSelectedCompetencyId] = useState('');
   const [newWeight, setNewWeight] = useState(10);
-  const [newLevel, setNewLevel] = useState('INTERMEDIATE');
 
   // File Upload modal
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -132,7 +135,7 @@ D. Đăng nhập ngay để tránh khóa tài khoản
         }
       }
 
-      // 2. Fetch assessment items
+      // 2. Fetch assessment items with options & rubric guide
       const { data: itemsData, error: itemsError } = await supabase
         .from('assessment_items')
         .select(`
@@ -140,8 +143,8 @@ D. Đăng nhập ngay để tránh khóa tài khoản
           type,
           prompt,
           points,
-          difficulty_level,
           order_index,
+          rubric_guide,
           competencies (
             id,
             skill_code,
@@ -152,6 +155,13 @@ D. Đăng nhập ngay để tránh khóa tài khoản
               code,
               title
             )
+          ),
+          item_options (
+            id,
+            content,
+            is_correct,
+            explanation,
+            order_index
           )
         `)
         .order('created_at', { ascending: false });
@@ -162,28 +172,23 @@ D. Đăng nhập ngay để tránh khóa tài khoản
         const mapped: QuestionItem[] = itemsData.map((item: any, idx: number) => {
           const comp = item.competencies;
           const domain = comp?.competency_domains;
-          const levelMap: Record<string, string> = {
-            FOUNDATION: 'Basic',
-            INTERMEDIATE: 'Intermediate',
-            ADVANCED: 'Advanced',
-            HIGHLY_ADVANCED: 'Highly Advanced',
-            Basic: 'Basic',
-            Intermediate: 'Intermediate',
-            Advanced: 'Advanced',
-            'Highly Advanced': 'Highly Advanced',
-          };
+          const sortedOptions = (item.item_options || []).sort(
+            (a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)
+          );
 
           return {
             id: item.id,
             code: comp?.skill_code ? `D${comp.skill_code}-${item.type}-${idx + 1}` : `Q-${item.id.slice(0, 6)}`,
             domain: domain?.title || 'Thông tin & Dữ liệu số',
             skill: comp ? `${comp.skill_code} ${comp.title}` : 'Kỹ năng số tổng hợp',
-            level: levelMap[item.difficulty_level] || item.difficulty_level || 'Intermediate',
+            level: 'DigComp 3.0',
             type: item.type || 'MCQ',
             prompt: item.prompt,
             rubricWeight: Number(item.points) || 10,
             isNexaStandard: true,
-            sampleAnswerCriteria: 'Tự động chấm bằng code thuần theo barem điểm quy định.',
+            sampleAnswerCriteria: item.rubric_guide || 'Tự động chấm bằng code thuần theo barem điểm quy định.',
+            rubricGuide: item.rubric_guide,
+            options: sortedOptions,
           };
         });
         setQuestions(mapped);
@@ -218,7 +223,7 @@ D. Đăng nhập ngay để tránh khóa tài khoản
           type: target.type,
           prompt: `[Bản sao] ${target.prompt}`,
           points: target.rubricWeight,
-          difficulty_level: target.level === 'Basic' ? 'FOUNDATION' : target.level.toUpperCase(),
+          difficulty_level: 'STANDARD',
         })
         .select()
         .single();
@@ -240,7 +245,7 @@ D. Đăng nhập ngay để tránh khóa tài khoản
         prompt: newPrompt.trim(),
         type: newType,
         competency_id: selectedCompetencyId || null,
-        difficulty_level: newLevel,
+        difficulty_level: 'STANDARD',
         points: Number(newWeight),
       });
 
@@ -323,18 +328,34 @@ D. Đăng nhập ngay để tránh khóa tài khoản
 
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative max-w-xs w-full">
-          <Search
-            className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            strokeWidth={1.75}
-          />
-          <input
-            type="text"
-            placeholder="Tìm theo nội dung, mã hoặc kỹ năng..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-          />
+        <div className="flex items-center gap-2 max-w-md w-full">
+          <div className="relative flex-1">
+            <Search
+              className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              strokeWidth={1.75}
+            />
+            <input
+              type="text"
+              placeholder="Tìm theo nội dung, mã hoặc kỹ năng..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowAnswerKeys((prev) => !prev)}
+            className={`px-3 py-2 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 border transition-colors shrink-0 ${
+              showAnswerKeys
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            }`}
+            title="Bật/tắt hiển thị đáp án đúng và tiêu chí rubric"
+          >
+            <Eye className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>{showAnswerKeys ? 'Ẩn Đáp Án & Rubric' : 'Xem Đáp Án & Rubric'}</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-1 sm:pb-0">
@@ -443,6 +464,58 @@ D. Đăng nhập ngay để tránh khóa tài khoản
                 {q.prompt}
               </p>
 
+              {/* Show Answer Keys & Options (Evaluator Master View) */}
+              {showAnswerKeys && q.options && q.options.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                  {q.options.map((opt, optIdx) => {
+                    const letter = String.fromCharCode(65 + optIdx);
+                    return (
+                      <div
+                        key={opt.id || optIdx}
+                        className={`p-2.5 rounded border text-xs flex items-start gap-2 ${
+                          opt.is_correct
+                            ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 font-medium'
+                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                            opt.is_correct
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white text-slate-500 border border-slate-200'
+                          }`}
+                        >
+                          {letter}
+                        </span>
+                        <div className="flex-1">
+                          <span>{opt.content}</span>
+                          {opt.is_correct && (
+                            <span className="block text-[10px] text-emerald-700 font-semibold mt-0.5">
+                              Đáp án đúng {opt.explanation ? `— ${opt.explanation}` : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Show Rubric Guide for Practical questions */}
+              {showAnswerKeys &&
+                (q.type === 'PRACTICAL_FILE' ||
+                  q.type === 'DIGITAL_LINK' ||
+                  q.type === 'DIGITAL_EVIDENCE' ||
+                  q.type === 'PRACTICAL_TASK') &&
+                q.rubricGuide && (
+                  <div className="p-3 rounded-md bg-sky-50/60 border border-sky-200 text-xs space-y-1">
+                    <span className="font-bold text-sky-900 block">
+                      Tiêu chí Rubric chuẩn (Chuyên gia &amp; AI):
+                    </span>
+                    <p className="text-[11px] text-slate-700 leading-relaxed">{q.rubricGuide}</p>
+                  </div>
+                )}
+
               {/* Skill & Rubric Criteria */}
               <div className="p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="text-slate-500">
@@ -524,36 +597,18 @@ D. Đăng nhập ngay để tránh khóa tài khoản
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Cấp độ thành thạo:
-                  </label>
-                  <select
-                    value={newLevel}
-                    onChange={(e) => setNewLevel(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
-                  >
-                    <option value="FOUNDATION">Basic (Cơ bản)</option>
-                    <option value="INTERMEDIATE">Intermediate (Trung cấp)</option>
-                    <option value="ADVANCED">Advanced (Nâng cao)</option>
-                    <option value="HIGHLY_ADVANCED">Highly Advanced (Chuyên sâu)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Điểm số tối đa:
-                  </label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={100}
-                    value={newWeight}
-                    onChange={(e) => setNewWeight(Number(e.target.value))}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
-                  />
-                </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Điểm số tối đa:
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={newWeight}
+                  onChange={(e) => setNewWeight(Number(e.target.value))}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
+                />
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">

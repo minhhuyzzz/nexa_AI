@@ -15,6 +15,7 @@ import {
   Upload,
   Paperclip,
   FileText,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 interface Option {
@@ -65,6 +66,7 @@ export default function AssessmentTakePage({
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
   const [evidenceUrls, setEvidenceUrls] = useState<Record<string, string>>({});
+  const [liveUrls, setLiveUrls] = useState<Record<string, string>>({});
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(900);
@@ -112,6 +114,14 @@ export default function AssessmentTakePage({
             setEvidenceUrls(JSON.parse(cachedEv));
           } catch {}
         }
+
+        const cacheLiveKey = `nexa_exam_draft_live_${assessmentId}`;
+        const cachedLive = localStorage.getItem(cacheLiveKey);
+        if (cachedLive) {
+          try {
+            setLiveUrls(JSON.parse(cachedLive));
+          } catch {}
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi kết nối khi tải đề thi');
       } finally {
@@ -154,11 +164,14 @@ export default function AssessmentTakePage({
       const cacheEvKey = `nexa_exam_draft_ev_${assessmentId}`;
       localStorage.setItem(cacheEvKey, JSON.stringify(evidenceUrls));
 
+      const cacheLiveKey = `nexa_exam_draft_live_${assessmentId}`;
+      localStorage.setItem(cacheLiveKey, JSON.stringify(liveUrls));
+
       setLastSaved(new Date().toLocaleTimeString('vi-VN'));
     }, 15000);
 
     return () => clearInterval(saveTimer);
-  }, [assessmentId, selectedAnswers, textAnswers, evidenceUrls, questions]);
+  }, [assessmentId, selectedAnswers, textAnswers, evidenceUrls, liveUrls, questions]);
 
   const handleSelectOption = (questionId: string, optionId: string) => {
     const updated = { ...selectedAnswers, [questionId]: optionId };
@@ -172,6 +185,13 @@ export default function AssessmentTakePage({
     setTextAnswers(updated);
     const cacheTextKey = `nexa_exam_draft_text_${assessmentId}`;
     localStorage.setItem(cacheTextKey, JSON.stringify(updated));
+  };
+
+  const handleLiveUrlChange = (questionId: string, value: string) => {
+    const updated = { ...liveUrls, [questionId]: value };
+    setLiveUrls(updated);
+    const cacheLiveKey = `nexa_exam_draft_live_${assessmentId}`;
+    localStorage.setItem(cacheLiveKey, JSON.stringify(updated));
   };
 
   const handleFileUpload = async (questionId: string, file: File) => {
@@ -215,6 +235,7 @@ export default function AssessmentTakePage({
         selectedOptionId: selectedAnswers[q.id] || null,
         textResponse: textAnswers[q.id] || undefined,
         evidenceUrl: evidenceUrls[q.id] || undefined,
+        liveUrl: liveUrls[q.id] || undefined,
       }));
 
       const totalTimeSpent = assessment ? assessment.duration_minutes * 60 - timeRemaining : 0;
@@ -415,8 +436,11 @@ export default function AssessmentTakePage({
               </div>
             )}
 
-            {/* If DIGITAL_EVIDENCE or PRACTICAL_TASK: File Upload + Mandatory >= 30 words Explanation */}
-            {(currentQ.type === 'DIGITAL_EVIDENCE' || currentQ.type === 'PRACTICAL_TASK') && (
+            {/* If DIGITAL_EVIDENCE or PRACTICAL: File Upload + Live Link + Mandatory >= 30 words Explanation */}
+            {(currentQ.type === 'DIGITAL_EVIDENCE' ||
+              currentQ.type === 'PRACTICAL_TASK' ||
+              currentQ.type === 'PRACTICAL_FILE' ||
+              currentQ.type === 'PRACTICAL') && (
               <div className="space-y-6">
                 {/* 1. File Upload Area */}
                 <div className="p-5 rounded-md bg-slate-50 border border-slate-200 space-y-3">
@@ -491,7 +515,27 @@ export default function AssessmentTakePage({
                   )}
                 </div>
 
-                {/* 2. Mandatory >= 30 Words Explanation Textarea */}
+                {/* 2. Live URL Input Area (Drive, Figma, Canva, GitHub) */}
+                <div className="p-4 rounded-md bg-white border border-slate-200 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+                    <span className="text-xs font-bold text-slate-800 uppercase">
+                      LIÊN KẾT TRỰC TIẾP (LIVE URL - TÙY CHỌN)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Dán liên kết sản phẩm số trực tiếp nếu bạn làm bài trên nền tảng đám mây (Canva, Figma, Google Drive, Docs, GitHub...).
+                  </p>
+                  <input
+                    type="text"
+                    value={liveUrls[currentQ.id] || ''}
+                    onChange={(e) => handleLiveUrlChange(currentQ.id, e.target.value)}
+                    placeholder="https://canva.com/design/..., https://figma.com/..., https://drive.google.com/..."
+                    className="w-full px-3.5 py-2 rounded-md border border-slate-200 text-xs font-mono text-slate-900 focus:outline-hidden focus:border-sky-600"
+                  />
+                </div>
+
+                {/* 3. Mandatory >= 30 Words Explanation Textarea */}
                 <div className="space-y-3">
                   {(() => {
                     const text = textAnswers[currentQ.id] || '';

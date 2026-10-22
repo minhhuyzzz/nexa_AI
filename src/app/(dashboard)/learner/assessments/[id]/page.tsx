@@ -32,6 +32,8 @@ interface AssessmentDetail {
   passing_score: number;
   pointReward: number;
   questionCount: number;
+  is_vip: boolean;
+  access_tier: 'FREE' | 'VIP';
   formats: {
     mcq: number;
     scenario: number;
@@ -48,17 +50,33 @@ export default function AssessmentDetailPage() {
   const [assessment, setAssessment] = useState<AssessmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [userPlanTier, setUserPlanTier] = useState<string>('FREE');
+  const [showVipModal, setShowVipModal] = useState(false);
 
   const fetchAssessmentDetail = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch assessment
+      // 1. Fetch user tier
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('plan_tier')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof?.plan_tier) {
+          setUserPlanTier(prof.plan_tier.toUpperCase());
+        }
+      }
+
+      // 2. Fetch assessment
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId);
       let query = supabase.from('assessments').select('*');
       if (isUUID) {
         query = query.eq('id', testId);
       } else {
-        // Fallback for non-uuid like asm-01 -> fetch benchmark
         query = query.limit(1);
       }
 
@@ -69,7 +87,7 @@ export default function AssessmentDetailPage() {
         return;
       }
 
-      // 2. Fetch items count
+      // 3. Fetch items count
       const { data: items } = await supabase
         .from('assessment_items')
         .select('id, type')
@@ -78,7 +96,13 @@ export default function AssessmentDetailPage() {
       const itemsList = items || [];
       const mcqCount = itemsList.filter((i) => i.type === 'MCQ').length;
       const scenarioCount = itemsList.filter((i) => i.type === 'SCENARIO').length;
-      const practicalCount = itemsList.filter((i) => i.type === 'DIGITAL_EVIDENCE' || i.type === 'PRACTICAL_TASK' || i.type === 'PRACTICAL_FILE').length;
+      const practicalCount = itemsList.filter(
+        (i) =>
+          i.type === 'DIGITAL_EVIDENCE' ||
+          i.type === 'PRACTICAL_TASK' ||
+          i.type === 'PRACTICAL_FILE' ||
+          i.type === 'PRACTICAL'
+      ).length;
 
       setAssessment({
         id: asm.id,
@@ -89,6 +113,8 @@ export default function AssessmentDetailPage() {
         passing_score: Number(asm.passing_score) || 70,
         pointReward: asm.point_reward || 50,
         questionCount: itemsList.length,
+        is_vip: Boolean(asm.is_vip || asm.access_tier === 'VIP'),
+        access_tier: asm.access_tier || (asm.is_vip ? 'VIP' : 'FREE'),
         formats: {
           mcq: mcqCount,
           scenario: scenarioCount,
@@ -314,13 +340,24 @@ export default function AssessmentDetailPage() {
             </div>
 
             <div className="space-y-2.5">
-              <Link
-                href={`/learner/take/${assessment.id}`}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs transition-colors shadow-xs"
-              >
-                <span>Bắt đầu làm bài thi ngay</span>
-                <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-              </Link>
+              {assessment.is_vip && userPlanTier === 'FREE' ? (
+                <button
+                  type="button"
+                  onClick={() => setShowVipModal(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors shadow-xs"
+                >
+                  <Lock className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span>Nâng cấp VIP để mở khóa bài thi</span>
+                </button>
+              ) : (
+                <Link
+                  href={`/learner/take/${assessment.id}`}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs transition-colors shadow-xs"
+                >
+                  <span>Bắt đầu làm bài thi ngay</span>
+                  <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                </Link>
+              )}
 
               <button
                 type="button"
@@ -343,6 +380,52 @@ export default function AssessmentDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* VIP Upgrade Modal */}
+      {showVipModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-md p-6 space-y-4 shadow-lg animate-in fade-in zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                <Lock className="w-5 h-5" strokeWidth={1.75} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Bài Khảo Thí Nâng Cao Hạng VIP
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Bài thi &ldquo;{assessment.title}&rdquo; thuộc danh mục khảo hạch chuyên sâu dành riêng cho tài khoản đã nâng cấp gói VIP / Pro.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+              <div className="font-semibold text-slate-800">Quyền lợi khi nâng cấp VIP:</div>
+              <ul className="text-slate-600 space-y-1 pl-4 list-disc text-[11px]">
+                <li>Mở khóa 100% đề thi chuyên sâu và bài thực hành AI</li>
+                <li>Không giới hạn lượt chấm Rubric bằng AI Gateway</li>
+                <li>Cấp chứng chỉ số thẩm định mã hóa SHA-256</li>
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowVipModal(false)}
+                className="px-3.5 py-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+              >
+                Để sau
+              </button>
+              <Link
+                href="/pricing"
+                className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors shadow-xs"
+              >
+                Xem Bảng Giá Nâng Cấp
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

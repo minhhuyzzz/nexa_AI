@@ -10,7 +10,8 @@ const submitSchema = z.object({
       itemId: z.string().uuid(),
       selectedOptionId: z.string().uuid().nullable().optional(),
       textResponse: z.string().optional(),
-      evidenceUrl: z.string().url().optional().nullable(),
+      evidenceUrl: z.string().optional().nullable(),
+      liveUrl: z.string().optional().nullable(),
     })
   ),
 });
@@ -96,6 +97,7 @@ export async function POST(
       selected_option_id: string | null;
       text_response: string | null;
       evidence_url: string | null;
+      live_url: string | null;
       score_awarded: number;
       is_correct: boolean;
       auto_graded: boolean;
@@ -108,6 +110,7 @@ export async function POST(
       const selectedOptionId = candidateAns?.selectedOptionId || null;
       const textResponse = candidateAns?.textResponse || null;
       const evidenceUrl = candidateAns?.evidenceUrl || null;
+      const liveUrl = candidateAns?.liveUrl || null;
 
       const isCorrect = selectedOptionId !== null && selectedOptionId === info.correctOptionId;
       const scoreAwarded = isCorrect ? info.points : 0;
@@ -118,6 +121,7 @@ export async function POST(
         selected_option_id: selectedOptionId,
         text_response: textResponse,
         evidence_url: evidenceUrl,
+        live_url: liveUrl,
         score_awarded: scoreAwarded,
         is_correct: isCorrect,
         auto_graded: true,
