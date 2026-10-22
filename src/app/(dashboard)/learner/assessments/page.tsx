@@ -17,6 +17,7 @@ import {
   Loader2,
   HelpCircle,
   Tag,
+  Sparkles,
 } from 'lucide-react';
 
 interface AssessmentItem {
@@ -30,6 +31,8 @@ interface AssessmentItem {
   questionCount: number;
   type: string;
   types: string[];
+  isVip?: boolean;
+  accessTier?: 'FREE' | 'VIP';
 }
 
 const domainList = [
@@ -47,10 +50,18 @@ const formatFilterOptions = [
   { id: 'DIGITAL_EVIDENCE' as const, label: 'Thực hành' },
 ];
 
+const tierFilterOptions = [
+  { id: 'ALL' as const, label: 'Tất cả phân hạng' },
+  { id: 'FREE' as const, label: 'Miễn phí' },
+  { id: 'VIP' as const, label: 'VIP' },
+];
+
 export default function LearnerAssessmentsPage() {
   const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [tierFilter, setTierFilter] = useState<'ALL' | 'FREE' | 'VIP'>('ALL');
+  const [isTierMenuOpen, setIsTierMenuOpen] = useState(false);
   const [formatFilter, setFormatFilter] = useState<'ALL' | 'MCQ' | 'SCENARIO' | 'DIGITAL_EVIDENCE'>('ALL');
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [isDomainMenuOpen, setIsDomainMenuOpen] = useState(false);
@@ -75,6 +86,8 @@ export default function LearnerAssessmentsPage() {
           questionCount: a.questionCount || 0,
           type: a.typeLabel || 'Trắc nghiệm khách quan',
           types: a.types || [],
+          isVip: Boolean(a.isVip || a.accessTier === 'VIP'),
+          accessTier: a.accessTier || (a.isVip ? 'VIP' : 'FREE'),
         }));
         setAssessments(mapped);
       } else {
@@ -128,7 +141,11 @@ export default function LearnerAssessmentsPage() {
       selectedDomains.length === 0 ||
       selectedDomains.some((d) => test.domainCodes.includes(d));
 
-    return matchesSearch && matchesFormat && matchesDomain;
+    const matchesTier =
+      tierFilter === 'ALL' ||
+      (tierFilter === 'VIP' ? Boolean(test.isVip || test.accessTier === 'VIP') : !test.isVip && test.accessTier !== 'VIP');
+
+    return matchesSearch && matchesFormat && matchesDomain && matchesTier;
   });
 
   return (
@@ -378,14 +395,110 @@ export default function LearnerAssessmentsPage() {
             )}
           </div>
 
+          {/* Tier (Free / VIP) Dropdown Menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsTierMenuOpen((prev) => !prev);
+                setIsDomainMenuOpen(false);
+                setIsFormatMenuOpen(false);
+              }}
+              className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
+                tierFilter !== 'ALL'
+                  ? 'border-sky-500 bg-sky-50/60 text-sky-800 font-semibold shadow-xs'
+                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+              <span>
+                {tierFilterOptions.find((t) => t.id === tierFilter)?.label || 'Tất cả phân hạng'}
+              </span>
+              {tierFilter !== 'ALL' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+              )}
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${
+                  isTierMenuOpen ? 'rotate-180' : ''
+                }`}
+                strokeWidth={1.75}
+              />
+            </button>
+
+            {isTierMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => setIsTierMenuOpen(false)}
+                />
+                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 bg-white border border-slate-200 rounded-md shadow-md py-1.5 z-30 animate-in fade-in-50 duration-100">
+                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Phân hạng
+                    </span>
+                    {tierFilter !== 'ALL' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTierFilter('ALL');
+                          setIsTierMenuOpen(false);
+                        }}
+                        className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold"
+                      >
+                        Mặc định
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="py-1">
+                    {tierFilterOptions.map((opt) => {
+                      const isSelected = tierFilter === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setTierFilter(opt.id);
+                            setIsTierMenuOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer ${
+                            isSelected ? 'bg-slate-50/70 font-semibold text-slate-900' : 'text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {opt.id === 'VIP' && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
+                                VIP
+                              </span>
+                            )}
+                            {opt.id === 'FREE' && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                                FREE
+                              </span>
+                            )}
+                            <span className={isSelected ? 'font-semibold text-slate-900' : 'text-slate-700'}>
+                              {opt.label}
+                            </span>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-600 stroke-[2.5]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Reset Filters button if any filter is active */}
-          {(searchQuery || selectedDomains.length > 0 || formatFilter !== 'ALL') && (
+          {(searchQuery || selectedDomains.length > 0 || formatFilter !== 'ALL' || tierFilter !== 'ALL') && (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedDomains([]);
                 setFormatFilter('ALL');
+                setTierFilter('ALL');
               }}
               className="text-xs text-slate-500 hover:text-slate-800 underline decoration-slate-300 underline-offset-2 ml-1"
             >
@@ -437,6 +550,18 @@ export default function LearnerAssessmentsPage() {
                       {test.questionCount} câu hỏi
                     </span>
                   </div>
+
+                  {/* Free vs VIP Badge */}
+                  {test.isVip || test.accessTier === 'VIP' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
+                      <Sparkles className="w-3 h-3 text-amber-600" strokeWidth={1.75} />
+                      <span>VIP</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                      FREE
+                    </span>
+                  )}
                 </div>
 
                 {/* Title */}

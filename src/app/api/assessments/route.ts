@@ -15,6 +15,8 @@ export async function GET() {
         passing_score, 
         point_reward, 
         is_published, 
+        is_vip,
+        access_tier,
         created_at,
         assessment_items (
           id,
@@ -91,6 +93,8 @@ export async function GET() {
         typeLabel: typeLabels.length > 0 ? typeLabels.join(', ') : 'Trắc nghiệm',
         domainName,
         domainCodes,
+        isVip: Boolean((a as any).is_vip || (a as any).access_tier === 'VIP'),
+        accessTier: (a as any).access_tier || ((a as any).is_vip ? 'VIP' : 'FREE'),
       };
     });
 
