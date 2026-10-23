@@ -16,6 +16,8 @@ import {
   Users,
   ChevronRight,
   ShieldCheck,
+  CheckSquare,
+  FileCheck,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
@@ -41,7 +43,7 @@ export function EvaluatorAvatarMenu() {
           if (user.email) setDisplayEmail(user.email);
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, username, avatar_url')
+            .select('full_name, nickname, avatar_url')
             .eq('id', user.id)
             .single();
 
@@ -163,16 +165,25 @@ export function EvaluatorAvatarMenu() {
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   <Users className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Quản lý lớp học</span>
+                  <span>Quản lý nhóm</span>
                 </Link>
 
                 <Link
-                  href="/evaluator/item-bank"
+                  href="/evaluator/assessments"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
-                  <FolderLock className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Kho đề & Ngân hàng câu hỏi</span>
+                  <FileCheck className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                  <span>Quản lý Đề thi</span>
+                </Link>
+
+                <Link
+                  href="/evaluator/grading"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                >
+                  <CheckSquare className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                  <span>Bàn chấm bài Rubric</span>
                 </Link>
 
                 {/* Dark/Light mode toggle switch */}

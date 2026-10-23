@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 const loginSchema = z.object({
-  identifier: z.string().optional(),
-  email: z.string().optional(),
+  email: z.string().trim().toLowerCase().email('Địa chỉ email không hợp lệ'),
   password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 });
 
@@ -20,34 +20,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const rawId = (validated.data.identifier || validated.data.email || '').trim().toLowerCase();
-    const { password } = validated.data;
-
-    if (!rawId) {
-      return NextResponse.json(
-        { error: 'Vui lòng nhập tài khoản' },
-        { status: 400 }
-      );
-    }
-
+    const { email, password } = validated.data;
     const supabase = await createClient();
-    let email = rawId;
-
-    // If identifier doesn't have an @, check if it's a registered username or account
-    if (!rawId.includes('@')) {
-      const cleanUsername = rawId.replace(/^@/, '');
-      const { data: profileRow } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('username', cleanUsername)
-        .single();
-
-      if (profileRow?.email) {
-        email = profileRow.email;
-      } else {
-        email = `${cleanUsername}@nexa.edu.vn`;
-      }
-    }
 
     // 1. Sign in with password
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -56,34 +30,26 @@ export async function POST(request: Request) {
     });
 
     if (authError || !authData.user) {
+      if (authError?.message.toLowerCase().includes('email not confirmed')) {
+        return NextResponse.json(
+          { error: 'Email chưa được xác thực. Vui lòng mở liên kết xác thực trong hộp thư của bạn.' },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
-        { error: 'Tài khoản hoặc mật khẩu không chính xác' },
+        { error: 'Email hoặc mật khẩu không chính xác' },
         { status: 401 }
       );
     }
 
-    // 2. Fetch profile and enforce Superadmin Authority
+    // 2. Fetch profile and enforce Superadmin Authority (email only)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, username')
+      .select('role')
       .eq('id', authData.user.id)
       .single();
 
-    const superadminConfig =
-      process.env.SUPERADMIN_ACCOUNTS ||
-      process.env.SUPERADMIN_EMAILS ||
-      'admin,huy868762@gmail.com,admin@nexa.edu.vn';
-    const superadminList = superadminConfig
-      .split(',')
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean);
-
-    const userEmail = (authData.user.email || '').toLowerCase();
-    const userName = (profile?.username || '').toLowerCase();
-    const isSuperadmin =
-      (userName && superadminList.includes(userName)) ||
-      (userEmail && superadminList.includes(userEmail)) ||
-      userName === 'admin';
+    const isSuperadmin = isSuperadminEmail(authData.user.email);
 
     let role = profile?.role || authData.user.user_metadata?.role || 'LEARNER';
     if (isSuperadmin) {

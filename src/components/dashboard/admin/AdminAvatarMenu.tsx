@@ -27,7 +27,7 @@ export function AdminAvatarMenu() {
   const [showFeedback, setShowFeedback] = useState(false);
 
   const [displayName, setDisplayName] = useState('Quản Trị Viên Tối Cao');
-  const [displayEmail, setDisplayEmail] = useState('admin@nexa.edu.vn');
+  const [displayEmail, setDisplayEmail] = useState('admin.nexa@gmail.com');
   const [displayInitials] = useState('AD');
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function AdminAvatarMenu() {
           if (user.email) setDisplayEmail(user.email);
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, username')
+            .select('full_name, nickname')
             .eq('id', user.id)
             .single();
 

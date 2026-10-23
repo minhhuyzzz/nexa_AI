@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Search,
   Lock,
-  PlusCircle,
   ChevronDown,
   Filter,
   Check,
@@ -168,15 +167,6 @@ export default function LearnerAssessmentsPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Link
-            href="/learner/contribute"
-            className="px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
-            title="Gửi bài thi hoặc tình huống thực tế cho Admin xét duyệt"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-            <span>Góp đề thi cộng đồng</span>
-          </Link>
-
           <Link
             href="/learner/live-pin"
             className="px-3.5 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"

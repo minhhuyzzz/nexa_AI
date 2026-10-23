@@ -20,19 +20,6 @@ export interface LeaderboardEntry {
 const REDIS_CACHE_KEY = 'nexa:leaderboard:top100';
 const CACHE_TTL_SECONDS = 60; // 60 seconds TTL for fast live leaderboard
 
-// Mask name for privacy under Decree 13/2023 if desired, or keep academic clean display
-function formatDisplayName(fullName: string): string {
-  if (!fullName) return 'Học viên ẩn danh';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length <= 1) return fullName;
-  // e.g. "Nguyễn Văn An" -> "Nguyễn V. An"
-  if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
-  const first = parts[0];
-  const last = parts[parts.length - 1];
-  const middle = parts.slice(1, -1).map((p) => `${p[0]}.`).join(' ');
-  return `${first} ${middle} ${last}`;
-}
-
 export async function GET() {
   const startTime = performance.now();
   const redis = getRedisClient();
@@ -61,7 +48,7 @@ export async function GET() {
 
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, points, rank_tier, avg_competency_score, role, specialization')
+      .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization')
       .eq('role', 'LEARNER')
       .order('points', { ascending: false })
       .order('avg_competency_score', { ascending: false })
@@ -80,7 +67,7 @@ export async function GET() {
     const leaderboard: LeaderboardEntry[] = (profiles || []).map((p, index) => ({
       rank: index + 1,
       userId: p.id,
-      displayName: formatDisplayName(p.full_name),
+      displayName: p.nickname || 'Học viên ẩn danh',
       avatarUrl: p.avatar_url,
       points: p.points || 0,
       rankTier: p.rank_tier || 'NOVICE',
@@ -134,7 +121,7 @@ export async function GET() {
         } else {
           const { data: myProfile } = await supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, points')
+            .select('id, nickname, avatar_url, points')
             .eq('id', effectiveUserId)
             .single();
 
@@ -148,7 +135,7 @@ export async function GET() {
             currentUserRank = {
               rank: (count ?? 0) + 1,
               userId: myProfile.id,
-              displayName: formatDisplayName(myProfile.full_name),
+              displayName: myProfile.nickname || 'Học viên ẩn danh',
               avatarUrl: myProfile.avatar_url,
               points: myProfile.points || 0,
             };

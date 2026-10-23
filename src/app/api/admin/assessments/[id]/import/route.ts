@@ -86,6 +86,14 @@ export async function POST(
         compId = compMap.get(row.skill_code.trim());
       }
 
+      let cleanPrompt = row.prompt.trim();
+      if (cleanType === 'SCENARIO' && (row as any).scenario_context && typeof (row as any).scenario_context === 'string' && (row as any).scenario_context.trim()) {
+        const ctx = (row as any).scenario_context.trim();
+        if (!cleanPrompt.includes(ctx)) {
+          cleanPrompt = `[Bối cảnh]: ${ctx}\n\n[Câu hỏi]: ${cleanPrompt}`;
+        }
+      }
+
       currentOrder++;
 
       // Insert question item (no difficulty level)
@@ -95,7 +103,7 @@ export async function POST(
           assessment_id: assessmentId,
           competency_id: compId,
           type: cleanType,
-          prompt: row.prompt.trim(),
+          prompt: cleanPrompt,
           points: Number(row.points) || 10,
           order_index: currentOrder,
           difficulty_level: 'STANDARD',

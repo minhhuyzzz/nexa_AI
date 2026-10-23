@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Radio, ArrowRight, ShieldCheck, AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
 
@@ -13,50 +13,58 @@ function LivePinContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initialPin && initialPin.length === 6) {
-      setPin(initialPin);
-    }
-  }, [initialPin]);
-
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanPin = pin.trim().replace(/\s+/g, '');
-    if (cleanPin.length !== 6) {
-      setError('Mã PIN phòng thi phải gồm đúng 6 chữ số');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/rooms/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: cleanPin }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Mã PIN phòng thi không hợp lệ hoặc không tồn tại');
+  const joinWithPin = useCallback(
+    async (pinToJoin: string) => {
+      const cleanPin = pinToJoin.trim().replace(/\s+/g, '');
+      if (cleanPin.length !== 6) {
+        setError('Mã PIN phòng thi phải gồm đúng 6 chữ số');
         return;
       }
 
-      // Late Joiner Check: If room has already started, bypass waiting room directly into the exam!
-      if (data.hasStarted) {
-        router.push(`/learner/take/${data.assessmentId || 'asm-01'}?roomId=${data.roomId}&pin=${cleanPin}`);
-      } else {
-        // Room is waiting for evaluator to start -> Route to Fullscreen Space Light Waiting Room
-        router.push(
-          `/live/waiting-room?pin=${cleanPin}&roomId=${data.roomId}&assessmentId=${data.assessmentId || 'asm-01'}`
-        );
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch('/api/rooms/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: cleanPin }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || 'Mã PIN phòng thi không hợp lệ hoặc không tồn tại');
+          return;
+        }
+
+        // Late Joiner Check: If room has already started, bypass waiting room directly into the exam!
+        if (data.hasStarted) {
+          router.push(`/learner/take/${data.assessmentId || 'asm-01'}?roomId=${data.roomId}&pin=${cleanPin}`);
+        } else {
+          // Room is waiting for evaluator to start -> Route to Fullscreen Space Light Waiting Room
+          router.push(
+            `/live/waiting-room?pin=${cleanPin}&roomId=${data.roomId}&assessmentId=${data.assessmentId || 'asm-01'}`
+          );
+        }
+      } catch {
+        setError('Lỗi kết nối khi tham gia phòng thi. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError('Lỗi kết nối khi tham gia phòng thi. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
+    },
+    [router]
+  );
+
+  useEffect(() => {
+    if (initialPin && initialPin.length === 6) {
+      setPin(initialPin);
+      joinWithPin(initialPin);
     }
+  }, [initialPin, joinWithPin]);
+
+  const handleJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    joinWithPin(pin);
   };
 
   return (

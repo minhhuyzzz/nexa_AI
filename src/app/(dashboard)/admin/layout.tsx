@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 import { AdminSidebar } from '@/components/dashboard/admin/AdminSidebar';
 import { AdminTopbar } from '@/components/dashboard/admin/AdminTopbar';
 
@@ -17,29 +18,7 @@ export default async function AdminLayout({
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, username')
-    .eq('id', user.id)
-    .single();
-
-  const superadminConfig =
-    process.env.SUPERADMIN_ACCOUNTS ||
-    process.env.SUPERADMIN_EMAILS ||
-    'admin,huy868762@gmail.com,admin@nexa.edu.vn';
-  const superadminList = superadminConfig
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-
-  const userEmail = (user.email || '').toLowerCase();
-  const userName = (profile?.username || '').toLowerCase();
-  const isAuthorizedAdmin =
-    (userName && superadminList.includes(userName)) ||
-    (userEmail && superadminList.includes(userEmail)) ||
-    userName === 'admin';
-
-  if (!isAuthorizedAdmin) {
+  if (!isSuperadminEmail(user.email)) {
     redirect('/login?error=unauthorized_admin_access');
   }
 

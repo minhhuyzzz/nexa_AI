@@ -40,7 +40,8 @@ export default function LearnerDashboardPage() {
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
   const [stats, setStats] = useState<{
-    fullName: string;
+    nickname: string;
+    fullName?: string;
     avatarUrl?: string | null;
     points: number;
     totalLoginDays: number;
@@ -51,6 +52,7 @@ export default function LearnerDashboardPage() {
     certPointsNeeded: number;
     newLoginToday: boolean;
   }>({
+    nickname: 'Học Viên Nexa',
     fullName: 'Học Viên Nexa',
     avatarUrl: null,
     points: 0,
@@ -86,7 +88,8 @@ export default function LearnerDashboardPage() {
           const json = await res.json();
           if (json.success) {
             setStats({
-              fullName: json.user?.fullName || 'Học Viên Nexa',
+              nickname: json.user?.nickname || 'Học Viên Nexa',
+              fullName: json.user?.fullName || json.user?.nickname || 'Học Viên Nexa',
               avatarUrl: json.user?.avatarUrl || null,
               points: json.stats?.points ?? 0,
               totalLoginDays: json.stats?.totalLoginDays ?? 0,

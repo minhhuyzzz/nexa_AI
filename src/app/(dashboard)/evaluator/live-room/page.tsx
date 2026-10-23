@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Radio,
   Users,
@@ -21,6 +21,7 @@ import {
   Maximize2,
   ChevronDown,
   X,
+  Trash2,
 } from 'lucide-react';
 
 interface ExamRoom {
@@ -38,9 +39,19 @@ interface ExamRoom {
   participantCount: number;
 }
 
-export default function EvaluatorLiveRoomPage() {
+interface AssessmentOption {
+  id: string;
+  title: string;
+  durationMinutes: number;
+}
+
+function LiveRoomContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryAsmId = searchParams.get('assessmentId');
+
   const [rooms, setRooms] = useState<ExamRoom[]>([]);
+  const [assessments, setAssessments] = useState<AssessmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrModalRoom, setQrModalRoom] = useState<ExamRoom | null>(null);
@@ -48,11 +59,48 @@ export default function EvaluatorLiveRoomPage() {
   // Form state for creating room
   const [isCreatingOpen, setIsCreatingOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
-  const [newAssessmentId, setNewAssessmentId] = useState('a0000000-0000-0000-0000-000000000001');
+  const [newAssessmentId, setNewAssessmentId] = useState('');
   const [newMode, setNewMode] = useState<'OPEN' | 'GROUP_ONLY'>('OPEN');
   const [submitting, setSubmitting] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  // 1. Fetch available assessments for dropdown
+  useEffect(() => {
+    async function loadAssessments() {
+      try {
+        const res = await fetch('/api/admin/assessments');
+        if (res.ok) {
+          const data = await res.json();
+          const list: AssessmentOption[] = (data.assessments || []).map((a: any) => ({
+            id: a.id,
+            title: a.title,
+            durationMinutes: a.duration_minutes || 45,
+          }));
+          setAssessments(list);
+
+          if (queryAsmId && list.some((a) => a.id === queryAsmId)) {
+            const found = list.find((a) => a.id === queryAsmId);
+            setNewAssessmentId(queryAsmId);
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            setNewTitle(`${found?.title || 'Đề khảo thí'} - Ca thi ${timeStr}`);
+            setIsCreatingOpen(true);
+          } else if (list.length > 0 && !newAssessmentId) {
+            setNewAssessmentId(list[0].id);
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            setNewTitle(`${list[0].title} - Ca thi ${timeStr}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load assessments dropdown:', err);
+      }
+    }
+
+    loadAssessments();
+  }, [queryAsmId]);
+
+  // 2. Fetch existing rooms
   const fetchRooms = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
@@ -77,9 +125,20 @@ export default function EvaluatorLiveRoomPage() {
     return () => clearInterval(interval);
   }, [fetchRooms]);
 
+  // Handle Assessment selection change -> auto suggest room title
+  const handleAssessmentChange = (id: string) => {
+    setNewAssessmentId(id);
+    const found = assessments.find((a) => a.id === id);
+    if (found) {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      setNewTitle(`${found.title} - Ca thi ${timeStr}`);
+    }
+  };
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !newAssessmentId) return;
 
     setSubmitting(true);
     setError(null);
@@ -89,7 +148,7 @@ export default function EvaluatorLiveRoomPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: newTitle,
+          title: newTitle.trim(),
           assessmentId: newAssessmentId,
           roomMode: newMode,
         }),
@@ -112,6 +171,25 @@ export default function EvaluatorLiveRoomPage() {
       setError('Đã xảy ra lỗi kết nối khi tạo phòng thi.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Delete Room
+  const handleDeleteRoom = async (roomId: string, roomTitle: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn đóng và xóa phòng thi "${roomTitle}" không?`)) return;
+
+    try {
+      const res = await fetch(`/api/evaluator/rooms?roomId=${roomId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setRooms((prev) => prev.filter((r) => r.id !== roomId));
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || 'Không thể xóa phòng thi.');
+      }
+    } catch {
+      alert('Lỗi kết nối khi xóa phòng thi.');
     }
   };
 
@@ -167,7 +245,7 @@ export default function EvaluatorLiveRoomPage() {
         </div>
       )}
 
-      {/* Inline Room Creation Form (No popup modal!) */}
+      {/* Inline Room Creation Form */}
       {isCreatingOpen && (
         <div className="p-5 rounded-md bg-white border border-sky-300 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -187,6 +265,27 @@ export default function EvaluatorLiveRoomPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="font-semibold text-slate-800 block mb-1">
+                  Chọn đề khảo thí chuẩn hóa:
+                </label>
+                <select
+                  value={newAssessmentId}
+                  onChange={(e) => handleAssessmentChange(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                >
+                  {assessments.length === 0 ? (
+                    <option value="">Đang tải danh mục đề thi...</option>
+                  ) : (
+                    assessments.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.title} ({a.durationMinutes} phút)
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">
                   Tên phòng thi / Phiên khảo thí:
                 </label>
                 <input
@@ -197,21 +296,6 @@ export default function EvaluatorLiveRoomPage() {
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
                 />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">
-                  Bộ đề khảo thí chuẩn hóa:
-                </label>
-                <select
-                  value={newAssessmentId}
-                  onChange={(e) => setNewAssessmentId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
-                >
-                  <option value="a0000000-0000-0000-0000-000000000001">
-                    Đề Benchmark Khảo Thí Năng Lực Số Chuẩn Hóa (12 Câu)
-                  </option>
-                </select>
               </div>
             </div>
 
@@ -260,7 +344,7 @@ export default function EvaluatorLiveRoomPage() {
               </button>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !newAssessmentId}
                 className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {submitting ? 'Đang kích hoạt...' : 'Kích hoạt & Vào Màn Hình Live'}
@@ -301,18 +385,30 @@ export default function EvaluatorLiveRoomPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    {room.hasStarted ? (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sky-600 animate-pulse" />
-                        ĐANG THI (IN PROGRESS)
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                        PHÒNG CHỜ (SẴN SÀNG)
-                      </span>
-                    )}
-                    <span className="text-[11px] text-slate-400">Chế độ: {room.roomMode}</span>
+                    <div className="flex items-center gap-2">
+                      {room.hasStarted ? (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-sky-600 animate-pulse" />
+                          ĐANG THI (IN PROGRESS)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                          PHÒNG CHỜ (SẴN SÀNG)
+                        </span>
+                      )}
+                      <span className="text-[11px] text-slate-400">Chế độ: {room.roomMode}</span>
+                    </div>
+
+                    {/* Delete Room Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRoom(room.id, room.title)}
+                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Đóng / Xóa phòng thi này"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    </button>
                   </div>
 
                   <div>
@@ -384,43 +480,51 @@ export default function EvaluatorLiveRoomPage() {
         )}
       </div>
 
-      {/* Projection Modal if needed from dashboard */}
+      {/* Projection Modal */}
       {qrModalRoom && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-md border border-slate-200 p-6 max-w-sm w-full text-center space-y-4">
-            <h3 className="text-base font-bold text-slate-900">{qrModalRoom.title}</h3>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <span className="text-xs font-bold text-slate-900 uppercase">Mã QR Tham Gia Phòng</span>
+              <button
+                onClick={() => setQrModalRoom(null)}
+                className="p-1 rounded text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
                 typeof window !== 'undefined'
                   ? `${window.location.origin}/learner/live-pin?pin=${qrModalRoom.roomCode}`
                   : `https://nexa.edu.vn/learner/live-pin?pin=${qrModalRoom.roomCode}`
               )}`}
-              alt="QR Code Phòng thi"
-              width={200}
-              height={200}
+              alt="QR Code Phòng Thi"
+              width={220}
+              height={220}
               className="rounded mx-auto border border-slate-200 p-2"
             />
-            <div className="text-3xl font-extrabold text-sky-600 font-mono tracking-widest">
+
+            <div className="font-mono font-extrabold text-2xl text-sky-600 tracking-widest">
               {qrModalRoom.roomCode.slice(0, 3)} {qrModalRoom.roomCode.slice(3)}
             </div>
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <Link
-                href={`/live/control?roomId=${qrModalRoom.id}`}
-                className="px-4 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700"
-              >
-                Vào phòng điều phối
-              </Link>
-              <button
-                onClick={() => setQrModalRoom(null)}
-                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50"
-              >
-                Đóng
-              </button>
-            </div>
+
+            <p className="text-[11px] text-slate-500">
+              Thí sinh dùng điện thoại quét mã QR hoặc truy cập <strong>/learner/live-pin</strong> và nhập 6 số trên.
+            </p>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+export default function EvaluatorLiveRoomPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Đang tải phòng thi...</div>}>
+      <LiveRoomContent />
+    </Suspense>
   );
 }

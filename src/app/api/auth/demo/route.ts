@@ -15,7 +15,7 @@ const REAL_ACCOUNTS: Record<string, { email: string; pass: string; defaultPath: 
     defaultPath: '/evaluator/dashboard',
   },
   ADMIN: {
-    email: 'admin@nexa.edu.vn',
+    email: 'admin.nexa@gmail.com',
     pass: 'Nexa@2026',
     defaultPath: '/admin/dashboard',
   },
@@ -71,16 +71,19 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  // Perform REAL Supabase authentication with real account credentials
+  // Perform clean Supabase authentication with matching account credentials
   try {
-    const { data: authRes } = await supabase.auth.signInWithPassword({
+    // Clear any previous session first to avoid role/profile collisions
+    await supabase.auth.signOut();
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
       email: acc.email,
       password: acc.pass,
     });
-
-    // Signed in successfully without arbitrary point tampering
+    if (signInErr) {
+      console.warn('Demo signIn note:', signInErr.message);
+    }
   } catch (err) {
-    console.error('Real account authentication error:', err);
+    console.error('Demo account authentication error:', err);
   }
 
   response.cookies.set('nexa_demo_role', role, {

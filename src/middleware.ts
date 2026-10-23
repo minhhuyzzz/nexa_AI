@@ -1,11 +1,13 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // 1. Identify route categories
   const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isOnboardingPage = pathname === '/onboarding';
   const isAdminRoute = pathname.startsWith('/admin');
   const isProtectedDashboard =
     pathname.startsWith('/learner') ||
@@ -29,7 +31,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Fast Short-Circuit: Public pages require ZERO auth checks or Supabase calls
-  if (!isAuthPage && !isProtectedDashboard) {
+  if (!isAuthPage && !isOnboardingPage && !isProtectedDashboard) {
     return NextResponse.next({ request });
   }
 
@@ -37,10 +39,10 @@ export async function middleware(request: NextRequest) {
   const cookies = request.cookies.getAll();
   const hasAuthCookie = cookies.some((c) => c.name.includes('-auth-token'));
 
-  // If visiting protected dashboard without any auth cookie
-  if (isProtectedDashboard && !hasAuthCookie) {
-    // Admin routes strictly require real authentication
-    if (isAdminRoute) {
+  // If visiting protected dashboard or onboarding without any auth cookie
+  if ((isProtectedDashboard || isOnboardingPage) && !hasAuthCookie) {
+    // Admin routes and onboarding strictly require real authentication
+    if (isAdminRoute || isOnboardingPage) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       url.searchParams.set('redirect', pathname);
@@ -109,29 +111,15 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Query profile to get role and username
+  // Query profile to get role and onboarding status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, username')
+    .select('role, is_onboarded')
     .eq('id', user.id)
     .single();
 
-  // Superadmin Master Authority: Account / Username / Email whitelist
-  const superadminConfig =
-    process.env.SUPERADMIN_ACCOUNTS ||
-    process.env.SUPERADMIN_EMAILS ||
-    'admin,huy868762@gmail.com,admin@nexa.edu.vn';
-  const superadminList = superadminConfig
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-
-  const userEmail = (user.email || '').toLowerCase();
-  const userName = (profile?.username || '').toLowerCase();
-  const isSuperadmin =
-    (userName && superadminList.includes(userName)) ||
-    (userEmail && superadminList.includes(userEmail)) ||
-    userName === 'admin';
+  // Superadmin Master Authority: email whitelist only
+  const isSuperadmin = isSuperadminEmail(user.email);
 
   let role = profile?.role || 'LEARNER';
   if (isSuperadmin) {
@@ -139,6 +127,25 @@ export async function middleware(request: NextRequest) {
   } else if (role === 'ADMIN') {
     // If not in superadmin list, downgrade to prevent unauthorized elevation
     role = 'LEARNER';
+  }
+
+  // If user has not completed onboarding, force them to /onboarding
+  if (profile && profile.is_onboarded === false) {
+    if (!isOnboardingPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/onboarding';
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // If user is already onboarded but visits /onboarding, redirect to their dashboard
+  if (isOnboardingPage) {
+    const url = request.nextUrl.clone();
+    if (role === 'ADMIN') url.pathname = '/admin/dashboard';
+    else if (role === 'EVALUATOR') url.pathname = '/evaluator/dashboard';
+    else url.pathname = '/learner/dashboard';
+    return NextResponse.redirect(url);
   }
 
   // If on /login or /register, redirect to corresponding dashboard

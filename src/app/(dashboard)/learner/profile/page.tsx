@@ -6,7 +6,6 @@ import {
   User,
   CheckCircle2,
   AlertCircle,
-  AtSign,
   Camera,
   Trash2,
   Award,
@@ -23,8 +22,7 @@ import { createClient } from '@/lib/supabase/client';
 
 interface ProfileData {
   id: string;
-  fullName: string;
-  username: string;
+  nickname: string;
   email: string;
   avatarUrl: string | null;
   role: string;
@@ -49,8 +47,7 @@ export default function LearnerProfilePage() {
   const [loading, setLoading] = useState(true);
 
   // Form states
-  const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
+  const [nickname, setNickname] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -63,8 +60,7 @@ export default function LearnerProfilePage() {
         const data = await res.json();
         if (data.profile) {
           setProfile(data.profile);
-          setFullName(data.profile.fullName || '');
-          setUsername(data.profile.username || '');
+          setNickname(data.profile.nickname || '');
         }
         if (data.credentials) {
           setCredentials(data.credentials);
@@ -184,17 +180,10 @@ export default function LearnerProfilePage() {
     setSuccessMsg(null);
     setErrorMsg(null);
 
-    const cleanFullName = fullName.trim();
-    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+    const cleanNickname = nickname.trim().replace(/\s+/g, ' ');
 
-    if (cleanFullName.length < 2) {
-      setErrorMsg('Họ và tên tối thiểu 2 ký tự.');
-      return;
-    }
-
-    const validRegex = /^[a-z0-9_]{3,24}$/;
-    if (!validRegex.test(cleanUsername)) {
-      setErrorMsg('Tên người dùng (@username) phải từ 3 đến 24 ký tự chữ thường, số hoặc dấu gạch dưới (_).');
+    if (cleanNickname.length < 2 || cleanNickname.length > 30) {
+      setErrorMsg('Biệt danh phải từ 2 đến 30 ký tự.');
       return;
     }
 
@@ -204,8 +193,7 @@ export default function LearnerProfilePage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: cleanFullName,
-          username: cleanUsername,
+          nickname: cleanNickname,
         }),
       });
 
@@ -217,8 +205,7 @@ export default function LearnerProfilePage() {
       if (profile) {
         setProfile({
           ...profile,
-          fullName: cleanFullName,
-          username: cleanUsername,
+          nickname: cleanNickname,
         });
       }
 
@@ -233,7 +220,7 @@ export default function LearnerProfilePage() {
   };
 
   // Avatar Initials
-  const initials = (profile?.fullName || fullName || 'Học Viên Nexa')
+  const initials = (profile?.nickname || nickname || 'Học Viên Nexa')
     .split(' ')
     .filter(Boolean)
     .slice(-2)
@@ -304,7 +291,7 @@ export default function LearnerProfilePage() {
         <div className="flex items-center gap-5">
           <div className="relative group w-18 h-18 rounded-full bg-slate-900 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xs font-mono overflow-hidden border border-slate-200">
             {profile?.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.fullName} className="w-full h-full object-cover" />
+              <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" />
             ) : (
               initials
             )}
@@ -351,53 +338,27 @@ export default function LearnerProfilePage() {
           </div>
         </div>
 
-        {/* Edit Form: Full name & Username */}
+        {/* Edit Form: Biệt danh */}
         <form onSubmit={handleSaveProfile} className="space-y-4 pt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Full Name / Nickname */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                Họ và tên / Biệt danh hiển thị
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ví dụ: Trần Minh Huy"
-                className="w-full px-3 py-2 text-xs rounded-md border border-slate-200 focus:outline-none focus:border-sky-600 bg-white text-slate-900"
-                required
-                minLength={2}
-                maxLength={50}
-              />
-              <p className="text-[11px] text-slate-400 mt-1">
-                Tên hiển thị công khai trên Bảng xếp hạng và trong các Nhóm học tập.
-              </p>
-            </div>
-
-            {/* Username */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                Tên người dùng (@username)
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-slate-400 font-mono select-none">
-                  @
-                </span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, ''))}
-                  placeholder="learner_nexa"
-                  className="w-full pl-7 pr-3 py-2 text-xs font-mono rounded-md border border-slate-200 focus:outline-none focus:border-sky-600 bg-white text-slate-900"
-                  required
-                  minLength={3}
-                  maxLength={24}
-                />
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Định danh duy nhất để chia sẻ hồ sơ (chữ thường, số, gạch dưới).
-              </p>
-            </div>
+          <div>
+            <label htmlFor="profile-nickname" className="block text-xs font-semibold text-slate-800 mb-1">
+              Biệt danh hiển thị
+            </label>
+            <input
+              id="profile-nickname"
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="Ví dụ: Trần Minh Huy"
+              className="w-full px-3 py-2 text-xs rounded-md border border-slate-200 focus:outline-none focus:border-sky-600 bg-white text-slate-900"
+              required
+              minLength={2}
+              maxLength={30}
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Tên công khai trên Bảng xếp hạng và trong các Nhóm học tập. Không được trùng với người
+              dùng khác.
+            </p>
           </div>
 
           {/* Email & Auth Provider */}

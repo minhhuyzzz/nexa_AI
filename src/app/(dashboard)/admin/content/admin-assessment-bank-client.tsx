@@ -511,50 +511,32 @@ export function AdminAssessmentBankClient({
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-md bg-white border border-slate-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Tổng Số Đề Khảo Thí</span>
-            <FileCheck className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+      {/* Compact Status Bar (h-10) */}
+      <div className="h-10 px-4 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-600">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 font-medium">
+            <span className="text-slate-500">Tổng số đề:</span>
+            <span className="font-mono font-bold text-slate-900 tabular-nums">{totalAssessments}</span>
           </div>
-          <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-2">
-            {totalAssessments}
-          </p>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">Đang lưu trữ trong CSDL</span>
+          <span className="text-slate-300">|</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <span className="text-slate-500">Đang phát hành:</span>
+            <span className="font-mono font-bold text-emerald-700 tabular-nums">{publishedAssessments}</span>
+          </div>
+          <span className="text-slate-300">|</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <span className="text-slate-500">Miễn phí:</span>
+            <span className="font-mono font-bold text-slate-700 tabular-nums">{freeAssessments}</span>
+          </div>
+          <span className="text-slate-300">|</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <span className="text-slate-500">VIP:</span>
+            <span className="font-mono font-bold text-amber-700 tabular-nums">{vipAssessments}</span>
+          </div>
         </div>
 
-        <div className="p-4 rounded-md bg-white border border-slate-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Đang Phát Hành</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
-          </div>
-          <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-2">
-            {publishedAssessments}
-          </p>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">Hiển thị cho học viên</span>
-        </div>
-
-        <div className="p-4 rounded-md bg-white border border-slate-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Gói Miễn Phí (Free)</span>
-            <Unlock className="w-4 h-4 text-slate-500" strokeWidth={1.75} />
-          </div>
-          <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-2">
-            {freeAssessments}
-          </p>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">Không yêu cầu nâng cấp</span>
-        </div>
-
-        <div className="p-4 rounded-md bg-white border border-slate-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Khóa Nâng Cao (VIP)</span>
-            <Lock className="w-4 h-4 text-amber-600" strokeWidth={1.75} />
-          </div>
-          <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-2">
-            {vipAssessments}
-          </p>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">Dành riêng cho gói VIP</span>
+        <div className="hidden sm:block text-[11px] text-slate-400 font-mono">
+          Chuẩn hóa DigComp 3.0 &bull; Dữ liệu thời gian thực
         </div>
       </div>
 
@@ -614,13 +596,12 @@ export function AdminAssessmentBankClient({
                 <p className="text-xs text-slate-500 font-medium">
                   Không tìm thấy bài khảo thí nào phù hợp với bộ lọc.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleOpenCreateModal}
+                <Link
+                  href="/admin/content/assessments/new"
                   className="text-xs text-sky-600 hover:text-sky-700 font-semibold inline-block"
                 >
                   + Tạo bài khảo thí mới ngay
-                </button>
+                </Link>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -721,26 +702,26 @@ export function AdminAssessmentBankClient({
                           <div className="flex items-center justify-end gap-1.5">
                             <Link
                               href={`/admin/content/assessments/${exam.id}`}
-                              className="px-2.5 py-1 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 font-semibold text-[11px] inline-flex items-center gap-1"
-                              title="Quản lý câu hỏi & tiêu chí chấm"
+                              className="px-2.5 py-1 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 font-semibold text-[11px] inline-flex items-center gap-1 transition-colors"
+                              title="Mở trình soạn thảo 3-Pane Studio"
                             >
-                              <span>Câu hỏi</span>
-                              <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
+                              <Edit3 className="w-3 h-3" strokeWidth={1.75} />
+                              <span>Sửa trong Studio</span>
+                            </Link>
+
+                            <Link
+                              href={`/learner/take/${exam.id}`}
+                              target="_blank"
+                              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                              title="Xem thử giao diện làm bài"
+                            >
+                              <Eye className="w-3.5 h-3.5" strokeWidth={1.75} />
                             </Link>
 
                             <button
                               type="button"
-                              onClick={() => handleOpenEditModal(exam)}
-                              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                              title="Sửa thông tin đề thi"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                            </button>
-
-                            <button
-                              type="button"
                               onClick={() => setDeletingId(exam.id)}
-                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                               title="Xóa bài thi"
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />

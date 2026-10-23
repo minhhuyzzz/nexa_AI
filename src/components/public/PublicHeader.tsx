@@ -213,7 +213,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
               <div className="px-3 py-1 text-[10px] text-slate-400 border-b border-slate-100 uppercase font-semibold font-mono">
                 3 Tài khoản thật (Real Auth)
               </div>
-              <Link
+              <a
                 href="/api/auth/demo?role=LEARNER"
                 className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
@@ -222,8 +222,8 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
                   <div className="font-semibold text-slate-900">Học viên</div>
                   <div className="text-[10px] text-slate-400 font-mono truncate">learner@nexa.edu.vn</div>
                 </div>
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/api/auth/demo?role=EVALUATOR"
                 className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
@@ -232,17 +232,17 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
                   <div className="font-semibold text-slate-900">Chuyên gia</div>
                   <div className="text-[10px] text-slate-400 font-mono truncate">evaluator@nexa.edu.vn</div>
                 </div>
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/api/auth/demo?role=ADMIN"
                 className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
                 <Shield className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
                 <div className="min-w-0">
                   <div className="font-semibold text-slate-900">Quản trị viên</div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate">admin@nexa.edu.vn</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">admin.nexa@gmail.com</div>
                 </div>
-              </Link>
+              </a>
             </div>
           </div>
 

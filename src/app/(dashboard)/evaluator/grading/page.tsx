@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   CheckSquare,
   User,
@@ -96,6 +97,15 @@ interface CandidateSubmission {
   submittedAt: string;
   timeSpentSeconds: number;
   items: SubmissionItem[];
+  groupId?: string | null;
+  groupName?: string | null;
+  groupCode?: string | null;
+}
+
+interface GroupOption {
+  id: string;
+  name: string;
+  code: string;
 }
 
 interface SelectedCriterionScore {
@@ -104,15 +114,21 @@ interface SelectedCriterionScore {
   score: number;
 }
 
-export default function EvaluatorGradingPage() {
+function EvaluatorGradingContent() {
+  const searchParams = useSearchParams();
+  const initialGroupId = searchParams.get('groupId') || '';
+  const initialSubId = searchParams.get('submissionId') || null;
+
   const [submissions, setSubmissions] = useState<CandidateSubmission[]>([]);
+  const [classes, setClasses] = useState<GroupOption[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filters & selection
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'SUBMITTED' | 'EVALUATED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(initialSubId);
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
 
   // Grading state for current item
@@ -126,17 +142,28 @@ export default function EvaluatorGradingPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [activeAiEval, setActiveAiEval] = useState<AIEvaluationData | null>(null);
 
-  const fetchSubmissions = useCallback(async () => {
+  const fetchSubmissions = useCallback(async (grpId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/evaluator/submissions');
+      const activeGroup = grpId !== undefined ? grpId : selectedGroupId;
+      const url = activeGroup
+        ? `/api/evaluator/submissions?groupId=${encodeURIComponent(activeGroup)}`
+        : '/api/evaluator/submissions';
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         const list: CandidateSubmission[] = data.submissions || [];
         setSubmissions(list);
-        if (list.length > 0 && !selectedSubId) {
-          setSelectedSubId(list[0].id);
+        if (data.classes) {
+          setClasses(data.classes);
+        }
+        if (list.length > 0) {
+          if (!selectedSubId || !list.some((s) => s.id === selectedSubId)) {
+            setSelectedSubId(list[0].id);
+          }
+        } else {
+          setSelectedSubId(null);
         }
       } else {
         setSubmissions([]);
@@ -146,11 +173,11 @@ export default function EvaluatorGradingPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedSubId]);
+  }, [selectedGroupId, selectedSubId]);
 
   useEffect(() => {
-    fetchSubmissions();
-  }, [fetchSubmissions]);
+    fetchSubmissions(selectedGroupId);
+  }, [selectedGroupId]);
 
   // Current active submission and item
   const activeSubmission = submissions.find((s) => s.id === selectedSubId) || submissions[0];
@@ -401,7 +428,7 @@ export default function EvaluatorGradingPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchSubmissions}
+            onClick={() => fetchSubmissions()}
             disabled={loading}
             className="px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
           >
@@ -452,6 +479,27 @@ export default function EvaluatorGradingPage() {
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
+
+            {/* Group Selector Dropdown */}
+            {classes.length > 0 && (
+              <div>
+                <select
+                  value={selectedGroupId}
+                  onChange={(e) => {
+                    const newGrp = e.target.value;
+                    setSelectedGroupId(newGrp);
+                  }}
+                  className="w-full p-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
+                >
+                  <option value="">-- Tất cả các nhóm --</option>
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name} ({cls.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Filter Tabs */}
             <div className="grid grid-cols-3 gap-1 pt-1 border-t border-slate-100">
@@ -532,8 +580,13 @@ export default function EvaluatorGradingPage() {
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-slate-500 truncate mb-2">
-                      {sub.candidateEmail}
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 truncate mb-2">
+                      <span className="truncate">{sub.candidateEmail}</span>
+                      {sub.groupCode && (
+                        <span className="font-mono text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1 rounded shrink-0 ml-1">
+                          {sub.groupCode}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 text-slate-600">
@@ -966,5 +1019,20 @@ export default function EvaluatorGradingPage() {
       </div>
       )}
     </div>
+  );
+}
+
+export default function EvaluatorGradingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-16 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
+          <RefreshCw className="w-5 h-5 animate-spin text-sky-600" />
+          <span>Đang nạp bàn chấm bài Rubric...</span>
+        </div>
+      }
+    >
+      <EvaluatorGradingContent />
+    </Suspense>
   );
 }

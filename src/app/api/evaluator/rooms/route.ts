@@ -203,6 +203,19 @@ export async function PATCH(request: Request) {
     }
 
     if (action === 'START') {
+      // Check participant count - Prevent starting with 0 participants
+      const { count: participantCount } = await supabase
+        .from('room_participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', roomId);
+
+      if (!participantCount || participantCount <= 0) {
+        return NextResponse.json(
+          { error: 'Không thể bắt đầu phòng thi khi chưa có thí sinh nào vào phòng' },
+          { status: 400 }
+        );
+      }
+
       const now = new Date().toISOString();
       // Set scheduled_start to now
       const { data: updatedRoom, error: updateError } = await supabase
@@ -262,6 +275,43 @@ export async function PATCH(request: Request) {
         room: updatedRoom,
       });
     }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const roomId = searchParams.get('roomId');
+
+    if (!roomId) {
+      return NextResponse.json({ error: 'Thiếu mã định danh phòng thi (roomId)' }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    }
+
+    const { error: deleteError } = await supabase
+      .from('exam_rooms')
+      .delete()
+      .eq('id', roomId)
+      .eq('created_by', user.id);
+
+    if (deleteError) {
+      console.error('Error deleting exam room:', deleteError);
+      return NextResponse.json({ error: 'Không thể xóa phòng thi' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Đã xóa phòng thi thành công' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });

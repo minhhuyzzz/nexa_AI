@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -19,6 +19,13 @@ import {
   ArrowLeft,
   Search,
   ExternalLink,
+  Settings,
+  Lock,
+  Unlock,
+  Maximize,
+  Minimize,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 interface Participant {
@@ -60,6 +67,11 @@ function LiveControlContent() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Host Control Toolbar states
+  const [isLocked, setIsLocked] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
   // Poll room & participant state every 2 seconds
   const fetchRoomState = useCallback(
     async (silent = false) => {
@@ -92,6 +104,43 @@ function LiveControlContent() {
     },
     [roomId]
   );
+
+  const playJoinChime = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {}
+  }, []);
+
+  const prevCountRef = useRef(participants.length);
+  useEffect(() => {
+    if (soundEnabled && participants.length > prevCountRef.current && prevCountRef.current > 0) {
+      playJoinChime();
+    }
+    prevCountRef.current = participants.length;
+  }, [participants.length, soundEnabled, playJoinChime]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+      }
+    }
+  };
 
   useEffect(() => {
     fetchRoomState();
@@ -270,8 +319,94 @@ function LiveControlContent() {
         </div>
       </header>
 
+      {/* Host Control Toolbar */}
+      <div className="p-3 my-3 rounded-md bg-white border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
+            <Settings className="w-3.5 h-3.5" strokeWidth={1.75} />
+          </div>
+          <span className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+            Cài Đặt Phòng Thi (Host Control)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* 1. Lock room toggle */}
+          <button
+            type="button"
+            onClick={() => setIsLocked(!isLocked)}
+            className={`px-3 py-1.5 rounded-md border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
+              isLocked
+                ? 'bg-rose-50 border-rose-300 text-rose-700'
+                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+            }`}
+            title={isLocked ? 'Phòng đang khóa, không nhận thêm thí sinh' : 'Khóa phòng thi để không cho thêm thí sinh vào'}
+          >
+            {isLocked ? (
+              <>
+                <Lock className="w-3.5 h-3.5 text-rose-600" strokeWidth={1.75} />
+                <span>Đã khóa cửa phòng</span>
+              </>
+            ) : (
+              <>
+                <Unlock className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+                <span>Khóa cửa phòng</span>
+              </>
+            )}
+          </button>
+
+          {/* 2. Fullscreen mode */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+            title="Chiếu toàn màn hình lên máy chiếu lớp học"
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
+                <span>Thu nhỏ màn hình</span>
+              </>
+            ) : (
+              <>
+                <Maximize className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
+                <span>Toàn màn hình máy chiếu</span>
+              </>
+            )}
+          </button>
+
+          {/* 3. Audio chime toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              if (next) playJoinChime();
+            }}
+            className={`px-3 py-1.5 rounded-md border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
+              soundEnabled
+                ? 'bg-sky-50 border-sky-200 text-sky-800'
+                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+            }`}
+            title="Âm báo khi có thí sinh mới vào phòng"
+          >
+            {soundEnabled ? (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
+                <span>Âm báo vào phòng: Bật</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                <span>Âm báo: Tắt</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Main Command Center Workspace */}
-      <main className="my-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="my-2 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left 7 Columns: Giant Projector & Master Controls */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
           <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs space-y-6 text-center">
@@ -344,6 +479,32 @@ function LiveControlContent() {
                 )}
               </button>
             </div>
+
+            {/* Direct Link Preview & 1-Click Test Button */}
+            <div className="p-3 rounded bg-slate-50 border border-slate-200 text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-between gap-2 text-left">
+              <div className="flex items-center gap-1.5 overflow-hidden truncate">
+                <span className="font-semibold text-slate-700 shrink-0">Link trực tiếp:</span>
+                <span className="font-mono text-sky-700 truncate select-all">
+                  {typeof window !== 'undefined'
+                    ? `${window.location.origin}/learner/live-pin?pin=${room?.roomCode || ''}`
+                    : `/learner/live-pin?pin=${room?.roomCode || ''}`}
+                </span>
+              </div>
+              <a
+                href={
+                  typeof window !== 'undefined'
+                    ? `${window.location.origin}/learner/live-pin?pin=${room?.roomCode || ''}`
+                    : `/learner/live-pin?pin=${room?.roomCode || ''}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-sky-700 text-[11px] font-semibold inline-flex items-center gap-1 shrink-0 transition-colors shadow-xs"
+                title="Mở thử trang thí sinh nhập PIN trong tab mới"
+              >
+                <ExternalLink className="w-3 h-3" strokeWidth={1.75} />
+                <span>Mở thử trong tab mới</span>
+              </a>
+            </div>
           </div>
 
           {/* Master Trigger: Start / End Exam */}
@@ -352,14 +513,20 @@ function LiveControlContent() {
               <div className="space-y-2">
                 <button
                   onClick={handleStartRoom}
-                  disabled={actionLoading}
-                  className="w-full py-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm sm:text-base inline-flex items-center justify-center gap-2.5 transition-colors shadow-xs disabled:opacity-50 tracking-wide"
+                  disabled={actionLoading || participants.length === 0}
+                  className="w-full py-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm sm:text-base inline-flex items-center justify-center gap-2.5 transition-colors shadow-xs disabled:opacity-50 tracking-wide disabled:cursor-not-allowed"
                 >
                   <Play className="w-5 h-5 fill-current" strokeWidth={1.75} />
-                  {actionLoading ? 'ĐANG PHÁT LỆNH BẮT ĐẦU...' : 'BẮT ĐẦU BÀI THI CHO CẢ LỚP'}
+                  {actionLoading
+                    ? 'ĐANG PHÁT LỆNH BẮT ĐẦU...'
+                    : participants.length === 0
+                    ? 'CHỜ THÍ SINH VÀO PHÒNG ĐỂ BẮT ĐẦU (0 THÍ SINH)'
+                    : 'BẮT ĐẦU BÀI THI CHO CẢ LỚP'}
                 </button>
                 <p className="text-[11px] text-center text-slate-500">
-                  Khi bấm bắt đầu, toàn bộ thí sinh trong phòng chờ sẽ tự động chuyển vào màn hình thi ngay lập tức.
+                  {participants.length === 0
+                    ? 'Phòng thi chưa có thí sinh nào tham gia. Yêu cầu ít nhất 1 thí sinh nhập mã PIN để bắt đầu.'
+                    : 'Khi bấm bắt đầu, toàn bộ thí sinh trong phòng chờ sẽ tự động chuyển vào màn hình thi ngay lập tức.'}
                 </p>
               </div>
             ) : (

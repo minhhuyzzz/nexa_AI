@@ -6,8 +6,11 @@ import { createClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 const updateProfileSchema = z.object({
-  fullName: z.string().trim().min(2, 'Họ và tên tối thiểu 2 ký tự').max(50, 'Họ và tên tối đa 50 ký tự').optional(),
-  username: z.string().trim().toLowerCase().regex(/^[a-z0-9_]{3,24}$/, 'Username phải từ 3-24 ký tự chữ thường, số hoặc gạch dưới').optional(),
+  nickname: z
+    .string()
+    .trim()
+    .min(2, 'Biệt danh phải có ít nhất 2 ký tự')
+    .max(30, 'Biệt danh tối đa 30 ký tự'),
 });
 
 export async function GET() {
@@ -24,9 +27,8 @@ export async function GET() {
     if (user) {
       isGoogleAuth =
         user.app_metadata?.provider === 'google' ||
-        user.identities?.some((id) => id.provider === 'google') ||
-        Boolean(user.user_metadata?.iss?.includes('google')) ||
-        (user.email?.endsWith('@gmail.com') ?? false);
+        (user.identities?.some((id) => id.provider === 'google') ?? false) ||
+        (user.user_metadata?.iss?.includes('google') ?? false);
     }
 
     if (!effectiveUserId) {
@@ -43,7 +45,7 @@ export async function GET() {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, full_name, username, email, avatar_url, role, points, login_streak, total_login_days')
+      .select('id, nickname, email, avatar_url, role, points, login_streak, total_login_days')
       .eq('id', effectiveUserId)
       .single();
 
@@ -82,8 +84,7 @@ export async function GET() {
     return NextResponse.json({
       profile: {
         id: profile.id,
-        fullName: profile.full_name || 'Học Viên Nexa',
-        username: profile.username || 'learner_nexa',
+        nickname: profile.nickname,
         email: profile.email || 'learner@nexa.edu.vn',
         avatarUrl: profile.avatar_url || null,
         role: profile.role,
@@ -136,13 +137,7 @@ export async function PATCH(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    if (validated.data.fullName !== undefined) {
-      updates.full_name = validated.data.fullName;
-    }
-
-    if (validated.data.username !== undefined) {
-      updates.username = validated.data.username;
-    }
+    updates.nickname = validated.data.nickname;
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -152,7 +147,7 @@ export async function PATCH(request: Request) {
     if (updateError) {
       if (updateError.code === '23505') {
         return NextResponse.json(
-          { error: 'Tên người dùng này đã tồn tại, vui lòng chọn tên khác.' },
+          { error: 'Biệt danh này đã có người sử dụng, vui lòng chọn tên khác.' },
           { status: 409 }
         );
       }

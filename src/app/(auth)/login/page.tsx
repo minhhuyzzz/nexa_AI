@@ -8,7 +8,7 @@ import { AlertCircle, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
@@ -23,13 +23,13 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Tài khoản hoặc mật khẩu không chính xác');
+        throw new Error(data.error || 'Email hoặc mật khẩu không chính xác');
       }
 
       router.push(data.redirectUrl || '/learner/dashboard');
@@ -79,22 +79,24 @@ export default function LoginPage() {
       {/* Login Form (Placed at Top) */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Tài khoản
+          <label htmlFor="login-email" className="block text-xs font-semibold text-slate-700 mb-1">
+            Địa chỉ email
           </label>
           <input
-            type="text"
+            id="login-email"
+            type="email"
+            autoComplete="email"
             required
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="Nhập email hoặc tên tài khoản"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com"
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-semibold text-slate-700">
+            <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700">
               Mật khẩu
             </label>
             <Link
@@ -105,7 +107,9 @@ export default function LoginPage() {
             </Link>
           </div>
           <input
+            id="login-password"
             type="password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

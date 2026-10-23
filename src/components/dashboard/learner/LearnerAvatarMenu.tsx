@@ -61,7 +61,7 @@ export function LearnerAvatarMenu() {
           if (user.email) setDisplayEmail(user.email);
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, username, avatar_url')
+            .select('full_name, nickname, avatar_url')
             .eq('id', user.id)
             .single();
 

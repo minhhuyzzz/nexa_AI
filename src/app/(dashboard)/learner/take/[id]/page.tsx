@@ -632,12 +632,29 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
         </div>
       )}
 
-      {/* Stage 2 Info Banner (Proctoring Relaxed) */}
+      {/* Context-Aware Smart Proctoring Banners */}
+      {activeStage === 'STAGE_1_OBJECTIVE' && (
+        <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 text-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <ShieldAlert className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
+            <span>
+              <strong>Chế độ Giám sát Nghiêm ngặt:</strong> Không rời khỏi màn hình hoặc chuyển tab trong suốt thời gian làm bài trắc nghiệm.
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 font-mono text-[11px] font-semibold">
+            <span className="text-slate-500">Số lần vi phạm:</span>
+            <span className={`px-2 py-0.5 rounded ${violationCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'}`}>
+              {violationCount}/3
+            </span>
+          </div>
+        </div>
+      )}
+
       {activeStage === 'STAGE_2_PRACTICAL' && (
         <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2.5">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
           <span>
-            <strong>Phần Thực hành:</strong> Bạn được phép mở ứng dụng ngoài (Canva, Figma, Google Drive, Sheets, Word...) để thao tác sản phẩm số, sau đó quay lại dán liên kết hoặc tải tệp đính kèm.
+            <strong>Phần Thực hành:</strong> Giám sát tự động tạm dừng. Bạn được phép mở ứng dụng ngoài (Canva, Figma, Google Drive, Sheets, Word...) để thao tác sản phẩm số, sau đó quay lại dán liên kết hoặc tải tệp đính kèm.
           </span>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const supabase = await createClient();
 
@@ -29,8 +29,50 @@ export async function GET() {
       );
     }
 
-    // 3. Fetch submissions (latest first)
-    const { data: rawSubmissions, error: subError } = await supabase
+    const { searchParams } = new URL(req.url);
+    const groupId = searchParams.get('groupId') || searchParams.get('classId');
+
+    // 3. Fetch evaluator's classes to build student-to-group map
+    const { data: rawClasses } = await supabase
+      .from('evaluator_classes')
+      .select(`
+        id,
+        name,
+        class_code,
+        class_members ( user_id )
+      `)
+      .eq('evaluator_id', user.id);
+
+    const groupMap = new Map<string, { id: string; name: string; code: string }>();
+    (rawClasses || []).forEach((c: any) => {
+      (c.class_members || []).forEach((m: any) => {
+        groupMap.set(m.user_id, { id: c.id, name: c.name, code: c.class_code });
+      });
+    });
+
+    let filterUserIds: string[] | null = null;
+    if (groupId) {
+      const matchedClass = (rawClasses || []).find((c: any) => c.id === groupId);
+      if (matchedClass) {
+        filterUserIds = (matchedClass.class_members || []).map((m: any) => m.user_id);
+      } else {
+        filterUserIds = [];
+      }
+    }
+
+    if (filterUserIds !== null && filterUserIds.length === 0) {
+      return NextResponse.json({
+        submissions: [],
+        classes: (rawClasses || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          code: c.class_code,
+        })),
+      });
+    }
+
+    // 4. Fetch submissions (latest first)
+    let subQuery = supabase
       .from('assessment_submissions')
       .select(`
         id,
@@ -53,13 +95,26 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(50);
 
+    if (filterUserIds && filterUserIds.length > 0) {
+      subQuery = subQuery.in('user_id', filterUserIds);
+    }
+
+    const { data: rawSubmissions, error: subError } = await subQuery;
+
     if (subError) {
       console.error('Error fetching submissions:', subError);
       return NextResponse.json({ error: 'Không thể tải danh sách bài làm' }, { status: 500 });
     }
 
     if (!rawSubmissions || rawSubmissions.length === 0) {
-      return NextResponse.json({ submissions: [] });
+      return NextResponse.json({
+        submissions: [],
+        classes: (rawClasses || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          code: c.class_code,
+        })),
+      });
     }
 
     // 4. Fetch candidate profiles
@@ -260,6 +315,8 @@ export async function GET() {
           };
         });
 
+      const userGroup = groupMap.get(sub.user_id);
+
       return {
         id: sub.id,
         userId: sub.user_id,
@@ -275,10 +332,20 @@ export async function GET() {
         submittedAt: sub.submitted_at || sub.created_at,
         timeSpentSeconds: sub.time_spent_seconds || 0,
         items: subAnswers,
+        groupId: userGroup?.id || null,
+        groupName: userGroup?.name || null,
+        groupCode: userGroup?.code || null,
       };
     });
 
-    return NextResponse.json({ submissions: formattedSubmissions });
+    return NextResponse.json({
+      submissions: formattedSubmissions,
+      classes: (rawClasses || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        code: c.class_code,
+      })),
+    });
   } catch (err) {
     console.error('Unexpected error in evaluator submissions:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

@@ -22,12 +22,13 @@ import {
 
 const assessmentNavItems = [
   { name: 'Tổng quan', href: '/evaluator/dashboard', icon: Home, exact: true },
-  { name: 'Lớp học & Học viên', href: '/evaluator/groups', icon: Users, exact: false },
+  { name: 'Quản lý Đề thi', href: '/evaluator/assessments', icon: FileCheck, exact: false },
   { name: 'Phòng thi trực tiếp', href: '/evaluator/live-room', icon: Radio, exact: false },
+  { name: 'Nhóm & Học viên', href: '/evaluator/groups', icon: Users, exact: false },
 ];
 
 const resourceNavItems = [
-  { name: 'Quản lý Đề thi', href: '/evaluator/assessments', icon: FileCheck, exact: false },
+  { name: 'Bàn chấm bài Rubric', href: '/evaluator/grading', icon: CheckSquare, exact: false },
   { name: 'Báo cáo & Thống kê', href: '/evaluator/analytics', icon: BarChart3, exact: false },
 ];
 
