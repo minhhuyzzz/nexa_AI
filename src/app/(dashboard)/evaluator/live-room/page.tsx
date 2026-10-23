@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Radio,
   Users,
@@ -13,10 +14,13 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
-  ChevronRight,
-  Sparkles,
+  Play,
+  Square,
   QrCode,
+  ArrowRight,
+  Maximize2,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 
 interface ExamRoom {
@@ -28,26 +32,29 @@ interface ExamRoom {
   durationMinutes: number;
   roomMode: string;
   isActive: boolean;
+  hasStarted?: boolean;
+  startedAt?: string;
   createdAt: string;
   participantCount: number;
 }
 
 export default function EvaluatorLiveRoomPage() {
+  const router = useRouter();
   const [rooms, setRooms] = useState<ExamRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrModalRoom, setQrModalRoom] = useState<ExamRoom | null>(null);
 
-  // New room modal / form state
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // Form state for creating room
+  const [isCreatingOpen, setIsCreatingOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newAssessmentId, setNewAssessmentId] = useState('a0000000-0000-0000-0000-000000000001');
   const [newMode, setNewMode] = useState<'OPEN' | 'GROUP_ONLY'>('OPEN');
-  const [creating, setCreating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const fetchRooms = useCallback(async () => {
-    setLoading(true);
+  const fetchRooms = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetch('/api/evaluator/rooms');
@@ -55,24 +62,26 @@ export default function EvaluatorLiveRoomPage() {
         const data = await res.json();
         setRooms(data.rooms || []);
       } else {
-        setRooms([]);
+        if (!silent) setRooms([]);
       }
     } catch {
-      setRooms([]);
+      if (!silent) setRooms([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchRooms();
+    const interval = setInterval(() => fetchRooms(true), 3000);
+    return () => clearInterval(interval);
   }, [fetchRooms]);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    setCreating(true);
+    setSubmitting(true);
     setError(null);
 
     try {
@@ -87,66 +96,66 @@ export default function EvaluatorLiveRoomPage() {
       });
 
       if (res.ok) {
-        setShowCreateModal(false);
+        const created = await res.json();
+        setIsCreatingOpen(false);
         setNewTitle('');
         await fetchRooms();
+        // Immediately navigate to fullscreen live control room
+        if (created?.room?.id) {
+          router.push(`/live/control?roomId=${created.room.id}`);
+        }
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Không thể tạo phòng thi trên hệ thống.');
+        setError(data.error || 'Không thể tạo phòng thi.');
       }
     } catch {
-      setError('Đã xảy ra lỗi kết nối khi tạo phòng thi. Vui lòng thử lại.');
+      setError('Đã xảy ra lỗi kết nối khi tạo phòng thi.');
     } finally {
-      setCreating(false);
+      setSubmitting(false);
     }
   };
 
-  const handleCopyLink = (pin: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${origin}/learner/live-pin?pin=${pin}`;
-    navigator.clipboard.writeText(link);
+  const handleCopyCode = (pin: string) => {
+    navigator.clipboard.writeText(pin);
     setCopiedCode(pin);
-    setTimeout(() => setCopiedCode(null), 2500);
+    setTimeout(() => setCopiedCode(null), 2000);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Top Banner */}
       <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-              PHÒNG THI TRỰC TIẾP
+              KHẢO THÍ TRỰC TIẾP
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Phòng Thi Trực Tiếp &amp; Mã PIN 6 Số
+            Quản Lý Phòng Thi Trực Tiếp
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Khởi tạo phiên thi thời gian thực, cấp phát mã PIN 6 số cho học viên tham gia đồng thời và giám sát tiến trình làm bài.
+            Khởi tạo phiên thi, cấp mã PIN và mở màn hình điều phối toàn màn hình cho kỳ thi thực tế.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setIsCreatingOpen((prev) => !prev)}
             className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-            Mở phòng thi mới
+            <span>Mở phòng thi mới</span>
           </button>
 
           <button
-            onClick={fetchRooms}
+            onClick={() => fetchRooms()}
             disabled={loading}
             className="p-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs shadow-xs transition-colors disabled:opacity-50"
-            title="Làm mới"
+            title="Làm mới danh sách"
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}
-              strokeWidth={1.75}
-            />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.75} />
           </button>
         </div>
       </div>
@@ -158,24 +167,24 @@ export default function EvaluatorLiveRoomPage() {
         </div>
       )}
 
-      {/* Create Room Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Radio className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                Thiết Lập Phòng Thi Trực Tiếp Mới
-              </h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-xs"
-              >
-                Đóng
-              </button>
-            </div>
+      {/* Inline Room Creation Form (No popup modal!) */}
+      {isCreatingOpen && (
+        <div className="p-5 rounded-md bg-white border border-sky-300 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Radio className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+              <span>Thiết Lập Phòng Thi Trực Tiếp Mới</span>
+            </h2>
+            <button
+              onClick={() => setIsCreatingOpen(false)}
+              className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            <form onSubmit={handleCreateRoom} className="space-y-4 text-xs">
+          <form onSubmit={handleCreateRoom} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="font-semibold text-slate-800 block mb-1">
                   Tên phòng thi / Phiên khảo thí:
@@ -183,7 +192,7 @@ export default function EvaluatorLiveRoomPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: Khảo thí Năng lực Số Lớp Tin học K48"
+                  placeholder="Ví dụ: Đánh giá Năng lực Số Lớp Tin học K48"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
@@ -204,66 +213,65 @@ export default function EvaluatorLiveRoomPage() {
                   </option>
                 </select>
               </div>
+            </div>
 
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">
-                  Chế độ tham gia:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewMode('OPEN')}
-                    className={`p-3 rounded border text-left transition-colors ${
-                      newMode === 'OPEN'
-                        ? 'bg-sky-50 border-sky-600 text-sky-900 font-semibold'
-                        : 'bg-white border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <div className="text-xs">MỞ TỰ DO (OPEN)</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">
-                      Bất kỳ ai có mã PIN 6 số đều có thể vào thi.
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setNewMode('GROUP_ONLY')}
-                    className={`p-3 rounded border text-left transition-colors ${
-                      newMode === 'GROUP_ONLY'
-                        ? 'bg-sky-50 border-sky-600 text-sky-900 font-semibold'
-                        : 'bg-white border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <div className="text-xs">THEO NHÓM (GROUP)</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">
-                      Chỉ học viên thuộc danh sách lớp phụ trách.
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <div>
+              <label className="font-semibold text-slate-800 block mb-1">Chế độ tham gia:</label>
+              <div className="grid grid-cols-2 gap-3 max-w-md">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => setNewMode('OPEN')}
+                  className={`p-3 rounded-md border text-left transition-colors ${
+                    newMode === 'OPEN'
+                      ? 'bg-sky-50 border-sky-600 text-sky-900 font-semibold'
+                      : 'bg-white border-slate-200 text-slate-700'
+                  }`}
                 >
-                  Hủy bỏ
+                  <div className="text-xs">MỞ TỰ DO (OPEN)</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Bất kỳ ai có mã PIN đều có thể vào phòng.
+                  </div>
                 </button>
+
                 <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50"
+                  type="button"
+                  onClick={() => setNewMode('GROUP_ONLY')}
+                  className={`p-3 rounded-md border text-left transition-colors ${
+                    newMode === 'GROUP_ONLY'
+                      ? 'bg-sky-50 border-sky-600 text-sky-900 font-semibold'
+                      : 'bg-white border-slate-200 text-slate-700'
+                  }`}
                 >
-                  {creating ? 'Đang tạo phòng...' : 'Kích hoạt phòng thi'}
+                  <div className="text-xs">THEO NHÓM (GROUP)</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Chỉ học viên thuộc danh sách được giao.
+                  </div>
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCreatingOpen(false)}
+                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {submitting ? 'Đang kích hoạt...' : 'Kích hoạt & Vào Màn Hình Live'}
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
-      {/* Rooms List */}
+      {/* Active Rooms Listing */}
       <div className="space-y-4">
         <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
           Phòng Thi Đang Mở ({rooms.length})
@@ -272,7 +280,7 @@ export default function EvaluatorLiveRoomPage() {
         {loading ? (
           <div className="p-12 text-center bg-white rounded-md border border-slate-200 text-xs text-slate-500">
             <RefreshCw className="w-5 h-5 text-sky-600 animate-spin mx-auto mb-2" strokeWidth={1.75} />
-            Đang tải dữ liệu phòng thi trực tiếp...
+            Đang tải dữ liệu phòng thi...
           </div>
         ) : rooms.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-md border border-slate-200 space-y-3">
@@ -280,7 +288,7 @@ export default function EvaluatorLiveRoomPage() {
             <div>
               <h3 className="text-sm font-bold text-slate-800">Chưa có phòng thi nào đang mở</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Bấm nút &ldquo;Mở phòng thi mới&rdquo; để nhận mã PIN 6 số và bắt đầu buổi khảo thí trực tuyến.
+                Bấm nút &ldquo;Mở phòng thi mới&rdquo; để nhận mã PIN 6 số và chuyển vào màn hình điều phối live.
               </p>
             </div>
           </div>
@@ -289,84 +297,85 @@ export default function EvaluatorLiveRoomPage() {
             {rooms.map((room) => (
               <div
                 key={room.id}
-                className="p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-5"
+                className="p-5 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-4"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                      PHÒNG ĐANG HOẠT ĐỘNG
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      Chế độ: {room.roomMode}
-                    </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    {room.hasStarted ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-600 animate-pulse" />
+                        ĐANG THI (IN PROGRESS)
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                        PHÒNG CHỜ (SẴN SÀNG)
+                      </span>
+                    )}
+                    <span className="text-[11px] text-slate-400">Chế độ: {room.roomMode}</span>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900 mb-1">{room.title}</h3>
-                  <div className="text-xs text-slate-500 mb-4">{room.assessmentTitle}</div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{room.title}</h3>
+                    <div className="text-xs text-slate-500 mt-0.5">{room.assessmentTitle}</div>
+                  </div>
 
-                  {/* 6-Digit PIN Prominent Display (JetBrains Mono) */}
-                  <div className="p-4 rounded-md bg-slate-50 border border-slate-200 text-center space-y-1">
-                    <span className="text-[11px] text-slate-500 uppercase tracking-widest block">
-                      MÃ PIN 6 SỐ THAM GIA
-                    </span>
-                    <div className="text-3xl sm:text-4xl font-extrabold tracking-widest text-sky-600 tabular-nums">
-                      {room.roomCode.slice(0, 3)} {room.roomCode.slice(3)}
+                  {/* 6-Digit PIN Banner */}
+                  <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-medium">
+                        MÃ PIN 6 SỐ
+                      </span>
+                      <span className="text-2xl font-extrabold text-sky-600 font-mono tracking-widest">
+                        {room.roomCode.slice(0, 3)} {room.roomCode.slice(3)}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-slate-400 block">
-                      Học viên truy cập /learner/live-pin và nhập mã trên
-                    </span>
-                  </div>
-                </div>
-
-                {/* Footer details & copy button */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-3 text-slate-600 text-[11px]">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                      {room.participantCount} thí sinh
-                    </span>
-                    <span>&bull;</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                      {room.durationMinutes} phút
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setQrModalRoom(room)}
-                      className="px-3 py-1.5 rounded-md bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
-                      title="Mở màn hình chiếu mã QR cho thí sinh quét"
-                    >
-                      <QrCode className="w-3.5 h-3.5" strokeWidth={1.75} />
-                      Chiếu QR
-                    </button>
 
                     <button
-                      onClick={() => handleCopyLink(room.roomCode)}
-                      className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 shadow-xs transition-colors"
+                      onClick={() => handleCopyCode(room.roomCode)}
+                      className="px-3 py-1.5 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1 transition-colors"
                     >
                       {copiedCode === room.roomCode ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
-                          <span className="text-emerald-700 font-semibold">Đã chép</span>
+                          <span className="text-emerald-700">Đã chép</span>
                         </>
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                          Sao chép PIN
+                          <span>Sao chép</span>
                         </>
                       )}
                     </button>
+                  </div>
+                </div>
 
-                    <Link
-                      href="/evaluator/grading"
-                      className="px-3 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold inline-flex items-center gap-1 transition-colors shadow-xs"
+                {/* Primary Action: Direct Jump to Fullscreen Live Control Room */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <Link
+                    href={`/live/control?roomId=${room.id}`}
+                    className="w-full py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    <span>VÀO PHÒNG ĐIỀU PHỐI TOÀN MÀN HÌNH (LIVE CONTROL)</span>
+                  </Link>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                    <div className="flex items-center gap-2 font-mono">
+                      <Users className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                      <span>{room.participantCount} thí sinh</span>
+                      <span>&bull;</span>
+                      <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                      <span>{room.durationMinutes} phút</span>
+                    </div>
+
+                    <button
+                      onClick={() => setQrModalRoom(room)}
+                      className="text-xs text-slate-600 hover:text-sky-600 font-medium inline-flex items-center gap-1"
                     >
-                      Bàn chấm
-                      <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    </Link>
+                      <QrCode className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      <span>Xem mã QR</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -375,64 +384,38 @@ export default function EvaluatorLiveRoomPage() {
         )}
       </div>
 
-      {/* QR Code Classroom Projection Modal */}
+      {/* Projection Modal if needed from dashboard */}
       {qrModalRoom && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-8 max-w-lg w-full text-center space-y-6">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                <span>PHÒNG THI ĐANG MỞ • {qrModalRoom.participantCount} THÍ SINH ĐÃ VÀO</span>
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-2">
-                {qrModalRoom.title}
-              </h2>
-              <p className="text-xs text-slate-500">
-                {qrModalRoom.assessmentTitle} ({qrModalRoom.durationMinutes} phút)
-              </p>
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-sm w-full text-center space-y-4">
+            <h3 className="text-base font-bold text-slate-900">{qrModalRoom.title}</h3>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+                typeof window !== 'undefined'
+                  ? `${window.location.origin}/learner/live-pin?pin=${qrModalRoom.roomCode}`
+                  : `https://nexa.edu.vn/learner/live-pin?pin=${qrModalRoom.roomCode}`
+              )}`}
+              alt="QR Code Phòng thi"
+              width={200}
+              height={200}
+              className="rounded mx-auto border border-slate-200 p-2"
+            />
+            <div className="text-3xl font-extrabold text-sky-600 font-mono tracking-widest">
+              {qrModalRoom.roomCode.slice(0, 3)} {qrModalRoom.roomCode.slice(3)}
             </div>
-
-            {/* QR Code Display */}
-            <div className="p-4 bg-slate-50 rounded-md border border-slate-200 inline-block shadow-xs">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-                  `https://nexa.edu.vn/learner/live-pin?code=${qrModalRoom.roomCode}`
-                )}`}
-                alt="QR Code Phòng thi"
-                width={240}
-                height={240}
-                className="rounded-md mx-auto"
-              />
-            </div>
-
-            {/* Large PIN */}
-            <div className="space-y-1">
-              <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
-                HOẶC NHẬP MÃ PIN 6 SỐ
-              </div>
-              <div className="text-4xl font-extrabold tracking-widest text-sky-600 font-mono">
-                {qrModalRoom.roomCode.slice(0, 3)} {qrModalRoom.roomCode.slice(3)}
-              </div>
-              <div className="text-xs text-slate-500">
-                Quét camera điện thoại hoặc vào <span className="font-semibold text-slate-700">/learner/live-pin</span>
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="pt-2 flex items-center justify-center gap-3">
-              <button
-                onClick={() => handleCopyLink(qrModalRoom.roomCode)}
-                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Link
+                href={`/live/control?roomId=${qrModalRoom.id}`}
+                className="px-4 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700"
               >
-                <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>Sao chép đường dẫn thi</span>
-              </button>
-
+                Vào phòng điều phối
+              </Link>
               <button
                 onClick={() => setQrModalRoom(null)}
-                className="px-5 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50"
               >
-                Đóng màn chiếu
+                Đóng
               </button>
             </div>
           </div>

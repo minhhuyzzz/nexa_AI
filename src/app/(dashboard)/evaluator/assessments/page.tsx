@@ -99,7 +99,7 @@ export default function EvaluatorAssessmentsPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/evaluator/exams"
+            href="/evaluator/assessments/new"
             className="flex items-center gap-2 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" strokeWidth={1.75} />
@@ -168,7 +168,7 @@ export default function EvaluatorAssessmentsPage() {
                 : 'Chưa có bài khảo thí nào trong hệ thống.'}
             </p>
             <Link
-              href="/evaluator/exams"
+              href="/evaluator/assessments/new"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />

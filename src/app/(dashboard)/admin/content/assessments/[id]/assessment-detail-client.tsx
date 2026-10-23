@@ -83,8 +83,9 @@ export function AdminAssessmentDetailClient({
   const [assessment, setAssessment] = useState<AssessmentDetailData>(initialAssessment);
   const [items, setItems] = useState<AssessmentItemDetail[]>(initialAssessment.assessment_items || []);
 
-  // Modal: Add / Edit Question
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  // Inline Add / Edit Question State (No popup modal)
+  const [isAddingInline, setIsAddingInline] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<AssessmentItemDetail | null>(null);
 
   // Form State for Question
@@ -163,8 +164,9 @@ export function AdminAssessmentDetailClient({
     }
   };
 
-  // Open Create Question Modal
+  // Open Inline Add Question Card
   const handleOpenAddQuestion = () => {
+    setEditingItemId(null);
     setEditingItem(null);
     setQType('MCQ');
     setQIsMultiComp(false);
@@ -179,11 +181,13 @@ export function AdminAssessmentDetailClient({
       { content: '', is_correct: false, explanation: '' },
     ]);
     setQRubricGuide('');
-    setIsQuestionModalOpen(true);
+    setIsAddingInline(true);
   };
 
-  // Open Edit Question Modal
+  // Open Inline Edit Question Card
   const handleOpenEditQuestion = (item: AssessmentItemDetail) => {
+    setIsAddingInline(false);
+    setEditingItemId(item.id);
     setEditingItem(item);
     const resolvedType =
       item.type === 'DIGITAL_EVIDENCE' || item.type === 'PRACTICAL_TASK'
@@ -217,8 +221,12 @@ export function AdminAssessmentDetailClient({
         { content: '', is_correct: false, explanation: '' },
       ]);
     }
+  };
 
-    setIsQuestionModalOpen(true);
+  const handleCloseInline = () => {
+    setIsAddingInline(false);
+    setEditingItemId(null);
+    setEditingItem(null);
   };
 
   // Save Question (Create or Edit)
@@ -326,7 +334,7 @@ export function AdminAssessmentDetailClient({
         showToast('Đã thêm câu hỏi mới vào đề thi!');
       }
 
-      setIsQuestionModalOpen(false);
+      handleCloseInline();
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi lưu câu hỏi');
     } finally {
@@ -422,6 +430,301 @@ export function AdminAssessmentDetailClient({
       setIsSubmittingImport(false);
     }
   };
+
+  const renderInlineQuestionForm = (isNew: boolean, itemIndex?: number) => (
+    <div className="p-5 rounded-md border-2 border-sky-500 bg-white shadow-xs space-y-4 animate-in fade-in slide-in-from-top-1">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-sky-600 text-white">
+            {isNew ? '+ THÊM CÂU HỎI MỚI (INLINE)' : `CHỈNH SỬA CÂU HỎI #${(itemIndex ?? 0) + 1}`}
+          </span>
+          <span className="text-xs text-slate-500">Soạn trực tiếp không qua bảng popup</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleCloseInline}
+          className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          title="Hủy bỏ"
+        >
+          <X className="w-4 h-4" strokeWidth={1.75} />
+        </button>
+      </div>
+
+      <form onSubmit={handleSaveQuestion} className="space-y-4 text-xs">
+        {/* Type selection */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-semibold text-slate-800 mb-1">
+              Hình thức câu hỏi:
+            </label>
+            <div className="grid grid-cols-3 gap-1.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setQType('MCQ')}
+                className={`py-1.5 px-2 rounded border text-[11px] font-semibold transition-colors ${
+                  qType === 'MCQ'
+                    ? 'bg-sky-50 border-sky-300 text-sky-800'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Trắc Nghiệm
+              </button>
+              <button
+                type="button"
+                onClick={() => setQType('SCENARIO')}
+                className={`py-1.5 px-2 rounded border text-[11px] font-semibold transition-colors ${
+                  qType === 'SCENARIO'
+                    ? 'bg-amber-50 border-amber-300 text-amber-800'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Tình Huống
+              </button>
+              <button
+                type="button"
+                onClick={() => setQType('PRACTICAL_TASK')}
+                className={`py-1.5 px-2 rounded border text-[11px] font-semibold transition-colors ${
+                  qType === 'PRACTICAL_TASK'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Thực Hành
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-800 mb-1">
+              Phân loại năng lực:
+            </label>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setQIsMultiComp(false)}
+                className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold transition-colors ${
+                  !qIsMultiComp
+                    ? 'bg-sky-50 border-sky-300 text-sky-800'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Đơn Năng Lực (1 Skill)
+              </button>
+              <button
+                type="button"
+                onClick={() => setQIsMultiComp(true)}
+                className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold transition-colors ${
+                  qIsMultiComp
+                    ? 'bg-amber-50 border-amber-300 text-amber-800'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Đa Năng Lực (Nhiều Skill)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Competencies & Points */}
+        {!qIsMultiComp ? (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block font-semibold text-slate-800 mb-1">
+                Kỹ Năng Mục Tiêu (DigComp 3.0) *
+              </label>
+              <select
+                value={qSkillCode}
+                onChange={(e) => setQSkillCode(e.target.value)}
+                className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 bg-white text-xs focus:outline-none focus:border-sky-600"
+              >
+                {competenciesList.map((c) => (
+                  <option key={c.id} value={c.skill_code}>
+                    [{c.skill_code}] {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-800 mb-1">Điểm Số *</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={qPoints}
+                onChange={(e) => setQPoints(Number(e.target.value))}
+                className="w-full px-3 py-2 rounded border border-slate-200 font-mono text-slate-900 text-xs focus:outline-none focus:border-sky-600"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block font-semibold text-slate-800">
+                Chọn Các Kỹ Năng Mục Tiêu Cho Câu Hỏi Đa Năng Lực *
+              </label>
+              <div className="w-24">
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={qPoints}
+                  onChange={(e) => setQPoints(Number(e.target.value))}
+                  placeholder="Điểm"
+                  className="w-full px-2 py-1 rounded border border-slate-200 font-mono text-slate-900 text-xs text-right"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto p-2 border border-slate-200 rounded">
+              {competenciesList.map((c) => {
+                const isChecked = qTargetCompetencies.includes(c.skill_code);
+                return (
+                  <label
+                    key={c.id}
+                    className={`flex items-center gap-1.5 p-1.5 rounded cursor-pointer text-[11px] border ${
+                      isChecked
+                        ? 'bg-amber-50/70 border-amber-300 text-amber-950 font-semibold'
+                        : 'bg-white border-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setQTargetCompetencies((prev) => [...prev, c.skill_code]);
+                        } else {
+                          setQTargetCompetencies((prev) =>
+                            prev.filter((code) => code !== c.skill_code)
+                          );
+                        }
+                      }}
+                      className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500"
+                    />
+                    <span className="font-mono">[{c.skill_code}]</span>
+                    <span className="truncate">{c.title}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Prompt */}
+        <div>
+          <label className="block font-semibold text-slate-800 mb-1">
+            Nội Dung Câu Hỏi / Đề Bài Tình Huống *
+          </label>
+          <textarea
+            rows={3}
+            required
+            autoFocus={isNew}
+            value={qPrompt}
+            onChange={(e) => setQPrompt(e.target.value)}
+            placeholder="Nhập nội dung câu hỏi, kịch bản bối cảnh hoặc yêu cầu thực hành chi tiết..."
+            className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-sky-600"
+          />
+        </div>
+
+        {/* MCQ / Scenario Options */}
+        {(qType === 'MCQ' || qType === 'SCENARIO') && (
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <span className="font-semibold text-slate-800 block">
+              Các Lựa Chọn Đáp Án (Chọn nút tròn cho đáp án đúng) *
+            </span>
+
+            {qOptions.map((opt, optIndex) => {
+              const letter = String.fromCharCode(65 + optIndex);
+              return (
+                <div key={optIndex} className="space-y-1 p-2.5 rounded border border-slate-200 bg-slate-50/50">
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                      <input
+                        type="radio"
+                        name={`correct_radio_${isNew ? 'new' : editingItemId}`}
+                        checked={opt.is_correct}
+                        onChange={() => {
+                          setQOptions((prev) =>
+                            prev.map((o, i) => ({ ...o, is_correct: i === optIndex }))
+                          );
+                        }}
+                        className="w-3.5 h-3.5 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="font-mono font-bold text-slate-800">{letter}.</span>
+                    </label>
+
+                    <input
+                      type="text"
+                      value={opt.content}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setQOptions((prev) =>
+                          prev.map((o, i) => (i === optIndex ? { ...o, content: val } : o))
+                        );
+                      }}
+                      placeholder={`Nội dung lựa chọn ${letter}...`}
+                      className="flex-1 px-3 py-1.5 rounded border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-sky-600"
+                    />
+                  </div>
+
+                  {opt.is_correct && (
+                    <div className="pl-7 pt-1">
+                      <input
+                        type="text"
+                        value={opt.explanation}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setQOptions((prev) =>
+                            prev.map((o, i) => (i === optIndex ? { ...o, explanation: val } : o))
+                          );
+                        }}
+                        placeholder="Giải thích sư phạm vì sao đáp án này đúng (tùy chọn)..."
+                        className="w-full px-2.5 py-1 rounded border border-slate-200 bg-white text-[11px] text-slate-700 focus:outline-none focus:border-emerald-600"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Practical Rubric Guide */}
+        {qType === 'PRACTICAL_TASK' && (
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <label className="block font-semibold text-slate-800">
+              Hướng Dẫn Chấm &amp; Tiêu Chí Rubric (Dành cho AI &amp; Giảng viên) *
+            </label>
+            <textarea
+              rows={4}
+              value={qRubricGuide}
+              onChange={(e) => setQRubricGuide(e.target.value)}
+              placeholder="Ví dụ: 1. Đầy đủ các tiêu chí bảo mật (40%); 2. Cấu trúc trình bày khoa học (30%); 3. Thuyết minh rõ ràng giải pháp thực hiện (30%)..."
+              className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-sky-600"
+            />
+          </div>
+        )}
+
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleCloseInline}
+            className="px-4 py-2 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            type="submit"
+            disabled={isSavingQuestion}
+            className="px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 font-semibold text-xs transition-colors shadow-xs disabled:opacity-50"
+          >
+            {isSavingQuestion ? 'Đang lưu...' : isNew ? 'Thêm Vào Đề Thi' : 'Cập Nhật Câu Hỏi'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -581,18 +884,21 @@ export function AdminAssessmentDetailClient({
           </div>
         </div>
 
-        {items.length === 0 ? (
+        {/* Inline editor card for creating new question */}
+        {isAddingInline && renderInlineQuestionForm(true)}
+
+        {items.length === 0 && !isAddingInline ? (
           <div className="p-12 rounded-md border border-dashed border-slate-200 bg-white text-center space-y-3">
             <FileCheck className="w-8 h-8 text-slate-300 mx-auto" strokeWidth={1.75} />
             <h3 className="text-xs font-bold text-slate-800">Đề thi chưa có câu hỏi nào</h3>
             <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              Bạn có thể bấm &quot;Thêm Câu Hỏi Mới&quot; để soạn từng câu, hoặc bấm &quot;Nạp Tệp Vào Đề&quot; để nhập hàng loạt từ Excel/CSV trong vài giây.
+              Bạn có thể bấm &quot;Thêm Câu Hỏi Mới&quot; để soạn trực tiếp tại đây, hoặc bấm &quot;Nạp Tệp Vào Đề&quot; để nhập hàng loạt từ Excel/CSV trong vài giây.
             </p>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={handleOpenAddQuestion}
-                className="px-3.5 py-1.5 rounded bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700"
+                className="px-3.5 py-1.5 rounded bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 shadow-xs"
               >
                 + Soạn Câu Hỏi Đầu Tiên
               </button>
@@ -608,6 +914,14 @@ export function AdminAssessmentDetailClient({
         ) : (
           <div className="space-y-3">
             {items.map((item, idx) => {
+              if (editingItemId === item.id) {
+                return (
+                  <div key={item.id}>
+                    {renderInlineQuestionForm(false, idx)}
+                  </div>
+                );
+              }
+
               const itemTypeLabel =
                 item.type === 'MCQ'
                   ? 'Trắc Nghiệm'
@@ -753,285 +1067,6 @@ export function AdminAssessmentDetailClient({
           </div>
         )}
       </div>
-
-      {/* Modal: Thêm / Sửa Câu Hỏi */}
-      {isQuestionModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">
-                  {editingItem ? 'Chỉnh Sửa Câu Hỏi' : 'Thêm Câu Hỏi Mới Vào Đề Khảo Thí'}
-                </h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Lựa chọn ma trận Trắc nghiệm / Tình huống / Thực hành và gán kỹ năng chuẩn DigComp.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsQuestionModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-4 h-4" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveQuestion} className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
-              {/* Type and Multi-competency selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">
-                    Dạng Câu Hỏi *
-                  </label>
-                  <select
-                    value={qType}
-                    onChange={(e) => setQType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 bg-white text-xs focus:outline-hidden focus:border-sky-600"
-                  >
-                    <option value="MCQ">Trắc nghiệm Khách quan (MCQ)</option>
-                    <option value="SCENARIO">Kịch bản Tình huống (Scenario-based)</option>
-                    <option value="PRACTICAL_TASK">Nhiệm vụ Thực hành Số (Nộp tệp + Link + Thuyết minh)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">
-                    Phân Loại Năng Lực *
-                  </label>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setQIsMultiComp(false)}
-                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold transition-colors ${
-                        !qIsMultiComp
-                          ? 'bg-sky-50 border-sky-300 text-sky-800'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      Đơn Năng Lực (1 Skill)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setQIsMultiComp(true)}
-                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold transition-colors ${
-                        qIsMultiComp
-                          ? 'bg-amber-50 border-amber-300 text-amber-800'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      Đa Năng Lực (Nhiều Skill)
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Competency mapping */}
-              {!qIsMultiComp ? (
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2">
-                    <label className="block font-semibold text-slate-800 mb-1">
-                      Kỹ Năng Mục Tiêu (DigComp 3.0) *
-                    </label>
-                    <select
-                      value={qSkillCode}
-                      onChange={(e) => setQSkillCode(e.target.value)}
-                      className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 bg-white text-xs focus:outline-hidden focus:border-sky-600"
-                    >
-                      {competenciesList.map((c) => (
-                        <option key={c.id} value={c.skill_code}>
-                          [{c.skill_code}] {c.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-800 mb-1">
-                      Điểm Số *
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={qPoints}
-                      onChange={(e) => setQPoints(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded border border-slate-200 font-mono text-slate-900 text-xs focus:outline-hidden focus:border-sky-600"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-slate-800">
-                      Chọn Các Kỹ Năng Mục Tiêu Cho Câu Hỏi Đa Năng Lực *
-                    </label>
-                    <div className="w-24">
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={qPoints}
-                        onChange={(e) => setQPoints(Number(e.target.value))}
-                        placeholder="Điểm"
-                        className="w-full px-2 py-1 rounded border border-slate-200 font-mono text-slate-900 text-xs text-right"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto p-2 border border-slate-200 rounded">
-                    {competenciesList.map((c) => {
-                      const isChecked = qTargetCompetencies.includes(c.skill_code);
-                      return (
-                        <label
-                          key={c.id}
-                          className={`flex items-center gap-1.5 p-1.5 rounded cursor-pointer text-[11px] border ${
-                            isChecked
-                              ? 'bg-amber-50/70 border-amber-300 text-amber-950 font-semibold'
-                              : 'bg-white border-slate-100 text-slate-600'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setQTargetCompetencies((prev) => [...prev, c.skill_code]);
-                              } else {
-                                setQTargetCompetencies((prev) =>
-                                  prev.filter((code) => code !== c.skill_code)
-                                );
-                              }
-                            }}
-                            className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500"
-                          />
-                          <span className="font-mono">[{c.skill_code}]</span>
-                          <span className="truncate">{c.title}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Question Prompt */}
-              <div>
-                <label className="block font-semibold text-slate-800 mb-1">
-                  Nội Dung Câu Hỏi / Đề Bài Tình Huống *
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={qPrompt}
-                  onChange={(e) => setQPrompt(e.target.value)}
-                  placeholder="Nhập nội dung câu hỏi, kịch bản bối cảnh hoặc yêu cầu thực hành chi tiết..."
-                  className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-sky-600"
-                />
-              </div>
-
-              {/* MCQ / Scenario Options */}
-              {(qType === 'MCQ' || qType === 'SCENARIO') && (
-                <div className="space-y-3 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">
-                      Các Lựa Chọn Đáp Án (Đánh dấu nút tròn cho đáp án đúng) *
-                    </span>
-                  </div>
-
-                  {qOptions.map((opt, idx) => {
-                    const letter = String.fromCharCode(65 + idx);
-                    return (
-                      <div key={idx} className="space-y-1 p-2.5 rounded border border-slate-200 bg-slate-50/50">
-                        <div className="flex items-center gap-2">
-                          <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
-                            <input
-                              type="radio"
-                              name="correct_option_radio"
-                              checked={opt.is_correct}
-                              onChange={() => {
-                                setQOptions((prev) =>
-                                  prev.map((o, i) => ({ ...o, is_correct: i === idx }))
-                                );
-                              }}
-                              className="w-3.5 h-3.5 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <span className="font-mono font-bold text-slate-800">{letter}.</span>
-                          </label>
-
-                          <input
-                            type="text"
-                            value={opt.content}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setQOptions((prev) =>
-                                prev.map((o, i) => (i === idx ? { ...o, content: val } : o))
-                              );
-                            }}
-                            placeholder={`Nội dung lựa chọn ${letter}...`}
-                            className="flex-1 px-3 py-1.5 rounded border border-slate-200 bg-white text-slate-900 text-xs focus:outline-hidden focus:border-sky-600"
-                          />
-                        </div>
-
-                        {opt.is_correct && (
-                          <div className="pl-7 pt-1">
-                            <input
-                              type="text"
-                              value={opt.explanation}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setQOptions((prev) =>
-                                  prev.map((o, i) => (i === idx ? { ...o, explanation: val } : o))
-                                );
-                              }}
-                              placeholder="Giải thích sư phạm vì sao đáp án này đúng (tùy chọn)..."
-                              className="w-full px-2.5 py-1 rounded border border-slate-200 bg-white text-[11px] text-slate-700 focus:outline-hidden focus:border-emerald-600"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Practical Rubric Guide */}
-              {qType === 'PRACTICAL_TASK' && (
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <label className="block font-semibold text-slate-800">
-                    Hướng Dẫn Chấm &amp; Tiêu Chí Rubric (Dành cho AI &amp; Giảng viên) *
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={qRubricGuide}
-                    onChange={(e) => setQRubricGuide(e.target.value)}
-                    placeholder="Ví dụ: 1. Đầy đủ các tiêu chí bảo mật (40%); 2. Cấu trúc trình bày khoa học (30%); 3. Thuyết minh rõ ràng giải pháp thực hiện (30%)..."
-                    className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-sky-600"
-                  />
-                  <p className="text-[10px] text-slate-500 italic">
-                    AI Gateway sẽ dựa vào rubric này để trích dẫn bằng chứng và tính điểm tự động khi thí sinh nộp bài.
-                  </p>
-                </div>
-              )}
-
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsQuestionModalOpen(false)}
-                  className="px-4 py-2 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingQuestion}
-                  className="px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 font-semibold text-xs transition-colors shadow-xs disabled:opacity-50"
-                >
-                  {isSavingQuestion ? 'Đang lưu...' : editingItem ? 'Cập Nhật Câu Hỏi' : 'Thêm Vào Đề Thi'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Modal: Nạp Tệp Hàng Loạt Vào Đề Thi Này */}
       {isImportModalOpen && (

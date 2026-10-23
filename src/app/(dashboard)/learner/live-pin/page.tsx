@@ -39,17 +39,23 @@ function LivePinContent() {
 
       const data = await res.json();
       if (!res.ok) {
-        // Prototype fallback for testing
-        console.warn('Room join API returned error, proceeding in prototype mode:', data.error);
-        router.push(`/learner/take/asm-01?roomId=room-demo&pin=${cleanPin}`);
+        setError(data.error || 'Mã PIN phòng thi không hợp lệ hoặc không tồn tại');
         return;
       }
 
-      // Redirect to exam taking page
-      router.push(`/learner/take/${data.assessmentId || 'asm-01'}?roomId=${data.roomId}&pin=${cleanPin}`);
-    } catch {
-      // Prototype fallback
-      router.push(`/learner/take/asm-01?roomId=room-demo&pin=${cleanPin}`);
+      // Late Joiner Check: If room has already started, bypass waiting room directly into the exam!
+      if (data.hasStarted) {
+        router.push(`/learner/take/${data.assessmentId || 'asm-01'}?roomId=${data.roomId}&pin=${cleanPin}`);
+      } else {
+        // Room is waiting for evaluator to start -> Route to Fullscreen Space Light Waiting Room
+        router.push(
+          `/live/waiting-room?pin=${cleanPin}&roomId=${data.roomId}&assessmentId=${data.assessmentId || 'asm-01'}`
+        );
+      }
+    } catch (err) {
+      setError('Lỗi kết nối khi tham gia phòng thi. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -27,8 +27,7 @@ const assessmentNavItems = [
 ];
 
 const resourceNavItems = [
-  { name: 'Ngân hàng câu hỏi', href: '/evaluator/item-bank', icon: Database, exact: false },
-  { name: 'Đề thi', href: '/evaluator/exams', icon: FileCheck, exact: false },
+  { name: 'Quản lý Đề thi', href: '/evaluator/assessments', icon: FileCheck, exact: false },
   { name: 'Báo cáo & Thống kê', href: '/evaluator/analytics', icon: BarChart3, exact: false },
 ];
 

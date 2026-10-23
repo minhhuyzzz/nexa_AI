@@ -210,3 +210,58 @@
     scrollbar-color: #3f3f46 transparent;
   }
 }
+
+/* Organic Floating Drift Animations for Live Waiting Room Bubbles */
+@keyframes float-drift-1 {
+  0%, 100% {
+    transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0));
+  }
+  25% {
+    transform: translate(calc(var(--tw-translate-x, 0) + 14px), calc(var(--tw-translate-y, 0) - 16px));
+  }
+  50% {
+    transform: translate(calc(var(--tw-translate-x, 0) - 10px), calc(var(--tw-translate-y, 0) + 12px));
+  }
+  75% {
+    transform: translate(calc(var(--tw-translate-x, 0) + 8px), calc(var(--tw-translate-y, 0) + 14px));
+  }
+}
+
+@keyframes float-drift-2 {
+  0%, 100% {
+    transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0));
+  }
+  30% {
+    transform: translate(calc(var(--tw-translate-x, 0) - 16px), calc(var(--tw-translate-y, 0) + 12px));
+  }
+  60% {
+    transform: translate(calc(var(--tw-translate-x, 0) + 12px), calc(var(--tw-translate-y, 0) - 14px));
+  }
+  85% {
+    transform: translate(calc(var(--tw-translate-x, 0) - 8px), calc(var(--tw-translate-y, 0) - 8px));
+  }
+}
+
+@keyframes float-drift-3 {
+  0%, 100% {
+    transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0));
+  }
+  35% {
+    transform: translate(calc(var(--tw-translate-x, 0) + 16px), calc(var(--tw-translate-y, 0) + 14px));
+  }
+  70% {
+    transform: translate(calc(var(--tw-translate-x, 0) - 14px), calc(var(--tw-translate-y, 0) - 10px));
+  }
+}
+
+.animate-float-drift-1 {
+  animation: float-drift-1 7s ease-in-out infinite;
+}
+
+.animate-float-drift-2 {
+  animation: float-drift-2 9s ease-in-out infinite;
+}
+
+.animate-float-drift-3 {
+  animation: float-drift-3 11s ease-in-out infinite;
+}

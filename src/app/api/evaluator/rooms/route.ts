@@ -32,6 +32,7 @@ export async function GET() {
         assessment_id,
         room_mode,
         is_active,
+        scheduled_start,
         created_at,
         assessments (
           title,
@@ -64,6 +65,8 @@ export async function GET() {
       durationMinutes: r.assessments?.duration_minutes || 45,
       roomMode: r.room_mode,
       isActive: r.is_active,
+      hasStarted: !!r.scheduled_start,
+      startedAt: r.scheduled_start,
       createdAt: r.created_at,
       participantCount: r.room_participants?.length || 0,
     }));
@@ -168,3 +171,100 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+const updateRoomSchema = z.object({
+  roomId: z.string().uuid('ID phòng thi không hợp lệ'),
+  action: z.enum(['START', 'END']),
+});
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const validated = updateRoomSchema.safeParse(body);
+
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.errors[0]?.message || 'Dữ liệu cập nhật không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    const { roomId, action } = validated.data;
+    const supabase = await createClient();
+
+    // 1. Authenticate user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    }
+
+    if (action === 'START') {
+      const now = new Date().toISOString();
+      // Set scheduled_start to now
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({
+          scheduled_start: now,
+          is_active: true,
+        })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json(
+          { error: 'Không thể bắt đầu phòng thi hoặc bạn không có quyền' },
+          { status: 500 }
+        );
+      }
+
+      // Update participants status to TAKING
+      await supabase
+        .from('room_participants')
+        .update({ status: 'TAKING' })
+        .eq('room_id', roomId)
+        .eq('status', 'JOINED');
+
+      return NextResponse.json({
+        success: true,
+        action: 'START',
+        room: updatedRoom,
+      });
+    } else {
+      // action === 'END'
+      const now = new Date().toISOString();
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({
+          is_active: false,
+          scheduled_end: now,
+        })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json(
+          { error: 'Không thể kết thúc phòng thi hoặc bạn không có quyền' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        action: 'END',
+        room: updatedRoom,
+      });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+

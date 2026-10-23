@@ -41,6 +41,7 @@ export async function POST(request: Request) {
         assessment_id,
         room_mode,
         is_active,
+        scheduled_start,
         assessments (
           id,
           title,
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         {
           room_id: room.id,
           user_id: user.id,
-          status: 'JOINED',
+          status: room.scheduled_start ? 'TAKING' : 'JOINED',
         },
         { onConflict: 'room_id,user_id' }
       );
@@ -81,6 +82,8 @@ export async function POST(request: Request) {
       assessmentId: room.assessment_id,
       assessmentTitle: rawAssessment?.title || 'Bài thi khảo thí',
       durationMinutes: rawAssessment?.duration_minutes || 45,
+      hasStarted: !!room.scheduled_start,
+      startedAt: room.scheduled_start,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

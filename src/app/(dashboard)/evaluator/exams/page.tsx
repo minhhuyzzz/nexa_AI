@@ -135,13 +135,124 @@ export default function EvaluatorExamsPage() {
         </div>
 
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setShowCreateModal((prev) => !prev)}
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
           <span>Tạo đề thi mới</span>
         </button>
       </div>
+
+      {/* Inline Create Form (No Popup Modal) */}
+      {showCreateModal && (
+        <div className="p-5 rounded-md border border-sky-400 bg-white shadow-xs space-y-4 animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+              <span>Thiết Lập Đề Thi Khảo Thí Mới</span>
+            </h2>
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            >
+              <X className="w-4 h-4" strokeWidth={1.75} />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreateExam} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Tên bài khảo thí / Đề thi *:
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: Đánh giá Năng lực Số cơ bản & Văn phòng thông minh"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Mô tả chuẩn đầu ra:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Mô tả mục tiêu và nội dung chuẩn đầu ra..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Thời lượng (phút):
+                </label>
+                <input
+                  type="number"
+                  min={10}
+                  max={180}
+                  value={newDuration}
+                  onChange={(e) => setNewDuration(Number(e.target.value))}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Điểm đạt (%):
+                </label>
+                <input
+                  type="number"
+                  min={40}
+                  max={100}
+                  value={newPassingScore}
+                  onChange={(e) => setNewPassingScore(Number(e.target.value))}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Điểm thưởng:
+                </label>
+                <input
+                  type="number"
+                  min={10}
+                  max={200}
+                  value={newPoints}
+                  onChange={(e) => setNewPoints(Number(e.target.value))}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50"
+              >
+                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
+                <span>Lưu đề thi</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Exam Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -226,116 +337,6 @@ export default function EvaluatorExamsPage() {
         )}
       </div>
 
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full space-y-4 text-slate-900 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                Tạo Đề Thi Khảo Thí Mới
-              </h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateExam} className="space-y-4 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Tên bài khảo thí / Đề thi:
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Đánh giá Năng lực Số cơ bản & Văn phòng thông minh"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Mô tả bài khảo thí:
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Mô tả mục tiêu và nội dung chuẩn đầu ra..."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Thời lượng (phút):
-                  </label>
-                  <input
-                    type="number"
-                    min={10}
-                    max={180}
-                    value={newDuration}
-                    onChange={(e) => setNewDuration(Number(e.target.value))}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Điểm đạt (%):
-                  </label>
-                  <input
-                    type="number"
-                    min={40}
-                    max={100}
-                    value={newPassingScore}
-                    onChange={(e) => setNewPassingScore(Number(e.target.value))}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Điểm thưởng:
-                  </label>
-                  <input
-                    type="number"
-                    min={10}
-                    max={200}
-                    value={newPoints}
-                    onChange={(e) => setNewPoints(Number(e.target.value))}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
-                  <span>Lưu đề thi</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

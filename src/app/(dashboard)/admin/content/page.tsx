@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import {
   AdminAssessmentBankClient,
   type AssessmentItemRecord,
-  type LearningModuleItemRecord,
 } from './admin-assessment-bank-client';
 
 export const dynamic = 'force-dynamic';
@@ -53,12 +52,6 @@ export default async function AdminContentPage() {
     .from('competencies')
     .select('id, skill_code, title, domain_id')
     .order('skill_code', { ascending: true });
-
-  // 4. Fetch learning modules
-  const { data: rawModules } = await supabase
-    .from('learning_modules')
-    .select('id, skill_code, domain_code, title, description, duration_minutes, point_reward, is_published')
-    .order('order_index', { ascending: true });
 
   // Format assessments
   const assessments: AssessmentItemRecord[] = (rawAssessments || []).map((a: any) => {
@@ -124,14 +117,12 @@ export default async function AdminContentPage() {
     title: string;
     domain_id: string;
   }>;
-  const learningModules = (rawModules || []) as LearningModuleItemRecord[];
 
   return (
     <AdminAssessmentBankClient
       initialAssessments={assessments}
       domains={domains}
       competencies={competencies}
-      learningModules={learningModules}
     />
   );
 }

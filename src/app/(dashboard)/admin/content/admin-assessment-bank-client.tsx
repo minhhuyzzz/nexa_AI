@@ -27,7 +27,14 @@ import {
   HelpCircle,
   Sparkles,
 } from 'lucide-react';
-import { downloadCSVTemplate, parseCSV, type ParsedItemRow } from '@/features/assessments/utils/csv-helper';
+import {
+  downloadMCQTemplate,
+  downloadScenarioTemplate,
+  downloadPracticalTemplate,
+  downloadCSVTemplate,
+  parseCSV,
+  type ParsedItemRow,
+} from '@/features/assessments/utils/csv-helper';
 
 export interface AssessmentItemRecord {
   id: string;
@@ -47,32 +54,18 @@ export interface AssessmentItemRecord {
   domainCodes: string[];
 }
 
-export interface LearningModuleItemRecord {
-  id: string;
-  skill_code: string;
-  domain_code: string;
-  title: string;
-  description: string | null;
-  duration_minutes: number;
-  point_reward: number;
-  is_published: boolean;
-}
-
 interface Props {
   initialAssessments: AssessmentItemRecord[];
   domains: Array<{ id: string; code: string; title: string }>;
   competencies: Array<{ id: string; skill_code: string; title: string; domain_id: string }>;
-  learningModules: LearningModuleItemRecord[];
 }
 
 export function AdminAssessmentBankClient({
   initialAssessments,
   domains,
   competencies,
-  learningModules,
 }: Props) {
   const [assessments, setAssessments] = useState<AssessmentItemRecord[]>(initialAssessments);
-  const [activeTab, setActiveTab] = useState<'assessments' | 'modules'>('assessments');
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -508,14 +501,13 @@ export function AdminAssessmentBankClient({
             <span>Nạp Hàng Loạt (Bulk Import)</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleOpenCreateModal}
+          <Link
+            href="/admin/content/assessments/new"
             className="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700 text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" strokeWidth={1.75} />
             <span>Tạo Đề Thi Mới</span>
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -566,38 +558,8 @@ export function AdminAssessmentBankClient({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-slate-200 flex items-center gap-6">
-        <button
-          type="button"
-          onClick={() => setActiveTab('assessments')}
-          className={`pb-3 text-xs font-bold transition-colors relative flex items-center gap-2 ${
-            activeTab === 'assessments'
-              ? 'text-sky-600 border-b-2 border-sky-600'
-              : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <FileCheck className="w-4 h-4" strokeWidth={1.75} />
-          <span>Ngân Hàng Đề Khảo Thí ({assessments.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('modules')}
-          className={`pb-3 text-xs font-bold transition-colors relative flex items-center gap-2 ${
-            activeTab === 'modules'
-              ? 'text-sky-600 border-b-2 border-sky-600'
-              : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" strokeWidth={1.75} />
-          <span>Module Học Liệu Bồi Dưỡng ({learningModules.length})</span>
-        </button>
-      </div>
-
-      {/* Tab 1: Ngân Hàng Đề Khảo Thí */}
-      {activeTab === 'assessments' && (
-        <div className="space-y-4">
+      {/* Danh Sách Đề Khảo Thí */}
+      <div className="space-y-4">
           {/* Toolbar: Search & Filters */}
           <div className="p-4 rounded-md bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
@@ -793,67 +755,6 @@ export function AdminAssessmentBankClient({
             )}
           </div>
         </div>
-      )}
-
-      {/* Tab 2: Module Học Liệu Bồi Dưỡng */}
-      {activeTab === 'modules' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-md bg-white border border-slate-200 flex items-center justify-between">
-            <div>
-              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Danh Sách Module Bồi Dưỡng DigComp 3.0 ({learningModules.length} Chuyên Đề)
-              </h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Các bài học tương tác gắn với từng kỹ năng cụ thể, giúp học viên lấp đầy khoảng trống năng lực số.
-              </p>
-            </div>
-            <Link
-              href="/learner/learning-path"
-              target="_blank"
-              className="text-xs text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1"
-            >
-              <span>Xem giao diện người học</span>
-              <ExternalLink className="w-3 h-3" strokeWidth={1.75} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {learningModules.map((mod) => (
-              <div
-                key={mod.id}
-                className="p-4 rounded-md border border-slate-200 bg-white flex flex-col justify-between text-xs space-y-3"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                      Kỹ năng {mod.skill_code}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {mod.domain_code}
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-slate-900 text-xs mb-1 line-clamp-2 leading-snug">
-                    {mod.title}
-                  </h3>
-
-                  <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                    {mod.description || 'Chuyên đề bồi dưỡng năng lực số theo khung DigComp chuẩn hóa.'}
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 font-mono">{mod.duration_minutes} phút</span>
-                  <span className="font-mono text-emerald-700 font-bold">+{mod.point_reward} pts</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    HOÀN TẤT
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Modal: Tạo / Chỉnh Sửa Bài Khảo Thí */}
       {isCreateModalOpen && (
@@ -1072,29 +973,41 @@ export function AdminAssessmentBankClient({
               )}
 
               {/* Template & Guidelines */}
-              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between">
+              {/* Template & Guidelines */}
+              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className="font-semibold text-slate-800">
-                    Quy chuẩn tệp Excel / CSV (UTF-8 BOM)
+                    Tải tệp mẫu Excel / CSV chuẩn theo 5 Miền DigComp (UTF-8)
                   </span>
-                  <button
-                    type="button"
-                    onClick={downloadCSVTemplate}
-                    className="text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1"
-                  >
-                    <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    <span>Tải tệp mẫu</span>
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={downloadMCQTemplate}
+                      className="px-2 py-1 rounded bg-white border border-slate-200 text-sky-700 hover:bg-sky-50 font-semibold inline-flex items-center gap-1 text-[11px]"
+                    >
+                      <Download className="w-3 h-3" strokeWidth={1.75} />
+                      <span>Mẫu Trắc Nghiệm</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={downloadScenarioTemplate}
+                      className="px-2 py-1 rounded bg-white border border-slate-200 text-amber-700 hover:bg-amber-50 font-semibold inline-flex items-center gap-1 text-[11px]"
+                    >
+                      <Download className="w-3 h-3" strokeWidth={1.75} />
+                      <span>Mẫu Tình Huống</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={downloadPracticalTemplate}
+                      className="px-2 py-1 rounded bg-white border border-slate-200 text-emerald-700 hover:bg-emerald-50 font-semibold inline-flex items-center gap-1 text-[11px]"
+                    >
+                      <Download className="w-3 h-3" strokeWidth={1.75} />
+                      <span>Mẫu Thực Hành</span>
+                    </button>
+                  </div>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Cột dữ liệu gồm: <code className="font-mono text-slate-800">skill_code</code> (1.1, 2.3...),{' '}
-                  <code className="font-mono text-slate-800">type</code> (MCQ, SCENARIO, PRACTICAL),{' '}
-                  <code className="font-mono text-slate-800">prompt</code> (Nội dung câu hỏi),{' '}
-                  <code className="font-mono text-slate-800">option_a..d</code>,{' '}
-                  <code className="font-mono text-slate-800">correct_answer</code> (A, B, C, D),{' '}
-                  <code className="font-mono text-slate-800">rubric_guide</code> (Hướng dẫn chấm thực hành),{' '}
-                  <code className="font-mono text-slate-800">points</code>.{' '}
-                  <span className="text-slate-600 font-medium">Hệ thống đã loại bỏ hoàn toàn trường độ khó theo thiết kế tinh giản.</span>
+                  Cột <code className="font-mono text-slate-800">domain</code> nhận số 1 đến 5 (hoặc kết hợp &ldquo;1, 2&rdquo;). Mẫu Thực hành hỗ trợ các cột tiêu chí phẳng (<code className="font-mono text-slate-800">criterion_1_name</code>, <code className="font-mono text-slate-800">criterion_1_weight</code>...) không cần nhập JSON phức tạp.
                 </p>
               </div>
 
