@@ -332,30 +332,18 @@ export default function AdminFrameworksPage() {
                   {domain.competencies
                     ?.sort((a, b) => a.display_order - b.display_order)
                     .map((comp) => {
-                      const levelLabel =
-                        comp.target_level === 4
-                          ? 'Highly Advanced'
-                          : comp.target_level === 3
-                          ? 'Advanced'
-                          : comp.target_level === 2
-                          ? 'Intermediate'
-                          : 'Basic';
-
                       return (
                         <div
                           key={comp.id}
                           className="p-3.5 rounded bg-slate-50 border border-slate-200 text-xs flex flex-col justify-between space-y-2 hover:bg-slate-100/70 transition-colors"
                         >
                           <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-bold text-sky-700 text-xs font-mono">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-bold text-sky-700 text-xs font-mono bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
                                 {comp.skill_code}
                               </span>
-                              <span className="text-[10px] text-slate-600 font-mono px-1.5 py-0.2 rounded bg-white border border-slate-200">
-                                Level {comp.target_level} &bull; {levelLabel}
-                              </span>
                             </div>
-                            <div className="font-medium text-slate-900 leading-snug">
+                            <div className="font-semibold text-slate-900 leading-snug">
                               {comp.title}
                             </div>
                             {comp.description && (
@@ -486,30 +474,15 @@ export default function AdminFrameworksPage() {
             )}
 
             <form onSubmit={handleSaveCompetency} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-800 block mb-1">Mã kỹ năng:</label>
-                  <input
-                    type="text"
-                    required
-                    value={competencyForm.skill_code}
-                    onChange={(e) => setCompetencyForm({ ...competencyForm, skill_code: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-800 block mb-1">Cấp độ chuẩn (Level):</label>
-                  <select
-                    value={competencyForm.target_level}
-                    onChange={(e) => setCompetencyForm({ ...competencyForm, target_level: Number(e.target.value) })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs"
-                  >
-                    <option value={1}>Level 1 - Basic</option>
-                    <option value={2}>Level 2 - Intermediate</option>
-                    <option value={3}>Level 3 - Advanced</option>
-                    <option value={4}>Level 4 - Highly Advanced</option>
-                  </select>
-                </div>
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">Mã kỹ năng:</label>
+                <input
+                  type="text"
+                  required
+                  value={competencyForm.skill_code}
+                  onChange={(e) => setCompetencyForm({ ...competencyForm, skill_code: e.target.value })}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
+                />
               </div>
 
               <div>
@@ -575,31 +548,16 @@ export default function AdminFrameworksPage() {
             )}
 
             <form onSubmit={handleAddCompetency} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-800 block mb-1">Mã kỹ năng:</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ví dụ: 1.4"
-                    value={newCompForm.skill_code}
-                    onChange={(e) => setNewCompForm({ ...newCompForm, skill_code: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-800 block mb-1">Cấp độ (Level):</label>
-                  <select
-                    value={newCompForm.target_level}
-                    onChange={(e) => setNewCompForm({ ...newCompForm, target_level: Number(e.target.value) })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs"
-                  >
-                    <option value={1}>Level 1 - Basic</option>
-                    <option value={2}>Level 2 - Intermediate</option>
-                    <option value={3}>Level 3 - Advanced</option>
-                    <option value={4}>Level 4 - Highly Advanced</option>
-                  </select>
-                </div>
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">Mã kỹ năng:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: 1.4"
+                  value={newCompForm.skill_code}
+                  onChange={(e) => setNewCompForm({ ...newCompForm, skill_code: e.target.value })}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
+                />
               </div>
 
               <div>

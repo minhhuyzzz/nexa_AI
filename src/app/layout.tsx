@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono, Alex_Brush, Playfair_Display } from 'next/font/google';
+import { Plus_Jakarta_Sans, JetBrains_Mono, Alex_Brush, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'vietnamese'],
   variable: '--font-sans',
   display: 'swap',
@@ -41,7 +41,7 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${inter.variable} ${jetbrainsMono.variable} ${alexBrush.variable} ${playfairDisplay.variable}`}
+      className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} ${alexBrush.variable} ${playfairDisplay.variable}`}
     >
       <head>
         <script

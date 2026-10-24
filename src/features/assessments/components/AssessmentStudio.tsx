@@ -1215,39 +1215,106 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
                   </p>
                 </div>
 
-                {/* 2. 3-Level Proctoring Mode Selector */}
-                <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                {/* 2. Proctoring Toggle Switches */}
+                <div className="pt-2 border-t border-slate-100 space-y-3">
                   <label className="text-xs font-semibold text-slate-800 block">
                     Chế độ Giám sát Khảo thí:
                   </label>
-                  <select
-                    value={proctoringMode}
-                    onChange={(e) => setProctoringMode(e.target.value as 'PRACTICE' | 'STANDARD' | 'SUPERVISED_LIVE' | 'HIGH_STAKES')}
-                    className="w-full p-2 text-xs border border-slate-200 rounded-md bg-white text-slate-800 focus:border-sky-600 focus:outline-none"
-                  >
-                    <option value="STANDARD">Khảo thí Chuẩn (Standard - Phát hiện chuyển tab sau 2s)</option>
-                    <option value="PRACTICE">Tự do Ôn luyện (Practice - Cho phép chuyển tab và tra cứu)</option>
-                    <option value="SUPERVISED_LIVE">Giám sát Trực tiếp (Supervised Live - Đồng bộ sự kiện Giám thị)</option>
-                    <option value="HIGH_STAKES">Bảo mật Cao (High Stakes - Yêu cầu toàn màn hình, khóa bài khi vi phạm 3 lần)</option>
-                  </select>
-                  <span className="text-[11px] text-slate-500 block leading-tight">
-                    {proctoringMode === 'STANDARD' &&
-                      'Phát hiện chuyển tab và mất focus sau 2 giây. Phần thực hành tự động tạm dừng để mở Canva/Figma/Docs.'}
-                    {proctoringMode === 'PRACTICE' &&
-                      'Thí sinh được phép tự do tra cứu và chuyển đổi giữa các cửa sổ không giới hạn.'}
-                    {proctoringMode === 'SUPERVISED_LIVE' &&
-                      'Đồng bộ tức thì sự kiện chuyển tab/mất focus lên timeline của Giám thị ca thi qua proctoring_events.'}
-                    {proctoringMode === 'HIGH_STAKES' &&
-                      'Bắt buộc toàn màn hình; tự động khóa và nộp bài sau 3 lần phát hiện chuyển tab.'}
-                  </span>
+
+                  {/* Switch 1: Anti-cheat / Fullscreen */}
+                  <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-slate-800">
+                        Giám sát chuyển tab
+                      </div>
+                      <div className="text-[11px] text-slate-500 leading-tight">
+                        {proctoringMode !== 'PRACTICE'
+                          ? 'Đang bật: Phát hiện và cảnh báo khi thí sinh chuyển tab'
+                          : 'Đang tắt: Chế độ ôn luyện tự do, cho phép tra cứu'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={proctoringMode !== 'PRACTICE'}
+                      onClick={() => setProctoringMode(proctoringMode === 'PRACTICE' ? 'STANDARD' : 'PRACTICE')}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        proctoringMode !== 'PRACTICE' ? 'bg-sky-600' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          proctoringMode !== 'PRACTICE' ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Switch 2: Supervised Live */}
+                  <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-slate-800">
+                        Đồng bộ Giám thị trực tiếp
+                      </div>
+                      <div className="text-[11px] text-slate-500 leading-tight">
+                        {proctoringMode === 'SUPERVISED_LIVE'
+                          ? 'Đang bật: Truyền sự kiện vi phạm tức thời tới Giám thị'
+                          : 'Đang tắt: Không đồng bộ phòng thi trực tiếp'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={proctoringMode === 'SUPERVISED_LIVE'}
+                      onClick={() => setProctoringMode(proctoringMode === 'SUPERVISED_LIVE' ? 'STANDARD' : 'SUPERVISED_LIVE')}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        proctoringMode === 'SUPERVISED_LIVE' ? 'bg-sky-600' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          proctoringMode === 'SUPERVISED_LIVE' ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Switch 3: High Stakes */}
+                  <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-slate-800">
+                        Bảo mật cao (Khóa bài khi vi phạm 3 lần)
+                      </div>
+                      <div className="text-[11px] text-slate-500 leading-tight">
+                        {proctoringMode === 'HIGH_STAKES'
+                          ? 'Đang bật: Tự động khóa và nộp bài nếu chuyển tab 3 lần'
+                          : 'Đang tắt: Chỉ ghi nhật ký, không tự động khóa bài'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={proctoringMode === 'HIGH_STAKES'}
+                      onClick={() => setProctoringMode(proctoringMode === 'HIGH_STAKES' ? 'STANDARD' : 'HIGH_STAKES')}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        proctoringMode === 'HIGH_STAKES' ? 'bg-sky-600' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          proctoringMode === 'HIGH_STAKES' ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
 
-                {/* 3. Duration & Passing Score */}
-                <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-800 block mb-1">
-                      Thời lượng (phút):
-                    </label>
+                {/* 3. Duration */}
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Thời lượng làm bài:
+                  </label>
+                  <div className="flex items-center gap-2">
                     <input
                       type="number"
                       min={5}
@@ -1256,71 +1323,41 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
                       onChange={(e) => setDurationMinutes(Number(e.target.value) || 45)}
                       className="w-full p-2 text-xs border border-slate-200 rounded-md font-mono focus:border-sky-600 focus:outline-none"
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-800 block mb-1">
-                      Chuẩn đạt (%):
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={passingScore}
-                      onChange={(e) => setPassingScore(Number(e.target.value) || 70)}
-                      className="w-full p-2 text-xs border border-slate-200 rounded-md font-mono focus:border-sky-600 focus:outline-none"
-                    />
+                    <span className="text-xs text-slate-500 font-mono shrink-0">phút</span>
                   </div>
                 </div>
 
-                {/* 4. Assessment Type & Access Tier (Admin only) */}
+                {/* 4. Access Tier (Admin only) */}
                 {role === 'ADMIN' && (
-                  <div className="pt-2 border-t border-slate-100 space-y-3">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-800 block mb-1">
-                        Loại bài đánh giá:
-                      </label>
-                      <select
-                        value={assessmentType}
-                        onChange={(e) => setAssessmentType(e.target.value as any)}
-                        className="w-full p-2 text-xs border border-slate-200 rounded-md bg-white text-slate-800 focus:border-sky-600 focus:outline-none"
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="text-xs font-semibold text-slate-800 block mb-1">
+                      Phân hạng quyền truy cập:
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAccessTier('FREE')}
+                        className={`p-2 rounded border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                          accessTier === 'FREE'
+                            ? 'bg-emerald-50 border-emerald-400 text-emerald-800 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-600'
+                        }`}
                       >
-                        <option value="CERTIFICATION">Sát hạch cấp Chứng chỉ số</option>
-                        <option value="PRACTICE">Luyện tập theo Miền năng lực</option>
-                        <option value="DIAGNOSTIC">Chẩn đoán đầu vào (Benchmark)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold text-slate-800 block mb-1">
-                        Phân hạng truy cập:
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setAccessTier('FREE')}
-                          className={`p-2 rounded border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
-                            accessTier === 'FREE'
-                              ? 'bg-emerald-50 border-emerald-400 text-emerald-800 shadow-xs'
-                              : 'bg-white border-slate-200 text-slate-600'
-                          }`}
-                        >
-                          <Unlock className="w-3.5 h-3.5" />
-                          <span>FREE</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAccessTier('VIP')}
-                          className={`p-2 rounded border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
-                            accessTier === 'VIP'
-                              ? 'bg-amber-50 border-amber-400 text-amber-800 shadow-xs'
-                              : 'bg-white border-slate-200 text-slate-600'
-                          }`}
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>VIP</span>
-                        </button>
-                      </div>
+                        <Unlock className="w-3.5 h-3.5" />
+                        <span>FREE</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAccessTier('VIP')}
+                        className={`p-2 rounded border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                          accessTier === 'VIP'
+                            ? 'bg-amber-50 border-amber-400 text-amber-800 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>VIP</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1357,22 +1394,7 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
 
                 <div>
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Cấp độ nhận thức (Cognitive Level):
-                  </label>
-                  <select
-                    className="w-full p-2 text-xs border border-slate-200 rounded-md bg-white text-slate-800 focus:border-sky-600 focus:outline-none"
-                    defaultValue="INTERMEDIATE"
-                  >
-                    <option value="FOUNDATION">Cơ bản (Foundation - Bậc 1-2)</option>
-                    <option value="INTERMEDIATE">Trung cấp (Intermediate - Bậc 3-4)</option>
-                    <option value="ADVANCED">Nâng cao (Advanced - Bậc 5-6)</option>
-                    <option value="EXPERT">Chuyên gia (Highly Specialized - Bậc 7-8)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Trọng số điểm của câu:
+                    Điểm số của câu:
                   </label>
                   <div className="flex items-center gap-2">
                     <input
