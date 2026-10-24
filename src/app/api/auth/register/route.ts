@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 const registerSchema = z.object({
   nickname: z
@@ -64,19 +65,7 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      if (error.message.toLowerCase().includes('already registered')) {
-        return NextResponse.json(
-          { error: 'Địa chỉ email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.' },
-          { status: 400 }
-        );
-      }
-      if (error.message.includes('Database error saving new user')) {
-        return NextResponse.json(
-          { error: 'Không tạo được hồ sơ. Biệt danh có thể đã được sử dụng, vui lòng chọn tên khác.' },
-          { status: 400 }
-        );
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: translateAuthError(error.message) }, { status: 400 });
     }
 
     // Supabase trả user rỗng identities khi email đã tồn tại (chống dò tài khoản)

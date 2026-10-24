@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import { RoleSelector, type SelectableRole } from '@/components/auth/RoleSelector';
+import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function RegisterPage() {
       router.push(data.redirectUrl || '/learner/dashboard');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi hệ thống');
+      setError(err instanceof Error ? translateAuthError(err.message) : 'Lỗi hệ thống');
     } finally {
       setLoading(false);
     }
@@ -205,6 +206,10 @@ export default function RegisterPage() {
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
             />
           </div>
+
+          <p className="text-[11px] text-slate-400 -mt-1 sm:col-span-2">
+            Mật khẩu từ 6 ký tự (nên kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt).
+          </p>
         </div>
 
         <div className="pt-1">

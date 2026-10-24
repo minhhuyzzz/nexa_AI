@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { AlertCircle, LogIn } from 'lucide-react';
+import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function LoginPage() {
       router.push(data.redirectUrl || '/learner/dashboard');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi hệ thống');
+      setError(err instanceof Error ? translateAuthError(err.message) : 'Lỗi hệ thống');
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể kết nối dịch vụ Google');
+      setError(err instanceof Error ? translateAuthError(err.message) : 'Không thể kết nối dịch vụ Google');
       setOauthLoading(false);
     }
   };
