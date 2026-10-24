@@ -1,16 +1,10 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, JetBrains_Mono, Alex_Brush, Playfair_Display } from 'next/font/google';
+import { Plus_Jakarta_Sans, Alex_Brush, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'vietnamese'],
   variable: '--font-sans',
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin', 'vietnamese'],
-  variable: '--font-mono',
   display: 'swap',
 });
 
@@ -41,7 +35,7 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} ${alexBrush.variable} ${playfairDisplay.variable}`}
+      className={`${plusJakartaSans.variable} ${alexBrush.variable} ${playfairDisplay.variable}`}
     >
       <head>
         <script
