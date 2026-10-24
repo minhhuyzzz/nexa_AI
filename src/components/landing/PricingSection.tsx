@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Users,
 } from 'lucide-react';
+import { EnterpriseContactModal } from '@/components/pricing/EnterpriseContactModal';
 
 type Frequency = 'monthly' | 'yearly';
 
@@ -112,13 +113,14 @@ const landingPlans: PlanSummary[] = [
       'Tích hợp đăng nhập một lần và LMS',
       'Chứng chỉ đồng thương hiệu riêng',
     ],
-    ctaText: 'Liên hệ hợp tác',
-    ctaHref: 'mailto:contact@nexa.edu.vn',
+    ctaText: 'Đăng ký cho Tổ chức / Nhận tư vấn',
+    ctaHref: '#enterprise-inquiry',
   },
 ];
 
 export function PricingSection() {
   const [frequency, setFrequency] = useState<Frequency>('monthly');
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
 
   const formatPrice = (plan: PlanSummary) => {
     if (plan.customPriceText) return plan.customPriceText;
@@ -259,17 +261,28 @@ export function PricingSection() {
 
               {/* Action Button */}
               <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
-                <Link
-                  href={plan.ctaHref}
-                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs ${
-                    plan.isPopular
-                      ? 'bg-sky-600 text-white hover:bg-sky-700'
-                      : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-200'
-                  }`}
-                >
-                  <span>{plan.ctaText}</span>
-                  <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-                </Link>
+                {plan.id === 'enterprise' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowEnterpriseModal(true)}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
+                  >
+                    <span>{plan.ctaText}</span>
+                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  </button>
+                ) : (
+                  <Link
+                    href={plan.ctaHref}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs ${
+                      plan.isPopular
+                        ? 'bg-sky-600 text-white hover:bg-sky-700'
+                        : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <span>{plan.ctaText}</span>
+                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  </Link>
+                )}
               </div>
             </div>
           ))}
@@ -286,6 +299,11 @@ export function PricingSection() {
           </Link>
         </div>
       </div>
+
+      <EnterpriseContactModal
+        isOpen={showEnterpriseModal}
+        onClose={() => setShowEnterpriseModal(false)}
+      />
     </section>
   );
 }

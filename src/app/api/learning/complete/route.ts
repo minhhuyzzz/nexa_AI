@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { PointLedgerService } from '@/features/gamification/services/point-ledger.service';
 
 const completeSchema = z.object({
   moduleId: z.string().uuid('Mã bài học (moduleId) không hợp lệ'),
@@ -79,20 +80,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Không thể ghi nhận tiến độ học tập' }, { status: 500 });
     }
 
-    // 5. Add +30 points to profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('points')
-      .eq('id', user.id)
-      .single();
-
-    const currentPoints = profile?.points ?? 0;
-    const newTotalPoints = currentPoints + pointsToAward;
-
-    await supabase
-      .from('profiles')
-      .update({ points: newTotalPoints })
-      .eq('id', user.id);
+    // 5. Award points through immutable Point Ledger (Atomic & Idempotent)
+    let newTotalPoints = 0;
+    if (pointsToAward > 0) {
+      const grantResult = await PointLedgerService.grantPoints(supabase, {
+        userId: user.id,
+        delta: pointsToAward,
+        eventType: 'MODULE_COMPLETED',
+        sourceType: 'MODULE',
+        sourceId: moduleId,
+        idempotencyKey: `MODULE_COMPLETION_${user.id}_${moduleId}`,
+        metadata: {
+          module_id: moduleId,
+          skill_code: moduleData.skill_code,
+          title: moduleData.title,
+        },
+      });
+      newTotalPoints = grantResult.points;
+    }
 
     return NextResponse.json({
       success: true,

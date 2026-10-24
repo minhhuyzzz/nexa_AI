@@ -27,6 +27,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
+import { ProctoringTimeline } from '@/components/live/ProctoringTimeline';
 
 interface Participant {
   id: string;
@@ -47,6 +48,9 @@ interface RoomData {
   durationMinutes: number;
   roomMode: string;
   isActive: boolean;
+  isLocked?: boolean;
+  proctoringProfile?: string;
+  accessPolicy?: string;
   hasStarted: boolean;
   startedAt?: string | null;
   elapsedSeconds?: number;
@@ -93,6 +97,9 @@ function LiveControlContent() {
         const data = await res.json();
         if (data.success && data.room) {
           setRoom(data.room);
+          if (typeof data.room.isLocked === 'boolean') {
+            setIsLocked(data.room.isLocked);
+          }
           setParticipants(data.participants || []);
           setError(null);
         }
@@ -195,6 +202,20 @@ function LiveControlContent() {
       setError('Lỗi khi kết thúc phiên thi.');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleToggleLock = async () => {
+    const next = !isLocked;
+    setIsLocked(next);
+    try {
+      await fetch('/api/rooms/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, isLocked: next }),
+      });
+    } catch (err) {
+      console.error('Failed to update room lockdown state:', err);
     }
   };
 
@@ -331,10 +352,16 @@ function LiveControlContent() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* 0. Proctoring Profile badge */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
+            <span>Hồ sơ giám sát: <strong className="font-mono text-slate-900">{room?.proctoringProfile || 'STANDARD'}</strong></span>
+          </div>
+
           {/* 1. Lock room toggle */}
           <button
             type="button"
-            onClick={() => setIsLocked(!isLocked)}
+            onClick={handleToggleLock}
             className={`px-3 py-1.5 rounded-md border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
               isLocked
                 ? 'bg-rose-50 border-rose-300 text-rose-700'
@@ -635,6 +662,11 @@ function LiveControlContent() {
           <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center gap-1.5 justify-center">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
             <span>Dữ liệu phòng thi được lưu trữ tự động trên cơ sở dữ liệu NEXA</span>
+          </div>
+
+          {/* Real-time Proctoring Audit Timeline */}
+          <div className="pt-4">
+            <ProctoringTimeline roomId={roomId} />
           </div>
         </div>
       </main>

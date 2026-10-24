@@ -477,7 +477,7 @@ export function AdminAssessmentBankClient({
             Ngân Hàng Đề Khảo Thí &amp; Quản Trị Khảo Hạch
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Hệ thống ngân hàng khảo thí chuẩn hóa DigComp 3.0: Quản lý ma trận đề đa miền, cấu hình phân hạng
+            Hệ thống ngân hàng khảo thí chuẩn hóa DigComp: Quản lý ma trận đề đa miền, cấu hình phân hạng
             truy cập (Free / VIP), nạp hàng loạt từ file Excel/CSV, và thiết lập rubric thực hành.
           </p>
         </div>
@@ -536,7 +536,7 @@ export function AdminAssessmentBankClient({
         </div>
 
         <div className="hidden sm:block text-[11px] text-slate-400 font-mono">
-          Chuẩn hóa DigComp 3.0 &bull; Dữ liệu thời gian thực
+          Chuẩn hóa DigComp Framework &bull; Dữ liệu thời gian thực
         </div>
       </div>
 
@@ -740,7 +740,7 @@ export function AdminAssessmentBankClient({
       {/* Modal: Tạo / Chỉnh Sửa Bài Khảo Thí */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-lg shadow-lg overflow-hidden animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-lg shadow-sm overflow-hidden animate-in fade-in zoom-in-95">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-bold text-slate-900">
@@ -897,7 +897,7 @@ export function AdminAssessmentBankClient({
       {/* Modal: Nạp Hàng Loạt (Bulk Import) */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-2xl shadow-sm overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -1103,7 +1103,7 @@ export function AdminAssessmentBankClient({
       {/* Confirmation Modal: Delete Assessment */}
       {deletingId && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-sm p-6 space-y-4 shadow-lg animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-sm p-6 space-y-4 shadow-sm animate-in fade-in zoom-in-95">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-full bg-rose-50 text-rose-600 shrink-0">
                 <Trash2 className="w-5 h-5" strokeWidth={1.75} />

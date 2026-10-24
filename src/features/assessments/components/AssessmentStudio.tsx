@@ -42,6 +42,8 @@ import {
   type ParsedItemRow,
   type RubricCriterion,
 } from '@/features/assessments/utils/csv-helper';
+import { QuestionBankDrawer } from './QuestionBankDrawer';
+import { PublishValidationModal } from './PublishValidationModal';
 
 export interface AssessmentStudioProps {
   role: 'ADMIN' | 'EVALUATOR';
@@ -68,7 +70,7 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
   const [passingScore, setPassingScore] = useState(70);
   const [assessmentType, setAssessmentType] = useState<'CERTIFICATION' | 'PRACTICE' | 'DIAGNOSTIC'>('CERTIFICATION');
   const [accessTier, setAccessTier] = useState<'FREE' | 'VIP'>('FREE');
-  const [proctoringMode, setProctoringMode] = useState<'RELAXED' | 'HYBRID_CONTEXT' | 'STRICT_LOCKDOWN'>('HYBRID_CONTEXT');
+  const [proctoringMode, setProctoringMode] = useState<'PRACTICE' | 'STANDARD' | 'SUPERVISED_LIVE' | 'HIGH_STAKES'>('STANDARD');
   const [isPublished, setIsPublished] = useState(false);
 
   // Questions State & Current Selected Index & Inspector Tab
@@ -88,6 +90,8 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importPreviewItems, setImportPreviewItems] = useState<ParsedItemRow[]>([]);
   const [importFileName, setImportFileName] = useState('');
+  const [showQuestionBankDrawer, setShowQuestionBankDrawer] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -528,7 +532,7 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
 
               <button
                 type="button"
-                onClick={() => handleSaveAssessment(true)}
+                onClick={() => setShowPublishModal(true)}
                 disabled={isSaving}
                 className="px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
               >
@@ -550,12 +554,12 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
 
               <button
                 type="button"
-                onClick={() => handleSaveAssessment(true, true)}
+                onClick={() => setShowPublishModal(true)}
                 disabled={isSaving}
                 className="px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
               >
                 <Radio className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>{isSaving ? 'Đang mở...' : 'Lưu & Mở Phòng Live Ngay'}</span>
+                <span>{isSaving ? 'Đang mở...' : 'Kiểm Định & Mở Phòng Live'}</span>
               </button>
             </>
           )}
@@ -607,6 +611,15 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
               <span>Nạp hàng loạt từ Excel/CSV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowQuestionBankDrawer(true)}
+              className="w-full py-1.5 px-2 rounded border border-sky-200 bg-sky-50/60 hover:bg-sky-100 text-sky-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
+              <span>Chọn từ Ngân Hàng Câu Hỏi</span>
             </button>
           </div>
 
@@ -1209,20 +1222,23 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
                   </label>
                   <select
                     value={proctoringMode}
-                    onChange={(e) => setProctoringMode(e.target.value as any)}
+                    onChange={(e) => setProctoringMode(e.target.value as 'PRACTICE' | 'STANDARD' | 'SUPERVISED_LIVE' | 'HIGH_STAKES')}
                     className="w-full p-2 text-xs border border-slate-200 rounded-md bg-white text-slate-800 focus:border-sky-600 focus:outline-none"
                   >
-                    <option value="HYBRID_CONTEXT">Phân đoạn Thông minh (Hybrid Context - Chuẩn)</option>
-                    <option value="RELAXED">Tự do / Ôn luyện (Cho phép chuyển tab)</option>
-                    <option value="STRICT_LOCKDOWN">Khóa cứng Trực tiếp (Live Lockdown)</option>
+                    <option value="STANDARD">Khảo thí Chuẩn (Standard - Phát hiện chuyển tab sau 2s)</option>
+                    <option value="PRACTICE">Tự do Ôn luyện (Practice - Cho phép chuyển tab và tra cứu)</option>
+                    <option value="SUPERVISED_LIVE">Giám sát Trực tiếp (Supervised Live - Đồng bộ sự kiện Giám thị)</option>
+                    <option value="HIGH_STAKES">Bảo mật Cao (High Stakes - Yêu cầu toàn màn hình, khóa bài khi vi phạm 3 lần)</option>
                   </select>
                   <span className="text-[11px] text-slate-500 block leading-tight">
-                    {proctoringMode === 'HYBRID_CONTEXT' &&
-                      'Chặng 1 cấm chuyển tab; Chặng 2 tự động tạm dừng để mở Canva/Figma/Docs.'}
-                    {proctoringMode === 'RELAXED' &&
-                      'Thí sinh được phép tự do tra cứu và chuyển đổi giữa các cửa sổ.'}
-                    {proctoringMode === 'STRICT_LOCKDOWN' &&
-                      'Đồng bộ vi phạm theo thời gian thực lên màn hình Giám thị ca thi.'}
+                    {proctoringMode === 'STANDARD' &&
+                      'Phát hiện chuyển tab và mất focus sau 2 giây. Phần thực hành tự động tạm dừng để mở Canva/Figma/Docs.'}
+                    {proctoringMode === 'PRACTICE' &&
+                      'Thí sinh được phép tự do tra cứu và chuyển đổi giữa các cửa sổ không giới hạn.'}
+                    {proctoringMode === 'SUPERVISED_LIVE' &&
+                      'Đồng bộ tức thì sự kiện chuyển tab/mất focus lên timeline của Giám thị ca thi qua proctoring_events.'}
+                    {proctoringMode === 'HIGH_STAKES' &&
+                      'Bắt buộc toàn màn hình; tự động khóa và nộp bài sau 3 lần phát hiện chuyển tab.'}
                   </span>
                 </div>
 
@@ -1532,6 +1548,37 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
           </div>
         </div>
       )}
+
+      {/* 4. Question Bank Drawer */}
+      <QuestionBankDrawer
+        isOpen={showQuestionBankDrawer}
+        onClose={() => setShowQuestionBankDrawer(false)}
+        onAddQuestions={(newQuestions) => {
+          setQuestions((prev) => [...prev, ...newQuestions]);
+          showToast(`Đã thêm ${newQuestions.length} câu hỏi từ ngân hàng vào bài thi!`);
+        }}
+      />
+
+      {/* 5. Pre-publish Validation Modal */}
+      <PublishValidationModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        metadata={{
+          title,
+          durationMinutes,
+          passingScore,
+        }}
+        questions={questions}
+        isPublishing={isSaving}
+        onSelectQuestionToFix={(idx) => {
+          setSelectedIndex(idx);
+          setInspectorTab('QUESTION');
+        }}
+        onConfirmPublish={() => {
+          setShowPublishModal(false);
+          handleSaveAssessment(true, role !== 'ADMIN');
+        }}
+      />
     </div>
   );
 }

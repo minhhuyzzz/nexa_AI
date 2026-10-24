@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
+import { EnterpriseContactModal } from '@/components/pricing/EnterpriseContactModal';
 
 type FREQUENCY = 'monthly' | 'yearly';
 
@@ -252,8 +253,8 @@ const plans: Plan[] = [
       },
     ],
     btn: {
-      text: 'Liên hệ hợp tác',
-      href: 'mailto:contact@nexa.edu.vn',
+      text: 'Đăng ký cho Tổ chức / Nhận tư vấn',
+      href: '#enterprise-inquiry',
     },
   },
 ];
@@ -261,6 +262,7 @@ const plans: Plan[] = [
 export default function PricingPage() {
   const [frequency, setFrequency] = useState<FREQUENCY>('monthly');
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
 
   const formatPrice = (plan: Plan) => {
     if (plan.customPriceText) return plan.customPriceText;
@@ -478,17 +480,28 @@ export default function PricingPage() {
 
                 {/* Card Action Button */}
                 <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
-                  <Link
-                    href={plan.btn.href}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs ${
-                      plan.isPopular
-                        ? 'bg-sky-600 text-white hover:bg-sky-700'
-                        : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-200'
-                    }`}
-                  >
-                    <span>{plan.btn.text}</span>
-                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  </Link>
+                  {plan.id === 'enterprise' ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowEnterpriseModal(true)}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
+                    >
+                      <span>{plan.btn.text}</span>
+                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    </button>
+                  ) : (
+                    <Link
+                      href={plan.btn.href}
+                      className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs ${
+                        plan.isPopular
+                          ? 'bg-sky-600 text-white hover:bg-sky-700'
+                          : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-200'
+                      }`}
+                    >
+                      <span>{plan.btn.text}</span>
+                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    </Link>
+                  )}
                 </div>
               </div>
             );
@@ -641,6 +654,11 @@ export default function PricingPage() {
           </div>
         </div>
       </main>
+
+      <EnterpriseContactModal
+        isOpen={showEnterpriseModal}
+        onClose={() => setShowEnterpriseModal(false)}
+      />
 
       <PublicFooter />
     </div>

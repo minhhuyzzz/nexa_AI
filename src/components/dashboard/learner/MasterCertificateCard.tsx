@@ -144,14 +144,14 @@ export function MasterCertificateCard({
                 clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%)',
               }}
             >
-              {/* Gold Medallion Outer Ridges (3D Metallic Seal) */}
-              <div className="relative w-12 h-12 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-full p-1 bg-gradient-to-br from-[#F5D77F] via-[#D4AF37] to-[#996515] shadow-lg flex items-center justify-center">
-                <div className="absolute -bottom-3 sm:-bottom-4 left-2 w-3 sm:w-4 h-6 sm:h-8 bg-gradient-to-b from-[#D4AF37] to-[#B38728] rotate-[-20deg] rounded-xs shadow-xs" />
-                <div className="absolute -bottom-3 sm:-bottom-4 right-2 w-3 sm:w-4 h-6 sm:h-8 bg-gradient-to-b from-[#D4AF37] to-[#B38728] rotate-[20deg] rounded-xs shadow-xs" />
+              {/* Gold Medallion Outer Ridges (Clean Academic Gold Seal) */}
+              <div className="relative w-12 h-12 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-full p-1 bg-amber-200 border-2 border-amber-400 shadow-sm flex items-center justify-center">
+                <div className="absolute -bottom-3 sm:-bottom-4 left-2 w-3 sm:w-4 h-6 sm:h-8 bg-amber-400 rotate-[-20deg] rounded-xs shadow-xs" />
+                <div className="absolute -bottom-3 sm:-bottom-4 right-2 w-3 sm:w-4 h-6 sm:h-8 bg-amber-400 rotate-[20deg] rounded-xs shadow-xs" />
 
-                <div className="relative z-10 w-full h-full rounded-full bg-gradient-to-tr from-[#B38728] via-[#FDF0CD] to-[#D4AF37] border-2 border-[#FFE89E] flex items-center justify-center shadow-inner">
-                  <div className="w-8 h-8 sm:w-11 sm:h-11 lg:w-13 lg:h-13 rounded-full border border-[#996515]/40 flex items-center justify-center bg-gradient-to-b from-[#E6C364] to-[#C49726]">
-                    <Award className="w-5 h-5 sm:w-7 sm:h-7 text-[#573E0C]" strokeWidth={2} />
+                <div className="relative z-10 w-full h-full rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center">
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 lg:w-13 lg:h-13 rounded-full border border-amber-300 flex items-center justify-center bg-amber-200">
+                    <Award className="w-5 h-5 sm:w-7 sm:h-7 text-amber-800" strokeWidth={1.75} />
                   </div>
                 </div>
               </div>
@@ -306,9 +306,9 @@ export function MasterCertificateCard({
 
               {/* Elegant Underline Divider */}
               <div className="flex items-center justify-center gap-2 max-w-md mx-auto py-1">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[#C5A059] to-[#C5A059]" />
-                <div className="w-1.5 h-1.5 rotate-45 bg-[#D4AF37]" />
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent via-[#C5A059] to-[#C5A059]" />
+                <div className="h-[1px] flex-1 bg-amber-300" />
+                <div className="w-1.5 h-1.5 rotate-45 bg-amber-500" />
+                <div className="h-[1px] flex-1 bg-amber-300" />
               </div>
 
               {/* Commendation Paragraph */}

@@ -221,10 +221,10 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Card 1: Quán Quân (Hạng #1 - Vàng Kim, Hero Centerpiece Tôn Vinh Cao Nhất) */}
-            <div className="rounded-xl border-2 border-[#FDE68A] bg-gradient-to-b from-[#FEF3C7]/40 via-white to-white p-6 sm:p-7 shadow-xs flex flex-col items-center text-center relative order-1 md:order-2 md:-translate-y-2">
+            <div className="rounded-md border-2 border-amber-300 bg-amber-50/30 p-6 sm:p-7 shadow-xs flex flex-col items-center text-center relative order-1 md:order-2 md:-translate-y-2">
               {/* Crown Pin */}
               <div className="mb-1">
-                <Crown className="w-6 h-6 text-[#ff9a27] fill-[#ff9a27] drop-shadow-2xs" strokeWidth={1.75} />
+                <Crown className="w-6 h-6 text-amber-500 fill-amber-500" strokeWidth={1.75} />
               </div>
 
               {/* Badge Pill */}

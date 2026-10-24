@@ -90,6 +90,9 @@ interface CandidateSubmission {
   assessmentTitle: string;
   passingScore: number;
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'EVALUATED';
+  gradingStatus?: string | null;
+  integrityFlag?: string | null;
+  evaluatorNotes?: string | null;
   totalScore: number;
   maxScore: number;
   percentage: number;
@@ -641,22 +644,54 @@ function EvaluatorGradingContent() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-4 text-xs flex-wrap">
                   <div className="text-right">
                     <div className="text-slate-500 text-[11px]">ĐIỂM HIỆN TẠI</div>
-                    <div className="font-bold text-slate-900 text-sm">
+                    <div className="font-bold text-slate-900 text-sm font-mono tabular-nums">
                       {activeSubmission.totalScore.toFixed(1)} / {activeSubmission.maxScore} đ (
                       {activeSubmission.percentage.toFixed(1)}%)
                     </div>
                   </div>
                   <div className="h-8 w-px bg-slate-200" />
                   <div className="text-right">
-                    <div className="text-slate-500 text-[11px]">TRẠNG THÁI</div>
+                    <div className="text-slate-500 text-[11px]">GIÁM SÁT THI (INTEGRITY)</div>
+                    <div className="font-semibold flex items-center gap-1.5 justify-end">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS'
+                            ? 'bg-amber-500'
+                            : activeSubmission.integrityFlag === 'MULTIPLE_DEVICES'
+                            ? 'bg-rose-600'
+                            : 'bg-emerald-600'
+                        }`}
+                      />
+                      <span
+                        className={
+                          activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS'
+                            ? 'text-amber-700'
+                            : activeSubmission.integrityFlag === 'MULTIPLE_DEVICES'
+                            ? 'text-rose-700'
+                            : 'text-emerald-700'
+                        }
+                      >
+                        {activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS'
+                          ? 'Có sự kiện chuyển tab'
+                          : activeSubmission.integrityFlag === 'MULTIPLE_DEVICES'
+                          ? 'Đa thiết bị'
+                          : 'Bình thường'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200" />
+                  <div className="text-right">
+                    <div className="text-slate-500 text-[11px]">THẨM ĐỊNH (HITL)</div>
                     <div className="font-bold flex items-center gap-1.5 justify-end">
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
                           activeSubmission.status === 'EVALUATED'
                             ? 'bg-emerald-600'
+                            : activeSubmission.gradingStatus === 'AI_DRAFT'
+                            ? 'bg-sky-500'
                             : 'bg-amber-500'
                         }`}
                       />
@@ -664,10 +699,16 @@ function EvaluatorGradingContent() {
                         className={
                           activeSubmission.status === 'EVALUATED'
                             ? 'text-emerald-700'
+                            : activeSubmission.gradingStatus === 'AI_DRAFT'
+                            ? 'text-sky-700'
                             : 'text-amber-700'
                         }
                       >
-                        {activeSubmission.status === 'EVALUATED' ? 'ĐÃ CÔNG BỐ' : 'CHỜ THẨM ĐỊNH'}
+                        {activeSubmission.status === 'EVALUATED'
+                          ? 'ĐÃ CÔNG BỐ'
+                          : activeSubmission.gradingStatus === 'AI_DRAFT'
+                          ? 'GỢI Ý AI (CHỜ DUYỆT)'
+                          : 'CHỜ THẨM ĐỊNH'}
                       </span>
                     </div>
                   </div>
@@ -849,9 +890,9 @@ function EvaluatorGradingContent() {
                     )}
 
                     {activeAiEval ? (
-                      <div className="p-3 rounded bg-slate-50 border border-slate-200 space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                      <div className="p-3.5 rounded bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span
                               className={`w-2 h-2 rounded-full ${
                                 activeAiEval.confidenceFlag === 'GREEN'
@@ -862,31 +903,38 @@ function EvaluatorGradingContent() {
                               }`}
                             />
                             <span className="font-bold text-slate-900">
-                              Gợi ý điểm AI: {activeAiEval.totalScore.toFixed(1)} / {activeAiEval.maxScore} đ
+                              Đề xuất điểm AI: {activeAiEval.totalScore.toFixed(1)} / {activeAiEval.maxScore} đ
                             </span>
-                            <span className="text-[11px] text-slate-500">
-                              (Độ tin cậy: {(activeAiEval.confidenceScore * 100).toFixed(0)}%)
+                            <span className="text-[11px] font-mono text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                              Cờ tin cậy AI: {activeAiEval.confidenceFlag === 'GREEN' ? 'CAO' : activeAiEval.confidenceFlag === 'AMBER' ? 'TRUNG BÌNH' : 'THẤP'}{' '}
+                              ({activeAiEval.confidenceScore > 1 ? Number(activeAiEval.confidenceScore).toFixed(0) : (Number(activeAiEval.confidenceScore) * 100).toFixed(0)}%)
                             </span>
                           </div>
 
                           <button
+                            type="button"
                             onClick={handleApplyAISuggestions}
-                            className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-sky-700 text-[11px] font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
+                            className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-sky-700 text-[11px] font-semibold inline-flex items-center gap-1 shadow-xs transition-colors shrink-0"
                           >
                             <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
                             Áp dụng gợi ý AI vào Rubric
                           </button>
                         </div>
 
+                        {/* Educational boundary note separating AI confidence from integrity */}
+                        <div className="p-2 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+                          <strong className="text-slate-800">Cơ chế thẩm định:</strong> Cờ tin cậy AI thể hiện mức độ xác thực của thuật toán đối với câu từ và rubric trích dẫn, hoàn toàn độc lập với cờ giám sát phòng thi (Integrity). Quyết định điểm cuối cùng luôn thuộc về Chuyên gia khảo thí.
+                        </div>
+
                         {activeAiEval.evidenceQuote && (
-                          <div className="p-2 rounded bg-white border border-slate-200 text-[11px] text-slate-600 italic">
-                            <span className="font-semibold not-italic text-slate-700">Trích dẫn bằng chứng: </span>
+                          <div className="p-2.5 rounded bg-white border border-slate-200 text-[11px] text-slate-700 italic leading-relaxed">
+                            <span className="font-semibold not-italic text-slate-800 block mb-0.5">Dẫn chứng gốc từ bài làm: </span>
                             &ldquo;{activeAiEval.evidenceQuote}&rdquo;
                           </div>
                         )}
 
                         <div className="text-[11px] text-slate-600">
-                          <span className="font-semibold text-slate-700">Nhận xét AI: </span>
+                          <span className="font-semibold text-slate-700">Nhận xét chuyên môn của AI: </span>
                           {activeAiEval.feedback}
                         </div>
                       </div>

@@ -71,7 +71,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Không thể cập nhật điểm câu hỏi' }, { status: 500 });
     }
 
-    // 5. Recalculate submission total score
+    // 5. Update AI evaluation audit status if AI previously evaluated this item
+    const { data: existingAiEval } = await supabase
+      .from('ai_evaluations')
+      .select('id, total_score')
+      .eq('submission_id', submissionId)
+      .eq('item_id', itemId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let isOverridden = false;
+    if (existingAiEval) {
+      isOverridden = Math.abs(Number(existingAiEval.total_score) - totalAwarded) > 0.01;
+      await supabase
+        .from('ai_evaluations')
+        .update({
+          status: isOverridden ? 'OVERRIDDEN' : 'ACCEPTED',
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+          override_score: isOverridden ? totalAwarded : null,
+          override_feedback: evaluatorFeedback || null,
+        })
+        .eq('id', existingAiEval.id);
+    }
+
+    // 6. Recalculate submission total score
     const { data: allAnswers } = await supabase
       .from('submission_answers')
       .select('score_awarded')
@@ -81,7 +106,7 @@ export async function POST(request: Request) {
 
     const { data: submission } = await supabase
       .from('assessment_submissions')
-      .select('max_score, assessments(passing_score)')
+      .select('user_id, max_score, assessments(passing_score)')
       .eq('id', submissionId)
       .single();
 
@@ -98,8 +123,35 @@ export async function POST(request: Request) {
         percentage: Number(percentage.toFixed(2)),
         is_passed: isPassed,
         status: 'EVALUATED',
+        grading_status: isOverridden ? 'EVALUATOR_OVERRIDDEN' : 'EVALUATOR_APPROVED',
+        evaluated_by: user.id,
+        evaluated_at: new Date().toISOString(),
+        evaluator_notes: evaluatorFeedback || null,
       })
       .eq('id', submissionId);
+
+    // 7. Insert verified competency evidence for longitudinal tracking
+    const { data: itemData } = await supabase
+      .from('assessment_items')
+      .select('competency_id, points')
+      .eq('id', itemId)
+      .single();
+
+    if (itemData?.competency_id && submission?.user_id) {
+      const itemMaxPoints = Number(itemData.points) || 10;
+      const competencyScore = Math.min(100, Math.max(0, Math.round((totalAwarded / itemMaxPoints) * 100)));
+      await supabase.from('competency_evidence').insert({
+        user_id: submission.user_id,
+        competency_id: itemData.competency_id,
+        source_type: 'EVALUATOR_VERIFIED',
+        source_id: submissionId,
+        score: competencyScore,
+        weight: 2.0, // Higher weight for human expert verified evidence
+        evidence_text: evaluatorFeedback || 'Điểm được thẩm định và phê duyệt bởi Chuyên gia khảo thí',
+        verified_by: user.id,
+        verified_at: new Date().toISOString(),
+      });
+    }
 
     return NextResponse.json({
       success: true,

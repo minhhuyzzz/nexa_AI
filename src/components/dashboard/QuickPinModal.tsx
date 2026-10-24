@@ -30,7 +30,7 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xl max-w-sm w-full p-6 text-slate-900 dark:text-zinc-100">
+      <div className="bg-white dark:bg-zinc-950 rounded-md border border-slate-200 dark:border-zinc-800 shadow-sm max-w-sm w-full p-6 text-slate-900 dark:text-zinc-100">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-100 dark:border-sky-850">

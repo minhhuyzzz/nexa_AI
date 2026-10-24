@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { EvaluatorAvatarMenu } from './EvaluatorAvatarMenu';
 import { NotificationBell } from '../NotificationBell';
 import { ChevronRight } from 'lucide-react';
@@ -129,6 +130,7 @@ export function EvaluatorTopbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
+        <WorkspaceSwitcher />
         <NotificationBell />
         <EvaluatorAvatarMenu />
       </div>

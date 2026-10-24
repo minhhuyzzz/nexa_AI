@@ -263,15 +263,17 @@ function LearningPathContent() {
     if (!targetStep) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('user_learning_progress').upsert({
-          user_id: user.id,
-          module_id: stepId,
-          is_completed: true,
-          points_awarded: targetStep.pointReward,
-          completed_at: new Date().toISOString(),
-        });
+      const res = await fetch('/api/learning/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleId: stepId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setToastMessage(data.error || 'Không thể ghi nhận hoàn thành bài học.');
+        setTimeout(() => setToastMessage(null), 4000);
+        return;
       }
 
       setSteps((prev) =>
@@ -286,10 +288,12 @@ function LearningPathContent() {
         })
       );
 
-      setToastMessage('Tuyệt vời! Bạn đã hoàn thành học liệu, nhận điểm thưởng và mở khóa bước tiếp theo.');
+      setToastMessage(data.message || 'Tuyệt vời! Bạn đã hoàn thành học liệu, nhận điểm thưởng và mở khóa bước tiếp theo.');
       setTimeout(() => setToastMessage(null), 5000);
     } catch (err) {
       console.error('Error completing module:', err);
+      setToastMessage('Lỗi kết nối khi lưu tiến độ học tập.');
+      setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
@@ -684,7 +688,7 @@ function LearningPathContent() {
                       </div>
 
                       <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded text-emerald-700 bg-emerald-50 border border-emerald-200">
-                        +{step.pointReward} XP
+                        +{step.pointReward} điểm
                       </div>
 
                       {!isLocked && (

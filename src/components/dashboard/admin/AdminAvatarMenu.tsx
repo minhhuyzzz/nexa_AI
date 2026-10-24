@@ -1,30 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
   LogOut,
-  User,
-  ShieldAlert,
-  Sparkles,
   Sun,
   Moon,
   FolderLock,
-  MessageSquare,
-  ChevronRight,
   Settings,
 } from 'lucide-react';
-import { useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
-import { FeedbackModal } from '../FeedbackModal';
 
 export function AdminAvatarMenu() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
-  const [showFeedback, setShowFeedback] = useState(false);
 
   const [displayName, setDisplayName] = useState('Quản Trị Viên Tối Cao');
   const [displayEmail, setDisplayEmail] = useState('admin.nexa@gmail.com');
@@ -83,7 +75,7 @@ export function AdminAvatarMenu() {
               onClick={() => setIsOpen(false)}
             />
 
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-sm py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
               <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-850">
                 <div className="flex items-center gap-3">
@@ -126,7 +118,7 @@ export function AdminAvatarMenu() {
                 </Link>
 
                 <Link
-                  href="/admin/ai-gateway"
+                  href="/admin/settings?tab=ai"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
@@ -163,19 +155,6 @@ export function AdminAvatarMenu() {
                     />
                   </button>
                 </div>
-
-                {/* Feedback Modal Trigger */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false);
-                    setShowFeedback(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors text-left"
-                >
-                  <MessageSquare className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Đóng góp ý kiến</span>
-                </button>
               </div>
 
               {/* Sign out */}
@@ -192,11 +171,6 @@ export function AdminAvatarMenu() {
           </>
         )}
       </div>
-
-      <FeedbackModal
-        isOpen={showFeedback}
-        onClose={() => setShowFeedback(false)}
-      />
     </>
   );
 }

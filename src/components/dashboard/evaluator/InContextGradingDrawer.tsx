@@ -156,7 +156,7 @@ export function InContextGradingDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-5xl bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-200">
+      <div className="w-full max-w-5xl bg-white h-full shadow-sm flex flex-col justify-between border-l border-slate-200">
         {/* Drawer Header with Full Context */}
         <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">

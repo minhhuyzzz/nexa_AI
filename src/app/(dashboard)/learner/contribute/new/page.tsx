@@ -16,6 +16,7 @@ import {
   FileText,
   HelpCircle,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 
 interface AttachedFile {
@@ -37,7 +38,9 @@ export default function NewContributionPage() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [submissionId, setSubmissionId] = useState('');
+  const [submissionCode, setSubmissionCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatFileSize = (bytes: number): string => {
@@ -70,14 +73,45 @@ export default function NewContributionPage() {
     handleFilesSelected(e.dataTransfer.files);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    if (!prompt.trim() && attachedFiles.length === 0) return;
+    const finalPrompt = prompt.trim() || 'Nội dung chi tiết được mô tả trong các tệp đính kèm đính kèm.';
+    if (finalPrompt.length < 10) {
+      setSubmitError('Nội dung đề bài tối thiểu 10 ký tự');
+      return;
+    }
 
-    const code = `NEXA-CONTRIB-${Math.floor(100000 + Math.random() * 900000)}`;
-    setSubmissionId(code);
-    setSubmitted(true);
+    setSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const res = await fetch('/api/contributions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          domain,
+          questionType,
+          difficulty,
+          prompt: finalPrompt,
+          solutionNotes: solutionNotes.trim(),
+          attachedFiles,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSubmissionCode(data.contribution?.code || 'CB-OK');
+        setSubmitted(true);
+      } else {
+        setSubmitError(data.error || 'Lỗi khi gửi đề xuất lên máy chủ');
+      }
+    } catch (err) {
+      setSubmitError('Lỗi kết nối máy chủ');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const getFileIcon = (fileName: string) => {
@@ -95,7 +129,7 @@ export default function NewContributionPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs text-slate-500">
         <Link
@@ -110,18 +144,18 @@ export default function NewContributionPage() {
       </div>
 
       {/* Header */}
-      <div className="pb-2">
+      <div className="pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            SÁNG KIẾN CỘNG ĐỒNG
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
+            COMMUNITY SUBMISSION
           </span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Đóng Góp Tình Huống &amp; Đề Bài Khảo Thí Mới
         </h1>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-          Đề xuất tình huống thực tế hoặc gửi tệp đề bài khảo thí năng lực số cho Ban Thẩm định NEXA. Bạn có thể nhập đề bài trực tiếp hoặc tải tệp tài liệu (Word, Excel, PDF, ZIP) đính kèm. Nhận ngay <span className="font-semibold text-emerald-600">+100 điểm thưởng</span> khi đề xuất được duyệt!
+          Đề xuất tình huống thực tế hoặc gửi tệp đề bài khảo thí năng lực số cho Ban Thẩm định NEXA. Nhận ngay <span className="font-semibold text-emerald-700">+100 điểm thưởng</span> khi đề xuất được duyệt!
         </p>
       </div>
 
@@ -131,21 +165,21 @@ export default function NewContributionPage() {
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[11px] font-mono text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded border border-emerald-200">
-              Mã đề xuất: {submissionId}
+            <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded border border-emerald-200">
+              Mã đề xuất CSDL: {submissionCode}
             </span>
             <h2 className="text-lg font-bold text-slate-900 mt-2">
-              Đề xuất &amp; tệp đính kèm của bạn đã được gửi thành công!
+              Đề xuất của bạn đã được lưu trữ bền vững trên máy chủ!
             </h2>
           </div>
 
           <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-            Hội đồng Thẩm định Học thuật NEXA sẽ rà soát nội dung trong vòng 24-48 giờ. Bạn có thể theo dõi tiến độ duyệt và phản hồi trực tiếp tại trang quản lý danh sách đóng góp.
+            Hội đồng Thẩm định Học thuật NEXA đã nhận được hồ sơ của bạn và sẽ xét duyệt trong vòng 24-48 giờ. Bạn có thể theo dõi tiến độ duyệt bất kỳ lúc nào trên tài khoản của mình.
           </p>
 
           {attachedFiles.length > 0 && (
             <div className="max-w-md mx-auto p-3.5 rounded-md bg-white border border-slate-200 text-left space-y-2 text-xs">
-              <div className="font-semibold text-slate-700 text-[11px] uppercase tracking-wider">
+              <div className="font-semibold text-slate-700 text-[11px] uppercase tracking-wider font-mono">
                 Tệp đính kèm đã gửi ({attachedFiles.length}):
               </div>
               <div className="space-y-1.5">
@@ -182,14 +216,21 @@ export default function NewContributionPage() {
             </button>
             <Link
               href="/learner/contribute"
-              className="px-4 py-2 rounded-md bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 rounded-md bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-xs"
             >
               Về danh sách quản lý đóng góp
             </Link>
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="p-6 rounded-md border border-slate-200 bg-white space-y-5 text-xs">
+        <form onSubmit={handleSubmit} className="p-6 rounded-md border border-slate-200 bg-white space-y-5 text-xs shadow-xs">
+          {submitError && (
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{submitError}</span>
+            </div>
+          )}
+
           {/* Title */}
           <div>
             <label className="font-semibold text-slate-800 block mb-1">
@@ -249,10 +290,10 @@ export default function NewContributionPage() {
                 onChange={(e) => setDifficulty(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md text-xs focus:bg-white focus:outline-none"
               >
-                <option value="BASIC">Basic</option>
+                <option value="FOUNDATION">Foundation</option>
                 <option value="INTERMEDIATE">Intermediate</option>
                 <option value="ADVANCED">Advanced</option>
-                <option value="HIGHLY_ADVANCED">Highly Advanced</option>
+                <option value="EXPERT">Expert</option>
               </select>
             </div>
           </div>
@@ -264,7 +305,7 @@ export default function NewContributionPage() {
                 Tệp đề thi hoặc minh chứng đính kèm (Khuyến nghị):
               </label>
               <span className="text-[11px] text-slate-400">
-                Hỗ trợ Word (.docx), Excel (.xlsx), PDF, ZIP (Tối đa 25MB)
+                Hỗ trợ Word (.docx), Excel (.xlsx), PDF, ZIP
               </span>
             </div>
 
@@ -320,7 +361,7 @@ export default function NewContributionPage() {
                           <div className="font-semibold text-slate-900 truncate">
                             {file.name}
                           </div>
-                          <div className="text-[10px] text-slate-400">
+                          <div className="text-[10px] text-slate-400 font-mono">
                             {file.size} &bull; Sẵn sàng thẩm định
                           </div>
                         </div>
@@ -354,8 +395,8 @@ export default function NewContributionPage() {
                 Nội dung mô tả tình huống / Đề bài tóm tắt:
               </label>
               {attachedFiles.length > 0 && (
-                <span className="text-[11px] text-emerald-600 font-medium">
-                  (Có thể để trống nếu nội dung chi tiết đã có trong tệp đính kèm)
+                <span className="text-[11px] text-emerald-700 font-medium">
+                  (Có thể để trống nếu nội dung đã có trong tệp đính kèm)
                 </span>
               )}
             </div>
@@ -393,11 +434,11 @@ export default function NewContributionPage() {
 
             <button
               type="submit"
-              disabled={!title.trim() || (!prompt.trim() && attachedFiles.length === 0)}
+              disabled={submitting || !title.trim()}
               className="px-5 py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-2 transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Gửi đề xuất &amp; tệp đính kèm (+100đ thưởng)</span>
+              <span>{submitting ? 'Đang lưu vào CSDL...' : 'Gửi đề xuất & tệp đính kèm (+100đ)'}</span>
             </button>
           </div>
         </form>

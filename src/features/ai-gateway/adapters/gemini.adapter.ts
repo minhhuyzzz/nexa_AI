@@ -216,6 +216,14 @@ ${JSON.stringify(input.skillScores, null, 2)}
 CHI TIẾT CÂU SAI HOẶC ĐIỂM CHƯA ĐẠT (NẾU CÓ):
 ${JSON.stringify(input.mistakes || [], null, 2)}
 
+DANH SÁCH BÀI HỌC CÓ SẴN TRONG HỆ THỐNG ĐỂ LIÊN KẾT (BẮT BUỘC CHỌN TỪ ĐÂY):
+${JSON.stringify(input.availableModules || [], null, 2)}
+
+QUY TẮC LIÊN KẾT LỘ TRÌNH HỌC TẬP:
+- Các bước trong "learningPathway" (4 bước) PHẢI ưu tiên chọn từ danh sách bài học có sẵn ở trên.
+- Điền đúng "moduleId" tương ứng với ID của bài học được chọn và "recommendedSkillCode" là skillCode của bài học đó.
+- Không tự bịa đặt ID không tồn tại.
+
 HÃY PHÂN TÍCH VÀ XUẤT RA JSON CHUẨN XÁC:
 {
   "overallLevel": "BASIC" | "INTERMEDIATE" | "ADVANCED" | "HIGHLY_ADVANCED",
@@ -244,36 +252,40 @@ HÃY PHÂN TÍCH VÀ XUẤT RA JSON CHUẨN XÁC:
   "learningPathway": [
     {
       "stepNumber": 1,
+      "moduleId": "uuid của bài học có thật",
       "title": "Tiêu đề bước 1",
       "targetSkill": "Kỹ năng mục tiêu",
-      "durationHours": 2,
+      "durationHours": 0.5,
       "objective": "Mục tiêu đạt được",
       "actionText": "Hành động thực hiện cụ thể",
       "recommendedSkillCode": "4.2"
     },
     {
       "stepNumber": 2,
+      "moduleId": "uuid của bài học có thật",
       "title": "Tiêu đề bước 2",
       "targetSkill": "Kỹ năng mục tiêu",
-      "durationHours": 3,
+      "durationHours": 0.5,
       "objective": "Mục tiêu đạt được",
       "actionText": "Hành động thực hiện cụ thể",
       "recommendedSkillCode": "1.2"
     },
     {
       "stepNumber": 3,
+      "moduleId": "uuid của bài học có thật",
       "title": "Tiêu đề bước 3",
       "targetSkill": "Kỹ năng mục tiêu",
-      "durationHours": 4,
+      "durationHours": 0.5,
       "objective": "Mục tiêu đạt được",
       "actionText": "Hành động thực hiện cụ thể",
       "recommendedSkillCode": "3.2"
     },
     {
       "stepNumber": 4,
+      "moduleId": "uuid của bài học có thật",
       "title": "Tiêu đề bước 4",
       "targetSkill": "Kỹ năng mục tiêu",
-      "durationHours": 2,
+      "durationHours": 0.5,
       "objective": "Mục tiêu đạt được",
       "actionText": "Hành động thực hiện cụ thể",
       "recommendedSkillCode": "5.2"

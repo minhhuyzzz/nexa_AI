@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { getAIAdapter } from '@/features/ai-gateway/adapters';
 import { RubricDef } from '@/features/ai-gateway/types/grading.types';
+import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
 
 const requestSchema = z.object({
   submissionId: z.string().uuid('Mã bài nộp (submissionId) không hợp lệ'),
@@ -56,7 +57,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Fetch candidate's response
+    // 3. Verify submission existence and learner ownership
+    const { data: submission, error: subError } = await supabase
+      .from('assessment_submissions')
+      .select('id, user_id, status, assessment_id')
+      .eq('id', submissionId)
+      .single();
+
+    if (subError || !submission) {
+      return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
+    }
+
+    if (profile.role === 'LEARNER' && submission.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Bạn không có thẩm quyền yêu cầu chấm bài thi này' },
+        { status: 403 }
+      );
+    }
+
+    // 4. Fetch candidate's response
     const { data: answer, error: answerError } = await supabase
       .from('submission_answers')
       .select('id, text_response, evidence_url')
@@ -147,14 +166,41 @@ export async function POST(request: Request) {
     };
 
     // 5. Invoke AI Gateway via GeminiAdapter
+    const startTime = performance.now();
     const adapter = getAIAdapter('GOOGLE_GEMINI');
-    const evaluation = await adapter.gradeRubricSubmission({
-      taskPrompt: item.prompt,
-      studentResponse: answer.text_response,
-      rubric: rubricDef,
+    let evaluation;
+    let evalError: unknown = null;
+
+    try {
+      evaluation = await adapter.gradeRubricSubmission({
+        taskPrompt: item.prompt,
+        studentResponse: answer.text_response,
+        rubric: rubricDef,
+      });
+    } catch (err) {
+      evalError = err;
+    }
+
+    const latencyMs = Math.round(performance.now() - startTime);
+
+    // Log AI Usage Event
+    await AIUsageLoggerService.logUsage(supabase, {
+      userId: user.id,
+      feature: 'RUBRIC_GRADING',
+      provider: 'GOOGLE_GEMINI',
+      model: adapter.defaultModel,
+      latencyMs,
+      status: evalError ? 'FAILED' : 'SUCCESS',
+      errorMessage: evalError ? (evalError instanceof Error ? evalError.message : String(evalError)) : null,
+      promptTokens: Math.round((item.prompt.length + (answer.text_response?.length || 0) + 500) / 4),
+      completionTokens: evaluation ? Math.round(JSON.stringify(evaluation).length / 4) : 0,
     });
 
-    // 6. Save AI evaluation result into public.ai_evaluations
+    if (evalError || !evaluation) {
+      throw evalError;
+    }
+
+    // 6. Save AI evaluation result into public.ai_evaluations as DRAFT for Evaluator review
     const { data: evalRecord, error: saveError } = await supabase
       .from('ai_evaluations')
       .insert({
@@ -170,6 +216,7 @@ export async function POST(request: Request) {
         weaknesses: evaluation.weaknesses,
         feedback: evaluation.feedback,
         criterion_scores: evaluation.criterionScores,
+        status: 'DRAFT',
       })
       .select('id, created_at')
       .single();
@@ -178,7 +225,7 @@ export async function POST(request: Request) {
       console.error('Failed to save AI evaluation:', saveError);
     }
 
-    // 7. Update answer score in submission_answers
+    // 7. Update answer score in submission_answers and mark submission as AI_DRAFT
     await supabase
       .from('submission_answers')
       .update({
@@ -187,14 +234,26 @@ export async function POST(request: Request) {
       })
       .eq('id', answer.id);
 
-    // 8. Deduct 1 credit for Learner
+    await supabase
+      .from('assessment_submissions')
+      .update({
+        grading_status: 'AI_DRAFT',
+      })
+      .eq('id', submissionId);
+
+    // 8. Atomic Credit Deduction for Learner (Zero race conditions, enforced by DB trigger)
     let remainingCredits = profile.credits;
     if (profile.role === 'LEARNER') {
-      remainingCredits = Math.max(0, (profile.credits ?? 1) - 1);
-      await supabase
-        .from('profiles')
-        .update({ credits: remainingCredits })
-        .eq('id', user.id);
+      const { data: newCredits, error: deductError } = await supabase.rpc('deduct_ai_credits', {
+        p_user_id: user.id,
+        p_amount: 1,
+      });
+
+      if (!deductError && typeof newCredits === 'number') {
+        remainingCredits = newCredits;
+      } else {
+        remainingCredits = Math.max(0, (profile.credits ?? 1) - 1);
+      }
     }
 
     return NextResponse.json({

@@ -11,6 +11,7 @@ const onboardingSchema = z.object({
     .trim()
     .min(2, 'Biệt danh phải có ít nhất 2 ký tự')
     .max(30, 'Biệt danh tối đa 30 ký tự'),
+  orgCode: z.string().trim().optional().or(z.literal('')),
 });
 
 export async function POST(request: Request) {
@@ -35,12 +36,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const { role, nickname } = validated.data;
+    const { role, nickname, orgCode } = validated.data;
 
     // 1. Fetch current profile
     const { data: profile, error: profileFetchError } = await supabase
       .from('profiles')
-      .select('id, role, nickname, is_onboarded')
+      .select('id, role, nickname, is_onboarded, plan_tier')
       .eq('id', user.id)
       .single();
 
@@ -58,7 +59,31 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. Kiểm tra trùng biệt danh (nếu người dùng thay đổi biệt danh so với gợi ý tự động)
+    // 2. Validate mã trường / B2B organization nếu người dùng có nhập
+    let linkedOrgId: string | null = null;
+    let targetPlanTier = profile.plan_tier || 'FREE';
+
+    if (orgCode && orgCode.trim()) {
+      const cleanCode = orgCode.trim().toUpperCase();
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name, status, code')
+        .ilike('code', cleanCode)
+        .eq('status', 'ACTIVE')
+        .maybeSingle();
+
+      if (orgError || !orgData) {
+        return NextResponse.json(
+          { error: `Mã đơn vị "${cleanCode}" không tồn tại hoặc chưa được kích hoạt.` },
+          { status: 400 }
+        );
+      }
+
+      linkedOrgId = orgData.id;
+      targetPlanTier = 'ENTERPRISE';
+    }
+
+    // 3. Kiểm tra trùng biệt danh (nếu người dùng thay đổi biệt danh so với gợi ý tự động)
     const cleanNickname = nickname.trim();
     if (cleanNickname.toLowerCase() !== (profile.nickname || '').toLowerCase()) {
       const { data: isAvailable, error: checkError } = await supabase.rpc(
@@ -76,12 +101,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Cập nhật hồ sơ với vai trò và biệt danh được chọn
+    // 4. Cập nhật hồ sơ với vai trò, biệt danh và plan_tier
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         role,
         nickname: cleanNickname,
+        plan_tier: targetPlanTier,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
       })
@@ -97,7 +123,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
-    // 4. Nếu chọn Người đánh giá (EVALUATOR), khởi tạo bản ghi evaluator_profiles
+    // 5. Gắn người dùng vào tổ chức nếu có orgCode hợp lệ
+    if (linkedOrgId) {
+      await supabase
+        .from('user_organizations')
+        .upsert(
+          {
+            user_id: user.id,
+            organization_id: linkedOrgId,
+            org_role: 'MEMBER',
+            status: 'ACTIVE',
+          },
+          { onConflict: 'user_id,organization_id' }
+        );
+    }
+
+    // 6. Nếu chọn Người đánh giá (EVALUATOR), khởi tạo bản ghi evaluator_profiles
     if (role === 'EVALUATOR') {
       await supabase
         .from('evaluator_profiles')
@@ -108,7 +149,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Thiết lập tài khoản thành công',
+      message: linkedOrgId ? 'Thiết lập tài khoản và kết nối đơn vị thành công' : 'Thiết lập tài khoản thành công',
       redirectUrl,
     });
   } catch (err) {

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Compass,
   Check,
+  X,
 } from 'lucide-react';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/learner/CompetencyRadarChart';
 
@@ -779,7 +780,7 @@ export default function LearnerDashboardPage() {
       {/* Level Tier Explanation Modal */}
       {showLevelModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full shadow-lg space-y-4 text-xs text-slate-800">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full shadow-sm space-y-4 text-xs text-slate-800">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
@@ -791,7 +792,7 @@ export default function LearnerDashboardPage() {
                 onClick={() => setShowLevelModal(false)}
                 className="text-slate-400 hover:text-slate-600 text-xs font-semibold p-1 rounded-md transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
 

@@ -384,7 +384,7 @@ export default function AssessmentDetailPage() {
       {/* VIP Upgrade Modal */}
       {showVipModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-md p-6 space-y-4 shadow-lg animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-md p-6 space-y-4 shadow-sm animate-in fade-in zoom-in-95">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
                 <Lock className="w-5 h-5" strokeWidth={1.75} />

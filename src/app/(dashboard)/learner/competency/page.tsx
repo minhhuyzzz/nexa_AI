@@ -22,89 +22,40 @@ import { createClient } from '@/lib/supabase/client';
 interface DomainProgress {
   domainCode: string;
   name: string;
-  score: number;
+  score: number | null;
   level: string;
   competenciesCount: number;
   completedCount: number;
-  status: 'MASTERED' | 'PROFICIENT' | 'NEEDS_IMPROVEMENT' | 'UNASSESSED';
+  status: 'MASTERED' | 'PROFICIENT' | 'DEVELOPING' | 'INSUFFICIENT_DATA';
 }
 
 export default function LearnerCompetencyHubPage() {
-  const supabase = createClient();
   const [domains, setDomains] = useState<DomainProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasTakenAssessment, setHasTakenAssessment] = useState(false);
+  const [overallScore, setOverallScore] = useState<number | null>(null);
+  const [totalEvidenceCount, setTotalEvidenceCount] = useState<number>(0);
+  const [baselineSnapshot, setBaselineSnapshot] = useState<{ overallScore: number; createdAt: string } | null>(null);
 
   const fetchCompetencyData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const res = await fetch('/api/learner/competency-radar');
+      if (!res.ok) throw new Error('Không thể tải hồ sơ năng lực');
+      const data = await res.json();
 
-      // 1. Fetch live domains and competencies
-      const { data: domainsData } = await supabase
-        .from('competency_domains')
-        .select(`
-          id,
-          code,
-          title,
-          domain_index,
-          competencies (
-            id,
-            skill_code,
-            title
-          )
-        `)
-        .order('domain_index', { ascending: true });
+      setOverallScore(data.overallScore ?? null);
+      setTotalEvidenceCount(data.totalEvidenceCount || 0);
+      setBaselineSnapshot(data.baselineSnapshot || null);
 
-      // 2. Fetch latest competency analysis for user
-      let analysis: any = null;
-      if (user) {
-        const { data: analysisData } = await supabase
-          .from('competency_analyses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        analysis = analysisData;
-      }
-
-      const radar = (analysis?.radar_data as Record<string, number>) || {};
-      const hasAnalysis = Boolean(analysis);
-      setHasTakenAssessment(hasAnalysis);
-
-      const mapped: DomainProgress[] = (domainsData || []).map((dom: any, idx: number) => {
-        const compCount = dom.competencies?.length || 4;
-        const domainKey = dom.code || `D${idx + 1}`;
-        const score = hasAnalysis ? (radar[domainKey] || radar[`Miền ${idx + 1}`] || 75) : 0;
-        
-        let level = 'Chưa khảo thí';
-        let status: DomainProgress['status'] = 'UNASSESSED';
-
-        if (hasAnalysis) {
-          if (score >= 80) {
-            level = 'Advanced';
-            status = 'MASTERED';
-          } else if (score >= 60) {
-            level = 'Intermediate';
-            status = 'PROFICIENT';
-          } else {
-            level = 'Basic';
-            status = 'NEEDS_IMPROVEMENT';
-          }
-        }
-
-        return {
-          domainCode: dom.code || `0${idx + 1}`,
-          name: dom.title,
-          score,
-          level,
-          competenciesCount: compCount,
-          completedCount: hasAnalysis ? (score >= 60 ? compCount : Math.floor(compCount / 2)) : 0,
-          status,
-        };
-      });
+      const mapped: DomainProgress[] = (data.domains || []).map((dom: any) => ({
+        domainCode: dom.domainCode,
+        name: dom.domainTitle,
+        score: dom.score,
+        level: dom.level,
+        competenciesCount: dom.totalSkillsCount,
+        completedCount: dom.assessedSkillsCount,
+        status: dom.status,
+      }));
 
       setDomains(mapped);
     } catch (err) {
@@ -112,15 +63,13 @@ export default function LearnerCompetencyHubPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     fetchCompetencyData();
   }, [fetchCompetencyData]);
 
-  const averageScore = domains.length > 0
-    ? Math.round(domains.reduce((sum, d) => sum + d.score, 0) / domains.length)
-    : 0;
+  const hasTakenAssessment = totalEvidenceCount > 0;
 
   return (
     <div className="space-y-6">
@@ -183,17 +132,26 @@ export default function LearnerCompetencyHubPage() {
         <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
           <div className="text-xs text-slate-500 font-medium">Điểm năng lực tổng thể</div>
           <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums mt-1">
-            {loading ? '-' : averageScore}
+            {loading ? '-' : overallScore !== null ? overallScore : '--'}
             <span className="text-sm font-normal text-slate-400 ml-1">/ 100</span>
           </div>
           <div className="text-[11px] text-slate-500 font-medium mt-1 flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-            {hasTakenAssessment ? 'Dựa trên đợt khảo thí gần nhất' : 'Chưa có dữ liệu khảo thí'}
+            {baselineSnapshot && overallScore !== null ? (
+              <span>
+                {overallScore >= baselineSnapshot.overallScore ? '+' : ''}
+                {overallScore - baselineSnapshot.overallScore}% so với khảo thí ban đầu
+              </span>
+            ) : hasTakenAssessment ? (
+              'Dựa trên các bài khảo thí đã hoàn thành'
+            ) : (
+              'Chưa đủ dữ liệu khảo thí'
+            )}
           </div>
         </div>
 
         <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="text-xs text-slate-500 font-medium">Kỹ năng đã hoàn thành</div>
+          <div className="text-xs text-slate-500 font-medium">Kỹ năng đã khảo thí</div>
           <div className="text-3xl font-extrabold text-sky-600 font-mono tabular-nums mt-1">
             {loading ? '-' : domains.reduce((sum, d) => sum + d.completedCount, 0)}
             <span className="text-sm font-normal text-slate-400 ml-1">/ 21 kỹ năng</span>
@@ -204,7 +162,7 @@ export default function LearnerCompetencyHubPage() {
         <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
           <div className="text-xs text-slate-500 font-medium">Khoảng trống cần bồi dưỡng (&lt; 60%)</div>
           <div className="text-3xl font-extrabold text-amber-600 font-mono tabular-nums mt-1">
-            {loading ? '-' : domains.filter((d) => d.score < 60 && d.status !== 'UNASSESSED').length}
+            {loading ? '-' : domains.filter((d) => d.score !== null && d.score < 60).length}
             <span className="text-sm font-normal text-slate-400 ml-1">miền năng lực</span>
           </div>
           <div className="text-[11px] text-amber-700 font-medium mt-1">
@@ -222,7 +180,7 @@ export default function LearnerCompetencyHubPage() {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400">
             <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
-            <p className="text-xs">Đang tải khung năng lực từ CSDL Supabase...</p>
+            <p className="text-xs">Đang tổng hợp dữ liệu năng lực từ CSDL...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3.5">
@@ -242,33 +200,35 @@ export default function LearnerCompetencyHubPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-slate-500 font-medium font-mono">{dom.level}</span>
                     <span className="text-base font-bold font-mono text-slate-900 tabular-nums">
-                      {dom.score}%
+                      {dom.score !== null ? `${dom.score}%` : '--'}
                     </span>
                   </div>
                 </div>
 
                 {/* Progress bar */}
                 <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      dom.score >= 80
-                        ? 'bg-emerald-600'
-                        : dom.score >= 60
-                        ? 'bg-sky-600'
-                        : dom.score > 0
-                        ? 'bg-amber-500'
-                        : 'bg-slate-200'
-                    }`}
-                    style={{ width: `${Math.max(dom.score, 2)}%` }}
-                  />
+                  {dom.score !== null ? (
+                    <div
+                      className={`h-full transition-all duration-500 ${
+                        dom.score >= 80
+                          ? 'bg-emerald-600'
+                          : dom.score >= 60
+                          ? 'bg-sky-600'
+                          : 'bg-amber-500'
+                      }`}
+                      style={{ width: `${Math.max(dom.score, 4)}%` }}
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-slate-200/50" />
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
                   <span>
-                    Đã đạt {dom.completedCount}/{dom.competenciesCount} kỹ năng thành phần
+                    Đã khảo thí {dom.completedCount}/{dom.competenciesCount} kỹ năng thành phần
                   </span>
 
-                  {dom.status === 'UNASSESSED' ? (
+                  {dom.status === 'INSUFFICIENT_DATA' || dom.score === null ? (
                     <Link
                       href="/learner/assessments"
                       className="text-sky-600 font-semibold inline-flex items-center gap-1 hover:underline"

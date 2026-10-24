@@ -1,349 +1,308 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CreditCard,
-  CheckCircle2,
-  Edit2,
+  Plus,
   Check,
+  Edit2,
+  Trash2,
+  Save,
   X,
+  Loader2,
+  Users,
+  Cpu,
+  Layers,
   Sparkles,
-  Zap,
-  Building2,
-  User,
-  ShieldCheck,
-  Award,
 } from 'lucide-react';
 
 interface ServicePlan {
   id: string;
-  code: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+  code: string;
+  role_target: 'LEARNER' | 'EVALUATOR' | 'ORGANIZATION';
   name: string;
-  targetAudience: string;
-  monthlyPriceVnd: number;
-  annualPriceVnd: number;
-  monthlyAiGradingQuota: number;
-  monthlyAssessmentsQuota: number | 'UNLIMITED';
+  description: string;
+  price_vnd: number;
+  credits_included: number;
+  max_members: number;
   features: string[];
-  isActive: boolean;
+  is_active: boolean;
+  sort_order: number;
 }
 
-const defaultPlans: ServicePlan[] = [
-  {
-    id: 'plan-free',
-    code: 'FREE',
-    name: 'Gói FREE',
-    targetAudience: 'Người học tự do và giáo viên mở lớp trải nghiệm',
-    monthlyPriceVnd: 0,
-    annualPriceVnd: 0,
-    monthlyAiGradingQuota: 10,
-    monthlyAssessmentsQuota: 'UNLIMITED',
-    features: [
-      'Kho đề chung trắc nghiệm không giới hạn',
-      'Đề thi chuyên sâu nâng cao: Bị khóa',
-      '10 AI credits phân tích năng lực mỗi tháng',
-      '1 nhóm lớp tối đa 15 học viên',
-      '1 phòng thi trực tiếp mã PIN',
-      'Chứng chỉ',
-      'Đóng góp đề thi cộng đồng',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'plan-plus',
-    code: 'PLUS',
-    name: 'Gói PLUS',
-    targetAudience: 'Người học bồi dưỡng chuyên đề & giáo viên quản lý lớp nhỏ',
-    monthlyPriceVnd: 69000,
-    annualPriceVnd: 690000,
-    monthlyAiGradingQuota: 100,
-    monthlyAssessmentsQuota: 'UNLIMITED',
-    features: [
-      'Mở thêm bài thi tình huống thực tế',
-      '100 AI credits phân tích và gợi ý lộ trình',
-      'Đánh giá lại kỹ năng sau khi học',
-      '3 nhóm lớp tối đa 50 học viên mỗi lớp',
-      '3 phòng thi trực tiếp đồng thời',
-      'Xuất bảng điểm Excel và CSV',
-      'Chứng chỉ',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'plan-pro',
-    code: 'PRO',
-    name: 'Gói PRO',
-    targetAudience: 'Người học bứt phá kỹ năng & chuyên gia khảo thí chuyên nghiệp',
-    monthlyPriceVnd: 199000,
-    annualPriceVnd: 1890000,
-    monthlyAiGradingQuota: 1000,
-    monthlyAssessmentsQuota: 'UNLIMITED',
-    features: [
-      'Mở khóa toàn bộ đề thi chuyên sâu',
-      '1.000 AI credits phân tích chi tiết và lập lộ trình',
-      'Không giới hạn số lớp và học viên',
-      'Không giới hạn phòng thi trực tiếp',
-      'Bàn chấm Split-view chuyên nghiệp',
-      'Xuất dữ liệu nghiên cứu 26 biến số',
-      'Chứng chỉ',
-      'Huy hiệu Pro và ưu tiên xếp hạng',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'plan-ent',
-    code: 'ENTERPRISE',
-    name: 'Gói ENTERPRISE',
-    targetAudience: 'Tổ chức, Doanh nghiệp, Tập đoàn và Đơn vị đào tạo quy mô lớn',
-    monthlyPriceVnd: 25000, // tính theo đầu người học / tháng
-    annualPriceVnd: 250000,
-    monthlyAiGradingQuota: 10000,
-    monthlyAssessmentsQuota: 'UNLIMITED',
-    features: [
-      'Toàn bộ người học nội bộ được kích hoạt đầy đủ tính năng Pro',
-      'Chuyên gia & Người đánh giá dùng trọn bộ công cụ khảo thí',
-      'Tùy biến khung năng lực số riêng',
-      'Tạo ngân hàng đề thi và học liệu riêng',
-      'Tích hợp đăng nhập một lần và LMS',
-      'Chứng chỉ đồng thương hiệu riêng',
-      'Báo cáo kiểm định chất lượng đào tạo',
-    ],
-    isActive: true,
-  },
-];
-
 export default function AdminPlansPage() {
-  const [plans, setPlans] = useState<ServicePlan[]>(defaultPlans);
+  const [plans, setPlans] = useState<ServicePlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingPlan, setEditingPlan] = useState<ServicePlan | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const handleSavePlan = (e: React.FormEvent) => {
+  const fetchPlans = async () => {
+    try {
+      const res = await fetch('/api/admin/plans');
+      if (res.ok) {
+        const data = await res.json();
+        setPlans(data.plans || []);
+      }
+    } catch (e) {
+      console.error('Failed to load plans', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPlan) return;
-    setPlans((prev) =>
-      prev.map((p) => (p.id === editingPlan.id ? editingPlan : p))
-    );
-    setToastMessage(`Đã cập nhật mức giá và hạn mức cho ${editingPlan.name}!`);
-    setEditingPlan(null);
-    setTimeout(() => setToastMessage(null), 4000);
+    setIsSaving(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch('/api/admin/plans', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingPlan.id,
+          name: editingPlan.name,
+          description: editingPlan.description,
+          priceVnd: Number(editingPlan.price_vnd),
+          creditsIncluded: Number(editingPlan.credits_included),
+          maxMembers: Number(editingPlan.max_members),
+          features: editingPlan.features,
+          isActive: editingPlan.is_active,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Không thể lưu gói dịch vụ');
+
+      setMessage('Đã cập nhật cấu hình gói dịch vụ thành công vào CSDL!');
+      setEditingPlan(null);
+      await fetchPlans();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Lỗi lưu dữ liệu');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              QUẢN TRỊ KINH DOANH
+              TÀI CHÍNH &amp; THƯƠNG MẠI
             </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Cấu Hình Gói Dịch Vụ & Bảng Giá Đồng Nhất
+            Quản Lý Cấu Hình Gói Dịch Vụ (Service Plans)
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Thiết lập mức phí chung, hạn mức AI credits và các đặc quyền mở khóa cho cả Người học & Người đánh giá.
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Dữ liệu gói lưu trữ trực tiếp trong bảng database <code className="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">public.service_plans</code>, không dùng mảng tĩnh.
           </p>
         </div>
       </div>
 
-      {toastMessage && (
-        <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
-          <span className="font-medium">{toastMessage}</span>
+      {message && (
+        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+          <span>{message}</span>
+          <button onClick={() => setMessage(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Grid of 4 Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`p-6 rounded-md border bg-white flex flex-col justify-between transition-all ${
-              plan.code === 'PRO'
-                ? 'border-sky-600 shadow-xs ring-1 ring-sky-600/30'
-                : 'border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-3">
+      {/* Grid of Plans */}
+      {isLoading ? (
+        <div className="py-12 flex justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-sky-600" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className={`p-6 rounded-md border flex flex-col justify-between bg-white shadow-xs transition-all ${
+                plan.is_active ? 'border-slate-200 hover:border-slate-300' : 'border-slate-200 opacity-60 bg-slate-50'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div>
+                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200 mb-1">
+                      {plan.role_target} &bull; {plan.code}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900">{plan.name}</h3>
+                  </div>
+                  <button
+                    onClick={() => setEditingPlan({ ...plan })}
+                    className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
+                    title="Chỉnh sửa gói"
+                  >
+                    <Edit2 className="w-4 h-4" strokeWidth={1.75} />
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-500 min-h-[32px] mb-4">{plan.description}</p>
+
+                <div className="mb-5 pb-4 border-b border-slate-100">
+                  <span className="text-2xl font-bold font-mono text-slate-900">
+                    {plan.price_vnd === 0 ? '0 đ' : `${plan.price_vnd.toLocaleString('vi-VN')} đ`}
+                  </span>
+                  <span className="text-xs text-slate-500 ml-1">/ tháng</span>
+                </div>
+
+                <div className="space-y-2 text-xs text-slate-700 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
+                    <span>
+                      Hạn mức AI: <strong className="font-mono">{plan.credits_included} credits</strong> / tháng
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-emerald-600 shrink-0" strokeWidth={1.75} />
+                    <span>
+                      Quy mô tối đa: <strong className="font-mono">{plan.max_members} thành viên</strong>
+                    </span>
+                  </div>
+                </div>
+
+                <ul className="space-y-2 text-xs text-slate-600 mb-6">
+                  {Array.isArray(plan.features) &&
+                    plan.features.map((f, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" strokeWidth={1.75} />
+                        <span className="text-[11px]">{f}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Trạng thái phát hành:</span>
                 <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-md ${
-                    plan.code === 'PRO'
-                      ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                      : plan.code === 'ENTERPRISE'
-                      ? 'bg-slate-900 text-white'
-                      : plan.code === 'PLUS'
+                  className={`px-2 py-0.5 rounded font-mono font-semibold ${
+                    plan.is_active
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
-                  {plan.code}
+                  {plan.is_active ? 'ĐANG MỞ' : 'TẠM KHÓA'}
                 </span>
-
-                <button
-                  onClick={() => setEditingPlan(plan)}
-                  className="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium inline-flex items-center gap-1 transition-colors"
-                >
-                  <Edit2 className="w-3 h-3" strokeWidth={1.75} />
-                  <span>Sửa giá</span>
-                </button>
-              </div>
-
-              <h2 className="text-base font-bold text-slate-900 mb-1">{plan.name}</h2>
-              <p className="text-xs text-slate-500 mb-4 min-h-[2rem]">{plan.targetAudience}</p>
-
-              {/* Pricing strip */}
-              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200/80 mb-5">
-                <div className="text-xl font-extrabold text-slate-900">
-                  {plan.monthlyPriceVnd === 0
-                    ? '0 VNĐ'
-                    : `${plan.monthlyPriceVnd.toLocaleString('vi-VN')} đ`}
-                  <span className="text-xs font-normal text-slate-500">
-                    {plan.code === 'ENTERPRISE' ? ' / học viên / tháng' : ' / tháng'}
-                  </span>
-                </div>
-                {plan.annualPriceVnd > 0 && (
-                  <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-                    Gói năm: {plan.annualPriceVnd.toLocaleString('vi-VN')} đ
-                  </div>
-                )}
-              </div>
-
-              {/* Quota breakdown */}
-              <div className="space-y-2 mb-5 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Hạn mức AI credits:</span>
-                  <span className="font-bold text-slate-900">
-                    {plan.monthlyAiGradingQuota >= 10000
-                      ? 'Theo hạn mức trường'
-                      : `${plan.monthlyAiGradingQuota.toLocaleString('vi-VN')} credits / tháng`}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Bài khảo thí tối đa:</span>
-                  <span className="font-bold text-slate-900">Không giới hạn</span>
-                </div>
-              </div>
-
-              {/* Features list */}
-              <div className="space-y-2 text-xs">
-                <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px] mb-2">
-                  Đặc quyền bao gồm:
-                </div>
-                {plan.features.map((feat, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-slate-600">
-                    <CheckCircle2
-                      className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5"
-                      strokeWidth={2}
-                    />
-                    <span className="leading-relaxed">{feat}</span>
-                  </div>
-                ))}
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Edit Plan Modal */}
+      {/* Edit Modal */}
       {editingPlan && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-slate-900 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-md border border-slate-200 max-w-lg w-full p-6 space-y-4 shadow-sm text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900">
-                Điều Chỉnh Giá &amp; Hạn Mức Gói
-              </h2>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Cập Nhật Gói: {editingPlan.name}
+                </h3>
+                <p className="text-[11px] font-mono text-slate-500">{editingPlan.code}</p>
+              </div>
               <button
                 onClick={() => setEditingPlan(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 p-1"
               >
-                <X className="w-4 h-4" strokeWidth={1.75} />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSavePlan} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Tên gói dịch vụ:
-                </label>
+                <label className="block font-semibold text-slate-700 mb-1">Tên gói hiển thị</label>
                 <input
                   type="text"
+                  required
                   value={editingPlan.name}
-                  onChange={(e) =>
-                    setEditingPlan({ ...editingPlan, name: e.target.value })
-                  }
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
+                  onChange={(e) => setEditingPlan({ ...editingPlan, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs focus:ring-1 focus:ring-sky-600"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Giá theo tháng:
-                  </label>
-                  <input
-                    type="number"
-                    value={editingPlan.monthlyPriceVnd}
-                    onChange={(e) =>
-                      setEditingPlan({
-                        ...editingPlan,
-                        monthlyPriceVnd: Number(e.target.value),
-                      })
-                    }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Giá theo năm:
-                  </label>
-                  <input
-                    type="number"
-                    value={editingPlan.annualPriceVnd}
-                    onChange={(e) =>
-                      setEditingPlan({
-                        ...editingPlan,
-                        annualPriceVnd: Number(e.target.value),
-                      })
-                    }
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Hạn mức AI credits / tháng:
-                </label>
+                <label className="block font-semibold text-slate-700 mb-1">Mô tả ngắn</label>
                 <input
-                  type="number"
-                  value={editingPlan.monthlyAiGradingQuota}
-                  onChange={(e) =>
-                    setEditingPlan({
-                      ...editingPlan,
-                      monthlyAiGradingQuota: Number(e.target.value),
-                    })
-                  }
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs"
+                  type="text"
+                  value={editingPlan.description}
+                  onChange={(e) => setEditingPlan({ ...editingPlan, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs focus:ring-1 focus:ring-sky-600"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Giá (VNĐ)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editingPlan.price_vnd}
+                    onChange={(e) => setEditingPlan({ ...editingPlan, price_vnd: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs font-mono focus:ring-1 focus:ring-sky-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">AI Credits</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editingPlan.credits_included}
+                    onChange={(e) => setEditingPlan({ ...editingPlan, credits_included: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs font-mono focus:ring-1 focus:ring-sky-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Quy mô tối đa</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingPlan.max_members}
+                    onChange={(e) => setEditingPlan({ ...editingPlan, max_members: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs font-mono focus:ring-1 focus:ring-sky-600"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="isActiveToggle"
+                  checked={editingPlan.is_active}
+                  onChange={(e) => setEditingPlan({ ...editingPlan, is_active: e.target.checked })}
+                  className="w-4 h-4 text-sky-600 rounded"
+                />
+                <label htmlFor="isActiveToggle" className="font-semibold text-slate-800">
+                  Kích hoạt gói dịch vụ (cho phép người dùng đăng ký &amp; gia hạn)
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditingPlan(null)}
-                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors"
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-medium flex items-center gap-1.5 transition-colors shadow-xs"
                 >
-                  Lưu thay đổi
+                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Lưu thay đổi vào CSDL</span>
                 </button>
               </div>
             </form>

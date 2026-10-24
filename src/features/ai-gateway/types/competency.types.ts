@@ -28,6 +28,13 @@ export interface QuestionMistakeInput {
   skillCode: string;
 }
 
+export interface AvailableModuleInput {
+  id: string;
+  skillCode: string;
+  title: string;
+  durationMinutes: number;
+}
+
 export interface CompetencyAnalysisInput {
   candidateName?: string;
   assessmentTitle: string;
@@ -37,6 +44,7 @@ export interface CompetencyAnalysisInput {
   domainScores: DomainScoreInput[];
   skillScores: SkillScoreInput[];
   mistakes?: QuestionMistakeInput[];
+  availableModules?: AvailableModuleInput[];
 }
 
 // ==============================================================================
@@ -62,9 +70,10 @@ export const SkillGapSchema = z.object({
 
 export const PathwayStepSchema = z.object({
   stepNumber: z.number().int().min(1).max(4),
+  moduleId: z.string().optional(),
   title: z.string(),
   targetSkill: z.string(),
-  durationHours: z.number().min(0.5),
+  durationHours: z.number().min(0.1),
   objective: z.string(),
   actionText: z.string(),
   recommendedSkillCode: z.string(),

@@ -26,6 +26,9 @@ export async function GET(request: Request) {
         assessment_id,
         room_mode,
         is_active,
+        is_locked,
+        access_policy,
+        proctoring_profile,
         scheduled_start,
         scheduled_end,
         created_at,
@@ -120,6 +123,9 @@ export async function GET(request: Request) {
         durationMinutes,
         roomMode: room.room_mode,
         isActive: room.is_active,
+        isLocked: room.is_locked,
+        accessPolicy: room.access_policy,
+        proctoringProfile: room.proctoring_profile,
         hasStarted,
         startedAt,
         elapsedSeconds,
@@ -128,6 +134,65 @@ export async function GET(request: Request) {
       },
       participants: formattedParticipants,
       participantCount: formattedParticipants.length,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { roomId, isLocked, isActive, hasStarted, proctoringProfile } = body;
+
+    if (!roomId) {
+      return NextResponse.json({ error: 'Thiếu mã định danh phòng thi (roomId)' }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+
+    // Authenticate and authorize evaluator / admin
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || (profile.role !== 'EVALUATOR' && profile.role !== 'ADMIN')) {
+      return NextResponse.json(
+        { error: 'Chỉ Giám thị hoặc Quản trị viên mới có quyền điều phối phòng thi' },
+        { status: 403 }
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (typeof isLocked === 'boolean') updates.is_locked = isLocked;
+    if (typeof isActive === 'boolean') updates.is_active = isActive;
+    if (hasStarted === true) updates.scheduled_start = new Date().toISOString();
+    if (proctoringProfile) updates.proctoring_profile = proctoringProfile;
+
+    const { error: updateError } = await supabase
+      .from('exam_rooms')
+      .update(updates)
+      .eq('id', roomId);
+
+    if (updateError) {
+      return NextResponse.json({ error: 'Không thể cập nhật trạng thái phòng thi' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      updated: updates,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

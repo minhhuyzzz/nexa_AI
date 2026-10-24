@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { PointLedgerService } from '@/features/gamification/services/point-ledger.service';
 
 const submitSchema = z.object({
   submissionId: z.string().uuid().optional(),
@@ -58,20 +59,51 @@ export async function POST(
       return NextResponse.json({ error: 'Bài đánh giá không tồn tại' }, { status: 404 });
     }
 
-    // 3. Fetch all correct options for instant pure code evaluation (0.01s)
-    const { data: items, error: itemsError } = await supabase
-      .from('assessment_items')
-      .select(`
-        id,
-        points,
-        type,
-        competency_id,
-        item_options (
-          id,
-          is_correct
-        )
-      `)
-      .eq('assessment_id', assessmentId);
+    const passingScore = Number(assessment.passing_score) || 70.0;
+    const pointReward = Number(assessment.point_reward) || 10;
+
+    // 3. Verify or initialize active submission with strict ownership check
+    let activeSubmissionId = submissionId;
+
+    if (activeSubmissionId) {
+      const { data: existingSub, error: existingSubError } = await supabase
+        .from('assessment_submissions')
+        .select('id, user_id, status')
+        .eq('id', activeSubmissionId)
+        .single();
+
+      if (existingSubError || !existingSub) {
+        return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
+      }
+
+      if (existingSub.user_id !== user.id) {
+        return NextResponse.json({ error: 'Bạn không có quyền nộp bài thi này' }, { status: 403 });
+      }
+    } else {
+      const { data: newSub, error: subError } = await supabase
+        .from('assessment_submissions')
+        .insert({
+          assessment_id: assessmentId,
+          user_id: user.id,
+          status: 'IN_PROGRESS',
+        })
+        .select('id')
+        .single();
+
+      if (subError || !newSub) {
+        return NextResponse.json({ error: 'Không thể tạo bản ghi nộp bài' }, { status: 500 });
+      }
+      activeSubmissionId = newSub.id;
+    }
+
+    // 4. Fetch all correct options via secure RPC (Zero AI calls, pure algorithmic evaluation)
+    const { data: items, error: itemsError } = await supabase.rpc(
+      'get_assessment_answer_keys_for_submission',
+      {
+        p_assessment_id: assessmentId,
+        p_submission_id: activeSubmissionId,
+      }
+    );
 
     if (itemsError || !items) {
       return NextResponse.json({ error: 'Không thể tải đáp án kiểm tra' }, { status: 500 });
@@ -81,16 +113,16 @@ export async function POST(
     const itemMap = new Map<string, { points: number; correctOptionId: string | null }>();
     let maxScore = 0;
 
-    for (const item of items) {
-      maxScore += Number(item.points);
-      const correctOption = item.item_options?.find((opt: { is_correct: boolean }) => opt.is_correct);
-      itemMap.set(item.id, {
-        points: Number(item.points),
-        correctOptionId: correctOption?.id || null,
+    for (const item of items as { item_id: string; points: number; correct_option_id: string | null }[]) {
+      const pts = Number(item.points);
+      maxScore += pts;
+      itemMap.set(item.item_id, {
+        points: pts,
+        correctOptionId: item.correct_option_id || null,
       });
     }
 
-    // 4. Evaluate each answer using pure algorithmic code (Zero AI calls)
+    // 5. Evaluate each answer using pure algorithmic code (0.01s instant response)
     let totalScore = 0;
     const answerRecords: {
       item_id: string;
@@ -131,73 +163,42 @@ export async function POST(
     const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
     // Điểm bài thi quy đổi theo Thang điểm 10 chuẩn Việt Nam (0.0 - 10.0)
     const scoreOn10 = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) / 10 : 0;
-    // Chuẩn đạt: scoreOn10 >= 7.0 (tương đương >= 70%)
-    const isPassed = scoreOn10 >= 7.0;
+    // Chuẩn đạt ĐỘNG theo cấu hình đề thi (passing_score)
+    const isPassed = percentage >= passingScore;
 
-    // 5. Create or Update submission record in database
-    let activeSubmissionId = submissionId;
-
-    // Cơ chế chống farm lặp: Mỗi bài thi đạt chuẩn chỉ được cộng +10 điểm tích lũy 1 lần duy nhất cho mỗi học viên
+    // 6. Anti-farming check: Each passed assessment only awards points once per candidate
     let pointsAwarded = 0;
-    if (isPassed) {
-      let previousQuery = supabase
+    if (isPassed && pointReward > 0) {
+      const { data: previousPassed } = await supabase
         .from('assessment_submissions')
         .select('id')
         .eq('assessment_id', assessmentId)
         .eq('user_id', user.id)
-        .eq('is_passed', true);
-
-      if (activeSubmissionId) {
-        previousQuery = previousQuery.neq('id', activeSubmissionId);
-      }
-
-      const { data: previousPassed } = await previousQuery.limit(1);
+        .eq('is_passed', true)
+        .neq('id', activeSubmissionId)
+        .limit(1);
 
       if (!previousPassed || previousPassed.length === 0) {
-        pointsAwarded = 10;
+        pointsAwarded = pointReward;
       }
     }
 
-    // 5. Create or Update submission record in database
-    if (activeSubmissionId) {
-      await supabase
-        .from('assessment_submissions')
-        .update({
-          status: 'SUBMITTED',
-          total_score: totalScore,
-          max_score: maxScore,
-          percentage: Number(percentage.toFixed(2)),
-          points_awarded: pointsAwarded,
-          is_passed: isPassed,
-          time_spent_seconds: timeSpentSeconds,
-          submitted_at: new Date().toISOString(),
-        })
-        .eq('id', activeSubmissionId);
-    } else {
-      const { data: newSub, error: subError } = await supabase
-        .from('assessment_submissions')
-        .insert({
-          assessment_id: assessmentId,
-          user_id: user.id,
-          status: 'SUBMITTED',
-          total_score: totalScore,
-          max_score: maxScore,
-          percentage: Number(percentage.toFixed(2)),
-          points_awarded: pointsAwarded,
-          is_passed: isPassed,
-          time_spent_seconds: timeSpentSeconds,
-          submitted_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
+    // 7. Update submission record to SUBMITTED
+    await supabase
+      .from('assessment_submissions')
+      .update({
+        status: 'SUBMITTED',
+        total_score: totalScore,
+        max_score: maxScore,
+        percentage: Number(percentage.toFixed(2)),
+        points_awarded: pointsAwarded,
+        is_passed: isPassed,
+        time_spent_seconds: timeSpentSeconds,
+        submitted_at: new Date().toISOString(),
+      })
+      .eq('id', activeSubmissionId);
 
-      if (subError || !newSub) {
-        return NextResponse.json({ error: 'Không thể tạo bản ghi nộp bài' }, { status: 500 });
-      }
-      activeSubmissionId = newSub.id;
-    }
-
-    // 6. Save answer records
+    // 8. Save candidate answer records
     const answersWithSubId = answerRecords.map((ans) => ({
       ...ans,
       submission_id: activeSubmissionId,
@@ -205,22 +206,21 @@ export async function POST(
 
     await supabase.from('submission_answers').insert(answersWithSubId);
 
-    // 7. Award points (+10 điểm tích lũy mở chứng chỉ) to candidate profile
+    // 9. Atomic Point Ledger Grant (Eliminates race conditions & client buffing)
     if (pointsAwarded > 0) {
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('points')
-        .eq('id', user.id)
-        .single();
-
-      const currentPoints = currentProfile?.points || 0;
-      await supabase
-        .from('profiles')
-        .update({
-          points: currentPoints + pointsAwarded,
-          avg_competency_score: Number(percentage.toFixed(2)),
-        })
-        .eq('id', user.id);
+      await PointLedgerService.grantPoints(supabase, {
+        userId: user.id,
+        delta: pointsAwarded,
+        eventType: 'ASSESSMENT_PASSED',
+        sourceType: 'ASSESSMENT',
+        sourceId: assessmentId,
+        idempotencyKey: `SUBMISSION_REWARD_${activeSubmissionId}`,
+        metadata: {
+          assessment_id: assessmentId,
+          submission_id: activeSubmissionId,
+          score_percentage: Number(percentage.toFixed(2)),
+        },
+      });
     }
 
     const executionTimeMs = (performance.now() - startTime).toFixed(2);
@@ -234,7 +234,7 @@ export async function POST(
       percentage: Number(percentage.toFixed(1)),
       pointsAwarded,
       isPassed,
-      passingScore: 7.0,
+      passingScore,
       executionTimeMs: `${executionTimeMs}ms`,
     });
   } catch (err) {

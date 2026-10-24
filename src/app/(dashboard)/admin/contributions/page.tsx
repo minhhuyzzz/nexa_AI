@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2,
@@ -20,12 +20,13 @@ import {
   ShieldAlert,
   ArrowRight,
   Check,
+  RefreshCw,
 } from 'lucide-react';
-import { useEffect } from 'react';
 import type { ContributionItem } from '@/types/contributions';
 
 export default function AdminContributionsPage() {
   const [contributions, setContributions] = useState<ContributionItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'needs_revision'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ContributionItem | null>(null);
@@ -33,14 +34,25 @@ export default function AdminContributionsPage() {
   // Review action modal state
   const [reviewFeedback, setReviewFeedback] = useState('');
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+
+  const fetchContributions = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/contributions');
+      const data = await res.json();
+      if (data.contributions) {
+        setContributions(data.contributions);
+      }
+    } catch (e) {
+      console.error('Failed to load contributions', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('nexa_contributions');
-      if (stored) {
-        setContributions(JSON.parse(stored));
-      }
-    } catch {}
+    fetchContributions();
   }, []);
 
   // Filter items
@@ -50,7 +62,8 @@ export default function AdminContributionsPage() {
       !searchQuery.trim() ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.domain.toLowerCase().includes(searchQuery.toLowerCase());
+      item.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.authorName || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -64,43 +77,88 @@ export default function AdminContributionsPage() {
     setActionSuccessMsg('');
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!selectedItem) return;
-
-    const updated: ContributionItem = {
-      ...selectedItem,
-      status: 'approved',
-      reviewedAt: new Date().toLocaleDateString('vi-VN'),
-      pointsRewarded: 100,
-      adminFeedback:
+    try {
+      setActionSubmitting(true);
+      const feedback =
         reviewFeedback.trim() ||
-        'Đề xuất tình huống đạt chuẩn Khung năng lực số NEXA. Đã được phê duyệt và cộng +100 điểm thưởng.',
-    };
+        'Đề xuất tình huống đạt chuẩn Khung năng lực số NEXA. Đã được phê duyệt và cộng +100 điểm thưởng.';
 
-    setContributions((prev) => {
-      const next = prev.map((c) => (c.id === selectedItem.id ? updated : c));
-      localStorage.setItem('nexa_contributions', JSON.stringify(next));
-      return next;
-    });
-    setSelectedItem(updated);
-    setActionSuccessMsg('Đã phê duyệt đề thi thành công! Học viên được cộng +100 điểm thưởng.');
+      const res = await fetch('/api/contributions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedItem.id,
+          status: 'APPROVED',
+          adminFeedback: feedback,
+          pointsRewarded: 100,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionSuccessMsg('Đã phê duyệt đề thi thành công! Học viên được cộng +100 điểm thưởng tự động.');
+        await fetchContributions();
+        setSelectedItem((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'approved',
+                adminFeedback: feedback,
+                pointsRewarded: 100,
+              }
+            : null
+        );
+      } else {
+        alert(data.error || 'Lỗi khi phê duyệt');
+      }
+    } catch (e) {
+      alert('Lỗi kết nối máy chủ');
+    } finally {
+      setActionSubmitting(false);
+    }
   };
 
-  const handleRequestRevision = () => {
-    if (!selectedItem || !reviewFeedback.trim()) return;
+  const handleRequestRevision = async () => {
+    if (!selectedItem || !reviewFeedback.trim()) {
+      alert('Vui lòng nhập lý do / ý kiến phản hồi cần bổ sung');
+      return;
+    }
+    try {
+      setActionSubmitting(true);
+      const res = await fetch('/api/contributions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedItem.id,
+          status: 'NEEDS_REVISION',
+          adminFeedback: reviewFeedback.trim(),
+          pointsRewarded: 0,
+        }),
+      });
 
-    const updated: ContributionItem = {
-      ...selectedItem,
-      status: 'needs_revision',
-      reviewedAt: new Date().toLocaleDateString('vi-VN'),
-      adminFeedback: reviewFeedback.trim(),
-    };
-
-    setContributions((prev) =>
-      prev.map((c) => (c.id === selectedItem.id ? updated : c))
-    );
-    setSelectedItem(updated);
-    setActionSuccessMsg('Đã gửi yêu cầu bổ sung đến học viên thành công.');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionSuccessMsg('Đã gửi yêu cầu bổ sung đến học viên thành công.');
+        await fetchContributions();
+        setSelectedItem((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'needs_revision',
+                adminFeedback: reviewFeedback.trim(),
+              }
+            : null
+        );
+      } else {
+        alert(data.error || 'Lỗi khi gửi yêu cầu bổ sung');
+      }
+    } catch (e) {
+      alert('Lỗi kết nối máy chủ');
+    } finally {
+      setActionSubmitting(false);
+    }
   };
 
   const getFileIcon = (fileName: string) => {
@@ -118,14 +176,14 @@ export default function AdminContributionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              QUẢN TRỊ HỌC THUẬT
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
+              COMMUNITY CONTENT MODERATION
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -137,8 +195,18 @@ export default function AdminContributionsPage() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Rà soát đề bài và tệp minh chứng do người học đề xuất. Phê duyệt để tự động đưa vào Ngân hàng đề thi và cộng +100 điểm thưởng cho học viên.
+            Rà soát đề bài và tệp minh chứng do người học đề xuất trên CSDL trung tâm. Phê duyệt để tự động đưa vào Ngân hàng câu hỏi và cộng +100 điểm thưởng.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={fetchContributions}
+            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+            <span>Làm mới</span>
+          </button>
         </div>
       </div>
 
@@ -208,7 +276,11 @@ export default function AdminContributionsPage() {
 
       {/* Contributions List */}
       <div className="space-y-3">
-        {filteredList.length === 0 ? (
+        {loading ? (
+          <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-md border border-slate-200 p-8">
+            Đang tải dữ liệu đóng góp từ cơ sở dữ liệu Supabase...
+          </div>
+        ) : filteredList.length === 0 ? (
           <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-md border border-slate-200/80 p-8">
             Không có đề xuất nào trong danh mục này.
           </div>
@@ -228,7 +300,7 @@ export default function AdminContributionsPage() {
                     {item.domain}
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    &bull; Người gửi: <strong>Trần Minh Huy</strong> (Học viên)
+                    &bull; Người gửi: <strong>{item.authorName || 'Người học'}</strong>
                   </span>
                 </div>
 
@@ -236,8 +308,8 @@ export default function AdminContributionsPage() {
                   {item.title}
                 </h3>
 
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-0.5">
-                  <span>Gửi vào: {item.submittedAt}</span>
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-0.5 font-mono">
+                  <span>Gửi lúc: {new Date(item.submittedAt).toLocaleDateString('vi-VN')}</span>
                   <span>&bull;</span>
                   <span>
                     Hình thức:{' '}
@@ -249,10 +321,10 @@ export default function AdminContributionsPage() {
                       ? 'Trắc nghiệm'
                       : 'Liên kết'}
                   </span>
-                  {item.attachedFiles.length > 0 && (
+                  {item.attachedFiles && item.attachedFiles.length > 0 && (
                     <>
                       <span>&bull;</span>
-                      <span className="flex items-center gap-1 text-slate-700 font-medium">
+                      <span className="flex items-center gap-1 text-slate-700 font-medium font-sans">
                         <FileText className="w-3.5 h-3.5 text-sky-600" />
                         {item.attachedFiles.length} tệp đính kèm
                       </span>
@@ -323,9 +395,9 @@ export default function AdminContributionsPage() {
               <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1">
                 <span className="font-semibold text-slate-700">{selectedItem.domain}</span>
                 <span>&bull;</span>
-                <span>Người gửi: <strong>Trần Minh Huy</strong> (Học viên)</span>
+                <span>Người gửi: <strong>{selectedItem.authorName || 'Người học'}</strong></span>
                 <span>&bull;</span>
-                <span>Ngày gửi: {selectedItem.submittedAt}</span>
+                <span>Ngày gửi: {new Date(selectedItem.submittedAt).toLocaleDateString('vi-VN')}</span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
                 {selectedItem.title}
@@ -361,19 +433,19 @@ export default function AdminContributionsPage() {
                   Tệp đính kèm cần thẩm định ({selectedItem.attachedFiles.length}):
                 </div>
                 <div className="space-y-1.5">
-                  {selectedItem.attachedFiles.map((file) => (
+                  {selectedItem.attachedFiles.map((file, idx) => (
                     <div
-                      key={file.id}
+                      key={file.id || idx}
                       className="p-2.5 rounded-md border border-slate-200 bg-white flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2.5 truncate max-w-md">
-                        {getFileIcon(file.name)}
+                        {getFileIcon(file.name || 'document.pdf')}
                         <div className="truncate">
                           <div className="font-semibold text-slate-900 truncate">
-                            {file.name}
+                            {file.name || 'document.pdf'}
                           </div>
-                          <div className="text-[10px] text-slate-400">
-                            {file.size}
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {file.size || 'Tài liệu đính kèm'}
                           </div>
                         </div>
                       </div>
@@ -414,20 +486,22 @@ export default function AdminContributionsPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  disabled={actionSubmitting}
                   onClick={handleRequestRevision}
-                  className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs"
+                  className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
                 >
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Yêu cầu bổ sung</span>
+                  <span>{actionSubmitting ? 'Đang gửi...' : 'Yêu cầu bổ sung'}</span>
                 </button>
 
                 <button
                   type="button"
+                  disabled={actionSubmitting}
                   onClick={handleApprove}
-                  className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs"
+                  className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Phê duyệt (+100đ)</span>
+                  <span>{actionSubmitting ? 'Đang duyệt...' : 'Phê duyệt (+100đ)'}</span>
                 </button>
               </div>
             </div>

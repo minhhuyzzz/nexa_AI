@@ -1071,7 +1071,7 @@ export function AdminAssessmentDetailClient({
       {/* Modal: Nạp Tệp Hàng Loạt Vào Đề Thi Này */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-xl p-6 space-y-4 shadow-lg animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-xl p-6 space-y-4 shadow-sm animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
@@ -1141,7 +1141,7 @@ export function AdminAssessmentDetailClient({
       {/* Confirmation Modal: Delete Item */}
       {deletingItemId && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-sm p-6 space-y-4 shadow-lg animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-md border border-slate-200 w-full max-w-sm p-6 space-y-4 shadow-sm animate-in fade-in zoom-in-95">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-full bg-rose-50 text-rose-600 shrink-0">
                 <Trash2 className="w-5 h-5" strokeWidth={1.75} />

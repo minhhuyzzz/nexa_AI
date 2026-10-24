@@ -10,6 +10,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [role, setRole] = useState<SelectableRole>('LEARNER');
   const [nickname, setNickname] = useState('');
+  const [orgCode, setOrgCode] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -77,6 +78,7 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           role,
           nickname: cleanNickname,
+          orgCode: orgCode.trim() || undefined,
         }),
       });
 
@@ -167,6 +169,27 @@ export default function OnboardingPage() {
           />
           <p className="text-[11px] text-slate-400 mt-1">
             Tên công khai trên Bảng xếp hạng và trong các Nhóm học tập (2–30 ký tự, hỗ trợ tiếng Việt).
+          </p>
+        </div>
+
+        {/* Mã trường / Đơn vị liên kết B2B (Tùy chọn) */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="onboarding-orgcode" className="block text-xs font-semibold text-slate-700">
+              Mã trường / Đơn vị liên kết
+            </label>
+            <span className="text-[10px] text-slate-400 font-normal">Tùy chọn</span>
+          </div>
+          <input
+            id="onboarding-orgcode"
+            type="text"
+            value={orgCode}
+            onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+            placeholder="Ví dụ: IUH2026, UEH2026"
+            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 font-mono uppercase focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">
+            Nhập mã do nhà trường hoặc đơn vị cung cấp để tự động kích hoạt gói Enterprise và tham gia đánh giá nội bộ.
           </p>
         </div>
 

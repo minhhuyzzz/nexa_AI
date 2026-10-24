@@ -7,6 +7,7 @@ import {
   SkillScoreInput,
   QuestionMistakeInput,
 } from '@/features/ai-gateway/types/competency.types';
+import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
 
 const requestSchema = z.object({
   submissionId: z.string().uuid('Mã bài thi (submissionId) không hợp lệ'),
@@ -48,7 +49,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Không tìm thấy hồ sơ người dùng' }, { status: 404 });
     }
 
-    // 3. Check if analysis already exists in competency_analyses (prevent duplicate AI charge)
+    // 3. Verify submission existence and learner ownership
+    const { data: submission, error: subError } = await supabase
+      .from('assessment_submissions')
+      .select(`
+        id,
+        user_id,
+        assessment_id,
+        total_score,
+        max_score,
+        percentage,
+        assessments (
+          title
+        )
+      `)
+      .eq('id', submissionId)
+      .single();
+
+    if (subError || !submission) {
+      return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
+    }
+
+    if (profile.role === 'LEARNER' && submission.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Bạn không có quyền phân tích bài thi của học viên khác' },
+        { status: 403 }
+      );
+    }
+
+    // 4. Check if analysis already exists in competency_analyses (prevent duplicate AI charge)
     const { data: existingAnalysis } = await supabase
       .from('competency_analyses')
       .select('*')
@@ -88,28 +117,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Fetch submission details
-    const { data: submission, error: subError } = await supabase
-      .from('assessment_submissions')
-      .select(`
-        id,
-        user_id,
-        assessment_id,
-        total_score,
-        max_score,
-        percentage,
-        assessments (
-          title
-        )
-      `)
-      .eq('id', submissionId)
-      .single();
-
-    if (subError || !submission) {
-      return NextResponse.json({ error: 'Không tìm thấy bài làm' }, { status: 404 });
-    }
-
-    // 6. Fetch submission answers with item, competency, and domain details
+    // 5. Fetch submission answers with item, competency, and domain details
     const { data: answers, error: answersError } = await supabase
       .from('submission_answers')
       .select(`
@@ -229,20 +237,61 @@ export async function POST(request: Request) {
     const rawAssessment = Array.isArray(submission.assessments) ? submission.assessments[0] : submission.assessments;
     const assessmentTitle = rawAssessment?.title || 'Bài đánh giá năng lực số';
 
-    // 8. Call AI Gateway
+    // 8. Fetch real learning modules from database to ground AI pathway recommendations
+    const { data: dbModules } = await supabase
+      .from('learning_modules')
+      .select('id, skill_code, title, duration_minutes')
+      .eq('is_published', true);
+
+    const availableModules = (dbModules || []).map((m) => ({
+      id: m.id,
+      skillCode: m.skill_code || '1.1',
+      title: m.title,
+      durationMinutes: m.duration_minutes || 20,
+    }));
+
+    // 9. Call AI Gateway
+    const startTime = performance.now();
     const adapter = getAIAdapter('GOOGLE_GEMINI');
-    const aiOutput = await adapter.analyzeCompetencyProfile({
-      candidateName: profile.full_name || 'Học viên',
-      assessmentTitle,
-      overallPercentage: Number(submission.percentage) || 0,
-      totalScore: Number(submission.total_score) || 0,
-      maxScore: Number(submission.max_score) || 100,
-      domainScores,
-      skillScores,
-      mistakes: mistakes.slice(0, 5), // Top 5 mistakes
+    let aiOutput;
+    let aiError: unknown = null;
+
+    try {
+      aiOutput = await adapter.analyzeCompetencyProfile({
+        candidateName: profile.full_name || 'Học viên',
+        assessmentTitle,
+        overallPercentage: Number(submission.percentage) || 0,
+        totalScore: Number(submission.total_score) || 0,
+        maxScore: Number(submission.max_score) || 100,
+        domainScores,
+        skillScores,
+        mistakes: mistakes.slice(0, 5), // Top 5 mistakes
+        availableModules,
+      });
+    } catch (err) {
+      aiError = err;
+    }
+
+    const latencyMs = Math.round(performance.now() - startTime);
+
+    // Log AI Usage Event
+    await AIUsageLoggerService.logUsage(supabase, {
+      userId: user.id,
+      feature: 'COMPETENCY_ANALYSIS',
+      provider: 'GOOGLE_GEMINI',
+      model: adapter.defaultModel,
+      latencyMs,
+      status: aiError ? 'FAILED' : 'SUCCESS',
+      errorMessage: aiError ? (aiError instanceof Error ? aiError.message : String(aiError)) : null,
+      promptTokens: 1200,
+      completionTokens: aiOutput ? Math.round(JSON.stringify(aiOutput).length / 4) : 0,
     });
 
-    // 9. Store analysis in public.competency_analyses
+    if (aiError || !aiOutput) {
+      throw aiError;
+    }
+
+    // 10. Store analysis in public.competency_analyses
     const { data: savedRecord, error: saveError } = await supabase
       .from('competency_analyses')
       .insert({
@@ -264,14 +313,19 @@ export async function POST(request: Request) {
       console.error('Error saving competency analysis:', saveError);
     }
 
-    // 10. Deduct 1 credit for Learner
+    // 10. Atomic Credit Deduction for Learner (Zero race conditions, enforced by DB trigger)
     let remainingCredits = profile.credits;
     if (profile.role === 'LEARNER') {
-      remainingCredits = Math.max(0, (profile.credits ?? 1) - 1);
-      await supabase
-        .from('profiles')
-        .update({ credits: remainingCredits })
-        .eq('id', user.id);
+      const { data: newCredits, error: deductError } = await supabase.rpc('deduct_ai_credits', {
+        p_user_id: user.id,
+        p_amount: 1,
+      });
+
+      if (!deductError && typeof newCredits === 'number') {
+        remainingCredits = newCredits;
+      } else {
+        remainingCredits = Math.max(0, (profile.credits ?? 1) - 1);
+      }
     }
 
     return NextResponse.json({
@@ -315,6 +369,26 @@ export async function GET(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    }
+
+    // Verify learner ownership of the submission
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const { data: subData } = await supabase
+      .from('assessment_submissions')
+      .select('user_id')
+      .eq('id', submissionId)
+      .single();
+
+    if (userProfile?.role === 'LEARNER' && subData && subData.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Bạn không có quyền xem phân tích bài thi này' },
+        { status: 403 }
+      );
     }
 
     const { data: analysis } = await supabase

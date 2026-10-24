@@ -1,37 +1,69 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function GET() {
   try {
     const supabase = await createClient();
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
-      .from('consent_logs')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('GET /api/admin/compliance query error:', error.message);
-      return NextResponse.json({ logs: [] });
+    if (authErr || !user) {
+      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
-    const formatted = (data || []).map((l) => ({
-      id: l.id,
-      timestamp: new Date(l.created_at).toLocaleString('vi-VN'),
-      actor: `User (${l.user_id?.slice(0, 8) || 'Ẩn danh'})`,
-      actorRole: 'SYSTEM',
-      action: l.is_granted ? 'CONSENT_GRANTED' : 'CONSENT_REVOKED',
-      resource: `Phiên bản cam kết: ${l.consent_version}`,
-      ipAddress: l.ip_address || '127.0.0.1',
-      sha256Hash: `hash-${l.id.replace(/-/g, '')}`,
-      status: 'VERIFIED',
-      details: `Người dùng chấp thuận điều khoản bảo mật dữ liệu & PII. Thiết bị: ${l.user_agent || 'Web Browser'}`,
-    }));
+    const adminSupabase = createAdminClient();
+    const { data: profile } = await adminSupabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
 
-    return NextResponse.json({ logs: formatted });
+    if (profile?.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Không có quyền truy cập' }, { status: 403 });
+    }
+
+    // Fetch real consent logs (Nghị định 13/2023/NĐ-CP)
+    const { data: consentLogs, error: consentErr } = await adminSupabase
+      .from('consent_logs')
+      .select(`
+        id,
+        user_id,
+        consent_version,
+        is_granted,
+        ip_address,
+        user_agent,
+        created_at,
+        profiles ( email, nickname )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    // Fetch proctoring suspicious events
+    const { data: proctoringEvents } = await adminSupabase
+      .from('proctoring_events')
+      .select(`
+        id,
+        user_id,
+        room_id,
+        event_type,
+        severity,
+        details,
+        created_at,
+        profiles ( email, nickname )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    return NextResponse.json({
+      success: true,
+      consentLogs: consentLogs || [],
+      proctoringEvents: proctoringEvents || [],
+    });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Server error';
-    console.warn('GET /api/admin/compliance exception:', message);
-    return NextResponse.json({ logs: [] });
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -244,6 +244,21 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
           // Auto lock stage 1 and move to stage 2
           handleExecuteLockStage1Ref.current();
         }
+
+        // Send real-time audit event to server if in a live exam room
+        if (roomId) {
+          fetch('/api/rooms/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roomId,
+              eventType: 'TAB_HIDDEN',
+              severity: next >= 3 ? 'HIGH' : next >= 2 ? 'MEDIUM' : 'LOW',
+              details: { violationCount: next, stage: activeStage },
+            }),
+          }).catch(() => {});
+        }
+
         return next;
       });
     };
@@ -873,7 +888,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       {/* MODAL 1: ONE-WAY LOCK CONFIRMATION */}
       {showLockConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in-50">
-          <div className="bg-white rounded-md border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-lg">
+          <div className="bg-white rounded-md border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
                 <Lock className="w-5 h-5" strokeWidth={1.75} />
@@ -911,7 +926,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       {/* MODAL 2: ANTI-CHEAT WARNING MODAL */}
       {warningModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in-50">
-          <div className="bg-white rounded-md border border-rose-300 max-w-md w-full p-6 space-y-4 shadow-xl">
+          <div className="bg-white rounded-md border border-rose-300 max-w-md w-full p-6 space-y-4 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-5 h-5" strokeWidth={1.75} />
@@ -942,7 +957,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       {/* MODAL 3: FINAL SUBMIT CONFIRMATION */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in-50">
-          <div className="bg-white rounded-md border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-lg">
+          <div className="bg-white rounded-md border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5" strokeWidth={1.75} />

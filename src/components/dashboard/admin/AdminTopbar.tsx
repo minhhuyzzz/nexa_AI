@@ -10,15 +10,17 @@ import { ChevronRight } from 'lucide-react';
 const adminRouteTitleMap: Record<string, string> = {
   '/admin': 'Tổng quan',
   '/admin/dashboard': 'Tổng quan',
+  '/admin/analytics': 'Phân tích toàn diện',
   '/admin/frameworks': 'Khung năng lực số',
   '/admin/content': 'Đề thi & Học liệu',
   '/admin/contributions': 'Duyệt đề cộng đồng',
-  '/admin/ai-gateway': 'Cấu hình AI Gateway',
-  '/admin/users': 'Quản lý người dùng',
-  '/admin/plans': 'Gói dịch vụ & Giá',
-  '/admin/organizations': 'Tổ chức & Doanh nghiệp',
+  '/admin/ai-gateway': 'Quản trị AI Gateway',
+  '/admin/users': 'Người dùng & Chuyên gia',
+  '/admin/plans': 'Cấu hình gói dịch vụ',
+  '/admin/transactions': 'Giao dịch & Đối soát',
+  '/admin/organizations': 'Trường học & Doanh nghiệp',
   '/admin/evaluators': 'Duyệt chuyên gia',
-  '/admin/compliance': 'Bảo mật & Nhật ký',
+  '/admin/compliance': 'Tuân thủ & Kiểm toán',
   '/admin/settings': 'Cài đặt hệ thống',
 };
 

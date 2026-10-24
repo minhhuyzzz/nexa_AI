@@ -41,6 +41,11 @@ export async function POST(request: Request) {
         assessment_id,
         room_mode,
         is_active,
+        is_locked,
+        access_policy,
+        proctoring_profile,
+        class_id,
+        organization_id,
         scheduled_start,
         assessments (
           id,
@@ -60,7 +65,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Record participation in room_participants
+    // 3. Enforce Server-Side Room Lockdown
+    if (room.is_locked) {
+      return NextResponse.json(
+        {
+          error: 'Phòng thi đã bị khóa bởi Giám thị, không nhận thêm thí sinh mới.',
+          code: 'ROOM_LOCKED',
+        },
+        { status: 403 }
+      );
+    }
+
+    // 4. Enforce Group / Class Membership for GROUP_ONLY rooms
+    if (room.access_policy === 'GROUP_ONLY' && room.class_id) {
+      const { data: membership } = await supabase
+        .from('class_members')
+        .select('id')
+        .eq('class_id', room.class_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json(
+          {
+            error: 'Phòng thi này chỉ dành cho học viên thuộc lớp/nhóm được chỉ định.',
+            code: 'GROUP_RESTRICTED',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 5. Record participation in room_participants
     await supabase
       .from('room_participants')
       .upsert(
@@ -84,6 +120,9 @@ export async function POST(request: Request) {
       durationMinutes: rawAssessment?.duration_minutes || 45,
       hasStarted: !!room.scheduled_start,
       startedAt: room.scheduled_start,
+      isLocked: room.is_locked,
+      accessPolicy: room.access_policy,
+      proctoringProfile: room.proctoring_profile,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

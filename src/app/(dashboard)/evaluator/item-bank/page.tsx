@@ -137,14 +137,15 @@ D. Đăng nhập ngay để tránh khóa tài khoản
 
       // 2. Fetch assessment items with options & rubric guide
       const { data: itemsData, error: itemsError } = await supabase
-        .from('assessment_items')
+        .from('question_bank_items')
         .select(`
           id,
+          code,
           type,
           prompt,
-          points,
-          order_index,
-          rubric_guide,
+          default_points,
+          difficulty_level,
+          status,
           competencies (
             id,
             skill_code,
@@ -156,7 +157,7 @@ D. Đăng nhập ngay để tránh khóa tài khoản
               title
             )
           ),
-          item_options (
+          question_bank_options (
             id,
             content,
             is_correct,
@@ -167,27 +168,26 @@ D. Đăng nhập ngay để tránh khóa tài khoản
         .order('created_at', { ascending: false });
 
       if (itemsError) {
-        console.error('Error fetching assessment items:', itemsError);
+        console.error('Error fetching question bank items:', itemsError);
       } else if (itemsData) {
         const mapped: QuestionItem[] = itemsData.map((item: any, idx: number) => {
           const comp = item.competencies;
           const domain = comp?.competency_domains;
-          const sortedOptions = (item.item_options || []).sort(
+          const sortedOptions = (item.question_bank_options || []).sort(
             (a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)
           );
 
           return {
             id: item.id,
-            code: comp?.skill_code ? `D${comp.skill_code}-${item.type}-${idx + 1}` : `Q-${item.id.slice(0, 6)}`,
+            code: item.code || (comp?.skill_code ? `D${comp.skill_code}-${item.type}-${idx + 1}` : `QB-${item.id.slice(0, 6)}`),
             domain: domain?.title || 'Thông tin & Dữ liệu số',
             skill: comp ? `${comp.skill_code} ${comp.title}` : 'Kỹ năng số tổng hợp',
-            level: 'DigComp 3.0',
+            level: item.difficulty_level || 'DigComp 3.0',
             type: item.type || 'MCQ',
             prompt: item.prompt,
-            rubricWeight: Number(item.points) || 10,
+            rubricWeight: Number(item.default_points) || 10,
             isNexaStandard: true,
-            sampleAnswerCriteria: item.rubric_guide || 'Tự động chấm bằng code thuần theo barem điểm quy định.',
-            rubricGuide: item.rubric_guide,
+            sampleAnswerCriteria: 'Tự động chấm bằng code thuần theo barem điểm quy định.',
             options: sortedOptions,
           };
         });
@@ -218,12 +218,13 @@ D. Đăng nhập ngay để tránh khóa tài khoản
     const target = questions.find((q) => q.id === id);
     if (target) {
       const { data, error } = await supabase
-        .from('assessment_items')
+        .from('question_bank_items')
         .insert({
+          code: `QB-${Date.now().toString(36).toUpperCase()}`,
           type: target.type,
           prompt: `[Bản sao] ${target.prompt}`,
-          points: target.rubricWeight,
-          difficulty_level: 'STANDARD',
+          default_points: target.rubricWeight,
+          difficulty_level: 'INTERMEDIATE',
         })
         .select()
         .single();
@@ -241,12 +242,13 @@ D. Đăng nhập ngay để tránh khóa tài khoản
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('assessment_items').insert({
+      const { error } = await supabase.from('question_bank_items').insert({
+        code: `QB-${Date.now().toString(36).toUpperCase()}`,
         prompt: newPrompt.trim(),
         type: newType,
         competency_id: selectedCompetencyId || null,
-        difficulty_level: 'STANDARD',
-        points: Number(newWeight),
+        difficulty_level: 'INTERMEDIATE',
+        default_points: Number(newWeight),
       });
 
       if (!error) {
@@ -254,7 +256,7 @@ D. Đăng nhập ngay để tránh khóa tài khoản
         setNewPrompt('');
         await fetchItemBank();
       } else {
-        console.error('Error inserting question:', error);
+        console.error('Error inserting question to bank:', error);
       }
     } finally {
       setIsSubmitting(false);
@@ -267,19 +269,20 @@ D. Đăng nhập ngay để tránh khóa tài khoản
 
     setIsSubmitting(true);
     try {
-      const inserts = blocks.map((block) => {
+      const inserts = blocks.map((block, idx) => {
         const lines = block.trim().split('\n');
         const prompt = lines[0] || 'Câu hỏi trắc nghiệm nhập từ tệp';
         return {
+          code: `QB-${Date.now().toString(36).toUpperCase()}-${idx + 1}`,
           prompt: prompt.trim(),
           type: 'MCQ',
           competency_id: selectedCompetencyId || null,
           difficulty_level: 'FOUNDATION',
-          points: 10,
+          default_points: 10,
         };
       });
 
-      await supabase.from('assessment_items').insert(inserts);
+      await supabase.from('question_bank_items').insert(inserts);
       setShowUploadModal(false);
       await fetchItemBank();
     } finally {

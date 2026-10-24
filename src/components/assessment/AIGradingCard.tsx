@@ -140,11 +140,16 @@ export function AIGradingCard({
             </div>
 
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              <span className="text-xs text-slate-500">ĐIỂM RUBRIC:</span>
-              <span className="text-base font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                {evaluation.totalScore} / {evaluation.maxScore} pts
+              <span className="text-xs text-slate-500 font-medium">ĐIỂM GỢI Ý:</span>
+              <span className="text-base font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded border border-sky-200 font-mono tabular-nums">
+                {evaluation.totalScore} / {evaluation.maxScore} điểm
               </span>
             </div>
+          </div>
+
+          {/* Academic notice */}
+          <div className="p-2.5 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+            <strong className="text-slate-800">Cơ chế thẩm định:</strong> Cờ tin cậy thể hiện mức độ xác thực của mô hình AI đối với câu trả lời dựa trên Rubric, không phản ánh cờ giám sát phòng thi (Integrity). Điểm gợi ý cần được Người đánh giá xác nhận.
           </div>
 
           {/* Evidence Quote */}

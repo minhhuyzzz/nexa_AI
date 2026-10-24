@@ -19,5 +19,6 @@ export interface ContributionItem {
   prompt: string;
   solutionNotes: string;
   adminFeedback?: string;
+  authorName?: string;
   attachedFiles: ContributionFile[];
 }

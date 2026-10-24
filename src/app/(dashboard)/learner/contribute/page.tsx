@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -16,26 +16,38 @@ import {
   ChevronRight,
   ExternalLink,
   Award,
-  Sparkles,
   Layers,
   ArrowRight,
   Download,
+  RefreshCw,
 } from 'lucide-react';
-import { ContributionItem } from '@/types/contributions';
+import type { ContributionItem } from '@/types/contributions';
 
 export default function LearnerContributeOverviewPage() {
-  const [contributions, setContributions] = useState<ContributionItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('nexa_community_contributions');
-        if (stored) return JSON.parse(stored);
-      } catch {}
-    }
-    return [];
-  });
+  const [contributions, setContributions] = useState<ContributionItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'needs_revision'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ContributionItem | null>(null);
+
+  const fetchMyContributions = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/contributions');
+      const data = await res.json();
+      if (data.contributions) {
+        setContributions(data.contributions);
+      }
+    } catch (e) {
+      console.error('Failed to load contributions', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyContributions();
+  }, []);
 
   // Filter items
   const filteredList = contributions.filter((item) => {
@@ -67,14 +79,14 @@ export default function LearnerContributeOverviewPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              SÁNG KIẾN CỘNG ĐỒNG
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
+              COMMUNITY CONTRIBUTION HUB
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -82,22 +94,31 @@ export default function LearnerContributeOverviewPage() {
               Quản Lý Đề Thi &amp; Sáng Kiến Đóng Góp
             </h1>
             <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-              Tổng đề đã đóng góp: <strong className="font-semibold text-slate-900">{contributions.length}</strong>
+              Đề đã đóng góp: <strong className="font-semibold text-slate-900">{contributions.length}</strong>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Theo dõi tiến độ thẩm định các đề bài khảo thí do bạn đề xuất, xem phản hồi từ Hội đồng Học thuật NEXA và quản lý điểm thưởng.
+            Theo dõi tiến độ thẩm định đề bài do bạn đề xuất, xem phản hồi từ Hội đồng Học thuật và nhận điểm thưởng tự động.
           </p>
         </div>
 
         {/* Primary CTA */}
-        <Link
-          href="/learner/contribute/new"
-          className="px-4 py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-xs shrink-0 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2} />
-          <span>Đóng góp đề bài mới</span>
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={fetchMyContributions}
+            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+            <span>Làm mới</span>
+          </button>
+          <Link
+            href="/learner/contribute/new"
+            className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2} />
+            <span>Đóng góp đề bài mới</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filter Tabs & Search Bar */}
@@ -167,14 +188,18 @@ export default function LearnerContributeOverviewPage() {
 
       {/* Contributions List */}
       <div className="space-y-3">
-        {filteredList.length === 0 ? (
+        {loading ? (
+          <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-md border border-slate-200 p-8">
+            Đang tải danh sách đề xuất từ máy chủ...
+          </div>
+        ) : filteredList.length === 0 ? (
           <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-md border border-slate-200/80 p-8 space-y-3">
-            <p>Không tìm thấy đề bài nào trong danh mục này.</p>
+            <p>Bạn chưa có đề xuất nào trong danh mục này.</p>
             <Link
               href="/learner/contribute/new"
               className="inline-flex items-center gap-1 text-sky-600 font-semibold hover:underline"
             >
-              <span>+ Đóng góp tình huống hoặc đề bài mới ngay</span>
+              <span>+ Đóng góp tình huống hoặc đề bài mới ngay (+100đ)</span>
             </Link>
           </div>
         ) : (
@@ -208,12 +233,12 @@ export default function LearnerContributeOverviewPage() {
                   {item.title}
                 </h3>
 
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-0.5">
-                  <span>Ngày gửi: {item.submittedAt}</span>
-                  {item.attachedFiles.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-0.5 font-mono">
+                  <span>Ngày gửi: {new Date(item.submittedAt).toLocaleDateString('vi-VN')}</span>
+                  {item.attachedFiles && item.attachedFiles.length > 0 && (
                     <>
                       <span>&bull;</span>
-                      <span className="flex items-center gap-1 text-slate-600">
+                      <span className="flex items-center gap-1 text-slate-600 font-sans">
                         <FileText className="w-3.5 h-3.5 text-sky-600" />
                         {item.attachedFiles.length} tệp đính kèm
                       </span>
@@ -274,16 +299,16 @@ export default function LearnerContributeOverviewPage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>ĐÃ ĐƯỢC HỘI ĐỒNG THẨM ĐỊNH PHÊ DUYỆT</span>
                   </div>
-                  <span className="text-emerald-700 font-bold text-[11px]">
-                    +100 ĐIỂM THƯỞNG
+                  <span className="text-emerald-700 font-bold text-[11px] font-mono">
+                    +{selectedItem.pointsRewarded || 100} ĐIỂM THƯỞNG
                   </span>
                 </div>
                 <p className="text-emerald-900 leading-relaxed text-[11px]">
-                  {selectedItem.adminFeedback}
+                  {selectedItem.adminFeedback || 'Đề xuất câu hỏi đạt tiêu chuẩn và đã được đưa vào kho đề khảo thí NEXA.'}
                 </p>
                 {selectedItem.reviewedAt && (
                   <div className="text-[10px] text-emerald-700 font-mono">
-                    Ngày phê duyệt: {selectedItem.reviewedAt}
+                    Ngày phê duyệt: {new Date(selectedItem.reviewedAt).toLocaleDateString('vi-VN')}
                   </div>
                 )}
               </div>
@@ -294,8 +319,7 @@ export default function LearnerContributeOverviewPage() {
                   <span>HỒ SƠ ĐANG CHỜ THẨM ĐỊNH HỌC THUẬT</span>
                 </div>
                 <p className="text-amber-900 leading-relaxed text-[11px]">
-                  {selectedItem.adminFeedback ||
-                    'Ban Thẩm định NEXA đang rà soát nội dung câu hỏi, barem đáp án và tính ứng dụng thực tế. Kết quả sẽ được phản hồi trong vòng 24-48 giờ.'}
+                  Ban Thẩm định NEXA đang rà soát nội dung câu hỏi, barem đáp án và tính ứng dụng thực tế. Kết quả sẽ được phản hồi trong vòng 24-48 giờ.
                 </p>
               </div>
             ) : (
@@ -327,7 +351,7 @@ export default function LearnerContributeOverviewPage() {
                 <span>&bull;</span>
                 <span>Độ khó: {selectedItem.difficulty}</span>
                 <span>&bull;</span>
-                <span>Ngày gửi: {selectedItem.submittedAt}</span>
+                <span className="font-mono">Ngày gửi: {new Date(selectedItem.submittedAt).toLocaleDateString('vi-VN')}</span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
                 {selectedItem.title}
@@ -363,19 +387,19 @@ export default function LearnerContributeOverviewPage() {
                   Tệp đính kèm ({selectedItem.attachedFiles.length}):
                 </div>
                 <div className="space-y-1.5">
-                  {selectedItem.attachedFiles.map((file) => (
+                  {selectedItem.attachedFiles.map((file, idx) => (
                     <div
-                      key={file.id}
+                      key={file.id || idx}
                       className="p-2.5 rounded-md border border-slate-200 bg-white flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2.5 truncate max-w-md">
-                        {getFileIcon(file.name)}
+                        {getFileIcon(file.name || 'document.pdf')}
                         <div className="truncate">
                           <div className="font-semibold text-slate-900 truncate">
-                            {file.name}
+                            {file.name || 'document.pdf'}
                           </div>
-                          <div className="text-[10px] text-slate-400">
-                            {file.size}
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {file.size || 'Tài liệu đính kèm'}
                           </div>
                         </div>
                       </div>

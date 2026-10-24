@@ -1,139 +1,81 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { AIConfigService } from '@/features/ai-gateway/services/ai-config.service';
-
-export const dynamic = 'force-dynamic';
-
-const saveConfigSchema = z.object({
-  provider: z.enum(['GOOGLE_GEMINI', 'ANTHROPIC_CLAUDE', 'OPENAI']).default('GOOGLE_GEMINI'),
-  apiKey: z.string().optional(),
-  defaultModel: z.string().min(1, 'Model không được để trống'),
-  flows: z.object({
-    rubricGrading: z.object({
-      enabled: z.boolean(),
-      model: z.string(),
-      name: z.string().optional(),
-      description: z.string().optional(),
-    }),
-    competencyAnalysis: z.object({
-      enabled: z.boolean(),
-      model: z.string(),
-      name: z.string().optional(),
-      description: z.string().optional(),
-    }),
-  }),
-});
-
-function maskApiKey(key: string): string {
-  if (!key || key.length < 8) return key ? '********' : '';
-  return `${key.slice(0, 6)}...${key.slice(-4)}`;
-}
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function GET() {
   try {
     const supabase = await createClient();
     const {
       data: { user },
-      error: authError,
+      error: authErr,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    if (authErr || !user) {
+      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const adminSupabase = createAdminClient();
+    const { data: profile } = await adminSupabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Chỉ Quản trị viên (Admin) mới có quyền truy cập' }, { status: 403 });
+      return NextResponse.json({ error: 'Không có quyền truy cập' }, { status: 403 });
     }
 
-    const config = AIConfigService.getConfig();
-    return NextResponse.json({
-      success: true,
-      config: {
-        ...config,
-        maskedApiKey: maskApiKey(config.apiKey),
-        hasApiKey: Boolean(config.apiKey),
-      },
+    const { data: events, error } = await adminSupabase
+      .from('ai_usage_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const allEvents = events || [];
+    let totalPromptTokens = 0;
+    let totalCompletionTokens = 0;
+    let totalLatencyMs = 0;
+    let totalCostUsd = 0;
+    const modelCounts: Record<string, number> = {};
+    const featureCounts: Record<string, number> = {};
+
+    allEvents.forEach((ev: any) => {
+      totalPromptTokens += ev.prompt_tokens || 0;
+      totalCompletionTokens += ev.completion_tokens || 0;
+      totalLatencyMs += ev.latency_ms || 0;
+      totalCostUsd += Number(ev.cost_estimated || 0);
+
+      const m = ev.model || 'gemini-2.5-flash';
+      modelCounts[m] = (modelCounts[m] || 0) + 1;
+
+      const f = ev.feature || 'unknown';
+      featureCounts[f] = (featureCounts[f] || 0) + 1;
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Lỗi khi đọc cấu hình AI Gateway';
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Chỉ Quản trị viên (Admin) mới có quyền cập nhật' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const validated = saveConfigSchema.safeParse(body);
-
-    if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.errors[0]?.message || 'Dữ liệu cấu hình không hợp lệ' },
-        { status: 400 }
-      );
-    }
-
-    const currentConfig = AIConfigService.getConfig();
-    const payload = validated.data;
-
-    // If apiKey is blank or masked, keep the existing one
-    const newApiKey = payload.apiKey?.includes('...') || !payload.apiKey?.trim()
-      ? currentConfig.apiKey
-      : payload.apiKey.trim();
-
-    const saved = AIConfigService.saveConfig({
-      provider: payload.provider,
-      apiKey: newApiKey,
-      defaultModel: payload.defaultModel,
-      flows: {
-        rubricGrading: {
-          ...currentConfig.flows.rubricGrading,
-          ...payload.flows.rubricGrading,
-        },
-        competencyAnalysis: {
-          ...currentConfig.flows.competencyAnalysis,
-          ...payload.flows.competencyAnalysis,
-        },
-      },
-    });
+    const avgLatency = allEvents.length > 0 ? Math.round(totalLatencyMs / allEvents.length) : 0;
+    const estimatedCostVnd = Math.round(totalCostUsd * 25400);
 
     return NextResponse.json({
       success: true,
-      message: 'Đã lưu và áp dụng cấu hình AI Gateway thành công!',
-      config: {
-        ...saved,
-        maskedApiKey: maskApiKey(saved.apiKey),
-        hasApiKey: Boolean(saved.apiKey),
+      stats: {
+        totalRequests: allEvents.length,
+        totalPromptTokens,
+        totalCompletionTokens,
+        totalTokens: totalPromptTokens + totalCompletionTokens,
+        avgLatencyMs: avgLatency,
+        totalCostUsd: Number(totalCostUsd.toFixed(4)),
+        totalCostVnd: estimatedCostVnd,
+        models: modelCounts,
+        features: featureCounts,
       },
+      recentEvents: allEvents.slice(0, 25),
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Lỗi khi cập nhật cấu hình AI Gateway';
+    const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

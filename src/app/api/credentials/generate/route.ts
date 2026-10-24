@@ -74,12 +74,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Không tìm thấy bài thi' }, { status: 404 });
     }
 
-    // Check pass requirement
+    // Verify caller ownership or institutional authority
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (callerProfile?.role === 'LEARNER' && submission.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Bạn không có quyền yêu cầu cấp chứng chỉ cho bài thi của học viên khác' },
+        { status: 403 }
+      );
+    }
+
+    // Check pass requirement strictly (Must be passed AND percentage >= passingScore)
     const percentage = Number(submission.percentage) || 0;
     const rawAssessment = Array.isArray(submission.assessments) ? submission.assessments[0] : submission.assessments;
     const passingScore = Number(rawAssessment?.passing_score) || 70.0;
 
-    if (!submission.is_passed && percentage < passingScore) {
+    if (!submission.is_passed || percentage < passingScore) {
       return NextResponse.json(
         {
           error: `Bài thi chưa đạt điều kiện cấp chứng chỉ số (Điểm đạt: ${percentage}% < Chuẩn: ${passingScore}%).`,
