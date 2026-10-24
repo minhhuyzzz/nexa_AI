@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { getRedisClient } from '@/lib/redis/client';
 
@@ -18,25 +17,24 @@ export interface LeaderboardEntry {
 }
 
 const REDIS_CACHE_KEY = 'nexa:leaderboard:top100';
-const CACHE_TTL_SECONDS = 60; // 60 seconds TTL for fast live leaderboard
+const CACHE_TTL_SECONDS = 60; // 60 seconds TTL
 
 export async function GET() {
   const startTime = performance.now();
   const redis = getRedisClient();
+  const supabase = await createClient();
 
   try {
-    // 1. Try to read from Upstash Redis cache (< 50ms)
+    let leaderboard: LeaderboardEntry[] = [];
+    let isCached = false;
+
+    // 1. Try to read leaderboard from Upstash Redis cache
     if (redis) {
       try {
         const cached = await redis.get<LeaderboardEntry[]>(REDIS_CACHE_KEY);
         if (cached && Array.isArray(cached) && cached.length > 0) {
-          const fetchTimeMs = Number((performance.now() - startTime).toFixed(2));
-          return NextResponse.json({
-            cached: true,
-            fetchTimeMs,
-            total: cached.length,
-            leaderboard: cached,
-          });
+          leaderboard = cached;
+          isCached = true;
         }
       } catch (cacheErr) {
         console.warn('Redis cache lookup skipped:', cacheErr);
@@ -44,48 +42,41 @@ export async function GET() {
     }
 
     // 2. Cache miss or Redis unavailable -> Query Supabase directly
-    const supabase = await createClient();
+    if (leaderboard.length === 0) {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization')
+        .eq('role', 'LEARNER')
+        .order('points', { ascending: false })
+        .order('avg_competency_score', { ascending: false })
+        .limit(100);
 
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization')
-      .eq('role', 'LEARNER')
-      .order('points', { ascending: false })
-      .order('avg_competency_score', { ascending: false })
-      .limit(100);
+      if (error) {
+        console.error('Supabase profiles query error:', error.message);
+      } else {
+        leaderboard = (profiles || []).map((p, index) => ({
+          rank: index + 1,
+          userId: p.id,
+          displayName: p.nickname || 'Học viên ẩn danh',
+          avatarUrl: p.avatar_url,
+          points: p.points || 0,
+          rankTier: p.rank_tier || 'NOVICE',
+          avgScore: Number(p.avg_competency_score) || 0,
+          role: p.role,
+          specialization: p.specialization,
+        }));
 
-    if (error) {
-      console.error('Supabase profiles query error:', error.message);
-      return NextResponse.json({
-        cached: false,
-        fetchTimeMs: Number((performance.now() - startTime).toFixed(2)),
-        total: 0,
-        leaderboard: [],
-      });
-    }
-
-    const leaderboard: LeaderboardEntry[] = (profiles || []).map((p, index) => ({
-      rank: index + 1,
-      userId: p.id,
-      displayName: p.nickname || 'Học viên ẩn danh',
-      avatarUrl: p.avatar_url,
-      points: p.points || 0,
-      rankTier: p.rank_tier || 'NOVICE',
-      avgScore: Number(p.avg_competency_score) || 0,
-      role: p.role,
-      specialization: p.specialization,
-    }));
-
-    // 3. Cache into Redis with 60s expiration
-    if (redis && leaderboard.length > 0) {
-      try {
-        await redis.set(REDIS_CACHE_KEY, leaderboard, { ex: CACHE_TTL_SECONDS });
-      } catch (saveCacheErr) {
-        console.warn('Failed to cache leaderboard into Redis:', saveCacheErr);
+        if (redis && leaderboard.length > 0) {
+          try {
+            await redis.set(REDIS_CACHE_KEY, leaderboard, { ex: CACHE_TTL_SECONDS });
+          } catch (saveCacheErr) {
+            console.warn('Failed to cache leaderboard into Redis:', saveCacheErr);
+          }
+        }
       }
     }
 
-    // 4. Calculate current user rank if authenticated
+    // 3. Always calculate current user rank dynamically based on currently logged in user session
     let currentUserRank: {
       rank: number;
       userId: string;
@@ -99,30 +90,22 @@ export async function GET() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      let effectiveUserId = user?.id;
-      if (!effectiveUserId) {
-        const cookieStore = await cookies();
-        const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
-        if (process.env.NODE_ENV !== 'production' || demoRole === 'LEARNER') {
-          effectiveUserId = '11111111-1111-1111-1111-111111111111';
-        }
-      }
-
-      if (effectiveUserId) {
-        const foundIndex = leaderboard.findIndex((item) => item.userId === effectiveUserId);
+      if (user?.id) {
+        const foundIndex = leaderboard.findIndex((item) => item.userId === user.id);
         if (foundIndex !== -1) {
           currentUserRank = {
             rank: foundIndex + 1,
-            userId: effectiveUserId,
+            userId: user.id,
             displayName: leaderboard[foundIndex].displayName,
             avatarUrl: leaderboard[foundIndex].avatarUrl,
             points: leaderboard[foundIndex].points,
           };
         } else {
+          // If not in top 100, calculate exact rank for current user
           const { data: myProfile } = await supabase
             .from('profiles')
             .select('id, nickname, avatar_url, points')
-            .eq('id', effectiveUserId)
+            .eq('id', user.id)
             .single();
 
           if (myProfile) {
@@ -148,13 +131,22 @@ export async function GET() {
 
     const fetchTimeMs = Number((performance.now() - startTime).toFixed(2));
 
-    return NextResponse.json({
-      cached: false,
-      fetchTimeMs,
-      total: leaderboard.length,
-      leaderboard,
-      currentUserRank,
-    });
+    return NextResponse.json(
+      {
+        cached: isCached,
+        fetchTimeMs,
+        total: leaderboard.length,
+        leaderboard,
+        currentUserRank,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (err) {
     console.error('Unexpected error in leaderboard:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

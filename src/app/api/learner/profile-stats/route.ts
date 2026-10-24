@@ -19,11 +19,10 @@ export async function GET() {
 
     let effectiveUserId = user?.id;
 
-    // In demo / test mode: if demo role is LEARNER and current auth user is not learner, use learner profile
-    if (demoRole === 'LEARNER' && user?.email && (user.email.startsWith('admin') || user.email.startsWith('evaluator'))) {
-      effectiveUserId = '11111111-1111-1111-1111-111111111111';
-    } else if (!effectiveUserId) {
-      if (process.env.NODE_ENV !== 'production' || demoRole === 'LEARNER') {
+    if (!effectiveUserId) {
+      const cookieStore = await cookies();
+      const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
+      if (demoRole === 'LEARNER') {
         effectiveUserId = '11111111-1111-1111-1111-111111111111';
       }
     }
@@ -144,6 +143,12 @@ export async function GET() {
           progressPercentage: certProgressPercentage,
           masterCredential,
         },
+      },
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
       },
     });
   } catch (err) {

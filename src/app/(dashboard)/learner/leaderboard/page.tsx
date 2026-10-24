@@ -54,45 +54,21 @@ export default function LeaderboardPage() {
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/leaderboard');
+      const res = await fetch('/api/leaderboard', { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok || !data.leaderboard || data.leaderboard.length === 0) {
         setLeaderboard(fallbackLeaderboard);
-        setMyRank({
-          rank: 1,
-          userId: 'usr-1',
-          displayName: 'Học Viên Nexa',
-          avatarUrl: null,
-          points: 241,
-        });
+        setMyRank(null);
       } else {
         const sorted = (data.leaderboard as LeaderboardEntry[]).sort(
           (a, b) => b.points - a.points
         );
         setLeaderboard(sorted);
-        if (data.currentUserRank) {
-          setMyRank(data.currentUserRank);
-        } else {
-          // If logged in user matched in leaderboard list
-          const firstUser = sorted[0];
-          setMyRank({
-            rank: firstUser?.rank || 1,
-            userId: firstUser?.userId || 'usr-me',
-            displayName: firstUser?.displayName || 'Học Viên Nexa',
-            avatarUrl: firstUser?.avatarUrl || null,
-            points: firstUser?.points || 0,
-          });
-        }
+        setMyRank(data.currentUserRank || null);
       }
     } catch {
       setLeaderboard(fallbackLeaderboard);
-      setMyRank({
-        rank: 1,
-        userId: 'usr-1',
-        displayName: 'Học Viên Nexa',
-        avatarUrl: null,
-        points: 241,
-      });
+      setMyRank(null);
     } finally {
       setLoading(false);
     }

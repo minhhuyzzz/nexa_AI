@@ -78,18 +78,22 @@ export async function POST(request: Request) {
 
     // Trường hợp Supabase chưa bật xác thực email: đã có session ngay
     if (data.session) {
-      return NextResponse.json({
+      const res = NextResponse.json({
         success: true,
         requiresEmailConfirmation: false,
         redirectUrl: role === 'LEARNER' ? '/learner/dashboard' : '/evaluator/dashboard',
       });
+      res.cookies.delete('nexa_demo_role');
+      return res;
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       requiresEmailConfirmation: true,
       message: 'Đã gửi liên kết xác thực tới email của bạn.',
     });
+    res.cookies.delete('nexa_demo_role');
+    return res;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });

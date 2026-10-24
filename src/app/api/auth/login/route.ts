@@ -102,11 +102,13 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       role,
       redirectUrl,
     });
+    response.cookies.delete('nexa_demo_role');
+    return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });

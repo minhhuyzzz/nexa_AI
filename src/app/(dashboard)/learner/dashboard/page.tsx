@@ -84,7 +84,7 @@ export default function LearnerDashboardPage() {
     async function loadStats() {
       setLoadingStats(true);
       try {
-        const res = await fetch('/api/learner/profile-stats');
+        const res = await fetch('/api/learner/profile-stats', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success) {
@@ -115,7 +115,7 @@ export default function LearnerDashboardPage() {
 
     async function loadCompetencyProfile() {
       try {
-        const res = await fetch('/api/learner/competency-profile');
+        const res = await fetch('/api/learner/competency-profile', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success) {
@@ -130,7 +130,7 @@ export default function LearnerDashboardPage() {
     async function loadAssessments() {
       setLoadingAssessments(true);
       try {
-        const res = await fetch('/api/assessments');
+        const res = await fetch('/api/assessments', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.assessments && Array.isArray(json.assessments)) {
@@ -147,7 +147,7 @@ export default function LearnerDashboardPage() {
     async function loadLeaderboard(myUserId?: string, myAvatarUrl?: string | null) {
       setLoadingLeaderboard(true);
       try {
-        const res = await fetch('/api/leaderboard');
+        const res = await fetch('/api/leaderboard', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.leaderboard && Array.isArray(json.leaderboard)) {

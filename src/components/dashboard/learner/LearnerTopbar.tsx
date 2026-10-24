@@ -19,7 +19,7 @@ export function LearnerTopbar() {
 
     async function fetchPoints() {
       try {
-        const res = await fetch('/api/learner/profile-stats');
+        const res = await fetch('/api/learner/profile-stats', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.stats) {
