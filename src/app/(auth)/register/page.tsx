@@ -208,7 +208,7 @@ export default function RegisterPage() {
           </div>
 
           <p className="text-[11px] text-slate-400 -mt-1 sm:col-span-2">
-            Mật khẩu từ 6 ký tự (nên kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt).
+            Mật khẩu từ 6 ký tự (kết hợp chữ thường và số).
           </p>
         </div>
 

@@ -11,7 +11,7 @@ export function translateAuthError(msg?: string | null): string {
     lower.includes('password should contain at least') ||
     lower.includes('password must contain')
   ) {
-    return 'Mật khẩu cần kết hợp ít nhất 1 chữ thường, 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt (!@#$%...).';
+    return 'Mật khẩu cần kết hợp chữ thường và số (tối thiểu 6 ký tự).';
   }
   if (
     lower.includes('password should be at least') ||
