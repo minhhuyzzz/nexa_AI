@@ -49,56 +49,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
-  // 3. Fast check: Demo Test Mode for non-admin testing (NEVER bypass /admin)
-  // Demo mode is ONLY allowed in development OR when explicit ENABLE_DEMO_MODE=true
-  const isDemoPermitted =
-    process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_MODE === 'true';
-
-  const demoCookie = request.cookies.get('nexa_demo_role')?.value?.toUpperCase();
-  const demoParam = request.nextUrl.searchParams.get('demo')?.toUpperCase();
-  const activeDemoRole = isDemoPermitted ? (demoParam || demoCookie) : undefined;
-
-  if (isDemoPermitted && !isAdminRoute && activeDemoRole && ['LEARNER', 'EVALUATOR', 'USER'].includes(activeDemoRole)) {
-    const res = NextResponse.next({ request });
-    if (demoParam) {
-      res.cookies.set('nexa_demo_role', demoParam, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
-    }
-    return res;
-  }
-
-  // 4. Fast Short-Circuit: Public pages require ZERO auth checks or remote calls
+  // 3. Fast Short-Circuit: Public pages require ZERO auth checks or remote calls
   if (!isAuthPage && !isOnboardingPage && !isProtectedDashboard) {
     return NextResponse.next({ request });
   }
 
-  // 5. Fast Cookie Check: If user has no Supabase auth cookie, avoid remote HTTPS calls
+  // 4. Fast Cookie Check: If user has no Supabase auth cookie, avoid remote HTTPS calls
   const cookies = request.cookies.getAll();
   const hasAuthCookie = cookies.some((c) => c.name.includes('-auth-token'));
 
   // If visiting protected dashboard or onboarding without any auth cookie
   if ((isProtectedDashboard || isOnboardingPage) && !hasAuthCookie) {
-    // Admin routes and onboarding strictly require real authentication
-    if (isAdminRoute || isOnboardingPage) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      url.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(url);
-    }
-
-    // In development / prototype testing mode, allow demo access if permitted
-    if (isDemoPermitted && activeDemoRole) {
-      const res = NextResponse.next({ request });
-      const inferredRole = activeDemoRole || 'USER';
-      res.cookies.set('nexa_demo_role', inferredRole, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
-      return res;
-    }
-
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('redirect', pathname);

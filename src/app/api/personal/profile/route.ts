@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
@@ -21,7 +20,7 @@ export async function GET() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    let effectiveUserId = user?.id;
+    const effectiveUserId = user?.id;
     let isGoogleAuth = false;
 
     if (user) {
@@ -29,14 +28,6 @@ export async function GET() {
         user.app_metadata?.provider === 'google' ||
         (user.identities?.some((id) => id.provider === 'google') ?? false) ||
         (user.user_metadata?.iss?.includes('google') ?? false);
-    }
-
-    if (!effectiveUserId) {
-      const cookieStore = await cookies();
-      const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
-      if (process.env.NODE_ENV !== 'production' || demoRole === 'LEARNER') {
-        effectiveUserId = '11111111-1111-1111-1111-111111111111';
-      }
     }
 
     if (!effectiveUserId) {
@@ -110,14 +101,7 @@ export async function PATCH(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    let effectiveUserId = user?.id;
-    if (!effectiveUserId) {
-      const cookieStore = await cookies();
-      const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
-      if (process.env.NODE_ENV !== 'production' || demoRole === 'LEARNER') {
-        effectiveUserId = '11111111-1111-1111-1111-111111111111';
-      }
-    }
+    const effectiveUserId = user?.id;
 
     if (!effectiveUserId) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });

@@ -1,6 +1,5 @@
 import { PersonalSidebar } from '@/components/dashboard/personal/PersonalSidebar';
 import { PersonalTopbar } from '@/components/dashboard/personal/PersonalTopbar';
-import { DemoRoleSwitcher } from '@/components/dashboard/DemoRoleSwitcher';
 
 export default function PersonalLayout({
   children,
@@ -16,7 +15,6 @@ export default function PersonalLayout({
           {children}
         </main>
       </div>
-      <DemoRoleSwitcher />
     </div>
   );
 }

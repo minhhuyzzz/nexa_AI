@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -11,21 +10,9 @@ export async function GET() {
     // 1. Authenticate user
     const {
       data: { user },
-      error: authError,
     } = await supabase.auth.getUser();
 
-    const cookieStore = await cookies();
-    const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
-
-    let effectiveUserId = user?.id;
-
-    if (!effectiveUserId) {
-      const cookieStore = await cookies();
-      const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
-      if (demoRole === 'LEARNER') {
-        effectiveUserId = '11111111-1111-1111-1111-111111111111';
-      }
-    }
+    const effectiveUserId = user?.id;
 
     if (!effectiveUserId) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });

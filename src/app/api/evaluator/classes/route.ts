@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
@@ -21,18 +20,7 @@ async function getEffectiveEvaluatorId(supabase: any) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user?.id) return user.id;
-
-  // Development / Demo Mode fallback
-  if (process.env.NODE_ENV !== 'production') {
-    const cookieStore = await cookies();
-    const demoRole = cookieStore.get('nexa_demo_role')?.value?.toUpperCase();
-    if (demoRole === 'EVALUATOR' || demoRole === 'ADMIN') {
-      return '22222222-2222-2222-2222-222222222222';
-    }
-  }
-
-  return null;
+  return user?.id || null;
 }
 
 export async function GET() {

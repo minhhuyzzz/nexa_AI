@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 
 // 25MB limit synchronized with storage.buckets file_size_limit (26214400 bytes)
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -53,10 +52,6 @@ const ALLOWED_EXTENSIONS = new Set([
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const cookieStore = await cookies();
-    const isDemoPermitted =
-      process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_MODE === 'true';
-    const demoRole = isDemoPermitted ? cookieStore.get('nexa_demo_role')?.value : undefined;
 
     // 1. Authenticate user
     const {
@@ -64,12 +59,11 @@ export async function POST(request: Request) {
       error: authError,
     } = await supabase.auth.getUser();
 
-    // In demo mode or if user is logged in
-    const userId = user?.id || (demoRole ? `demo-${demoRole.toLowerCase()}-user` : null);
-
-    if (!userId && (authError || !user)) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập để tải tệp minh chứng' }, { status: 401 });
     }
+
+    const userId = user.id;
 
     // 2. Parse FormData
     const formData = await request.formData();
@@ -105,19 +99,7 @@ export async function POST(request: Request) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = `submissions/${userId}/${submissionId}/${itemId || 'item'}_${Date.now()}_${safeName}`;
 
-    // 6. If testing in development demo mode without configured Supabase bucket
-    if (process.env.NODE_ENV !== 'production' && !user && demoRole) {
-      return NextResponse.json({
-        success: true,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type || `application/${fileExt}`,
-        storagePath: filePath,
-        url: `https://storage.nexa.edu.vn/${filePath}`,
-      });
-    }
-
-    // 7. Upload to Supabase Storage
+    // 6. Upload to Supabase Storage
     const buffer = Buffer.from(await file.arrayBuffer());
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('assessment-evidence')
@@ -135,7 +117,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 8. Generate Signed URL for secure private storage access (valid for 7 days)
+    // 7. Generate Signed URL for secure private storage access (valid for 7 days)
     const { data: signedData } = await supabase.storage
       .from('assessment-evidence')
       .createSignedUrl(uploadData.path, 60 * 60 * 24 * 7);
