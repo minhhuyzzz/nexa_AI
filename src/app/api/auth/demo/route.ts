@@ -12,26 +12,31 @@ interface WorkspaceTarget {
 
 const DEMO_TARGETS: Record<string, WorkspaceTarget> = {
   PERSONAL: {
-    email: 'learner@nexa.edu.vn',
-    pass: 'Nexa@2026',
+    email: process.env.DEMO_LEARNER_EMAIL || 'learner@nexa.edu.vn',
+    pass: process.env.DEMO_LEARNER_PASSWORD || 'Nexa@2026',
     defaultPath: '/personal/dashboard',
     activeWorkspaceId: 'personal',
   },
   ORG: {
-    email: 'learner@nexa.edu.vn',
-    pass: 'Nexa@2026',
+    email: process.env.DEMO_EVALUATOR_EMAIL || 'learner@nexa.edu.vn',
+    pass: process.env.DEMO_EVALUATOR_PASSWORD || 'Nexa@2026',
     defaultPath: '/org/fpt-polytechnic',
     activeWorkspaceId: 'org_aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   },
   ADMIN: {
-    email: 'admin.nexa@gmail.com',
-    pass: 'Nexa@2026',
+    email: process.env.DEMO_ADMIN_EMAIL || 'admin.nexa@gmail.com',
+    pass: process.env.DEMO_ADMIN_PASSWORD || 'Nexa@2026',
     defaultPath: '/admin/dashboard',
     activeWorkspaceId: 'admin',
   },
 };
 
 export async function GET(request: NextRequest) {
+  // Strict security check: Demo mode is blocked in production unless explicit ENABLE_DEMO_MODE=true
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEMO_MODE !== 'true') {
+    return new NextResponse('Demo mode is disabled in production', { status: 404 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -121,4 +126,3 @@ export async function GET(request: NextRequest) {
 
   return response;
 }
-

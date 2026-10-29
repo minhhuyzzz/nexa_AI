@@ -213,7 +213,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             href="/register"
             className="text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-4 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 shadow-xs"
           >
-            <span>Bắt đầu</span>
+            <span>Đăng ký miễn phí</span>
             <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
           </Link>
         </div>

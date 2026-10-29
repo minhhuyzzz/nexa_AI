@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+// 25MB limit synchronized with storage.buckets file_size_limit (26214400 bytes)
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = new Set([
   // Documents
@@ -53,7 +54,9 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const cookieStore = await cookies();
-    const demoRole = cookieStore.get('nexa_demo_role')?.value;
+    const isDemoPermitted =
+      process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_MODE === 'true';
+    const demoRole = isDemoPermitted ? cookieStore.get('nexa_demo_role')?.value : undefined;
 
     // 1. Authenticate user
     const {
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Validate MIME Type or File Extension
+    // 4. Validate MIME Type and File Extension
     const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     const isAllowedMime = file.type ? ALLOWED_MIME_TYPES.has(file.type) : false;
     const isAllowedExt = ALLOWED_EXTENSIONS.has(fileExt);
@@ -98,12 +101,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Build clean safe path
+    // 5. Build clean safe path bound to authenticated user's ID
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = `submissions/${userId}/${submissionId}/${itemId || 'item'}_${Date.now()}_${safeName}`;
 
-    // 6. If testing in demo mode without configured Supabase bucket, return simulated stored file
-    if (!user && demoRole) {
+    // 6. If testing in development demo mode without configured Supabase bucket
+    if (process.env.NODE_ENV !== 'production' && !user && demoRole) {
       return NextResponse.json({
         success: true,
         fileName: file.name,
@@ -123,23 +126,23 @@ export async function POST(request: Request) {
         upsert: true,
       });
 
+    // Fail immediately if storage upload fails (no fake success return)
     if (uploadError) {
-      // If bucket does not exist in local development, provide fallback URL gracefully
-      console.warn('Supabase storage bucket warning, falling back:', uploadError.message);
-      return NextResponse.json({
-        success: true,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type || `application/${fileExt}`,
-        storagePath: filePath,
-        url: `https://storage.nexa.edu.vn/${filePath}`,
-      });
+      console.error('Lỗi khi tải tệp lên Supabase Storage:', uploadError.message);
+      return NextResponse.json(
+        { error: `Không thể lưu tệp minh chứng: ${uploadError.message}` },
+        { status: 500 }
+      );
     }
 
-    // 8. Get Public URL
-    const { data: urlData } = supabase.storage
+    // 8. Generate Signed URL for secure private storage access (valid for 7 days)
+    const { data: signedData } = await supabase.storage
       .from('assessment-evidence')
-      .getPublicUrl(uploadData.path);
+      .createSignedUrl(uploadData.path, 60 * 60 * 24 * 7);
+
+    const fileUrl =
+      signedData?.signedUrl ||
+      supabase.storage.from('assessment-evidence').getPublicUrl(uploadData.path).data.publicUrl;
 
     return NextResponse.json({
       success: true,
@@ -147,7 +150,7 @@ export async function POST(request: Request) {
       fileSize: file.size,
       mimeType: file.type || `application/${fileExt}`,
       storagePath: uploadData.path,
-      url: urlData.publicUrl,
+      url: fileUrl,
     });
   } catch (err) {
     console.error('Unexpected error in evidence upload:', err);

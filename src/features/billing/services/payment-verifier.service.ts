@@ -95,14 +95,15 @@ export class PaymentVerifierService {
   static async fulfillByReference(
     referenceCode: string,
     rawPayload: Record<string, unknown> = {},
-    providerRef: string = 'WEBHOOK_AUTOMATED'
+    providerRef: string = 'WEBHOOK_AUTOMATED',
+    incomingAmount?: number
   ) {
     const adminSupabase = createAdminClient();
 
     // 1. Find transaction by reference code in transfer content
     const { data: tx, error: findErr } = await adminSupabase
       .from('payment_transactions')
-      .select('id, status, plan_code, user_id')
+      .select('id, status, plan_code, user_id, amount, currency')
       .eq('transaction_reference', referenceCode)
       .single();
 
@@ -114,7 +115,22 @@ export class PaymentVerifierService {
       return { success: true, message: 'Giao dịch đã được kích hoạt trước đó', alreadyFulfilled: true };
     }
 
-    // 2. Call atomic DB RPC
+    if (tx.status !== 'PENDING') {
+      return { success: false, error: `Giao dịch đang ở trạng thái '${tx.status}', không thể xử lý` };
+    }
+
+    // 2. Validate currency and incoming amount if provided by provider
+    if (incomingAmount !== undefined && incomingAmount !== null && Number(incomingAmount) > 0) {
+      const expectedAmount = Number(tx.amount);
+      if (Number(incomingAmount) < expectedAmount) {
+        return {
+          success: false,
+          error: `Số tiền thanh toán (${incomingAmount} VND) không đủ với giá trị gói (${expectedAmount} VND)`,
+        };
+      }
+    }
+
+    // 3. Call atomic DB RPC (using service_role admin client)
     const { data: rpcResult, error: rpcErr } = await adminSupabase.rpc(
       'fulfill_payment_transaction',
       {

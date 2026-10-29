@@ -67,6 +67,14 @@
     border-color: var(--border);
   }
 
+  /* Disable browser native password reveal icon in Edge/Chromium to prevent duplicate eye icons */
+  input::-ms-reveal,
+  input::-ms-clear,
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none !important;
+  }
+
   html {
     overflow-y: scroll;
     scrollbar-gutter: stable;
@@ -264,4 +272,18 @@
 
 .animate-float-drift-3 {
   animation: float-drift-3 11s ease-in-out infinite;
+}
+
+
+@keyframes border-beam-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-border-beam {
+  animation: border-beam-spin 3s linear infinite;
 }

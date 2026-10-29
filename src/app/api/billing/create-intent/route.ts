@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 import { PaymentVerifierService } from '@/features/billing/services/payment-verifier.service';
 
 const createIntentSchema = z.object({
@@ -30,6 +31,28 @@ export async function POST(request: NextRequest) {
     }
 
     const { planCode, organizationId } = validation.data;
+
+    // Verify organization authority if billing for an organization
+    if (organizationId) {
+      const isSuperadmin = isSuperadminEmail(user.email);
+      if (!isSuperadmin) {
+        const { data: membership, error: memErr } = await supabase
+          .from('user_organizations')
+          .select('org_role, status')
+          .eq('organization_id', organizationId)
+          .eq('user_id', user.id)
+          .eq('status', 'ACTIVE')
+          .maybeSingle();
+
+        if (memErr || !membership || !['ORG_OWNER', 'ORG_ADMIN'].includes(membership.org_role)) {
+          return NextResponse.json(
+            { error: 'Bạn không có quyền quản trị tổ chức này để thực hiện thanh toán nâng cấp' },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const intent = await PaymentVerifierService.createPaymentIntent(
       user.id,
       planCode,

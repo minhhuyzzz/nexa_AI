@@ -4,14 +4,29 @@ import { PaymentVerifierService } from '@/features/billing/services/payment-veri
 export async function POST(request: NextRequest) {
   try {
     const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
-    const authHeader = request.headers.get('authorization') || request.headers.get('x-webhook-secret');
 
-    // If webhook secret is set in env, verify it
-    if (webhookSecret && authHeader) {
-      const token = authHeader.replace(/^Bearer\s+/i, '');
-      if (token !== webhookSecret) {
-        return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 });
-      }
+    // Fail-closed webhook security: reject if not configured
+    if (!webhookSecret) {
+      return NextResponse.json(
+        { error: 'Dịch vụ webhook thanh toán chưa được cấu hình (PAYMENT_WEBHOOK_SECRET)' },
+        { status: 503 }
+      );
+    }
+
+    const authHeader = request.headers.get('authorization') || request.headers.get('x-webhook-secret');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Thiếu header xác thực webhook' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (token !== webhookSecret) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Sai mã bí mật webhook' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json().catch(() => ({}));
@@ -42,11 +57,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract incoming transfer amount if provided by payment gateway
+    const rawAmount =
+      body.transferAmount ??
+      body.amount ??
+      body.creditAmount ??
+      body.amountIn;
+    const incomingAmount =
+      typeof rawAmount === 'number'
+        ? rawAmount
+        : typeof rawAmount === 'string' && !isNaN(Number(rawAmount))
+        ? Number(rawAmount)
+        : undefined;
+
     const provider = body.gateway || body.bank || 'SEPAY_WEBHOOK';
     const result = await PaymentVerifierService.fulfillByReference(
       refCode,
       body,
-      provider
+      provider,
+      incomingAmount
     );
 
     if (!result.success) {

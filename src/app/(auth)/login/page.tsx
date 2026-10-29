@@ -4,13 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { AlertCircle, LogIn } from 'lucide-react';
+import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
 import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,16 +108,31 @@ export default function LoginPage() {
               Quên mật khẩu?
             </Link>
           </div>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Nhập mật khẩu"
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
-          />
+          <div className="relative">
+            <input
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu"
+              className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+              title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" strokeWidth={1.75} />
+              ) : (
+                <Eye className="w-4 h-4" strokeWidth={1.75} />
+              )}
+            </button>
+          </div>
         </div>
 
         <button
@@ -128,8 +144,6 @@ export default function LoginPage() {
           <span>{loading ? 'Đang xác thực...' : 'Đăng nhập'}</span>
         </button>
       </form>
-
-
 
       {/* Google OAuth Button - Placed at Bottom */}
       <div>

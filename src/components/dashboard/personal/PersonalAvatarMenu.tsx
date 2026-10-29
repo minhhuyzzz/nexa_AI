@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client';
 import {
   LogOut,
   User,
-  Award,
   Sparkles,
   Sun,
   Moon,
@@ -31,7 +30,7 @@ export function PersonalAvatarMenu() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        // 1. Try fetching from internal profile-stats API first (Server-authenticated, 100% reliable)
+        // 1. Try fetching from internal profile-stats API first
         const res = await fetch('/api/personal/profile-stats');
         if (res.ok) {
           const data = await res.json();
@@ -40,12 +39,13 @@ export function PersonalAvatarMenu() {
             const name = userObj.fullName || userObj.displayName || 'Học Viên Nexa';
             setDisplayName(name);
             if (userObj.email) setDisplayEmail(userObj.email);
-            const inits = name
-              .split(' ')
-              .filter(Boolean)
-              .slice(-2)
-              .map((w: string) => w[0]?.toUpperCase())
-              .join('') || 'NX';
+            const inits =
+              name
+                .split(' ')
+                .filter(Boolean)
+                .slice(-2)
+                .map((w: string) => w[0]?.toUpperCase())
+                .join('') || 'NX';
             setDisplayInitials(inits);
             if (userObj.avatarUrl) {
               setAvatarUrl(userObj.avatarUrl);
@@ -56,7 +56,9 @@ export function PersonalAvatarMenu() {
 
         // 2. Direct Supabase Client fallback
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           if (user.email) setDisplayEmail(user.email);
           const { data: profile } = await supabase
@@ -68,12 +70,13 @@ export function PersonalAvatarMenu() {
           if (profile) {
             const name = profile.full_name || user.user_metadata?.full_name || 'Học Viên Nexa';
             setDisplayName(name);
-            const inits = name
-              .split(' ')
-              .filter(Boolean)
-              .slice(-2)
-              .map((w: string) => w[0]?.toUpperCase())
-              .join('') || 'NX';
+            const inits =
+              name
+                .split(' ')
+                .filter(Boolean)
+                .slice(-2)
+                .map((w: string) => w[0]?.toUpperCase())
+                .join('') || 'NX';
             setDisplayInitials(inits);
 
             const avatar =
@@ -88,6 +91,7 @@ export function PersonalAvatarMenu() {
         // Fallback gracefully
       }
     }
+
     fetchUser();
     window.addEventListener('profile-updated', fetchUser);
     return () => window.removeEventListener('profile-updated', fetchUser);
@@ -97,6 +101,7 @@ export function PersonalAvatarMenu() {
     const supabase = createClient();
     await supabase.auth.signOut();
     document.cookie = 'nexa_demo_role=; path=/; max-age=0';
+    document.cookie = 'nexa_active_workspace=; path=/; max-age=0';
     router.push('/login');
     router.refresh();
   };
@@ -107,8 +112,9 @@ export function PersonalAvatarMenu() {
         {/* Avatar ONLY - Pure Circle with zero adjacent text */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all focus:outline-none overflow-hidden font-mono"
+          className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all focus:outline-none overflow-hidden font-mono cursor-pointer"
           title="Tài khoản cá nhân"
+          aria-expanded={isOpen}
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
@@ -125,7 +131,7 @@ export function PersonalAvatarMenu() {
               onClick={() => setIsOpen(false)}
             />
 
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-sm py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-md py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
               <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-850">
                 <div className="flex items-center gap-3">
@@ -187,9 +193,10 @@ export function PersonalAvatarMenu() {
                     ) : (
                       <Sun className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                     )}
-                    <span className="font-medium text-xs text-slate-700 dark:text-zinc-300">Giao diện {isDarkMode ? 'Tối' : 'Sáng'}</span>
+                    <span className="font-medium text-xs text-slate-700 dark:text-zinc-300">
+                      Giao diện {isDarkMode ? 'Tối' : 'Sáng'}
+                    </span>
                   </div>
-                  {/* Thanh gạt switch */}
                   <button
                     type="button"
                     role="switch"
@@ -227,7 +234,7 @@ export function PersonalAvatarMenu() {
               <div className="pt-1 mt-1 border-t border-slate-100 dark:border-zinc-850">
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 text-rose-500" strokeWidth={1.75} />
                   <span>Đăng xuất</span>

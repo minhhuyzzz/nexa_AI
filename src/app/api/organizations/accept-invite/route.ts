@@ -67,7 +67,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Fetch organization info
+    // 2. Security validation: Verify the authenticated user is the actual invitee
+    const currentEmail = user.email?.trim().toLowerCase();
+    const invitedEmail = invitation.email?.trim().toLowerCase();
+
+    if (!currentEmail || currentEmail !== invitedEmail) {
+      return NextResponse.json(
+        {
+          error: `Lời mời này được gửi cho địa chỉ email ${invitation.email}. Bạn đang đăng nhập bằng ${user.email || 'tài khoản khác'}. Vui lòng đăng nhập đúng tài khoản nhận lời mời.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // 3. Fetch organization info
     const { data: org } = await adminSupabase
       .from('organizations')
       .select('id, name')

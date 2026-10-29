@@ -4,14 +4,44 @@ import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
 
+interface OrgRelation {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface UserOrgRelation {
+  organization_id: string;
+  organizations: OrgRelation | null;
+}
+
+interface ProfileRow {
+  id: string;
+  nickname: string | null;
+  full_name: string | null;
+  email: string | null;
+  role: string | null;
+  plan_tier: string | null;
+  points: number | null;
+  created_at: string;
+  user_organizations?: UserOrgRelation[];
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
 
-    // Verify admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !isSuperadminEmail(user.email)) {
-      // In dev mode allow test access
+    // Strictly enforce Superadmin authorization
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user || !isSuperadminEmail(user.email)) {
+      return NextResponse.json(
+        { error: 'Forbidden: Yêu cầu quyền Superadmin' },
+        { status: 403 }
+      );
     }
 
     // Fetch profiles with user_organizations
@@ -45,10 +75,12 @@ export async function GET() {
       if (s.user_id) subCountMap[s.user_id] = (subCountMap[s.user_id] || 0) + 1;
     });
 
-    const formatted = (profiles || []).map((p: any) => {
-      const orgRel = Array.isArray(p.user_organizations) && p.user_organizations.length > 0
-        ? p.user_organizations[0]?.organizations
-        : null;
+    const rows = (profiles || []) as unknown as ProfileRow[];
+    const formatted = rows.map((p) => {
+      const orgRel =
+        Array.isArray(p.user_organizations) && p.user_organizations.length > 0
+          ? p.user_organizations[0]?.organizations
+          : null;
 
       return {
         id: p.id,
@@ -68,22 +100,47 @@ export async function GET() {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';
     console.error('GET /api/admin/users error:', message);
-    return NextResponse.json({ users: [] });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+interface PatchBody {
+  userId: string;
+  role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
+  planTier?: 'FREE' | 'PRO' | 'ENTERPRISE';
+  organizationId?: string;
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
+    const supabase = await createClient();
+
+    // Strictly enforce Superadmin authorization
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user || !isSuperadminEmail(user.email)) {
+      return NextResponse.json(
+        { error: 'Forbidden: Yêu cầu quyền Superadmin' },
+        { status: 403 }
+      );
+    }
+
+    const body: PatchBody = await request.json();
     const { userId, role, planTier, organizationId } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'Thiếu userId' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const updates: {
+      updated_at: string;
+      role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
+      plan_tier?: 'FREE' | 'PRO' | 'ENTERPRISE';
+    } = { updated_at: new Date().toISOString() };
 
-    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
     if (role && ['LEARNER', 'EVALUATOR', 'ADMIN'].includes(role)) {
       updates.role = role;
     }

@@ -8,8 +8,16 @@ export function DemoRoleSwitcher() {
   const pathname = usePathname();
   const [minimized, setMinimized] = useState(false);
 
-  const isLearner = pathname.startsWith('/learner');
-  const isEvaluator = pathname.startsWith('/evaluator');
+  // Hide in production unless explicitly enabled
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDemoExplicitlyEnabled = process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === 'true';
+
+  if (isProduction && !isDemoExplicitlyEnabled) {
+    return null;
+  }
+
+  const isLearner = pathname.startsWith('/learner') || pathname.startsWith('/personal');
+  const isEvaluator = pathname.startsWith('/evaluator') || pathname.startsWith('/org');
   const isAdmin = pathname.startsWith('/admin');
 
   if (minimized) {
@@ -54,7 +62,7 @@ export function DemoRoleSwitcher() {
         {/* Learner Switch */}
         <a
           href="/api/auth/demo?role=LEARNER"
-          title="learner@nexa.edu.vn (Nexa@2026)"
+          title="Tài khoản Học viên mẫu"
           className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors border ${
             isLearner
               ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-xs'
@@ -68,7 +76,7 @@ export function DemoRoleSwitcher() {
         {/* Evaluator Switch */}
         <a
           href="/api/auth/demo?role=EVALUATOR"
-          title="evaluator@nexa.edu.vn (Nexa@2026)"
+          title="Tài khoản Chuyên gia mẫu"
           className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors border ${
             isEvaluator
               ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-xs'
@@ -82,7 +90,7 @@ export function DemoRoleSwitcher() {
         {/* Admin Switch */}
         <a
           href="/api/auth/demo?role=ADMIN"
-          title="admin.nexa@gmail.com (Nexa@2026)"
+          title="Tài khoản Admin mẫu"
           className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors border ${
             isAdmin
               ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-xs'

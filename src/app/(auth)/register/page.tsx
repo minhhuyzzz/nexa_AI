@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, AlertCircle, ArrowRight } from 'lucide-react';
+import { Mail, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 export default function RegisterPage() {
@@ -12,6 +12,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +148,6 @@ export default function RegisterPage() {
             placeholder="Ví dụ: Trần Minh Huy"
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
           />
-
         </div>
 
         <div>
@@ -162,7 +163,6 @@ export default function RegisterPage() {
             placeholder="name@example.com"
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
           />
-
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -170,32 +170,62 @@ export default function RegisterPage() {
             <label htmlFor="register-password" className="block text-xs font-semibold text-slate-700 mb-1">
               Mật khẩu <span className="text-rose-600">*</span>
             </label>
-            <input
-              id="register-password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Tối thiểu 6 ký tự"
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
-            />
+            <div className="relative">
+              <input
+                id="register-password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tối thiểu 6 ký tự"
+                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" strokeWidth={1.75} />
+                ) : (
+                  <Eye className="w-4 h-4" strokeWidth={1.75} />
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
             <label htmlFor="register-confirm-password" className="block text-xs font-semibold text-slate-700 mb-1">
               Xác nhận lại mật khẩu <span className="text-rose-600">*</span>
             </label>
-            <input
-              id="register-confirm-password"
-              type="password"
-              required
-              minLength={6}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Nhập lại mật khẩu"
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
-            />
+            <div className="relative">
+              <input
+                id="register-confirm-password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Nhập lại mật khẩu"
+                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+                title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-4 h-4" strokeWidth={1.75} />
+                ) : (
+                  <Eye className="w-4 h-4" strokeWidth={1.75} />
+                )}
+              </button>
+            </div>
           </div>
 
           <p className="text-[11px] text-slate-400 -mt-1 sm:col-span-2">

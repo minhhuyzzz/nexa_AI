@@ -50,11 +50,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Fast check: Demo Test Mode for non-admin testing (NEVER bypass /admin)
+  // Demo mode is ONLY allowed in development OR when explicit ENABLE_DEMO_MODE=true
+  const isDemoPermitted =
+    process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_MODE === 'true';
+
   const demoCookie = request.cookies.get('nexa_demo_role')?.value?.toUpperCase();
   const demoParam = request.nextUrl.searchParams.get('demo')?.toUpperCase();
-  const activeDemoRole = demoParam || demoCookie;
+  const activeDemoRole = isDemoPermitted ? (demoParam || demoCookie) : undefined;
 
-  if (!isAdminRoute && activeDemoRole && ['LEARNER', 'EVALUATOR', 'USER'].includes(activeDemoRole)) {
+  if (isDemoPermitted && !isAdminRoute && activeDemoRole && ['LEARNER', 'EVALUATOR', 'USER'].includes(activeDemoRole)) {
     const res = NextResponse.next({ request });
     if (demoParam) {
       res.cookies.set('nexa_demo_role', demoParam, {
@@ -84,8 +88,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // In development / prototype testing mode, allow demo access
-    if (process.env.NODE_ENV !== 'production' || activeDemoRole) {
+    // In development / prototype testing mode, allow demo access if permitted
+    if (isDemoPermitted && activeDemoRole) {
       const res = NextResponse.next({ request });
       const inferredRole = activeDemoRole || 'USER';
       res.cookies.set('nexa_demo_role', inferredRole, {

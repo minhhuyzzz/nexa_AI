@@ -1,10 +1,10 @@
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { CoreHighlightsSection } from '@/components/landing/CoreHighlightsSection';
 import { CompetencyFrameworkSection } from '@/components/landing/CompetencyFrameworkSection';
 import { AssessmentFormatsSection } from '@/components/landing/AssessmentFormatsSection';
 import { AiWorkflowSection } from '@/components/landing/AiWorkflowSection';
-import { DualHashVerifySection } from '@/components/landing/DualHashVerifySection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { CtaBannerSection } from '@/components/landing/CtaBannerSection';
 
@@ -16,8 +16,11 @@ export default function HomePage() {
 
       {/* 2. Nội dung các phân đoạn độc lập */}
       <main className="flex-1">
-        {/* Phân đoạn Hero & Các chỉ số nhanh */}
+        {/* Phân đoạn Hero & Biểu đồ Radar 5 Miền */}
         <HeroSection />
+
+        {/* Phân đoạn 3 Điểm nhấn Cốt lõi */}
+        <CoreHighlightsSection />
 
         {/* Phân đoạn 5 Miền Năng Lực Số Chuẩn Hóa */}
         <CompetencyFrameworkSection />
@@ -27,9 +30,6 @@ export default function HomePage() {
 
         {/* Phân đoạn Quy Trình Trí Tuệ Nhân Tạo Kích Hoạt Theo Yêu Cầu */}
         <AiWorkflowSection />
-
-        {/* Phân đoạn Bảo Chứng Toàn Vẹn Số SHA-256 Kép */}
-        <DualHashVerifySection />
 
         {/* Phân đoạn Bảng Giá & Gói Dịch Vụ */}
         <PricingSection />
