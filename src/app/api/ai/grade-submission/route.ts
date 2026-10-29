@@ -57,10 +57,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Verify submission existence and learner ownership
+    // 3. Verify submission existence and strict resource-level authorization
     const { data: submission, error: subError } = await supabase
       .from('assessment_submissions')
-      .select('id, user_id, status, assessment_id')
+      .select('id, user_id, status, assessment_id, class_assignment_id')
       .eq('id', submissionId)
       .single();
 
@@ -68,11 +68,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
     }
 
-    if (profile.role === 'LEARNER' && submission.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Bạn không có thẩm quyền yêu cầu chấm bài thi này' },
-        { status: 403 }
-      );
+    // Kiểm tra quyền hạn theo tài nguyên (Resource-Level Authorization):
+    if (submission.user_id !== user.id && profile.role !== 'ADMIN') {
+      // Người gọi là Giảng viên/Chuyên gia khảo thí: phải phụ trách đề thi hoặc lớp học của học viên
+      const { data: asm } = await supabase
+        .from('assessments')
+        .select('created_by, owner_user_id')
+        .eq('id', submission.assessment_id)
+        .single();
+
+      const isAssessmentOwner =
+        asm && (asm.created_by === user.id || asm.owner_user_id === user.id);
+
+      let isClassEvaluator = false;
+      if (!isAssessmentOwner) {
+        const { data: classRows } = await supabase
+          .from('evaluator_classes')
+          .select('id, class_members!inner(user_id)')
+          .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`)
+          .eq('class_members.user_id', submission.user_id)
+          .limit(1);
+
+        isClassEvaluator = Boolean(classRows && classRows.length > 0);
+      }
+
+      if (!isAssessmentOwner && !isClassEvaluator) {
+        return NextResponse.json(
+          { error: 'Bạn không có thẩm quyền yêu cầu chấm bài thi của học viên này' },
+          { status: 403 }
+        );
+      }
     }
 
     // 4. Fetch candidate's response

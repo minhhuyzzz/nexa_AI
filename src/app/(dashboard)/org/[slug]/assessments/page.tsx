@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FilePlus, Clock, Award, CheckSquare, Plus, ArrowRight } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function OrgAssessmentsPage({
   params,
 }: {
@@ -45,7 +47,7 @@ export default async function OrgAssessmentsPage({
         </div>
 
         <Link
-          href="/personal/authoring"
+          href={`/org/${slug}/assessments/new`}
           className="flex items-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors shrink-0"
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />

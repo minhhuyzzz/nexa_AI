@@ -1,4 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';

@@ -48,6 +48,8 @@ import { PublishValidationModal } from './PublishValidationModal';
 export interface AssessmentStudioProps {
   role: 'ADMIN' | 'EVALUATOR';
   assessmentId?: string;
+  organizationId?: string;
+  returnUrl?: string;
 }
 
 const DOMAIN_OPTIONS = [
@@ -58,9 +60,14 @@ const DOMAIN_OPTIONS = [
   { id: 5, code: '05', title: 'Giải quyết Vấn đề' },
 ];
 
-export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) {
+export function AssessmentStudio({
+  role,
+  assessmentId,
+  organizationId,
+  returnUrl,
+}: AssessmentStudioProps) {
   const router = useRouter();
-  const backHref = role === 'ADMIN' ? '/admin/content' : '/personal/authoring';
+  const backHref = returnUrl || (role === 'ADMIN' ? '/admin/content' : '/personal/authoring');
 
   // General Settings State
   const [title, setTitle] = useState('Đề Khảo Thí Năng Lực Số');
@@ -387,6 +394,7 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
             is_vip: accessTier === 'VIP',
             access_tier: accessTier,
             is_published: publish,
+            organization_id: organizationId || null,
           }),
         });
 
@@ -406,6 +414,7 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
             is_vip: accessTier === 'VIP',
             access_tier: accessTier,
             is_published: publish,
+            organization_id: organizationId || null,
           }),
         });
 

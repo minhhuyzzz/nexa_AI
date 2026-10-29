@@ -90,7 +90,7 @@ export class PaymentVerifierService {
   }
 
   /**
-   * Xác thực và hoàn tất giao dịch thanh toán phía máy chủ
+   * Xác thực và hoàn tất giao dịch thanh toán phía máy chủ (Fail-closed & Bắt buộc đối soát số tiền)
    */
   static async fulfillByReference(
     referenceCode: string,
@@ -100,7 +100,15 @@ export class PaymentVerifierService {
   ) {
     const adminSupabase = createAdminClient();
 
-    // 1. Find transaction by reference code in transfer content
+    // 1. Fail-closed: Bắt buộc phải có số tiền thực nhận (incomingAmount) hợp lệ
+    if (incomingAmount === undefined || incomingAmount === null || isNaN(Number(incomingAmount)) || Number(incomingAmount) <= 0) {
+      return {
+        success: false,
+        error: 'Thiếu hoặc sai lệch thông tin số tiền thực nhận (incomingAmount). Giao dịch bị từ chối đối soát.',
+      };
+    }
+
+    // 2. Tìm kiếm giao dịch theo referenceCode trong nội dung chuyển khoản
     const { data: tx, error: findErr } = await adminSupabase
       .from('payment_transactions')
       .select('id, status, plan_code, user_id, amount, currency')
@@ -119,18 +127,16 @@ export class PaymentVerifierService {
       return { success: false, error: `Giao dịch đang ở trạng thái '${tx.status}', không thể xử lý` };
     }
 
-    // 2. Validate currency and incoming amount if provided by provider
-    if (incomingAmount !== undefined && incomingAmount !== null && Number(incomingAmount) > 0) {
-      const expectedAmount = Number(tx.amount);
-      if (Number(incomingAmount) < expectedAmount) {
-        return {
-          success: false,
-          error: `Số tiền thanh toán (${incomingAmount} VND) không đủ với giá trị gói (${expectedAmount} VND)`,
-        };
-      }
+    // 3. Đối soát số tiền bắt buộc: số tiền thực nhận không được nhỏ hơn giá trị đơn hàng
+    const expectedAmount = Number(tx.amount);
+    if (Number(incomingAmount) < expectedAmount) {
+      return {
+        success: false,
+        error: `Số tiền thanh toán (${incomingAmount} VND) không đủ với giá trị gói (${expectedAmount} VND)`,
+      };
     }
 
-    // 3. Call atomic DB RPC (using service_role admin client)
+    // 4. Kích hoạt atomic DB RPC (thông qua service_role admin client)
     const { data: rpcResult, error: rpcErr } = await adminSupabase.rpc(
       'fulfill_payment_transaction',
       {

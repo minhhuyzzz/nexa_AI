@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -66,58 +66,71 @@ export default function LearnerGroupsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      let enrolledRooms: Array<{
-        id: string;
-        room_code: string;
-        title: string;
-        created_at: string;
-      }> = [];
+      let classList: ClassGroupItem[] = [];
 
       if (user) {
-        const { data: participants } = await supabase
-          .from('room_participants')
+        // 1. Lấy các nhóm lớp mà người dùng là thành viên tham gia
+        const { data: memberRows } = await supabase
+          .from('class_members')
           .select(`
             id,
             joined_at,
-            exam_rooms (
+            evaluator_classes (
               id,
-              room_code,
-              title,
-              created_at
+              name,
+              class_code,
+              description,
+              created_at,
+              evaluator_id,
+              class_members ( id ),
+              class_assignments ( id )
             )
           `)
           .eq('user_id', user.id);
 
-        enrolledRooms = (participants || [])
-          .map((p: any) => p.exam_rooms)
-          .filter(Boolean);
+        // 2. Lấy các nhóm lớp do chính người dùng khởi tạo (vai trò giảng viên/chủ nhiệm)
+        const { data: createdRows } = await supabase
+          .from('evaluator_classes')
+          .select(`
+            id,
+            name,
+            class_code,
+            description,
+            created_at,
+            evaluator_id,
+            class_members ( id ),
+            class_assignments ( id )
+          `)
+          .eq('evaluator_id', user.id);
+
+        const combinedMap = new Map<string, any>();
+
+        (createdRows || []).forEach((c: any) => {
+          if (c?.id) combinedMap.set(c.id, { ...c, isOwner: true });
+        });
+
+        (memberRows || []).forEach((m: any) => {
+          const c = m?.evaluator_classes;
+          if (c?.id && !combinedMap.has(c.id)) {
+            combinedMap.set(c.id, { ...c, isOwner: false });
+          }
+        });
+
+        classList = Array.from(combinedMap.values()).map((c) => ({
+          id: c.id,
+          name: c.name,
+          code: c.class_code,
+          shortCode: (c.name || 'CL').slice(0, 2).toUpperCase(),
+          memberCount: c.class_members?.length || 1,
+          evaluatorName: c.isOwner ? 'Bạn (Chủ nhiệm)' : 'Giảng viên phụ trách',
+          institution: 'Học viện Số NEXA',
+          unreadPostsCount: 0,
+          pendingAssignmentsCount: c.class_assignments?.length || 0,
+          filesCount: 0,
+        }));
       }
 
-      // If learner has no enrolled rooms, show active public exam rooms
-      if (enrolledRooms.length === 0) {
-        const { data: publicRooms } = await supabase
-          .from('exam_rooms')
-          .select('id, room_code, title, created_at')
-          .eq('is_active', true)
-          .limit(6);
-
-        enrolledRooms = publicRooms || [];
-      }
-
-      const mapped: ClassGroupItem[] = enrolledRooms.map((r) => ({
-        id: r.id,
-        name: r.title,
-        code: r.room_code,
-        shortCode: r.title.slice(0, 2).toUpperCase(),
-        memberCount: 1,
-        evaluatorName: 'Chuyên gia Khảo thí NEXA',
-        institution: 'Học viện Số NEXA',
-        unreadPostsCount: 0,
-        pendingAssignmentsCount: 1,
-        filesCount: 2,
-      }));
-
-      setGroups(mapped);
+      setGroups(classList);
     } catch (err) {
       console.error('Error fetching learner groups:', err);
     } finally {
@@ -142,18 +155,18 @@ export default function LearnerGroupsPage() {
     setJoinSuccess(null);
 
     try {
-      const res = await fetch('/api/rooms/join', {
+      const res = await fetch('/api/classes/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: clean }),
+        body: JSON.stringify({ classCode: clean }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Mã nhóm không hợp lệ hoặc đã hết hạn');
+        throw new Error(data.error || 'Mã nhóm không hợp lệ hoặc không tồn tại');
       }
 
-      setJoinSuccess(`Đã ghi danh vào nhóm: ${data.roomTitle || data.roomCode}`);
+      setJoinSuccess(`Đã tham gia nhóm: ${data.className || clean}`);
       setJoinCode('');
       await fetchGroups();
       setTimeout(() => {
@@ -220,7 +233,7 @@ export default function LearnerGroupsPage() {
                       setJoinCode(e.target.value.toUpperCase().replace(/\s+/g, ''));
                       setJoinError(null);
                     }}
-                    placeholder="VD: 849201"
+                    placeholder="VD: NX-CLASS-01"
                     autoFocus
                     maxLength={10}
                     className="w-full text-center text-sm font-bold tracking-widest font-mono text-slate-900 bg-slate-50 rounded-md border border-slate-200 py-2 focus:bg-white focus:border-sky-600 focus:outline-none transition-colors"

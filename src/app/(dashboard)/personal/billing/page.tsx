@@ -155,20 +155,17 @@ export default function LearnerBillingPage() {
     setErrorMsg(null);
 
     try {
-      const res = await fetch('/api/webhooks/payment', {
+      const res = await fetch('/api/billing/mock-pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           referenceCode: activeIntent.referenceCode,
-          content: `Chuyen khoan ${activeIntent.referenceCode}`,
-          transferAmount: activeIntent.amount,
-          gateway: 'SIMULATOR_TEST',
         }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Giả lập webhook thất bại');
+        throw new Error(data.error || 'Giả lập thanh toán thất bại');
       }
 
       setUpgradeSuccess(true);
@@ -180,7 +177,7 @@ export default function LearnerBillingPage() {
         setActiveIntent(null);
       }, 2500);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Lỗi giả lập webhook');
+      setErrorMsg(err instanceof Error ? err.message : 'Lỗi giả lập thanh toán');
     } finally {
       setIsSimulatingWebhook(false);
     }
@@ -430,15 +427,17 @@ export default function LearnerBillingPage() {
                     <span>Kiểm tra trạng thái thanh toán</span>
                   </button>
 
-                  {/* Dev/Demo Webhook Simulator Button */}
-                  <button
-                    onClick={handleSimulateWebhook}
-                    disabled={isSimulatingWebhook}
-                    className="w-full py-2 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-mono flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    {isSimulatingWebhook && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>[Môi trường thử nghiệm] Giả lập Webhook đối soát</span>
-                  </button>
+                  {/* Dev/Demo Simulator Button (Chỉ hiển thị ngoài môi trường Production) */}
+                  {process.env.NODE_ENV !== 'production' && (
+                    <button
+                      onClick={handleSimulateWebhook}
+                      disabled={isSimulatingWebhook}
+                      className="w-full py-2 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-mono flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      {isSimulatingWebhook && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>[Thử nghiệm Dev] Giả lập hoàn tất thanh toán</span>
+                    </button>
+                  )}
                 </div>
               </>
             ) : null}

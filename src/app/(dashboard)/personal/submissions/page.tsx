@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -33,6 +33,8 @@ import {
 
 interface AssignmentItem {
   id: string;
+  assessmentId: string;
+  itemId?: string;
   title: string;
   groupName: string;
   groupShortCode: string;
@@ -50,6 +52,7 @@ interface AssignmentItem {
   submittedFile?: {
     name: string;
     size: string;
+    storagePath?: string;
   };
   studentNote?: string;
 }
@@ -71,50 +74,142 @@ export default function LearnerSubmissionsPage() {
         return;
       }
 
-      // Fetch enrolled rooms and any associated assessment submissions
-      const { data: participants } = await supabase
-        .from('room_participants')
-        .select(`
-          id,
-          joined_at,
-          status,
-          exam_rooms (
-            id,
-            room_code,
-            title,
-            scheduled_end,
-            assessments (
-              id,
-              title
-            )
-          )
-        `)
+      // 1. Lấy danh sách nhóm lớp người dùng tham gia hoặc chủ nhiệm
+      const { data: memberRows } = await supabase
+        .from('class_members')
+        .select('class_id')
         .eq('user_id', user.id);
 
-      if (!participants || participants.length === 0) {
+      const classIds = (memberRows || []).map((m: any) => m.class_id);
+
+      const { data: createdClasses } = await supabase
+        .from('evaluator_classes')
+        .select('id')
+        .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
+
+      (createdClasses || []).forEach((c: any) => {
+        if (!classIds.includes(c.id)) classIds.push(c.id);
+      });
+
+      if (classIds.length === 0) {
         setAssignments([]);
         return;
       }
 
-      const mapped: AssignmentItem[] = participants.map((p: any) => {
-        const room = p.exam_rooms;
-        const rawAssessment = Array.isArray(room?.assessments) ? room?.assessments[0] : room?.assessments;
-        const isDone = p.status === 'SUBMITTED';
-        const endDate = room?.scheduled_end ? new Date(room.scheduled_end) : new Date();
+      // 2. Lấy các bài tập được giao cho các lớp này
+      const { data: assignmentsData } = await supabase
+        .from('class_assignments')
+        .select(`
+          id,
+          class_id,
+          assessment_id,
+          deadline,
+          created_at,
+          evaluator_classes (
+            id,
+            name,
+            class_code
+          ),
+          assessments (
+            id,
+            title,
+            passing_score,
+            assessment_items (
+              id,
+              prompt
+            )
+          )
+        `)
+        .in('class_id', classIds);
+
+      // 3. Lấy các bài nộp của người dùng
+      const { data: userSubmissions } = await supabase
+        .from('assessment_submissions')
+        .select(`
+          id,
+          assessment_id,
+          class_assignment_id,
+          status,
+          grading_status,
+          total_score,
+          max_score,
+          submitted_at,
+          evaluator_notes,
+          submission_answers (
+            id,
+            item_id,
+            text_response,
+            evidence_url
+          )
+        `)
+        .eq('user_id', user.id);
+
+      const subByAssignmentId = new Map<string, any>();
+      const subByAssessmentId = new Map<string, any>();
+
+      (userSubmissions || []).forEach((s: any) => {
+        if (s.class_assignment_id) {
+          subByAssignmentId.set(s.class_assignment_id, s);
+        }
+        if (s.assessment_id) {
+          subByAssessmentId.set(s.assessment_id, s);
+        }
+      });
+
+      const mapped: AssignmentItem[] = (assignmentsData || []).map((ca: any) => {
+        const cls = Array.isArray(ca.evaluator_classes) ? ca.evaluator_classes[0] : ca.evaluator_classes;
+        const asm = Array.isArray(ca.assessments) ? ca.assessments[0] : ca.assessments;
+        const items = asm?.assessment_items || [];
+        const firstItem = items[0];
+
+        const existingSub = subByAssignmentId.get(ca.id) || subByAssessmentId.get(ca.assessment_id);
+        const isDone = existingSub && (existingSub.status === 'SUBMITTED' || existingSub.status === 'EVALUATED');
+
+        const endDate = ca.deadline ? new Date(ca.deadline) : new Date(Date.now() + 7 * 86400000);
         const isOverdue = !isDone && endDate < new Date();
 
+        let submittedFile = undefined;
+        let studentNote = undefined;
+        if (existingSub && existingSub.submission_answers?.length > 0) {
+          const ans = existingSub.submission_answers[0];
+          studentNote = ans.text_response || undefined;
+          if (ans.evidence_url) {
+            const rawFileName = ans.evidence_url.split('/').pop() || 'minh_chung.pdf';
+            const cleanFileName = rawFileName.replace(/^\w+_\d+_/, '');
+            submittedFile = {
+              name: cleanFileName || 'Tệp minh chứng đã nộp',
+              size: 'Đã lưu trữ',
+              storagePath: ans.evidence_url,
+            };
+          }
+        }
+
+        let submittedAtFormatted = undefined;
+        if (existingSub?.submitted_at) {
+          const d = new Date(existingSub.submitted_at);
+          submittedAtFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+
         return {
-          id: p.id,
-          title: room?.title || rawAssessment?.title || 'Nhiệm vụ nhóm',
-          groupName: `Nhóm mã PIN: ${room?.room_code || 'Chung'}`,
-          groupShortCode: (room?.title || 'NV').slice(0, 2).toUpperCase(),
+          id: ca.id,
+          assessmentId: ca.assessment_id,
+          itemId: firstItem?.id,
+          title: asm?.title || 'Nhiệm vụ thực hành',
+          groupName: cls?.name ? `${cls.name} (${cls.class_code})` : 'Nhóm học tập',
+          groupShortCode: (cls?.name || 'NH').slice(0, 2).toUpperCase(),
           groupAvatarBg: 'bg-sky-600',
           dueDate: `${endDate.getDate()} thg ${endDate.getMonth() + 1}`,
           dueDayOfWeek: `thứ ${endDate.getDay() === 0 ? 'CN' : endDate.getDay() + 1}`,
           dateKey: endDate.toISOString().split('T')[0],
           status: isDone ? 'completed' : isOverdue ? 'overdue' : 'upcoming',
-          instructions: 'Hoàn thành bài đánh giá hoặc nộp minh chứng theo yêu cầu của người đánh giá.',
-          allowedFormats: 'PDF (.pdf), Word (.docx), Excel (.xlsx)',
+          submittedAt: submittedAtFormatted,
+          score: existingSub?.total_score,
+          maxScore: existingSub?.max_score,
+          evaluatorFeedback: existingSub?.evaluator_notes || undefined,
+          submittedFile,
+          studentNote,
+          instructions: firstItem?.prompt || 'Hoàn thành bài đánh giá hoặc nộp minh chứng theo yêu cầu của người đánh giá.',
+          allowedFormats: 'PDF (.pdf), Word (.docx), Excel (.xlsx), ZIP (.zip)',
         };
       });
 
@@ -132,6 +227,7 @@ export default function LearnerSubmissionsPage() {
   }, [fetchRealAssignments]);
 
   // Submission Form State inside Drawer
+  const [rawFile, setRawFile] = useState<File | null>(null);
   const [stagedFile, setStagedFile] = useState<{ name: string; size: string } | null>(null);
   const [studentNote, setStudentNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -177,43 +273,71 @@ export default function LearnerSubmissionsPage() {
       sizeStr = (file.size / 1048576).toFixed(1) + ' MB';
     }
 
+    setRawFile(file);
     setStagedFile({
       name: file.name,
       size: sizeStr,
     });
   };
 
-  const handleTurnIn = () => {
-    if (!selectedAssignment || !stagedFile) return;
+  const handleTurnIn = async () => {
+    if (!selectedAssignment || (!stagedFile && !studentNote.trim())) return;
 
     setIsSubmitting(true);
+    try {
+      let evidenceStoragePath: string | null = null;
 
-    setTimeout(() => {
-      const now = new Date();
-      const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(
-        now.getMonth() + 1
-      ).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(
-        2,
-        '0'
-      )}:${String(now.getMinutes()).padStart(2, '0')}`;
+      // 1. Tải file minh chứng lên Supabase Storage qua API an toàn
+      if (rawFile) {
+        const formData = new FormData();
+        formData.append('file', rawFile);
+        formData.append('itemId', selectedAssignment.itemId || 'item');
+        formData.append('submissionId', selectedAssignment.id);
 
-      const updatedAssignment: AssignmentItem = {
-        ...selectedAssignment,
-        status: 'completed',
-        submittedAt: timeStr,
-        submittedFile: stagedFile,
-        studentNote: studentNote.trim() || undefined,
-      };
+        const uploadRes = await fetch('/api/evidence/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      setAssignments((prev) =>
-        prev.map((a) => (a.id === selectedAssignment.id ? updatedAssignment : a))
-      );
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json();
+          throw new Error(errData.error || 'Tải tệp minh chứng thất bại');
+        }
 
-      setSelectedAssignment(updatedAssignment);
-      setIsSubmitting(false);
+        const uploadData = await uploadRes.json();
+        evidenceStoragePath = uploadData.storagePath;
+      }
+
+      // 2. Ghi nhận bài nộp thật vào cơ sở dữ liệu
+      const submitRes = await fetch(`/api/assessments/${selectedAssignment.assessmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classAssignmentId: selectedAssignment.id,
+          timeSpentSeconds: 60,
+          answers: [
+            {
+              itemId: selectedAssignment.itemId || '00000000-0000-0000-0000-000000000000',
+              textResponse: studentNote.trim(),
+              evidenceUrl: evidenceStoragePath,
+            },
+          ],
+        }),
+      });
+
+      if (!submitRes.ok) {
+        const errJson = await submitRes.json();
+        throw new Error(errJson.error || 'Nộp bài thất bại');
+      }
+
+      await fetchRealAssignments();
       setIsSuccessTurnIn(true);
       setIsResubmittingMode(false);
-    }, 700);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Lỗi khi nộp bài');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getFileIcon = (fileName: string) => {

@@ -5,6 +5,8 @@ import { OrgSidebar } from '@/components/dashboard/org/OrgSidebar';
 import { OrgTopbar } from '@/components/dashboard/org/OrgTopbar';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
+export const dynamic = 'force-dynamic';
+
 export default async function OrgLayout({
   children,
   params,

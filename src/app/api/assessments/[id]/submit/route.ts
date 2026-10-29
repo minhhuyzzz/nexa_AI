@@ -5,6 +5,7 @@ import { PointLedgerService } from '@/features/gamification/services/point-ledge
 
 const submitSchema = z.object({
   submissionId: z.string().uuid().optional(),
+  classAssignmentId: z.string().uuid().optional(),
   timeSpentSeconds: z.number().int().min(0).default(0),
   answers: z.array(
     z.object({
@@ -35,7 +36,7 @@ export async function POST(
       );
     }
 
-    const { submissionId, timeSpentSeconds, answers } = validated.data;
+    const { submissionId, classAssignmentId, timeSpentSeconds, answers } = validated.data;
     const supabase = await createClient();
 
     // 1. Authenticate candidate
@@ -79,12 +80,20 @@ export async function POST(
       if (existingSub.user_id !== user.id) {
         return NextResponse.json({ error: 'Bạn không có quyền nộp bài thi này' }, { status: 403 });
       }
+
+      if (classAssignmentId) {
+        await supabase
+          .from('assessment_submissions')
+          .update({ class_assignment_id: classAssignmentId })
+          .eq('id', activeSubmissionId);
+      }
     } else {
       const { data: newSub, error: subError } = await supabase
         .from('assessment_submissions')
         .insert({
           assessment_id: assessmentId,
           user_id: user.id,
+          class_assignment_id: classAssignmentId || null,
           status: 'IN_PROGRESS',
         })
         .select('id')
@@ -188,6 +197,7 @@ export async function POST(
       .from('assessment_submissions')
       .update({
         status: 'SUBMITTED',
+        grading_status: 'PENDING_REVIEW',
         total_score: totalScore,
         max_score: maxScore,
         percentage: Number(percentage.toFixed(2)),

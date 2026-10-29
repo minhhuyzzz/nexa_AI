@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FolderKanban, Users, Plus, ArrowRight, BookOpen } from 'lucide-react';
+import { CreateOrgClassButton } from '@/components/dashboard/org/CreateOrgClassButton';
+
+export const dynamic = 'force-dynamic';
 
 export default async function OrgClassesPage({
   params,
@@ -44,13 +47,7 @@ export default async function OrgClassesPage({
           </p>
         </div>
 
-        <Link
-          href="/personal/groups"
-          className="flex items-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>Tạo nhóm mới</span>
-        </Link>
+        <CreateOrgClassButton organizationId={org.id} orgName={org.name} />
       </div>
 
       {/* Classes Grid */}

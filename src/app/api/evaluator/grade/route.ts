@@ -58,9 +58,21 @@ export async function POST(request: Request) {
       ((submission.assessments as any).owner_user_id === user.id ||
         (submission.assessments as any).created_by === user.id);
 
-    const isPrivileged = profile?.role === 'ADMIN' || profile?.role === 'EVALUATOR';
+    let isClassEvaluator = false;
+    if (!isAssessmentOwner && profile?.role !== 'ADMIN') {
+      const { data: classRows } = await supabase
+        .from('evaluator_classes')
+        .select('id, class_members!inner(user_id)')
+        .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`)
+        .eq('class_members.user_id', submission?.user_id)
+        .limit(1);
 
-    if (!isAssessmentOwner && !isPrivileged) {
+      isClassEvaluator = Boolean(classRows && classRows.length > 0);
+    }
+
+    const hasAuthority = isAssessmentOwner || isClassEvaluator || profile?.role === 'ADMIN';
+
+    if (!hasAuthority) {
       return NextResponse.json(
         { error: 'Bạn không có quyền thẩm định điểm cho bài thi này' },
         { status: 403 }

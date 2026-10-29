@@ -140,17 +140,13 @@ export async function POST(request: Request) {
       .from('assessment-evidence')
       .createSignedUrl(uploadData.path, 60 * 60 * 24 * 7);
 
-    const fileUrl =
-      signedData?.signedUrl ||
-      supabase.storage.from('assessment-evidence').getPublicUrl(uploadData.path).data.publicUrl;
-
     return NextResponse.json({
       success: true,
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type || `application/${fileExt}`,
       storagePath: uploadData.path,
-      url: fileUrl,
+      url: signedData?.signedUrl || null,
     });
   } catch (err) {
     console.error('Unexpected error in evidence upload:', err);

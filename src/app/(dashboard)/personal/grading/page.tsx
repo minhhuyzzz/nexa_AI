@@ -144,6 +144,34 @@ function EvaluatorGradingContent() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [activeAiEval, setActiveAiEval] = useState<AIEvaluationData | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  const handleOpenEvidence = async (path: string) => {
+    if (path.startsWith('http')) {
+      window.open(path, '_blank');
+      return;
+    }
+    try {
+      if (signedUrls[path]) {
+        window.open(signedUrls[path], '_blank');
+        return;
+      }
+      const res = await fetch('/api/evidence/signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storagePath: path }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.signedUrl) {
+        alert(data.error || 'Không thể tạo liên kết xem tệp bảo mật');
+        return;
+      }
+      setSignedUrls((prev) => ({ ...prev, [path]: data.signedUrl }));
+      window.open(data.signedUrl, '_blank');
+    } catch {
+      alert('Lỗi khi mở tệp minh chứng');
+    }
+  };
 
   const fetchSubmissions = useCallback(async (grpId?: string) => {
     setLoading(true);
@@ -813,23 +841,22 @@ function EvaluatorGradingContent() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <a
-                              href={activeItem.evidenceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100 text-[11px] font-medium text-slate-700 inline-flex items-center gap-1 shadow-xs transition-colors"
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEvidence(activeItem.evidenceUrl!)}
+                              className="px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100 text-[11px] font-medium text-slate-700 inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
                             >
                               <ExternalLink className="w-3 h-3" strokeWidth={1.75} />
                               Mở xem
-                            </a>
-                            <a
-                              href={activeItem.evidenceUrl}
-                              download
-                              className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-[11px] font-medium text-white inline-flex items-center gap-1 shadow-xs transition-colors"
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEvidence(activeItem.evidenceUrl!)}
+                              className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-[11px] font-medium text-white inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
                             >
                               <Download className="w-3 h-3" strokeWidth={1.75} />
                               Tải về
-                            </a>
+                            </button>
                           </div>
                         </div>
 

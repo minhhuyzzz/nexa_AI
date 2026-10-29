@@ -1,15 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Bell,
   Eye,
   CheckCircle2,
   Save,
+  Loader2,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LearnerSettingsPage() {
+  const supabase = createClient();
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Privacy options
   const [publicCredentials, setPublicCredentials] = useState(true);
@@ -21,11 +26,55 @@ export default function LearnerSettingsPage() {
   const [notifyDeadline24h, setNotifyDeadline24h] = useState(true);
   const [notifyAiAnalysisReady, setNotifyAiAnalysisReady] = useState(true);
 
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.settings) {
+          const s = user.user_metadata.settings;
+          if (s.publicCredentials !== undefined) setPublicCredentials(s.publicCredentials);
+          if (s.showOnLeaderboard !== undefined) setShowOnLeaderboard(s.showOnLeaderboard);
+          if (s.shareSkillBadges !== undefined) setShareSkillBadges(s.shareSkillBadges);
+          if (s.notifyNewAssessment !== undefined) setNotifyNewAssessment(s.notifyNewAssessment);
+          if (s.notifyDeadline24h !== undefined) setNotifyDeadline24h(s.notifyDeadline24h);
+          if (s.notifyAiAnalysisReady !== undefined) setNotifyAiAnalysisReady(s.notifyAiAnalysisReady);
+        }
+      } catch (err) {
+        console.error('Error loading settings:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSettings();
+  }, [supabase]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsSaving(true);
+    setIsSaved(false);
+
+    try {
+      const settings = {
+        publicCredentials,
+        showOnLeaderboard,
+        shareSkillBadges,
+        notifyNewAssessment,
+        notifyDeadline24h,
+        notifyAiAnalysisReady,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await supabase.auth.updateUser({
+        data: { settings },
+      });
+
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving settings:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -48,10 +97,15 @@ export default function LearnerSettingsPage() {
 
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs shrink-0"
+          disabled={isSaving}
+          className="flex items-center gap-2 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-xs font-semibold transition-colors shadow-xs shrink-0 cursor-pointer"
         >
-          <Save className="w-4 h-4" strokeWidth={2} />
-          <span>Lưu cài đặt</span>
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" strokeWidth={2} />
+          )}
+          <span>{isSaving ? 'Đang lưu...' : 'Lưu cài đặt'}</span>
         </button>
       </div>
 
@@ -195,9 +249,11 @@ export default function LearnerSettingsPage() {
         <div className="flex justify-end gap-3 pt-2">
           <button
             type="submit"
-            className="px-5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors shadow-xs"
+            disabled={isSaving}
+            className="px-5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
-            Lưu cài đặt tài khoản
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>{isSaving ? 'Đang lưu...' : 'Lưu cài đặt tài khoản'}</span>
           </button>
         </div>
       </form>

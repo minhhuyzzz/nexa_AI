@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { BarChart2, CheckCircle2, Award, Users, TrendingUp } from 'lucide-react';
 import { CompetencyRadarChart } from '@/components/dashboard/personal/CompetencyRadarChart';

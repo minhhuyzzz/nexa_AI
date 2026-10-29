@@ -14,6 +14,7 @@ const createAssessmentSchema = z.object({
   is_vip: z.boolean().default(false),
   access_tier: z.enum(['FREE', 'VIP']).default('FREE'),
   framework_id: z.string().uuid().optional(),
+  organization_id: z.string().uuid().optional().nullable(),
 });
 
 export async function GET() {
@@ -136,6 +137,7 @@ export async function POST(req: Request) {
       .single();
 
     const framework_id = parsed.data.framework_id || framework?.id;
+    const { data: { user } } = await supabase.auth.getUser();
 
     const { data: created, error } = await supabase
       .from('assessments')
@@ -149,6 +151,9 @@ export async function POST(req: Request) {
         is_vip: parsed.data.is_vip || parsed.data.access_tier === 'VIP',
         access_tier: parsed.data.access_tier,
         framework_id,
+        organization_id: parsed.data.organization_id || null,
+        owner_user_id: user?.id || null,
+        created_by: user?.id || null,
       })
       .select()
       .single();

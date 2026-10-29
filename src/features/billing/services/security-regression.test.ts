@@ -22,6 +22,48 @@ describe('Security Regression Suite (P0 & P1 Protections)', () => {
   });
 
   describe('P0: Payment & Webhook Verification Hardening', () => {
+    it('từ chối hoàn tất nếu không có số tiền thực nhận (incomingAmount is missing/null/0)', async () => {
+      const mockAdmin = {
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: 'tx-123',
+                  status: 'PENDING',
+                  plan_code: 'LEARNER_PRO',
+                  user_id: 'user-abc',
+                  amount: 149000,
+                  currency: 'VND',
+                },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      };
+      (createAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockAdmin);
+
+      // Gọi không truyền incomingAmount
+      const resultMissing = await PaymentVerifierService.fulfillByReference(
+        'NEXA123456',
+        { content: 'NEXA123456' },
+        'SEPAY_WEBHOOK'
+      );
+      expect(resultMissing.success).toBe(false);
+      expect(resultMissing.error).toContain('Thiếu hoặc sai lệch thông tin số tiền');
+
+      // Gọi truyền 0
+      const resultZero = await PaymentVerifierService.fulfillByReference(
+        'NEXA123456',
+        { content: 'NEXA123456' },
+        'SEPAY_WEBHOOK',
+        0
+      );
+      expect(resultZero.success).toBe(false);
+      expect(resultZero.error).toContain('Thiếu hoặc sai lệch thông tin số tiền');
+    });
+
     it('từ chối hoàn tất nếu số tiền thực nhận (incomingAmount) nhỏ hơn số tiền yêu cầu của giao dịch', async () => {
       const mockAdmin = {
         from: vi.fn().mockReturnValue({
