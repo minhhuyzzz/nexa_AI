@@ -27,6 +27,7 @@ export async function GET() {
         organizations (
           id,
           name,
+          slug,
           code,
           plan_tier,
           status
@@ -46,6 +47,7 @@ export async function GET() {
       organizations: {
         id: string;
         name: string;
+        slug: string;
         code?: string;
         plan_tier?: string;
         status?: string;

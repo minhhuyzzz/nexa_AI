@@ -60,7 +60,7 @@ const DOMAIN_OPTIONS = [
 
 export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) {
   const router = useRouter();
-  const backHref = role === 'ADMIN' ? '/admin/content' : '/evaluator/assessments';
+  const backHref = role === 'ADMIN' ? '/admin/content' : '/personal/authoring';
 
   // General Settings State
   const [title, setTitle] = useState('Đề Khảo Thí Năng Lực Số');
@@ -432,7 +432,7 @@ export function AssessmentStudio({ role, assessmentId }: AssessmentStudioProps) 
       );
 
       if (openLiveRoom && targetAssessmentId) {
-        router.push(`/evaluator/live-room?assessmentId=${targetAssessmentId}`);
+        router.push(`/personal/live-room?assessmentId=${targetAssessmentId}`);
       } else if (!assessmentId) {
         // If newly created, replace url or go to list
         router.push(backHref);

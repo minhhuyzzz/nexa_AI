@@ -40,16 +40,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Verify evaluator or admin role
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (!profile || (profile.role !== 'EVALUATOR' && profile.role !== 'ADMIN')) {
+    // 2. Verify grading authority (Assessment Owner, Evaluator, or Admin)
+    const { data: submission } = await supabase
+      .from('assessment_submissions')
+      .select('id, user_id, assessment_id, max_score, assessments(created_by, owner_user_id, passing_score)')
+      .eq('id', submissionId)
+      .single();
+
+    const isAssessmentOwner =
+      submission?.assessments &&
+      ((submission.assessments as any).owner_user_id === user.id ||
+        (submission.assessments as any).created_by === user.id);
+
+    const isPrivileged = profile?.role === 'ADMIN' || profile?.role === 'EVALUATOR';
+
+    if (!isAssessmentOwner && !isPrivileged) {
       return NextResponse.json(
-        { error: 'Chỉ Chuyên gia khảo thí (EVALUATOR) hoặc Quản trị viên mới có quyền thẩm định điểm' },
+        { error: 'Bạn không có quyền thẩm định điểm cho bài thi này' },
         { status: 403 }
       );
     }
@@ -104,11 +117,6 @@ export async function POST(request: Request) {
 
     const newTotalScore = (allAnswers || []).reduce((acc, curr) => acc + Number(curr.score_awarded), 0);
 
-    const { data: submission } = await supabase
-      .from('assessment_submissions')
-      .select('user_id, max_score, assessments(passing_score)')
-      .eq('id', submissionId)
-      .single();
 
     const maxScore = Number(submission?.max_score) || 100;
     const percentage = maxScore > 0 ? (newTotalScore / maxScore) * 100 : 0;

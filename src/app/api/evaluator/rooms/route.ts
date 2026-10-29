@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
 const createRoomSchema = z.object({
   title: z.string().min(3, 'Tên phòng thi tối thiểu 3 ký tự'),
@@ -103,6 +104,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
+    // Server-side Quota Gate Enforcement
+    const quotaCheck = await QuotaEnforcementService.checkLiveRoomQuota(supabase, user.id);
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { error: quotaCheck.reason || 'Đã đạt giới hạn số lượng phòng thi Live đang mở', quota: quotaCheck },
+        { status: 403 }
+      );
+    }
+
     // 2. Generate unique 6-digit numeric PIN (e.g. '839210')
     let roomCode = '';
     let isUnique = false;
@@ -134,6 +144,8 @@ export async function POST(request: Request) {
         room_code: roomCode,
         assessment_id: assessmentId,
         created_by: user.id,
+        owner_user_id: user.id,
+        visibility: 'PERSONAL',
         title,
         room_mode: roomMode,
         is_active: true,

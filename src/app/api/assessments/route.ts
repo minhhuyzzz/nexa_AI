@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
 export async function GET() {
   try {
@@ -104,3 +105,86 @@ export async function GET() {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Yêu cầu đăng nhập để tạo đề thi' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      title,
+      description,
+      duration_minutes = 30,
+      passing_score = 70,
+      point_reward = 0,
+      is_published = false,
+      organizationId = null,
+    } = body;
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return NextResponse.json({ error: 'Tiêu đề bài thi không được để trống' }, { status: 400 });
+    }
+
+    // 1. Server-side Quota Gate Enforcement
+    const quotaCheck = await QuotaEnforcementService.checkAssessmentCreationQuota(
+      supabase,
+      user.id,
+      organizationId
+    );
+
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: quotaCheck.reason || 'Đã vượt quá hạn mức đề thi của gói dịch vụ',
+          quota: quotaCheck,
+        },
+        { status: 403 }
+      );
+    }
+
+    // 2. Lấy framework_id mặc định
+    const { data: framework } = await supabase
+      .from('assessment_frameworks')
+      .select('id')
+      .limit(1)
+      .single();
+
+    // 3. Khởi tạo đề thi với quyền sở hữu cá nhân / tổ chức rõ ràng
+    const { data: created, error: insertError } = await supabase
+      .from('assessments')
+      .insert({
+        title: title.trim(),
+        description: description?.trim() || 'Bài khảo thí năng lực số DigComp.',
+        duration_minutes: Number(duration_minutes),
+        passing_score: Number(passing_score),
+        point_reward: Number(point_reward),
+        is_published: Boolean(is_published),
+        owner_user_id: user.id,
+        created_by: user.id,
+        organization_id: organizationId || null,
+        visibility: organizationId ? 'ORGANIZATION' : 'PERSONAL',
+        framework_id: framework?.id,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error creating assessment:', insertError);
+      return NextResponse.json({ error: insertError.message || 'Không thể tạo đề thi' }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, assessment: created }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+

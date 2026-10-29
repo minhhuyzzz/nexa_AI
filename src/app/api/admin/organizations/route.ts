@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       });
 
       const origin = request.nextUrl.origin || 'http://localhost:3000';
-      inviteUrl = `${origin}/evaluator/accept-invite?token=${token}`;
+      inviteUrl = `${origin}/personal/accept-invite?token=${token}`;
     }
 
     return NextResponse.json({ success: true, organization: data, inviteUrl });

@@ -16,16 +16,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // Verify Evaluator or Admin authority
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (!profile || !['ADMIN', 'EVALUATOR'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Bạn không có quyền truy cập ngân hàng câu hỏi' }, { status: 403 });
-    }
+    // Unified Workspace: Any authenticated user has access to question bank
+    // Non-admin/evaluator users can see approved items and items they created
+    const isCurator = profile && ['ADMIN', 'EVALUATOR'].includes(profile.role);
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim() || '';
@@ -129,15 +128,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || !['ADMIN', 'EVALUATOR'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Bạn không có quyền thêm câu hỏi vào ngân hàng' }, { status: 403 });
-    }
+    // Unified Workspace: Any authenticated user can create questions in question bank
 
     const body = await request.json();
     const validated = createItemSchema.safeParse(body);

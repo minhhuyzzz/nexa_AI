@@ -15,24 +15,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Verify evaluator or admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || (profile.role !== 'EVALUATOR' && profile.role !== 'ADMIN')) {
-      return NextResponse.json(
-        { error: 'Chỉ Chuyên gia khảo thí (EVALUATOR) hoặc Quản trị viên mới có quyền truy cập bàn chấm' },
-        { status: 403 }
-      );
-    }
-
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get('groupId') || searchParams.get('classId');
 
-    // 3. Fetch evaluator's classes to build student-to-group map
+    // 2. Fetch classes owned or evaluated by this user
     const { data: rawClasses } = await supabase
       .from('evaluator_classes')
       .select(`
@@ -41,7 +27,7 @@ export async function GET(req: Request) {
         class_code,
         class_members ( user_id )
       `)
-      .eq('evaluator_id', user.id);
+      .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
 
     const groupMap = new Map<string, { id: string; name: string; code: string }>();
     (rawClasses || []).forEach((c: any) => {

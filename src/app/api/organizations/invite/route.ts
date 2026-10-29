@@ -6,7 +6,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 const inviteSchema = z.object({
   organizationId: z.string().uuid('ID tổ chức không hợp lệ'),
   email: z.string().email('Email không đúng định dạng'),
-  orgRole: z.enum(['ORG_ADMIN', 'EVALUATOR', 'MEMBER']).default('EVALUATOR'),
+  orgRole: z
+    .enum(['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'])
+    .default('ASSESSOR'),
 });
 
 export async function POST(request: NextRequest) {
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
         .eq('status', 'ACTIVE')
         .single();
 
-      if (!membership || membership.org_role !== 'ORG_ADMIN') {
+      if (!membership || !['ORG_OWNER', 'ORG_ADMIN'].includes(membership.org_role)) {
         return NextResponse.json(
           { error: 'Bạn không có quyền quản trị để mời thành viên vào tổ chức này' },
           { status: 403 }
@@ -135,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.nextUrl.origin || 'http://localhost:3000';
-    const inviteUrl = `${origin}/evaluator/accept-invite?token=${token}`;
+    const inviteUrl = `${origin}/personal/accept-invite?token=${token}`;
 
     return NextResponse.json({
       success: true,

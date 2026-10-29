@@ -29,11 +29,13 @@ Bạn đang lập trình cho dự án **NEXA** — *Nền tảng đánh giá và
 
 ## 2. BẢY QUY TẮC KIẾN TRÚC BẤT BIẾN (ARCHITECTURAL GUARDRAILS)
 
-1. **1 Email = 1 Vai trò tĩnh cố định (`LEARNER` | `EVALUATOR` | `ADMIN`):**
-   - Khách vãng lai tự đăng ký tại `/register` chỉ được chọn `LEARNER` hoặc `EVALUATOR` (vào thẳng gói Free để sử dụng ngay). Không có nút chuyển đổi vai trò sau khi đăng ký. Vai trò `ADMIN` dành riêng cho Chủ nền tảng.
-2. **3 Bộ Shell Dashboard tách biệt hoàn toàn (`Zero-Shared Shell`):**
-   - `learner/layout.tsx` chỉ dùng `LearnerSidebar`, `LearnerTopbar`, `LearnerAvatarMenu`.
-   - `evaluator/layout.tsx` chỉ dùng `EvaluatorSidebar`, `EvaluatorTopbar`, `EvaluatorAvatarMenu`.
+1. **Mô hình Không gian làm việc Đa tầng (Personal & Organization Workspaces):**
+   - **Personal Workspace (`/personal/*`):** Không gian làm việc cá nhân mặc định dành cho mọi người dùng khi đăng ký. Người dùng có quyền truy cập toàn bộ tính năng khảo thí, học tập, chứng chỉ, và các công cụ sáng tạo/giảng dạy (Soạn đề, Ngân hàng câu hỏi, Phòng thi trực tiếp, Bàn chấm bài).
+   - **Organization Workspace (`/org/[slug]/*`):** Không gian làm việc tổ chức nhiều đơn vị (B2B Multi-tenant) dành cho Trường học / Doanh nghiệp với vai trò `ORG_ADMIN` hoặc `MEMBER`.
+   - **Platform Control Plane (`/admin/*`):** Dành riêng cho Chủ sở hữu nền tảng (Superadmin) quản trị toàn bộ hệ sinh thái, tenant, đề thi, AI, tài chính và phân quyền.
+2. **3 Bộ Shell Dashboard chuẩn hóa (`Zero-Shared Shell`):**
+   - `personal/layout.tsx` chỉ dùng `PersonalSidebar`, `PersonalTopbar`, `PersonalAvatarMenu` (tích hợp Workspace Switcher).
+   - `org/[slug]/layout.tsx` chỉ dùng `OrgSidebar`, `OrgTopbar`, `OrgAvatarMenu` (Sidebar riêng biệt của Tổ chức).
    - `admin/layout.tsx` chỉ dùng `AdminSidebar`, `AdminTopbar`, `AdminAvatarMenu`.
    - Tuyệt đối KHÔNG có Footer trong bất kỳ màn hình Dashboard nào.
 3. **Không đặt ô tra cứu QR lên Landing Page hay `PublicHeader`:**
@@ -46,10 +48,10 @@ Bạn đang lập trình cho dự án **NEXA** — *Nền tảng đánh giá và
    - Luôn khử sạch thông tin cá nhân (PII) trước khi gửi sang AI.
 6. **CƠ CHẾ KÍCH HOẠT AI THEO YÊU CẦU (ON-DEMAND AI TRIGGER — CẤM TỰ ĐỘNG GỌI KHI NỘP BÀI):**
    - Khi người học bấm "Nộp bài" (`POST /api/assessments/[id]/submit`), hệ thống CHỈ chấm tự động bằng code thuần cho các câu hỏi khách quan (`MCQ` và nhánh chọn `SCENARIO`), lưu câu trả lời thực hành/minh chứng vào CSDL và trả kết quả ngay lập tức (`0.01s`). **TUYỆT ĐỐI KHÔNG tự động gọi API AI bên trong hàm nộp bài.**
-   - AI chỉ được kích hoạt khi người dùng (Learner hoặc Evaluator) chủ động bấm nút trên giao diện thông qua 2 API tách biệt:
+   - AI chỉ được kích hoạt khi người dùng chủ động bấm nút trên giao diện thông qua 2 API tách biệt:
      1. `POST /api/ai/grade-submission`: Khi bấm nút **"Chấm bài thực hành bằng AI"** (Thực hiện Ứng dụng AI số 1: chấm Rubric 100%, trích dẫn `evidenceQuote` và tính `confidenceScore`).
      2. `POST /api/ai/analyze-competency`: Khi bấm nút **"Phân tích năng lực & Đề xuất lộ trình bằng AI"** (Thực hiện Ứng dụng AI số 2, 3, 4, 5: Điểm mạnh/yếu, Khoảng trống năng lực `< 60%`, Phản hồi cá nhân hóa và Lộ trình 4 bước).
-   - Tại `/evaluator/grading`, Người đánh giá có toàn quyền tự chấm thủ công (tốn 0 lượt AI) hoặc chủ động bấm nút nhờ AI chấm gợi ý cho từng bài / nhóm bài đã chọn.
+   - Tại `/personal/grading`, Người chấm/giảng viên có toàn quyền tự chấm thủ công (tốn 0 lượt AI) hoặc chủ động bấm nút nhờ AI chấm gợi ý cho từng bài / nhóm bài đã chọn.
 7. **TypeScript Strict & Zero-any:**
    - Tuyệt đối không dùng từ khóa `any`. Mọi dữ liệu đầu vào API và đầu ra JSON của AI phải kiểm tra bằng `zod`.
 

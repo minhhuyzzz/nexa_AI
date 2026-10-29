@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
     }
     setError('');
     onClose();
-    router.push(`/learner/live-pin?pin=${cleanPin}`);
+    router.push(`/personal/live-pin?pin=${cleanPin}`);
   };
 
   return (

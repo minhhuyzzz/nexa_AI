@@ -33,7 +33,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Email hoặc mật khẩu không chính xác');
       }
 
-      router.push(data.redirectUrl || '/learner/dashboard');
+      router.push(data.redirectUrl || '/dashboard');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? translateAuthError(err.message) : 'Lỗi hệ thống');

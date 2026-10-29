@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
 const createClassSchema = z.object({
   name: z.string().min(2, 'Tên nhóm tối thiểu 2 ký tự'),
@@ -100,6 +101,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
+    // Server-side Quota Enforcement
+    const quotaCheck = await QuotaEnforcementService.checkClassCreationQuota(supabase, evaluatorId);
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { error: quotaCheck.reason || 'Đã đạt giới hạn số lượng nhóm/lớp của gói dịch vụ', quota: quotaCheck },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = createClassSchema.safeParse(body);
     if (!parsed.success) {
@@ -122,6 +132,8 @@ export async function POST(req: Request) {
       .from('evaluator_classes')
       .insert({
         evaluator_id: evaluatorId,
+        owner_user_id: evaluatorId,
+        visibility: 'PERSONAL',
         name: name.trim(),
         class_code: code,
         description: description?.trim() || null,

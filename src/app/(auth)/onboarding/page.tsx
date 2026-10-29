@@ -41,7 +41,7 @@ export default function OnboardingPage() {
         if (profile) {
           if (profile.is_onboarded === true) {
             // Đã hoàn tất trước đó, điều hướng thẳng tới dashboard
-            const target = profile.role === 'EVALUATOR' ? '/evaluator/dashboard' : '/learner/dashboard';
+            const target = '/personal/dashboard';
             router.replace(target);
             return;
           }
@@ -88,7 +88,7 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Không thể lưu thông tin hồ sơ');
       }
 
-      router.push(data.redirectUrl || (role === 'EVALUATOR' ? '/evaluator/dashboard' : '/learner/dashboard'));
+      router.push(data.redirectUrl || '/personal/dashboard');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi hệ thống');

@@ -61,13 +61,13 @@ export async function GET(request: Request) {
       .eq('id', data.user.id);
   }
 
-  let targetPath = '/learner/dashboard';
+  let targetPath = '/personal/dashboard';
   if (profile && profile.is_onboarded === false) {
     targetPath = '/onboarding';
   } else if (profile?.role === 'ADMIN') {
     targetPath = '/admin/dashboard';
-  } else if (profile?.role === 'EVALUATOR') {
-    targetPath = '/evaluator/dashboard';
+  } else {
+    targetPath = '/personal/dashboard';
   }
 
   const finalResponse = NextResponse.redirect(`${origin}${targetPath}`);

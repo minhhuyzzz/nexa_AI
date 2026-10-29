@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -229,7 +229,7 @@ function LiveControlContent() {
   const handleCopyLink = () => {
     if (!room) return;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${origin}/learner/live-pin?pin=${room.roomCode}`;
+    const link = `${origin}/personal/live-pin?pin=${room.roomCode}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -260,7 +260,7 @@ function LiveControlContent() {
           <div className="text-base font-bold text-slate-900">{error}</div>
           <div className="pt-2">
             <Link
-              href="/evaluator/live-room"
+              href="/personal/live-room"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors"
             >
               Quay về Bảng điều khiển
@@ -278,7 +278,7 @@ function LiveControlContent() {
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href="/evaluator/live-room"
+              href="/personal/live-room"
               className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 font-medium mr-2"
               title="Quay về danh sách phòng"
             >
@@ -324,7 +324,7 @@ function LiveControlContent() {
           </button>
 
           <Link
-            href="/evaluator/live-room"
+            href="/personal/live-room"
             className="px-4 py-2.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -332,7 +332,7 @@ function LiveControlContent() {
           </Link>
 
           <Link
-            href="/evaluator/grading"
+            href="/personal/grading"
             className="px-4 py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
           >
             Bàn chấm bài
@@ -446,7 +446,7 @@ function LiveControlContent() {
               </div>
               <p className="text-xs text-slate-500">
                 Thí sinh dùng điện thoại hoặc máy tính truy cập{' '}
-                <strong className="text-slate-800">/learner/live-pin</strong> và nhập 6 số trên.
+                <strong className="text-slate-800">/personal/live-pin</strong> và nhập 6 số trên.
               </p>
             </div>
 
@@ -456,8 +456,8 @@ function LiveControlContent() {
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
                   typeof window !== 'undefined'
-                    ? `${window.location.origin}/learner/live-pin?pin=${room?.roomCode || ''}`
-                    : `https://nexa.edu.vn/learner/live-pin?pin=${room?.roomCode || ''}`
+                    ? `${window.location.origin}/personal/live-pin?pin=${room?.roomCode || ''}`
+                    : `https://nexa.edu.vn/personal/live-pin?pin=${room?.roomCode || ''}`
                 )}`}
                 alt="QR Code Phòng thi"
                 width={200}
@@ -513,15 +513,15 @@ function LiveControlContent() {
                 <span className="font-semibold text-slate-700 shrink-0">Link trực tiếp:</span>
                 <span className="font-mono text-sky-700 truncate select-all">
                   {typeof window !== 'undefined'
-                    ? `${window.location.origin}/learner/live-pin?pin=${room?.roomCode || ''}`
-                    : `/learner/live-pin?pin=${room?.roomCode || ''}`}
+                    ? `${window.location.origin}/personal/live-pin?pin=${room?.roomCode || ''}`
+                    : `/personal/live-pin?pin=${room?.roomCode || ''}`}
                 </span>
               </div>
               <a
                 href={
                   typeof window !== 'undefined'
-                    ? `${window.location.origin}/learner/live-pin?pin=${room?.roomCode || ''}`
-                    : `/learner/live-pin?pin=${room?.roomCode || ''}`
+                    ? `${window.location.origin}/personal/live-pin?pin=${room?.roomCode || ''}`
+                    : `/personal/live-pin?pin=${room?.roomCode || ''}`
                 }
                 target="_blank"
                 rel="noopener noreferrer"

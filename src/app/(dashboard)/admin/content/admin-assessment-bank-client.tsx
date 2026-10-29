@@ -710,7 +710,7 @@ export function AdminAssessmentBankClient({
                             </Link>
 
                             <Link
-                              href={`/learner/take/${exam.id}`}
+                              href={`/personal/take/${exam.id}`}
                               target="_blank"
                               className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                               title="Xem thử giao diện làm bài"

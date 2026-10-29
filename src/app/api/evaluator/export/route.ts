@@ -19,19 +19,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Verify evaluator or admin role
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (!profile || (profile.role !== 'EVALUATOR' && profile.role !== 'ADMIN')) {
-      return NextResponse.json(
-        { error: 'Chỉ Chuyên gia khảo thí hoặc Quản trị viên mới có quyền xuất dữ liệu' },
-        { status: 403 }
-      );
-    }
+    const isSuperOrEvaluator = profile && ['ADMIN', 'EVALUATOR'].includes(profile.role);
 
     // 3. Query submissions with answers and assessments
     const { data: submissions, error: subError } = await supabase

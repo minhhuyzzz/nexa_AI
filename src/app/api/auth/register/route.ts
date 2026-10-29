@@ -12,9 +12,12 @@ const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email('Địa chỉ email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string().min(1, 'Vui lòng xác nhận lại mật khẩu'),
-  role: z.enum(['LEARNER', 'EVALUATOR'], {
-    errorMap: () => ({ message: 'Vai trò chỉ được chọn LEARNER hoặc EVALUATOR' }),
-  }),
+  role: z
+    .enum(['LEARNER', 'EVALUATOR', 'USER'], {
+      errorMap: () => ({ message: 'Vai trò chỉ được chọn LEARNER, EVALUATOR hoặc USER' }),
+    })
+    .optional()
+    .default('LEARNER'),
 });
 
 export async function POST(request: Request) {
@@ -81,7 +84,7 @@ export async function POST(request: Request) {
       const res = NextResponse.json({
         success: true,
         requiresEmailConfirmation: false,
-        redirectUrl: role === 'LEARNER' ? '/learner/dashboard' : '/evaluator/dashboard',
+        redirectUrl: '/dashboard',
       });
       res.cookies.delete('nexa_demo_role');
       return res;

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -106,7 +106,7 @@ function WaitingRoomContent() {
           setStartingNotice(true);
           const targetAsmId = data.room.assessmentId || assessmentId || 'asm-01';
           setTimeout(() => {
-            router.push(`/learner/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode}`);
+            router.push(`/personal/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode}`);
           }, 800);
         }
       }
@@ -148,7 +148,7 @@ function WaitingRoomContent() {
           </p>
           <div className="pt-2">
             <Link
-              href="/learner/live-pin"
+              href="/personal/live-pin"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors"
             >
               Nhập mã PIN khác
@@ -200,7 +200,7 @@ function WaitingRoomContent() {
           </div>
 
           <Link
-            href="/learner/live-pin"
+            href="/personal/live-pin"
             className="px-4 py-2.5 rounded-md border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-700 hover:text-rose-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
             title="Thoát khỏi phòng thi"
           >

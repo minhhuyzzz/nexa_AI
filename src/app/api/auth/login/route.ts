@@ -58,12 +58,14 @@ export async function POST(request: Request) {
       role = 'LEARNER';
     }
 
-    let redirectUrl = '/learner/dashboard';
+    let redirectUrl = '/personal/dashboard';
     if (role === 'ADMIN') {
       redirectUrl = '/admin/dashboard';
-    } else if (role === 'EVALUATOR') {
-      redirectUrl = '/evaluator/dashboard';
-    } else if (role === 'LEARNER') {
+    } else {
+      redirectUrl = '/personal/dashboard';
+    }
+
+    if (role === 'LEARNER') {
       // Daily check-in: +1 point, total days + 1, streak logic
       try {
         const now = new Date();

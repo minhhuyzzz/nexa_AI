@@ -3,9 +3,12 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 const onboardingSchema = z.object({
-  role: z.enum(['LEARNER', 'EVALUATOR'], {
-    errorMap: () => ({ message: 'Vai trò chỉ được chọn Người học (LEARNER) hoặc Người đánh giá (EVALUATOR)' }),
-  }),
+  role: z
+    .enum(['LEARNER', 'EVALUATOR', 'USER'], {
+      errorMap: () => ({ message: 'Vai trò chỉ được chọn LEARNER, EVALUATOR hoặc USER' }),
+    })
+    .optional()
+    .default('LEARNER'),
   nickname: z
     .string()
     .trim()
@@ -51,11 +54,10 @@ export async function POST(request: Request) {
 
     // Nếu đã hoàn tất thiết lập trước đó, bảo vệ quy tắc vai trò cố định
     if (profile.is_onboarded === true) {
-      const redirectUrl = profile.role === 'EVALUATOR' ? '/evaluator/dashboard' : '/learner/dashboard';
       return NextResponse.json({
         success: true,
         message: 'Tài khoản đã hoàn tất thiết lập từ trước',
-        redirectUrl,
+        redirectUrl: '/dashboard',
       });
     }
 
@@ -145,7 +147,7 @@ export async function POST(request: Request) {
         .upsert({ user_id: user.id, status: 'PENDING' });
     }
 
-    const redirectUrl = role === 'EVALUATOR' ? '/evaluator/dashboard' : '/learner/dashboard';
+    const redirectUrl = '/dashboard';
 
     return NextResponse.json({
       success: true,

@@ -4,12 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, AlertCircle, ArrowRight } from 'lucide-react';
-import { RoleSelector, type SelectableRole } from '@/components/auth/RoleSelector';
 import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole] = useState<SelectableRole>('LEARNER');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,7 +51,6 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role,
           nickname: cleanNickname,
           email: cleanEmail,
           password,
@@ -72,7 +69,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push(data.redirectUrl || '/learner/dashboard');
+      router.push(data.redirectUrl || '/dashboard');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? translateAuthError(err.message) : 'Lỗi hệ thống');
@@ -120,9 +117,9 @@ export default function RegisterPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Tạo tài khoản mới</h2>
+        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Tạo tài khoản cá nhân</h2>
         <p className="text-xs text-slate-500 mt-1">
-          Chọn đúng vai trò của bạn. Mỗi tài khoản gắn liền với 1 vai trò tĩnh cố định.
+          Học tập, đánh giá năng lực số DigComp và khởi tạo bài thi trên NEXA AI.
         </p>
       </div>
 
@@ -134,8 +131,6 @@ export default function RegisterPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <RoleSelector value={role} onChange={setRole} />
-
         <div>
           <label htmlFor="register-nickname" className="block text-xs font-semibold text-slate-700 mb-1">
             Biệt danh hiển thị <span className="text-rose-600">*</span>
@@ -151,9 +146,7 @@ export default function RegisterPage() {
             placeholder="Ví dụ: Trần Minh Huy"
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
           />
-          <p className="text-[11px] text-slate-400 mt-1">
-            Tên công khai trên Bảng xếp hạng. Không được trùng với người dùng khác.
-          </p>
+
         </div>
 
         <div>
@@ -169,9 +162,7 @@ export default function RegisterPage() {
             placeholder="name@example.com"
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
           />
-          <p className="text-[11px] text-slate-400 mt-1">
-            Bạn sẽ nhận liên kết xác thực tại email này.
-          </p>
+
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -223,8 +214,7 @@ export default function RegisterPage() {
             />
             <span className="text-xs text-slate-600 leading-relaxed">
               Tôi đồng ý với <span className="text-slate-900 font-semibold">Điều khoản dịch vụ</span>{' '}
-              và <span className="text-slate-900 font-semibold">Chính sách bảo mật dữ liệu</span> của
-              NEXA.
+              và <span className="text-slate-900 font-semibold">Chính sách bảo mật dữ liệu</span>.
             </span>
           </label>
         </div>

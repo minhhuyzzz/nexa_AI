@@ -3,21 +3,31 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 export const dynamic = 'force-dynamic';
 
-const REAL_ACCOUNTS: Record<string, { email: string; pass: string; defaultPath: string }> = {
-  LEARNER: {
+interface WorkspaceTarget {
+  email: string;
+  pass: string;
+  defaultPath: string;
+  activeWorkspaceId: string;
+}
+
+const DEMO_TARGETS: Record<string, WorkspaceTarget> = {
+  PERSONAL: {
     email: 'learner@nexa.edu.vn',
     pass: 'Nexa@2026',
-    defaultPath: '/learner/dashboard',
+    defaultPath: '/personal/dashboard',
+    activeWorkspaceId: 'personal',
   },
-  EVALUATOR: {
-    email: 'evaluator@nexa.edu.vn',
+  ORG: {
+    email: 'learner@nexa.edu.vn',
     pass: 'Nexa@2026',
-    defaultPath: '/evaluator/dashboard',
+    defaultPath: '/org/fpt-polytechnic',
+    activeWorkspaceId: 'org_aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   },
   ADMIN: {
     email: 'admin.nexa@gmail.com',
     pass: 'Nexa@2026',
     defaultPath: '/admin/dashboard',
+    activeWorkspaceId: 'admin',
   },
 };
 
@@ -47,14 +57,23 @@ export async function GET(request: NextRequest) {
       // ignore
     }
     clearResponse.cookies.delete('nexa_demo_role');
+    clearResponse.cookies.delete('nexa_active_workspace');
     return clearResponse;
   }
 
-  // Get requested role
-  const rawRole = searchParams.get('role')?.toUpperCase() || 'LEARNER';
-  const role = ['LEARNER', 'EVALUATOR', 'ADMIN'].includes(rawRole) ? rawRole : 'LEARNER';
-  const acc = REAL_ACCOUNTS[role];
-  const target = searchParams.get('target') || acc.defaultPath;
+  // Determine requested space (supports space or role param)
+  const rawParam = (searchParams.get('space') || searchParams.get('role') || 'PERSONAL').toUpperCase();
+  let selectedSpace = 'PERSONAL';
+  if (['ORG', 'ORGANIZATION', 'SCHOOL'].includes(rawParam)) {
+    selectedSpace = 'ORG';
+  } else if (['ADMIN', 'SUPERADMIN'].includes(rawParam)) {
+    selectedSpace = 'ADMIN';
+  } else {
+    selectedSpace = 'PERSONAL';
+  }
+
+  const targetConfig = DEMO_TARGETS[selectedSpace];
+  const target = searchParams.get('target') || targetConfig.defaultPath;
 
   const response = NextResponse.redirect(new URL(target, request.url));
 
@@ -73,11 +92,10 @@ export async function GET(request: NextRequest) {
 
   // Perform clean Supabase authentication with matching account credentials
   try {
-    // Clear any previous session first to avoid role/profile collisions
     await supabase.auth.signOut();
     const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: acc.email,
-      password: acc.pass,
+      email: targetConfig.email,
+      password: targetConfig.pass,
     });
     if (signInErr) {
       console.warn('Demo signIn note:', signInErr.message);
@@ -86,7 +104,15 @@ export async function GET(request: NextRequest) {
     console.error('Demo account authentication error:', err);
   }
 
-  response.cookies.set('nexa_demo_role', role, {
+  // Set cookies for workspace and demo role
+  response.cookies.set('nexa_active_workspace', targetConfig.activeWorkspaceId, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+    sameSite: 'lax',
+    httpOnly: false,
+  });
+
+  response.cookies.set('nexa_demo_role', selectedSpace, {
     path: '/',
     maxAge: 60 * 60 * 24 * 7,
     sameSite: 'lax',

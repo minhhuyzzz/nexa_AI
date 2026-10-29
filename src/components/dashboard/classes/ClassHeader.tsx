@@ -31,7 +31,7 @@ export function ClassHeader({
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const backUrl = role === 'EVALUATOR' ? '/evaluator/groups' : '/learner/groups';
+  const backUrl = '/personal/groups';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);

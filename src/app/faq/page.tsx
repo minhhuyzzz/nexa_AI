@@ -1,4 +1,4 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { HelpCircle, ChevronDown, ShieldCheck, Zap, Bot, Award, Users, BookOpen } from 'lucide-react';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
@@ -76,11 +76,11 @@ export default function FaqPage() {
       questions: [
         {
           q: 'Giảng viên tổ chức thi cho lớp học như thế nào?',
-          a: 'Giảng viên đăng ký tài khoản EVALUATOR, vào mục "Phòng thi trực tiếp", chọn đề thi và nhấn mở phòng. Hệ thống sẽ sinh Mã PIN 6 số ngẫu nhiên. Sinh viên chỉ cần truy cập /learner/live-pin và nhập đúng mã PIN để vào thẳng phòng thi Zen Mode.',
+          a: 'Giảng viên đăng ký tài khoản EVALUATOR, vào mục "Phòng thi trực tiếp", chọn đề thi và nhấn mở phòng. Hệ thống sẽ sinh Mã PIN 6 số ngẫu nhiên. Sinh viên chỉ cần truy cập /personal/live-pin và nhập đúng mã PIN để vào thẳng phòng thi Zen Mode.',
         },
         {
           q: 'Cách xuất dữ liệu phục vụ nghiên cứu khoa học (SPSS, R, Python)?',
-          a: 'Tại trang Phân tích của Chuyên gia (/evaluator/analytics), giảng viên nhấn nút "Xuất dữ liệu nghiên cứu". Hệ thống xuất file CSV định dạng UTF-8 BOM bao gồm 26 biến số học thuật chuẩn hóa, hoàn toàn ẩn danh thông tin cá nhân theo đúng chuẩn quốc tế.',
+          a: 'Tại bảng điều khiển chuyên gia hoặc mục Phân tích Tổ chức, người hướng dẫn nhấn nút "Xuất dữ liệu nghiên cứu". Hệ thống xuất file CSV định dạng UTF-8 BOM bao gồm 26 biến số học thuật chuẩn hóa, hoàn toàn ẩn danh thông tin cá nhân theo đúng chuẩn quốc tế.',
         },
       ],
     },

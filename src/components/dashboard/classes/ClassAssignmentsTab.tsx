@@ -19,7 +19,7 @@ import {
   InContextGradingDrawer,
   InContextGradingSubmission,
   RubricCriterionItem,
-} from '@/components/dashboard/evaluator/InContextGradingDrawer';
+} from '@/components/dashboard/grading/InContextGradingDrawer';
 
 const defaultRubricCriteria: RubricCriterionItem[] = [
   {

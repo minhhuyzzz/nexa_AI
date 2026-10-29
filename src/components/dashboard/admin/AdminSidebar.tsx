@@ -81,6 +81,7 @@ const adminNavSections: NavSection[] = [
     icon: Settings,
     items: [
       { name: 'Quản trị AI Gateway', href: '/admin/ai-gateway', icon: Cpu, exact: false },
+      { name: 'Tuân thủ & Dữ liệu (ND13)', href: '/admin/compliance', icon: Shield, exact: false },
       { name: 'Cài đặt hệ thống', href: '/admin/settings', icon: Settings, exact: false },
     ],
   },

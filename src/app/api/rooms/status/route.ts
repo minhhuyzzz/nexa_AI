@@ -168,9 +168,19 @@ export async function PATCH(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || (profile.role !== 'EVALUATOR' && profile.role !== 'ADMIN')) {
+    // Verify room owner or admin/evaluator authority
+    const { data: room } = await supabase
+      .from('exam_rooms')
+      .select('id, created_by, owner_user_id')
+      .eq('id', roomId)
+      .single();
+
+    const isRoomOwner = room && (room.owner_user_id === user.id || room.created_by === user.id);
+    const isPrivileged = profile?.role === 'ADMIN' || profile?.role === 'EVALUATOR';
+
+    if (!isRoomOwner && !isPrivileged) {
       return NextResponse.json(
-        { error: 'Chỉ Giám thị hoặc Quản trị viên mới có quyền điều phối phòng thi' },
+        { error: 'Bạn không có quyền điều phối phòng thi này' },
         { status: 403 }
       );
     }

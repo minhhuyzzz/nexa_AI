@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowRight, ChevronDown, User, Award, Shield } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { NexaLogo } from '@/components/brand/NexaLogo';
 
 interface PublicHeaderProps {
@@ -202,49 +202,6 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
         {/* Right: Actions & Demo */}
         <div className="flex items-center gap-3">
-          {/* Quick Demo Entrance */}
-          <div className="relative group">
-            <button className="text-xs font-medium px-2.5 py-1.5 rounded-full border border-slate-200 bg-white/80 hover:bg-white text-slate-800 transition-colors inline-flex items-center gap-1.5 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              <span>Test Dashboard</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
-            <div className="absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-md shadow-md py-1.5 hidden group-hover:block z-50">
-              <div className="px-3 py-1 text-[10px] text-slate-400 border-b border-slate-100 uppercase font-semibold font-mono">
-                3 Tài khoản thật (Real Auth)
-              </div>
-              <a
-                href="/api/auth/demo?role=LEARNER"
-                className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-              >
-                <User className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
-                <div className="min-w-0">
-                  <div className="font-semibold text-slate-900">Học viên</div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate">learner@nexa.edu.vn</div>
-                </div>
-              </a>
-              <a
-                href="/api/auth/demo?role=EVALUATOR"
-                className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-              >
-                <Award className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
-                <div className="min-w-0">
-                  <div className="font-semibold text-slate-900">Chuyên gia</div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate">evaluator@nexa.edu.vn</div>
-                </div>
-              </a>
-              <a
-                href="/api/auth/demo?role=ADMIN"
-                className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-              >
-                <Shield className="w-3.5 h-3.5 text-sky-600 shrink-0" strokeWidth={1.75} />
-                <div className="min-w-0">
-                  <div className="font-semibold text-slate-900">Quản trị viên</div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate">admin.nexa@gmail.com</div>
-                </div>
-              </a>
-            </div>
-          </div>
 
           <Link
             href="/login"
