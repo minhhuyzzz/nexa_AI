@@ -34,7 +34,7 @@ export default async function OrgLayout({
     .eq('slug', slug)
     .single();
 
-  if (orgError || !org) {
+  if (orgError || !org || !org.is_active) {
     redirect('/dashboard');
   }
 

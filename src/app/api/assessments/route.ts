@@ -150,7 +150,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Lấy framework_id mặc định
+    // 2. Authorization check if creating within an Organization (ORG-F04)
+    if (organizationId) {
+      const { data: membership } = await supabase
+        .from('user_organizations')
+        .select('org_role, status')
+        .eq('user_id', user.id)
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+
+      const authorizedRoles = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
+      if (!membership || membership.status !== 'ACTIVE' || !authorizedRoles.includes(membership.org_role)) {
+        return NextResponse.json(
+          { error: 'Bạn không có quyền tạo đề thi trong không gian tổ chức này' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 3. Lấy framework_id mặc định
     const { data: framework } = await supabase
       .from('assessment_frameworks')
       .select('id')
