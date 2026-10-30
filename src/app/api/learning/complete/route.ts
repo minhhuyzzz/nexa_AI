@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { PointLedgerService } from '@/features/gamification/services/point-ledger.service';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const completeSchema = z.object({
   moduleId: z.string().uuid('Mã bài học (moduleId) không hợp lệ'),
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
     // 5. Award points through immutable Point Ledger (Atomic & Idempotent)
     let newTotalPoints = 0;
     if (pointsToAward > 0) {
-      const grantResult = await PointLedgerService.grantPoints(supabase, {
+      const grantResult = await PointLedgerService.grantPoints(createAdminClient(), {
         userId: user.id,
         delta: pointsToAward,
         eventType: 'MODULE_COMPLETED',

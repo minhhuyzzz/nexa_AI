@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getAIAdapter } from '@/features/ai-gateway/adapters';
 import { RubricDef } from '@/features/ai-gateway/types/grading.types';
 import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
@@ -269,7 +270,7 @@ export async function POST(request: Request) {
     // 8. Atomic Credit Deduction for Learner (Zero race conditions, enforced by DB trigger)
     let remainingCredits = profile.credits;
     if (profile.role === 'LEARNER') {
-      const { data: newCredits, error: deductError } = await supabase.rpc('deduct_ai_credits', {
+      const { data: newCredits, error: deductError } = await createAdminClient().rpc('deduct_ai_credits', {
         p_user_id: user.id,
         p_amount: 1,
       });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { PointLedgerService } from '@/features/gamification/services/point-ledger.service';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const submitSchema = z.object({
   submissionId: z.string().uuid().optional(),
@@ -218,7 +219,7 @@ export async function POST(
 
     // 9. Atomic Point Ledger Grant (Eliminates race conditions & client buffing)
     if (pointsAwarded > 0) {
-      await PointLedgerService.grantPoints(supabase, {
+      await PointLedgerService.grantPoints(createAdminClient(), {
         userId: user.id,
         delta: pointsAwarded,
         eventType: 'ASSESSMENT_PASSED',
