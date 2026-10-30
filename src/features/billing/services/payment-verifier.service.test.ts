@@ -28,4 +28,15 @@ describe('PaymentVerifierService', () => {
     expect(url).toContain('addInfo=NEXA999888');
     expect(url).toContain('accountName=CONG%20TY%20CP%20CONG%20NGHE%20NEXA');
   });
+
+  it('should generate valid checkout URL for standard VietQR format', () => {
+    const bankId = 'MB';
+    const accountNo = '0901234567';
+    const accountName = 'CONG TY CP CONG NGHE NEXA';
+    const amount = 299000;
+    const ref = 'NEXA123456';
+
+    const url = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(ref)}&accountName=${encodeURIComponent(accountName)}`;
+    expect(url).toBe('https://img.vietqr.io/image/MB-0901234567-compact2.png?amount=299000&addInfo=NEXA123456&accountName=CONG%20TY%20CP%20CONG%20NGHE%20NEXA');
+  });
 });

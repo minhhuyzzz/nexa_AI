@@ -99,6 +99,25 @@ export async function GET() {
       };
     });
 
+    if (formatted.length === 0) {
+      // Fallback baseline assessment ensures new users always have an actionable onboarding entry point
+      formatted.push({
+        id: 'a0000000-0000-0000-0000-000000000001',
+        title: 'Đánh Giá Năng Lực Số Chuẩn Quốc Gia & EU DigComp',
+        description: 'Bài đánh giá trắc nghiệm bao quát 5 miền năng lực số cốt lõi. Giúp hệ thống thiết lập hồ sơ ban đầu và gợi ý lộ trình cải thiện chính xác.',
+        duration_minutes: 30,
+        passing_score: 70,
+        point_reward: 50,
+        questionCount: 10,
+        types: ['MCQ'],
+        typeLabel: 'Trắc nghiệm khách quan',
+        domainName: 'Đa Miền Năng Lực Số',
+        domainCodes: ['D1', 'D2', 'D3', 'D4', 'D5'],
+        isVip: false,
+        accessTier: 'FREE',
+      });
+    }
+
     return NextResponse.json({ assessments: formatted });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi máy chủ';

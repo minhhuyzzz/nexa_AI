@@ -25,6 +25,7 @@ import {
   Check,
   X,
   AlertCircle,
+  CheckSquare,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -468,6 +469,16 @@ export default function EvaluatorAssessmentsPage() {
                           <Users className="w-3 h-3 text-slate-500" strokeWidth={1.75} />
                           <span>Giao lớp</span>
                         </button>
+
+                        {/* 3. Bàn chấm bài theo ngữ cảnh */}
+                        <Link
+                          href={`/personal/grading?assessmentId=${asm.id}`}
+                          className="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[11px] font-medium transition-colors inline-flex items-center gap-1"
+                          title="Xem bài nộp và mở bàn chấm bài cho đề này"
+                        >
+                          <CheckSquare className="w-3 h-3 text-slate-500" strokeWidth={1.75} />
+                          <span>Bàn chấm</span>
+                        </Link>
 
                         {/* 3. Sửa đề trong Studio */}
                         <Link

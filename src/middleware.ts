@@ -23,9 +23,22 @@ export async function middleware(request: NextRequest) {
     url.pathname = pathname.replace('/learner/', '/personal/');
     return NextResponse.redirect(url, 307);
   }
-  // Backward-compatibility redirect: /learner or /dashboard -> /personal/dashboard
-  if (pathname === '/learner' || pathname === '/dashboard') {
+  // Backward-compatibility redirect: /learner -> /personal/dashboard
+  if (pathname === '/learner') {
     const url = request.nextUrl.clone();
+    url.pathname = '/personal/dashboard';
+    return NextResponse.redirect(url, 307);
+  }
+
+  // Smart workspace redirect for /dashboard: respect active organization context
+  if (pathname === '/dashboard') {
+    const activeWs = request.cookies.get('nexa_active_workspace')?.value;
+    const orgSlug = request.cookies.get('nexa_active_org_slug')?.value;
+    const url = request.nextUrl.clone();
+    if (activeWs?.startsWith('org_') && orgSlug) {
+      url.pathname = `/org/${orgSlug}`;
+      return NextResponse.redirect(url, 307);
+    }
     url.pathname = '/personal/dashboard';
     return NextResponse.redirect(url, 307);
   }
@@ -131,24 +144,33 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Helper to resolve user dashboard based on active workspace
+  const activeWs = request.cookies.get('nexa_active_workspace')?.value;
+  const orgSlug = request.cookies.get('nexa_active_org_slug')?.value;
+  const targetDashboard = isSuperadmin
+    ? '/admin/dashboard'
+    : activeWs?.startsWith('org_') && orgSlug
+    ? `/org/${orgSlug}`
+    : '/personal/dashboard';
+
   // If user is already onboarded but visits /onboarding, redirect to their dashboard
   if (isOnboardingPage) {
     const url = request.nextUrl.clone();
-    url.pathname = isSuperadmin ? '/admin/dashboard' : '/dashboard';
+    url.pathname = targetDashboard;
     return NextResponse.redirect(url);
   }
 
   // If on /login or /register, redirect to corresponding dashboard
   if (isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = isSuperadmin ? '/admin/dashboard' : '/dashboard';
+    url.pathname = targetDashboard;
     return NextResponse.redirect(url);
   }
 
   // RBAC: Admin route strictly for verified Superadmin email
   if (isAdminRoute && !isSuperadmin) {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = targetDashboard;
     return NextResponse.redirect(url);
   }
 

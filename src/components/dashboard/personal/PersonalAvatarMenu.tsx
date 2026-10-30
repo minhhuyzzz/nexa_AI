@@ -154,17 +154,17 @@ export function PersonalAvatarMenu() {
               </div>
 
               {/* Subscription Plan Badge & Upgrade Link */}
-              <div className="p-3 mx-2 my-2 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/70 dark:border-zinc-800">
+              <div className="p-3 mx-2 my-2 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-slate-500 dark:text-zinc-400 text-[11px]">Gói dịch vụ</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700">
                     CÁ NHÂN (FREE)
                   </span>
                 </div>
                 <Link
                   href="/personal/billing"
                   onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium text-[11px] transition-colors shadow-xs"
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-medium text-[11px] transition-colors shadow-xs"
                 >
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="w-3 h-3 text-sky-200" />

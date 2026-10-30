@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Medal,
   Sparkles,
-  ShieldCheck,
 } from 'lucide-react';
 
 interface LeaderboardEntry {
@@ -38,27 +37,17 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fallbackLeaderboard: LeaderboardEntry[] = [
-    { rank: 1, userId: 'usr-1', displayName: 'Nguyễn Văn An', avatarUrl: null, points: 1420, role: 'LEARNER', specialization: 'Khoa học máy tính' },
-    { rank: 2, userId: 'usr-2', displayName: 'Trần Thị Mai', avatarUrl: null, points: 1280, role: 'LEARNER', specialization: 'Sư phạm Tin học' },
-    { rank: 3, userId: 'usr-3', displayName: 'Lê Hoàng Nam', avatarUrl: null, points: 1150, role: 'LEARNER', specialization: 'Kinh tế số & TMĐT' },
-    { rank: 4, userId: 'usr-4', displayName: 'Đỗ Quang Bảo', avatarUrl: null, points: 980, role: 'LEARNER', specialization: 'Hệ thống thông tin' },
-    { rank: 5, userId: 'usr-5', displayName: 'Phạm Minh Thư', avatarUrl: null, points: 920, role: 'LEARNER', specialization: 'Truyền thông số' },
-    { rank: 6, userId: 'usr-6', displayName: 'Hoàng Văn Đức', avatarUrl: null, points: 840, role: 'LEARNER', specialization: 'Công nghệ thông tin' },
-    { rank: 7, userId: 'usr-7', displayName: 'Vũ Thùy Lan', avatarUrl: null, points: 760, role: 'LEARNER', specialization: 'Quản trị số' },
-    { rank: 8, userId: 'usr-8', displayName: 'Đặng Tiến Hùng', avatarUrl: null, points: 690, role: 'LEARNER', specialization: 'Khoa học dữ liệu' },
-    { rank: 9, userId: 'usr-9', displayName: 'Bùi Ngọc Ánh', avatarUrl: null, points: 580, role: 'LEARNER', specialization: 'Ngoại ngữ & Kỹ năng số' },
-    { rank: 10, userId: 'usr-10', displayName: 'Ngô Việt Khang', avatarUrl: null, points: 510, role: 'LEARNER', specialization: 'Kỹ thuật phần mềm' },
-  ];
+  const [hasError, setHasError] = useState(false);
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
+    setHasError(false);
     try {
       const res = await fetch('/api/leaderboard', { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok || !data.leaderboard || data.leaderboard.length === 0) {
-        setLeaderboard(fallbackLeaderboard);
-        setMyRank(null);
+        setLeaderboard([]);
+        setMyRank(data.currentUserRank || null);
       } else {
         const sorted = (data.leaderboard as LeaderboardEntry[]).sort(
           (a, b) => b.points - a.points
@@ -67,7 +56,8 @@ export default function LeaderboardPage() {
         setMyRank(data.currentUserRank || null);
       }
     } catch {
-      setLeaderboard(fallbackLeaderboard);
+      setHasError(true);
+      setLeaderboard([]);
       setMyRank(null);
     } finally {
       setLoading(false);
@@ -95,16 +85,16 @@ export default function LeaderboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff9a27]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider font-mono">
-              DANH HIỆU & VINH DANH
+              DANH HIỆU &amp; VINH DANH HOẠT ĐỘNG
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Bảng Xếp Hạng Năng Lực Số
+            Bảng Xếp Hạng Điểm Rèn Luyện (XP)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Thi đua tích lũy điểm năng lực thông qua các bài khảo thí thực chiến và học liệu bồi dưỡng.
+            Thi đua tích lũy điểm hoạt động (XP) qua các bài khảo thí và học phần. Điểm XP dùng để theo dõi sự chuyên cần và độc lập với hồ sơ 5 miền năng lực.
           </p>
         </div>
 
@@ -129,7 +119,7 @@ export default function LeaderboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-md bg-[#FEF3C7] text-[#92400E]">
-                <Trophy className="w-4 h-4 text-[#ff9a27]" strokeWidth={1.75} />
+                <Trophy className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider font-mono">
@@ -141,7 +131,7 @@ export default function LeaderboardPage() {
               </div>
             </div>
             <div className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-mono font-medium">
-              <Sparkles className="w-3 h-3 text-[#ff9a27]" />
+              <Sparkles className="w-3 h-3 text-amber-500" />
               <span>Cập nhật liên tục</span>
             </div>
           </div>
@@ -205,13 +195,13 @@ export default function LeaderboardPage() {
 
               {/* Badge Pill */}
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] text-xs font-bold font-mono tracking-wide shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#ff9a27]" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>HẠNG #1 · QUÁN QUÂN</span>
               </div>
 
               {/* Avatar Frame */}
               <div className="relative mt-4 mb-2">
-                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full border-2 border-[#ff9a27] ring-4 ring-amber-200/90 overflow-hidden flex items-center justify-center bg-white font-mono font-extrabold text-2xl text-[#92400E] shadow-sm">
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full border-2 border-amber-400 ring-4 ring-amber-200/90 overflow-hidden flex items-center justify-center bg-white font-mono font-extrabold text-2xl text-[#92400E] shadow-sm">
                   {top1?.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -223,7 +213,7 @@ export default function LeaderboardPage() {
                     <span>{top1?.displayName?.[0] || '1'}</span>
                   )}
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#ff9a27] text-white font-mono font-bold text-xs flex items-center justify-center border-2 border-white shadow-xs">
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-amber-500 text-white font-mono font-bold text-xs flex items-center justify-center border-2 border-white shadow-xs">
                   1
                 </div>
               </div>
@@ -330,10 +320,27 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Table: Full ranking, NO Level column, 1 2 3 are cleanly kept */}
-        {loading ? (
+        {hasError ? (
+          <div className="py-16 text-center text-xs text-slate-500 bg-white border border-slate-200 rounded-md space-y-3">
+            <p className="text-slate-700 font-medium">Không thể tải dữ liệu bảng xếp hạng vào lúc này.</p>
+            <button
+              type="button"
+              onClick={fetchLeaderboard}
+              className="px-3.5 py-1.5 rounded-md bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors inline-flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        ) : loading ? (
           <div className="py-16 text-center text-xs text-slate-500 bg-white border border-slate-200 rounded-md">
             <RefreshCw className="w-5 h-5 text-sky-600 animate-spin mx-auto mb-2" strokeWidth={1.75} />
             Đang tải dữ liệu bảng xếp hạng...
+          </div>
+        ) : leaderboard.length === 0 ? (
+          <div className="py-16 text-center text-xs text-slate-500 border border-slate-200 rounded-md bg-white space-y-1.5">
+            <p className="font-semibold text-slate-800 text-sm">Chưa có dữ liệu bảng xếp hạng</p>
+            <p className="text-slate-500">Hãy là người đầu tiên hoàn thành bài đánh giá để ghi danh vào bảng vinh danh!</p>
           </div>
         ) : filteredList.length === 0 ? (
           <div className="py-16 text-center text-xs text-slate-400 border border-slate-200 rounded-md bg-white">
@@ -416,7 +423,7 @@ export default function LeaderboardPage() {
                             <div className="font-semibold text-slate-900 flex items-center gap-2">
                               <span>{entry.displayName}</span>
                               {rank === 1 && (
-                                <Crown className="w-3.5 h-3.5 text-[#ff9a27] fill-[#ff9a27]" />
+                                <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                               )}
                               {isCurrentUser && (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-100 text-sky-700 border border-sky-200">
@@ -479,7 +486,7 @@ export default function LeaderboardPage() {
               </span>
               {myRank && myRank.points > 0 ? (
                 <span className="px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] text-[10px] font-mono font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff9a27]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   Hạng #{myRank.rank}
                 </span>
               ) : (

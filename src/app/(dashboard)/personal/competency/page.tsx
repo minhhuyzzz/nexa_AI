@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -85,7 +85,7 @@ export default function LearnerCompetencyHubPage() {
             Hồ Sơ Năng Lực Số Cá Nhân
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Bản đồ đánh giá năng lực qua 5 miền và 21 kỹ năng số thành phần với dữ liệu khảo thí thời gian thực.
+            Bản đồ đánh giá năng lực số cá nhân theo 5 miền chuẩn DigComp với dữ liệu khảo thí thời gian thực.
           </p>
         </div>
 
@@ -151,22 +151,22 @@ export default function LearnerCompetencyHubPage() {
         </div>
 
         <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="text-xs text-slate-500 font-medium">Kỹ năng đã khảo thí</div>
+          <div className="text-xs text-slate-500 font-medium">Miền đã đánh giá</div>
           <div className="text-3xl font-extrabold text-sky-600 font-mono tabular-nums mt-1">
-            {loading ? '-' : domains.reduce((sum, d) => sum + d.completedCount, 0)}
-            <span className="text-sm font-normal text-slate-400 ml-1">/ 21 kỹ năng</span>
+            {loading ? '-' : domains.filter((d) => d.score !== null).length}
+            <span className="text-sm font-normal text-slate-400 ml-1">/ 5 miền</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">Chuẩn hóa theo khung DigComp 3.0</div>
+          <div className="text-[11px] text-slate-500 mt-1">Đánh giá chuẩn hóa 5 miền DigComp</div>
         </div>
 
         <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="text-xs text-slate-500 font-medium">Khoảng trống cần bồi dưỡng (&lt; 60%)</div>
+          <div className="text-xs text-slate-500 font-medium">Miền cần củng cố (&lt; 70%)</div>
           <div className="text-3xl font-extrabold text-amber-600 font-mono tabular-nums mt-1">
-            {loading ? '-' : domains.filter((d) => d.score !== null && d.score < 60).length}
+            {loading ? '-' : domains.filter((d) => d.score !== null && d.score < 70).length}
             <span className="text-sm font-normal text-slate-400 ml-1">miền năng lực</span>
           </div>
           <div className="text-[11px] text-amber-700 font-medium mt-1">
-            Được phát hiện tự động bởi AI Gateway
+            Xác định theo chuẩn mục tiêu 70%
           </div>
         </div>
       </div>

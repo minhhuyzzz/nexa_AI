@@ -1,162 +1,163 @@
-# Danh Sách Nhiệm Vụ Thực Thi: Chuẩn Hóa & Hoàn Thiện Hệ Thống NEXA AI
+# Danh Sách Nhiệm Vụ: Tối Ưu Personal Dashboard UX & Chuẩn Hóa 5 Miền Năng Lực
 
-> Kế hoạch hành động chi tiết tuân thủ quy tắc `planning-and-task-breakdown`.
-> Căn cứ: `NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md` và `NEXA_REVIEW_LATEST_FOR_AGENT.md`.
-
----
-
-## Giai Đoạn 1: P0 — Khóa Chết Thanh Toán & Bảo Mật RPC Database
-
-- [x] **Task 1.1: Migration 21 — Siết chặt RPC `fulfill_payment_transaction`**
-  - **Mô tả:** Thu hồi quyền thực thi từ `PUBLIC, anon, authenticated` trên `fulfill_payment_transaction`, chỉ cấp cho `service_role`. Loại bỏ logic kiểm tra `CURRENT_USER = 'postgres'` vì hàm chạy dưới dạng `SECURITY DEFINER` (luôn trả về postgres). Thay thế bằng kiểm tra role caller thực tế hoặc giới hạn quyền thực thi tuyệt đối ở cấp PostgreSQL grant.
-  - **Tiêu chuẩn nghiệm thu:**
-    1. SQL Migration file mới `src/database/migrations/21_harden_payment_rpc.sql`.
-    2. `REVOKE ALL ON FUNCTION fulfill_payment_transaction FROM PUBLIC, anon, authenticated;` được thực thi.
-    3. `GRANT EXECUTE ON FUNCTION fulfill_payment_transaction TO service_role;`.
-    4. Không còn đoạn check `CURRENT_USER` bị bypass.
-  - **Lệnh kiểm chứng:** `npx vitest run src/features/billing/services/security-regression.test.ts`
-  - **Phụ thuộc:** Không có
-  - **Files:** `src/database/migrations/21_harden_payment_rpc.sql`, `src/features/billing/services/security-regression.test.ts`
-  - **Size:** S (< 50 dòng)
-
-- [x] **Task 1.2: Chuẩn hóa Webhook Thanh toán & Chặn Client Mock trên Production**
-  - **Mô tả:** Trong `payment-verifier.service.ts` và route `POST /api/webhooks/payment/route.ts`: Cưỡng chế Zod schema bắt buộc `incomingAmount`, `currency`, `provider_tx_id`, `reference_code`, `status = PAID`. Nếu thiếu trường tiền hoặc không khớp đơn hàng thì fail-closed (HTTP 400/422). Vô hiệu hóa tính năng mock client-side thanh toán nếu `NODE_ENV === 'production'`.
-  - **Tiêu chuẩn nghiệm thu:**
-    1. Zod schema từ chối webhook payload thiếu `amount` hoặc `currency`.
-    2. Endpoint webhook trả về lỗi rõ ràng khi số tiền không khớp với `billing_transactions.amount`.
-    3. Mock simulation trả về 403 Forbidden nếu môi trường là production.
-  - **Lệnh kiểm chứng:** `npx vitest run src/features/billing/services/payment-verifier.service.test.ts`
-  - **Phụ thuộc:** Task 1.1
-  - **Files:** `src/features/billing/services/payment-verifier.service.ts`, `src/app/api/webhooks/payment/route.ts`, `src/app/api/billing/mock-pay/route.ts`
-  - **Size:** M (~100 dòng)
-
-- [x] **Checkpoint 1: Kiểm thử P0 an toàn thanh toán**
-  - **Tiêu chuẩn nghiệm thu:** Toàn bộ test suites liên quan đến billing và security đều xanh (`100% pass`).
+> Quy chuẩn theo kỹ năng `planning-and-task-breakdown`.  
+> Căn cứ: `NEXA_PERSONAL_DASHBOARD_UX_PRODUCT_REVIEW_2026-10-30 (1).md` và `AGENTS.md`.
 
 ---
 
-## Giai Đoạn 2: P1 — Khép Kín Vòng Đời Lớp Học → Giao Bài → Nộp Bài → Bàn Chấm
+## Giai Đoạn 1: Nền Tảng Dữ Liệu 5 Miền, Tách XP & Tinh Gọn Sidebar
 
-- [x] **Task 2.1: Tách Domain Nhóm Học Tập (`evaluator_classes`) khỏi Phòng Thi Live (`exam_rooms`)**
-  - **Mô tả:** Trong `src/app/(dashboard)/personal/groups/page.tsx`, sửa câu truy vấn lấy danh sách lớp học: query từ `evaluator_classes` thay vì `exam_rooms`. Sửa logic "Tham gia nhóm bằng mã PIN": gọi API tham gia lớp học (`/api/classes/join` với `class_code`) thay vì gọi API phòng thi (`/api/rooms/join` với mã PIN 6 số).
+- [x] **Task 1.1: Chuẩn hóa `CompetencyAggregationService` & API Năng Lực về đúng 5 Miền (PERS-04)**
+  - **Mô tả:** Cập nhật `CompetencyAggregationService.ts`, `/api/personal/competency-profile`, `/api/personal/competency-radar` để chỉ trả về đúng 5 miền DigComp. Phân biệt rõ ràng giữa `score = null` (chưa có bằng chứng) và `score = 0` (đã thi và bị 0 điểm). Loại bỏ hoàn toàn việc tính toán hoặc trả về chỉ số 21 kỹ năng thành phần ở tầng API công khai.
   - **Tiêu chuẩn nghiệm thu:**
-    1. Danh sách tại `/personal/groups` hiển thị đúng các lớp học của người dùng từ `evaluator_classes` và `class_members`.
-    2. Nhấp vào nhóm mở đúng trang `/personal/groups/[groupId]` mà không báo lỗi "Không tìm thấy lớp học".
-    3. Dialog tham gia nhóm yêu cầu `Mã lớp học` và xác thực với bảng `evaluator_classes`.
-  - **Lệnh kiểm chứng:** Kiểm tra route `/personal/groups` và API endpoint `/api/classes/join`.
+    1. Response của `/api/personal/competency-profile` và `/api/personal/competency-radar` chỉ chứa 5 domains, không có danh sách 21 skills điểm số.
+    2. Miền chưa có bài làm có `score: null` và `status: 'INSUFFICIENT_DATA'`, không bị gán thành `0%` hay `NEEDS_IMPROVEMENT`.
+    3. Ngưỡng chuẩn mục tiêu thống nhất là `70%`.
+  - **Lệnh kiểm chứng:** `npx vitest run src/features/competency/services/competency-aggregation.service.test.ts`
   - **Phụ thuộc:** Không có
-  - **Files:** `src/app/(dashboard)/personal/groups/page.tsx`, `src/app/(dashboard)/personal/groups/[groupId]/page.tsx`, `src/app/api/classes/join/route.ts`
-  - **Size:** M (~150 dòng)
+  - **Files:** `src/features/competency/services/competency-aggregation.service.ts`, `src/app/api/personal/competency-profile/route.ts`, `src/app/api/personal/competency-radar/route.ts`
+  - **Size:** M (3 files, ~120 dòng)
 
-- [x] **Task 2.2: Nộp Bài Thật: Persistence `assignment_submissions` & Quản Lý File Minh Chứng**
-  - **Mô tả:** Thay thế hoàn toàn logic `setTimeout` giả lập trong `src/app/(dashboard)/personal/submissions/page.tsx`. Xây dựng API và giao diện nộp bài thực tế: sinh viên tải file minh chứng lên bucket `nexa-evidence`, ghi nhận bản ghi vào bảng `assignment_submissions` với trạng thái `SUBMITTED`, lưu đường dẫn storage path và thời gian nộp.
+- [x] **Task 1.2: Tách Rời Gamification XP Khỏi Quyền Cấp Master Certificate (PERS-05, PERS-07)**
+  - **Mô tả:** Trong `src/app/api/personal/profile-stats/route.ts`, xóa bỏ điều kiện `points >= 450` để mở khóa Master Certificate. `points` chỉ đại diện cho điểm tích lũy hoạt động (XP) và level học tập (Level 1..4). Trạng thái `isCertificateUnlocked` chỉ `true` khi người dùng có chứng chỉ thật trong bảng `credentials` (không bị revoked).
   - **Tiêu chuẩn nghiệm thu:**
-    1. Nút "Nộp bài" thực hiện POST dữ liệu thật lên backend.
-    2. Dữ liệu được lưu vào `assignment_submissions`.
-    3. Tải lại trang (F5) trạng thái bài nộp vẫn tồn tại (không mất dữ liệu).
-    4. Giảng viên mở `/personal/grading` thấy bài nộp mới xuất hiện trong danh sách cần chấm.
-  - **Lệnh kiểm chứng:** Thực hiện nộp bài qua UI và truy vấn Supabase kiểm tra bản ghi `assignment_submissions`.
+    1. Người dùng có 1000 điểm tích lũy nhưng chưa thi/chưa có chứng chỉ thì `isCertificateUnlocked = false`.
+    2. Điểm tích lũy và Level được ghi rõ là "Cấp độ hoạt động / XP", không gọi là "Chứng chỉ Level 4".
+  - **Lệnh kiểm chứng:** `npx vitest run src/app/api/personal/profile-stats/route.test.ts`
+  - **Phụ thuộc:** Không có
+  - **Files:** `src/app/api/personal/profile-stats/route.ts`
+  - **Size:** S (1 file, ~40 dòng)
+
+- [x] **Task 1.3: Tái Cấu Trúc `PersonalSidebar.tsx` Theo 3 Khối Chuẩn & Bỏ Chấm Bài/Gói khỏi Cấp 1 (PERS-01)**
+  - **Mô tả:** Cập nhật `PersonalSidebar.tsx` theo cấu trúc IA mới: (1) HỌC TẬP & PHÁT TRIỂN (Tổng quan, Bài đánh giá, Hồ sơ năng lực, Lộ trình của tôi, Chứng chỉ); (2) NHÓM & CÔNG VIỆC (Nhóm của tôi, Bài được giao); (3) CÔNG CỤ TẠO & TỔ CHỨC (Đề đánh giá của tôi, Ngân hàng câu hỏi, Phòng thi trực tiếp). Loại bỏ `Bàn chấm bài` và `Gói & Nâng cấp` khỏi sidebar cấp 1. Chuyển nút "Góp đề thi cộng đồng" thành liên kết phụ thay vì nút đen chiếm đỉnh sidebar.
+  - **Tiêu chuẩn nghiệm thu:**
+    1. Sidebar hiển thị đúng 3 nhóm chức năng với tên nhãn thân thiện.
+    2. Không còn item `Bàn chấm bài` và `Gói & Nâng cấp` ở menu chính (route `/personal/grading` và `/personal/billing` vẫn hoạt động khi truy cập trực tiếp hoặc từ ngữ cảnh).
+    3. Giữ nguyên tính năng thu gọn/mở rộng sidebar và hỗ trợ phím tắt điều hướng.
+  - **Lệnh kiểm chứng:** `npm run typecheck`
+  - **Phụ thuộc:** Không có
+  - **Files:** `src/components/dashboard/personal/PersonalSidebar.tsx`
+  - **Size:** M (1 file, ~100 dòng)
+
+- [x] **Task 1.4: Nâng Cấp `personal/dashboard/page.tsx` Theo 4 Trạng Thái & Khắc Phục Onboarding Catalog Rỗng (PERS-02, PERS-03)**
+  - **Mô tả:** Tái cấu trúc Dashboard cá nhân theo 4 trạng thái động (Người mới chưa có baseline, Đã có baseline, Có việc gần hạn, Có bài cần chấm). Khi chưa có dữ liệu khảo thí, không vẽ 0% đa giác Radar giả mà hiển thị card tóm tắt "0/5 miền đã đánh giá" kèm nút CTA "Bắt đầu làm bài đánh giá đầu vào". Đảm bảo API `/api/assessments` luôn trả về ít nhất 1 bài đánh giá baseline DigComp công khai (hoặc seed sẵn nếu DB trống).
+  - **Tiêu chuẩn nghiệm thu:**
+    1. Người dùng mới thấy rõ CTA duy nhất: "Làm bài đánh giá đầu vào".
+    2. Radar chỉ hiển thị khi có dữ liệu từ 5 miền; nếu chưa có thì hiển thị Empty State lịch thiệp, không vẽ đa giác 0%.
+    3. Bấm "Bắt đầu làm bài" mở ra trang Bài đánh giá có sẵn bài thi baseline khả dụng.
+  - **Lệnh kiểm chứng:** `npm run typecheck` và kiểm tra route `/personal/dashboard`
+  - **Phụ thuộc:** Task 1.1, Task 1.2, Task 1.3
+  - **Files:** `src/app/(dashboard)/personal/dashboard/page.tsx`, `src/app/(dashboard)/personal/competency/page.tsx`, `src/app/api/assessments/route.ts`
+  - **Size:** M (3 files, ~150 dòng)
+
+- [x] **Checkpoint 1: Hoàn tất Giai đoạn 1**
+  - Chạy `npm test` và `npm run typecheck` xác nhận 0 lỗi. Toàn bộ sidebar, dashboard và 5 miền năng lực hoạt động đồng bộ.
+
+---
+
+## Giai Đoạn 2: Kho Khóa Học Tuyển Chọn & Lộ Trình 4 Bước
+
+- [x] **Task 2.1: Tạo Bảng `course_catalog` & Seed Dữ Liệu Khóa Học Tuyển Chọn Theo 5 Miền (PERS-13)**
+  - **Mô tả:** Viết migration SQL `24_create_course_catalog.sql` tạo bảng `course_catalog` lưu trữ danh mục khóa học được tuyển chọn (không phải sàn bán khóa học). Viết seed SQL cung cấp ít nhất 10 khóa học uy tín (miễn phí/chất lượng cao từ Coursera, edX, Google Digital Garage, Vinschool, MOOCs) phân bổ đều cho 5 miền năng lực số DigComp.
+  - **Tiêu chuẩn nghiệm thu:**
+    1. Migration tạo bảng `course_catalog` với các trường: `id`, `title`, `provider`, `official_url`, `domain_ids`, `level`, `language`, `price_type`, `review_status`, `short_description`.
+    2. RLS policy cho phép người dùng đọc danh mục khóa học đã duyệt (`review_status = 'APPROVED'`).
+    3. Endpoint `/api/courses` trả về danh sách khóa học theo `domain_id`.
+  - **Lệnh kiểm chứng:** Gọi GET `/api/courses?domain=DIGCOMP_D1` trả về các khóa học tương ứng.
+  - **Phụ thuộc:** Checkpoint 1
+  - **Files:** `src/database/migrations/24_create_course_catalog.sql`, `src/database/seeds/06_course_catalog_seed.sql`, `src/app/api/courses/route.ts`
+  - **Size:** M (3 files, ~150 dòng)
+
+- [x] **Task 2.2: Tái Thiết Kế Trang `personal/learning-path/page.tsx` Theo Miền Ưu Tiên & Khóa Tuyển Chọn (PERS-05)**
+  - **Mô tả:** Viết lại trang `/personal/learning-path` để thực thi đúng vòng lặp 4 bước: (1) Nhận diện miền < 70% từ kết quả khảo thí; (2) Hiển thị 2 lựa chọn song song: Học liệu trong NEXA hoặc Khóa học tuyển chọn bên ngoài (có link chính thức, ghi rõ chi phí); (3) Cho phép người dùng lưu vào lộ trình hoặc đánh dấu đã học; (4) Nút CTA "Đánh giá lại miền này".
+  - **Tiêu chuẩn nghiệm thu:**
+    1. Trang hiển thị các khối theo từng miền cần cải thiện (score < 70%).
+    2. Khóa học hiển thị đầy đủ: Tên, Đơn vị cung cấp, Thời lượng, Nhãn miễn phí/có phí, và link trực tiếp sang trang nguồn.
+    3. Đánh dấu đã học lưu trạng thái vào CSDL và không tự động cấp chứng chỉ năng lực khi chưa thi lại.
+  - **Lệnh kiểm chứng:** Kiểm tra route `/personal/learning-path` với tài khoản có miền < 70%.
   - **Phụ thuộc:** Task 2.1
-  - **Files:** `src/app/(dashboard)/personal/submissions/page.tsx`, `src/app/api/assessments/[id]/submit/route.ts`
-  - **Size:** M (~200 dòng)
+  - **Files:** `src/app/(dashboard)/personal/learning-path/page.tsx`, `src/app/api/personal/learning-plan/route.ts`
+  - **Size:** M (2 files, ~180 dòng)
 
-- [x] **Task 2.3: Bảo Mật File Minh Chứng: On-Demand Signed URLs & Quyền Theo Tài Nguyên**
-  - **Mô tả:** Xóa bỏ cơ chế fallback sang `getPublicUrl` đối với bucket private `nexa-evidence`. Xây dựng endpoint lấy Signed URL tạm thời (TTL 60 - 300 giây) có kiểm tra quyền: Chỉ chủ sở hữu bài nộp (người học) hoặc người chấm/giảng viên của lớp học chứa bài tập đó mới được phép lấy link xem file.
+- [x] **Task 2.3: Ràng Buộc AI Recommender Chỉ Gợi Ý `course_id` Hợp Lệ từ Catalog Đã Duyệt (PERS-06, PERS-13)**
+  - **Mô tả:** Trong service gợi ý AI (`/api/ai/analyze-competency` và `gemini.adapter.ts`), cung cấp danh sách ID các khóa học đã được duyệt từ `course_catalog` vào prompt context. Kiểm tra kết quả trả về của AI: nếu AI sinh ID không tồn tại trong database, backend tự động lọc bỏ và thay bằng khóa học phù hợp nhất theo quy tắc deterministic. Tuyệt đối không để AI tự bịa URL hoặc tên khóa học.
   - **Tiêu chuẩn nghiệm thu:**
-    1. Không còn lời gọi `supabase.storage.from('nexa-evidence').getPublicUrl()`.
-    2. Người dùng lạ không thể truy cập hoặc lấy link tải file minh chứng của người khác.
-    3. Giảng viên của lớp và người nộp bài tải được file minh chứng an toàn qua Signed URL.
-  - **Lệnh kiểm chứng:** Gọi API lấy Signed URL bằng tài khoản không có quyền và xác nhận trả về 403 Forbidden.
-  - **Phụ thuộc:** Task 2.2
-  - **Files:** `src/app/api/evidence/signed-url/route.ts`, `src/app/api/evidence/upload/route.ts`, `src/app/(dashboard)/personal/grading/page.tsx`
-  - **Size:** S (~80 dòng)
+    1. AI chỉ trả về `recommendedCourseIds[]` và giải thích lý do vì sao miền đó cần học khóa này.
+    2. Server loại bỏ mọi ID ảo không có trong bảng `course_catalog`.
+  - **Lệnh kiểm chứng:** `npx vitest run src/features/ai-gateway/adapters/gemini.adapter.test.ts`
+  - **Phụ thuộc:** Task 2.1, Task 2.2
+  - **Files:** `src/features/ai-gateway/adapters/gemini.adapter.ts`, `src/app/api/ai/analyze-competency/route.ts`
+  - **Size:** S (2 files, ~80 dòng)
 
-- [x] **Task 2.4: Kiểm Tra Quyền Theo Tài Nguyên Khi Chấm Bài Thủ Công & AI Grading**
-  - **Mô tả:** Trong `src/app/api/ai/grade-submission/route.ts` và API chấm bài thủ công: Thêm kiểm tra quyền truy cập tài nguyên. Nếu người gọi là Giảng viên/Người chấm, phải xác thực họ là người tạo bài tập (`created_by`) hoặc là giáo viên của lớp học chứa bài tập đó; không chỉ kiểm tra vai trò chung chung `profile.role === 'EVALUATOR'`.
-  - **Tiêu chuẩn nghiệm thu:**
-    1. API từ chối chấm bài nếu người chấm không phụ trách lớp học tương ứng.
-    2. Chấm bài bằng AI và chấm bài thủ công cập nhật đúng điểm và nhận xét vào `assignment_submissions` / `assessment_submissions`.
-  - **Lệnh kiểm chứng:** Unit test API chấm bài với 2 tài khoản giảng viên khác nhau.
-  - **Phụ thuộc:** Task 2.3
-  - **Files:** `src/app/api/ai/grade-submission/route.ts`, `src/app/api/evaluator/grade/route.ts`
-  - **Size:** S (~60 dòng)
-
-- [x] **Checkpoint 2: Kiểm thử toàn trình Vòng Đời Lớp Học & Bài Tập**
-  - **Tiêu chuẩn nghiệm thu:** Luồng: Tạo lớp -> Tạo bài tập -> Sinh viên nộp bài đính kèm minh chứng -> Giảng viên xem bài và chấm điểm -> Sinh viên xem kết quả hoạt động 100% dữ liệu thật.
+- [x] **Checkpoint 2: Hoàn tất Giai đoạn 2**
+  - Chạy `npm test` và `npm run typecheck`. Xác nhận vòng lặp: Đánh giá 5 miền -> Gợi ý khóa tuyển chọn -> Tiến độ -> Đánh giá lại hoạt động liền mạch.
 
 ---
 
-## Giai Đoạn 3: P1 — Chuẩn Hóa Không Gian Tổ Chức & Lời Mời Thành Viên
+## Giai Đoạn 3: Quản Lý Tác Vụ, Chấm Bài & Bảng Xếp Hạng
 
-- [x] **Task 3.1: Migration 22 — Đồng bộ Constraint `organization_invitations.org_role`**
-  - **Mô tả:** Cập nhật check constraint của cột `org_role` trong bảng `organization_invitations` để chấp nhận đầy đủ các role nghiệp vụ thực tế: `ORG_OWNER`, `ORG_ADMIN`, `ASSESSOR`, `REPORT_VIEWER`, `MEMBER`.
+- [x] **Task 3.1: Đổi Tab Mặc Định Thành `Cần xử lý` trong `personal/submissions/page.tsx` (PERS-10)**
+  - **Mô tả:** Trong `src/app/(dashboard)/personal/submissions/page.tsx`, đổi tab mặc định từ "Sắp tới" thành "Cần xử lý" (`action_required`). Ưu tiên hiển thị các bài tập đã quá hạn (Overdue) hoặc sát hạn nộp lên đầu danh sách để học viên không bị bỏ sót bài cần làm.
   - **Tiêu chuẩn nghiệm thu:**
-    1. File migration mới `src/database/migrations/22_update_org_roles_constraint.sql`.
-    2. Lời mời với vai trò `ASSESSOR` hoặc `REPORT_VIEWER` từ `/org/[slug]/members` lưu thành công vào CSDL mà không văng lỗi PostgreSQL check constraint violation.
-  - **Lệnh kiểm chứng:** Chạy lệnh mời thành viên vai trò `ASSESSOR` qua API và xác nhận mã HTTP 201 Created.
+    1. Vào trang `/personal/submissions`, tab "Cần xử lý" được chọn mặc định.
+    2. Nếu có bài quá hạn, xuất hiện badge cảnh báo màu cam/đỏ tinh tế và nút "Nộp ngay".
+  - **Lệnh kiểm chứng:** Mở trang `/personal/submissions` và kiểm tra tab hiển thị đầu tiên.
+  - **Phụ thuộc:** Checkpoint 2
+  - **Files:** `src/app/(dashboard)/personal/submissions/page.tsx`
+  - **Size:** S (1 file, ~40 dòng)
+
+- [x] **Task 3.2: Tích Hợp Nút Chấm Bài Theo Ngữ Cảnh Vào Đề Thi & Nhóm Lớp (PERS-08)**
+  - **Mô tả:** Vì `Bàn chấm bài` đã được rút khỏi sidebar cấp 1, thêm các entry point ngữ cảnh: (1) Trên Dashboard: Card "Bài chờ chấm (n)" khi người dùng có quyền chấm bài trong lớp học; (2) Trong trang quản lý đề (`/personal/authoring`): Nút "Xem bài nộp / Bàn chấm"; (3) Trong chi tiết lớp học (`/personal/groups/[groupId]`): Nút "Chấm bài" cạnh từng bài tập đã giao.
+  - **Tiêu chuẩn nghiệm thu:**
+    1. Giảng viên/Người tạo đề dễ dàng mở Bàn chấm bài trực tiếp từ đề thi hoặc lớp học của mình.
+    2. URL chuyển tiếp truyền kèm query param `?assignmentId=...` hoặc `?assessmentId=...` để Bàn chấm lọc đúng ngữ cảnh.
+  - **Lệnh kiểm chứng:** Kiểm tra các liên kết dẫn đến `/personal/grading` từ `authoring` và `groups`.
+  - **Phụ thuộc:** Task 1.3
+  - **Files:** `src/app/(dashboard)/personal/authoring/page.tsx`, `src/app/(dashboard)/personal/groups/[groupId]/page.tsx`, `src/app/(dashboard)/personal/dashboard/page.tsx`
+  - **Size:** M (3 files, ~80 dòng)
+
+- [x] **Task 3.3: Dọn Dẹp Mock Data & Thu Gọn Gamification trong `personal/leaderboard/page.tsx` (PERS-09)**
+  - **Mô tả:** Trong `src/app/(dashboard)/personal/leaderboard/page.tsx`, loại bỏ `fallbackLeaderboard` chứa danh sách người dùng mẫu khi API lỗi hoặc rỗng. Hiển thị thông báo rỗng hoặc lỗi trung thực kèm nút tải lại. Ghi rõ nhãn "Bảng xếp hạng Điểm Tích Lũy (XP)" để phân biệt với Năng lực số. Thu gọn bục vinh danh (Podium) để tránh chiếm diện tích vô ích.
+  - **Tiêu chuẩn nghiệm thu:**
+    1. Khi API trả rỗng hoặc lỗi, hiển thị Empty/Error state trang nhã, không sinh ra người dùng giả mạo.
+    2. Giao diện ghi rõ tiêu chí xếp hạng là XP/Hoạt động.
+  - **Lệnh kiểm chứng:** Kiểm tra trang `/personal/leaderboard`.
   - **Phụ thuộc:** Không có
-  - **Files:** `src/database/migrations/22_update_org_roles_constraint.sql`, `src/app/api/organizations/invite/route.ts`
-  - **Size:** S (< 40 dòng)
+  - **Files:** `src/app/(dashboard)/personal/leaderboard/page.tsx`
+  - **Size:** S (1 file, ~60 dòng)
 
-- [x] **Task 3.2: Giữ Ngữ Cảnh Tổ Chức Khi Tạo Đề và Quản Lý Lớp Học**
-  - **Mô tả:** Khi người dùng đang ở trong không gian tổ chức `/org/[slug]/*`, các nút tạo đề hoặc tạo lớp học không được chuyển hướng sang `/personal/assessments/new` mà phải giữ nguyên ngữ cảnh tổ chức: điều hướng đến `/org/[slug]/assessments/new` hoặc mở Modal tạo bài thi nội bộ gắn `organization_id` tương ứng.
-  - **Tiêu chuẩn nghiệm thu:**
-    1. Tạo đề trong Tổ chức tự động gán `organization_id = currentOrg.id`.
-    2. Bài thi tạo trong Tổ chức hiển thị tại danh mục đề thi của tổ chức và tuân thủ quota của tổ chức, không tính vào quota cá nhân.
-  - **Lệnh kiểm chứng:** Tạo một bài thi từ `/org/[slug]/assessments` và kiểm tra `organization_id` trong bảng `assessments`.
-  - **Phụ thuộc:** Task 3.1
-  - **Files:** `src/app/(dashboard)/org/[slug]/assessments/page.tsx`, `src/app/(dashboard)/org/[slug]/classes/page.tsx`, `src/app/(dashboard)/org/[slug]/assessments/new/page.tsx`, `src/components/dashboard/org/CreateOrgClassButton.tsx`, `src/app/api/classes/route.ts`, `src/features/assessments/components/AssessmentStudio.tsx`
-  - **Size:** M (~150 dòng)
-
-- [x] **Checkpoint 3: Kiểm thử Đa Người Thuê Tổ Chức**
-  - **Tiêu chuẩn nghiệm thu:** Mời thành viên với mọi vai trò thành công; tài nguyên tổ chức hoàn toàn cô lập với tài nguyên cá nhân.
+- [x] **Checkpoint 3: Hoàn tất Giai đoạn 3**
+  - Chạy `npm test` và `npm run typecheck`. Toàn bộ luồng tác vụ, chấm bài ngữ cảnh và leaderboard sạch dữ liệu mẫu.
 
 ---
 
-## Giai Đoạn 4: P2 — Dọn Dẹp Route, UX & Hoàn Thiện Vận Hành
+## Giai Đoạn 4: Thanh Toán Checkout Trang Riêng (payOS) & Đánh Bóng UI
 
-- [x] **Task 4.1: Chuẩn Hóa Trang Kết Quả Khảo Thí (Result Page Deduplication)**
-  - **Mô tả:** Gộp trang kết quả khảo thí thành một nguồn sự thật duy nhất tại `/personal/assessments/[id]/result?submissionId=...`. Chuyển hướng hoặc tái sử dụng component từ `/personal/results/[id]` để tránh trùng lặp 2 màn hình hiển thị cùng dữ liệu.
+- [x] **Task 4.1: Xây Dựng Chuỗi Trang Billing Checkout Trang Riêng Thay Thế QR Modal (PERS-08, PERS-09)**
+  - **Mô tả:** Xóa bỏ `showQrModal` trong `src/app/(dashboard)/personal/billing/page.tsx`. Xây dựng trang riêng `/personal/checkout/[orderId]/page.tsx` hiển thị mã QR VietQR từ payOS, số tiền thanh toán chính xác từ backend, mã đơn hàng, và đồng hồ đếm ngược. Xây dựng trang kết quả `/personal/billing/result/page.tsx` phục vụ việc hiển thị trạng thái sau khi quét mã thanh toán.
   - **Tiêu chuẩn nghiệm thu:**
-    1. Cả 2 đường dẫn đều trỏ về một giao diện thống nhất, nhận `submissionId`.
-    2. Hiển thị điểm số, phân tích 5 miền năng lực DigComp, và các nút kích hoạt AI on-demand.
-  - **Lệnh kiểm chứng:** Kiểm tra route `/personal/assessments/[id]/result` và `/personal/results/[id]`.
-  - **Phụ thuộc:** Không có
-  - **Files:** `src/app/(dashboard)/personal/assessments/[id]/result/page.tsx`
-  - **Size:** S (~80 dòng)
+    1. Bấm chọn gói tại `/personal/billing` điều hướng sang `/personal/checkout/[orderId]`.
+    2. Trang checkout hiển thị VietQR do payOS cung cấp và tự động kiểm tra trạng thái thanh toán qua polling `/api/billing/status`.
+    3. F5 trang checkout giữ nguyên phiên đơn hàng, không tạo order trùng lặp.
+    4. Thanh toán thành công chuyển hướng sang `/personal/billing/result?orderId=...`.
+  - **Lệnh kiểm chứng:** Chạy thử luồng tạo order và render trang checkout.
+  - **Phụ thuộc:** Checkpoint 3
+  - **Files:** `src/app/(dashboard)/personal/billing/page.tsx`, `src/app/(dashboard)/personal/checkout/[orderId]/page.tsx`, `src/app/(dashboard)/personal/billing/result/page.tsx`
+  - **Size:** M (3 files, ~200 dòng)
 
-- [x] **Task 4.2: Phân Tách Rõ Ràng Phân Tích Năng Lực (Analysis) & Lộ Trình Học Tập (Learning Path)**
-  - **Mô tả:** Tách biệt rõ 2 chức năng: `/personal/competency` chuyên hiển thị phân tích năng lực và khoảng trống kỹ năng (< 60%); `/personal/learning-path` chuyên hiển thị các bước học tập và khóa học đề xuất dựa trên kết quả phân tích.
+- [x] **Task 4.2: Tích Hợp Link "Gói & Nâng Cấp" Vào User Avatar Menu & Đánh Bóng Toàn Diện UI (PERS-12)**
+  - **Mô tả:** Thêm mục "Gói dịch vụ & Thanh toán" vào `PersonalAvatarMenu.tsx`. Rà soát toàn bộ giao diện theo chuẩn `AGENTS.md`: phông chữ `JetBrains Mono` cho điểm số/tiền/mã PIN, viền mỏng 1px `border-slate-200`, không dùng emoji trong JSX, 100% icon nét mảnh từ `lucide-react`.
   - **Tiêu chuẩn nghiệm thu:**
-    1. Giao diện `/personal/competency` tập trung vào radar chart, bảng chi tiết từng năng lực.
-    2. Giao diện `/personal/learning-path` tập trung vào roadmap từng giai đoạn và nút "Tạo lộ trình bằng AI".
-  - **Lệnh kiểm chứng:** Truy cập cả 2 trang và kiểm tra tính trực quan, độc lập.
-  - **Phụ thuộc:** Không có
-  - **Files:** `src/app/(dashboard)/personal/competency/page.tsx`, `src/app/(dashboard)/personal/learning-path/page.tsx`
-  - **Size:** S (~80 dòng)
+    1. Người dùng truy cập Billing từ Avatar menu góc trên bên phải hoặc khi hết lượt AI.
+    2. Không có icon/emoji vi phạm `AGENTS.md`.
+    3. Độ tương phản chữ và trợ năng WCAG AA đạt chuẩn.
+  - **Lệnh kiểm chứng:** `npm run typecheck` và `npm run build`
+  - **Phụ thuộc:** Task 4.1
+  - **Files:** `src/components/dashboard/personal/PersonalAvatarMenu.tsx`, `src/components/dashboard/personal/PersonalTopbar.tsx`
+  - **Size:** S (2 files, ~50 dòng)
 
-- [x] **Task 4.3: Persistence Dữ Liệu Cài Đặt Người Dùng (`personal/settings`) Vào Database Thật**
-  - **Mô tả:** Kết nối trang `/personal/settings` với API `/api/users/profile` và Supabase Auth. Cho phép người dùng cập nhật thông tin hiển thị (tên, avatar, thông báo, ngôn ngữ) lưu trực tiếp vào bảng `user_profiles`.
-  - **Tiêu chuẩn nghiệm thu:**
-    1. Đổi tên hiển thị tại settings và bấm lưu -> reload trang tên mới vẫn được giữ nguyên.
-    2. Đổi mật khẩu hoạt động thông qua `supabase.auth.updateUser()`.
-  - **Lệnh kiểm chứng:** Test cập nhật thông tin profile qua UI settings và F5 kiểm tra.
-  - **Phụ thuộc:** Không có
-  - **Files:** `src/app/(dashboard)/personal/settings/page.tsx`
-  - **Size:** S (~100 dòng)
-
-- [x] **Task 4.4: Cấu Hình Fail-Closed Cho Supabase Admin Client**
-  - **Mô tả:** Trong `src/lib/supabase/admin.ts`, đảm bảo rằng nếu biến môi trường `SUPABASE_SERVICE_ROLE_KEY` bị thiếu trên production, hệ thống phải ném lỗi (throw Error) ngay lập tức chứ không được âm thầm fallback sang `anon` key hoặc tạo client không đủ quyền gây ra lỗi ngầm.
-  - **Tiêu chuẩn nghiệm thu:**
-    1. Hàm `createAdminClient()` throw Error nếu thiếu secret key trên môi trường production.
-    2. Ghi log cảnh báo rõ ràng trên môi trường test/dev.
-  - **Lệnh kiểm chứng:** Unit test `admin.ts` với mock biến môi trường rỗng.
-  - **Phụ thuộc:** Không có
-  - **Files:** `src/lib/supabase/admin.ts`
-  - **Size:** S (< 30 dòng)
-
-- [x] **Checkpoint 4: Kiểm thử tổng thể & Đóng gói chất lượng**
+- [x] **Checkpoint 4: Kiểm Thử Toàn Trình & Nghiệm Thu Sản Phẩm**
   - **Tiêu chuẩn nghiệm thu:**
     1. `npm run typecheck` đạt 0 lỗi.
-    2. `npm test` vượt qua 100% bài kiểm thử.
-    3. `npm run build` thành công không có warning nghiêm trọng.
+    2. `npm test` vượt qua 100% test suites.
+    3. Tất cả 4 giai đoạn hoàn thành theo đúng tiêu chí trong `tasks/plan.md`.

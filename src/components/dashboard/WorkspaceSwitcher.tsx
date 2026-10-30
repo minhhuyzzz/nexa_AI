@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Building2,
   User,
@@ -49,6 +49,7 @@ const ROLE_LABELS: Record<OrgRoleType, string> = {
 
 export function WorkspaceSwitcher() {
   const router = useRouter();
+  const pathname = usePathname();
   const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('personal');
   const [isOpen, setIsOpen] = useState(false);
@@ -83,6 +84,21 @@ export function WorkspaceSwitcher() {
           const data = await res.json();
           if (data.workspaces) {
             setWorkspaces(data.workspaces);
+            // Sync active workspace state with current route
+            if (pathname?.startsWith('/org/')) {
+              const routeSlug = pathname.split('/')[2];
+              const matched = data.workspaces.find((w: WorkspaceItem) => w.organization.slug === routeSlug);
+              if (matched) {
+                setActiveWorkspaceId(`org_${matched.organization.id}`);
+                localStorage.setItem('nexa_active_workspace', `org_${matched.organization.id}`);
+                document.cookie = `nexa_active_workspace=org_${matched.organization.id}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+                document.cookie = `nexa_active_org_slug=${matched.organization.slug}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+              }
+            } else if (pathname?.startsWith('/personal')) {
+              setActiveWorkspaceId('personal');
+              localStorage.setItem('nexa_active_workspace', 'personal');
+              document.cookie = `nexa_active_workspace=personal; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+            }
           }
         }
       } catch (e) {
@@ -91,7 +107,7 @@ export function WorkspaceSwitcher() {
     };
 
     fetchWorkspaces();
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -108,10 +124,15 @@ export function WorkspaceSwitcher() {
     localStorage.setItem('nexa_active_workspace', id);
     // Set 30-day cookie for server/middleware
     document.cookie = `nexa_active_workspace=${id}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    if (slug) {
+      document.cookie = `nexa_active_org_slug=${slug}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    } else {
+      document.cookie = `nexa_active_org_slug=; path=/; max-age=0; SameSite=Lax`;
+    }
     setIsOpen(false);
 
     if (id === 'personal') {
-      router.push('/dashboard');
+      router.push('/personal/dashboard');
     } else if (slug) {
       router.push(`/org/${slug}`);
     } else {

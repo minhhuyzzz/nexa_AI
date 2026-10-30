@@ -69,7 +69,9 @@ export default function LearnerDashboardPage() {
   const [competencyProfile, setCompetencyProfile] = useState<{
     hasTakenAssessment?: boolean;
     totalAssessmentsCompleted?: number;
-    overallScore: number;
+    assessedDomainsCount?: number;
+    totalDomainsCount?: number;
+    overallScore: number | null;
     radarData: DomainScore[];
     insights: {
       strongest: { code: string; name: string; score: number; level: string } | null;
@@ -326,11 +328,81 @@ export default function LearnerDashboardPage() {
         </div>
       </div>
 
-      {/* 2. Clean Metric Strip */}
+      {/* 2. Dynamic Action Card: Bước tiếp theo của bạn */}
+      <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-md bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0 text-sky-600 mt-0.5">
+            <Compass className="w-5 h-5" strokeWidth={1.75} />
+          </div>
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold text-sky-700">
+              BƯỚC TIẾP THEO CỦA BẠN
+            </div>
+            {!competencyProfile?.hasTakenAssessment ? (
+              <>
+                <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+                  Thiết lập Hồ sơ Năng Lực Số Ban Đầu
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Bạn chưa thực hiện bài đánh giá nào. Làm bài khảo thí chuẩn DigComp để hệ thống lập bản đồ 5 miền năng lực và đề xuất lộ trình tối ưu.
+                </p>
+              </>
+            ) : competencyProfile?.insights?.weakest?.isGap ? (
+              <>
+                <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+                  Cải thiện Miền {competencyProfile.insights.weakest.code}: {competencyProfile.insights.weakest.name}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Kết quả khảo thí cho thấy miền này đạt {competencyProfile.insights.weakest.score}% (dưới chuẩn 70%). Hãy bắt đầu các học phần và khóa học tuyển chọn để củng cố miền này.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+                  Duy trì &amp; Phát triển Năng Lực Nâng Cao
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tất cả các miền đã đánh giá đều đạt chuẩn 70%. Bạn có thể làm các bài đánh giá tình huống chuyên sâu hoặc chuẩn bị cho các bài thi chứng chỉ.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="shrink-0 flex items-center gap-2">
+          {!competencyProfile?.hasTakenAssessment ? (
+            <Link
+              href="/personal/assessments"
+              className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              <span>Làm bài đánh giá ngay</span>
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </Link>
+          ) : competencyProfile?.insights?.weakest?.isGap ? (
+            <Link
+              href="/personal/learning-path"
+              className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              <span>Xem lộ trình gợi ý</span>
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </Link>
+          ) : (
+            <Link
+              href="/personal/competency"
+              className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              <span>Xem chi tiết hồ sơ</span>
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Clean Metric Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 py-1">
         <div className="py-1">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-            <CheckSquare className="w-4 h-4 text-slate-400" />
+            <CheckSquare className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
             <span>Bài đã làm</span>
           </div>
           <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
@@ -340,22 +412,26 @@ export default function LearnerDashboardPage() {
 
         <div className="py-1 sm:pl-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-            <Compass className="w-4 h-4 text-slate-400" />
+            <Compass className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
             <span>Miền đạt chuẩn</span>
           </div>
           <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
             {competencyProfile?.hasTakenAssessment
-              ? `${competencyProfile.radarData.filter((d) => d.score >= 70).length}/5`
-              : '0/5'}
+              ? `${competencyProfile.radarData.filter((d) => (d.score ?? 0) >= 70).length}/5`
+              : '—'}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-0.5">
+            {competencyProfile?.hasTakenAssessment ? 'Chuẩn mục tiêu ≥70%' : 'Chưa đánh giá'}
           </div>
         </div>
 
         <div className="py-1 sm:pl-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-            <Trophy className="w-4 h-4 text-amber-500" />
-            <span>Điểm tích luỹ</span>
+            <Trophy className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
+            <span>Điểm tích luỹ (XP)</span>
           </div>
           <div className="text-2xl font-bold text-amber-600 font-mono tabular-nums">{stats.points}</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Điểm rèn luyện hoạt động</div>
         </div>
 
         <Link
@@ -363,8 +439,8 @@ export default function LearnerDashboardPage() {
           className="py-1 sm:pl-2 block group hover:opacity-90 transition-opacity"
         >
           <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-            <Award className="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors" />
-            <span className="group-hover:text-sky-600 transition-colors">Chứng chỉ Level 4</span>
+            <Award className="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors" strokeWidth={1.75} />
+            <span className="group-hover:text-sky-600 transition-colors">Chứng chỉ Năng lực số</span>
           </div>
           <div className="flex items-center gap-1.5 h-8">
             <span
@@ -375,7 +451,7 @@ export default function LearnerDashboardPage() {
               className={`text-sm font-semibold ${stats.isCertUnlocked ? 'text-emerald-700' : 'text-slate-600'
                 }`}
             >
-              {stats.isCertUnlocked ? 'Hoàn thành' : 'Chưa hoàn thành'}
+              {stats.isCertUnlocked ? 'Đã cấp chứng chỉ' : 'Chưa hoàn thành'}
             </span>
           </div>
         </Link>
@@ -419,14 +495,15 @@ export default function LearnerDashboardPage() {
               {/* 5 Compact Progress Bars */}
               <div className="space-y-2.5">
                 {(competencyProfile?.radarData || [
-                  { code: 'D1', name: 'Thông tin & Dữ liệu', score: 0, target: 70 },
-                  { code: 'D2', name: 'Giao tiếp & Hợp tác', score: 0, target: 70 },
-                  { code: 'D3', name: 'Sáng tạo Nội dung số', score: 0, target: 70 },
-                  { code: 'D4', name: 'An toàn & Bảo mật', score: 0, target: 70 },
-                  { code: 'D5', name: 'Giải quyết Vấn đề', score: 0, target: 70 },
+                  { code: 'D1', name: 'Thông tin & Dữ liệu', score: null, target: 70 },
+                  { code: 'D2', name: 'Giao tiếp & Hợp tác', score: null, target: 70 },
+                  { code: 'D3', name: 'Sáng tạo Nội dung số', score: null, target: 70 },
+                  { code: 'D4', name: 'An toàn & Bảo mật', score: null, target: 70 },
+                  { code: 'D5', name: 'Giải quyết Vấn đề', score: null, target: 70 },
                 ]).map((d) => {
-                  const hasAssessed = competencyProfile?.hasTakenAssessment ?? false;
-                  const isGap = hasAssessed && d.score < 70;
+                  const hasAssessed = Boolean(competencyProfile?.hasTakenAssessment && d.score !== null);
+                  const numScore = d.score ?? 0;
+                  const isGap = hasAssessed && numScore < 70;
                   return (
                     <div key={d.code} className="space-y-1">
                       <div className="flex items-center justify-between text-[11px]">
@@ -439,7 +516,7 @@ export default function LearnerDashboardPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {hasAssessed && (
+                          {hasAssessed ? (
                             isGap ? (
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
                                 Cần rèn luyện
@@ -449,6 +526,10 @@ export default function LearnerDashboardPage() {
                                 Đạt chuẩn
                               </span>
                             )
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200 font-mono">
+                              Chưa đo
+                            </span>
                           )}
                           <span
                             className={`font-mono font-bold tabular-nums ${!hasAssessed
@@ -458,7 +539,7 @@ export default function LearnerDashboardPage() {
                                   : 'text-slate-900'
                               }`}
                           >
-                            {d.score}%
+                            {hasAssessed ? `${d.score}%` : '—'}
                           </span>
                         </div>
                       </div>
@@ -467,14 +548,14 @@ export default function LearnerDashboardPage() {
                       <div className="relative w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${!hasAssessed
-                              ? 'bg-slate-300'
+                              ? 'bg-slate-200'
                               : isGap
                                 ? 'bg-amber-500'
-                                : d.score >= 85
+                                : numScore >= 85
                                   ? 'bg-sky-600'
                                   : 'bg-sky-500'
                             }`}
-                          style={{ width: `${Math.min(100, d.score)}%` }}
+                          style={{ width: `${hasAssessed ? Math.min(100, numScore) : 0}%` }}
                         />
                         {/* 70% threshold marker */}
                         <div

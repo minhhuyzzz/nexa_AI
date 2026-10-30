@@ -1,86 +1,87 @@
-# Kế Hoạch Triển Khai Hoàn Chỉnh: Chuẩn Hóa Workspaces & Khép Kín Nghiệp Vụ NEXA AI
+# Kế Hoạch Triển Khai: Tối Ưu Personal Dashboard UX & Chuẩn Hóa 5 Miền Năng Lực (DigComp)
 
 > **Căn cứ tài liệu:**
-> - [NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md](file:///c:/nexa/NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md) (Đặc tả mô hình sản phẩm chuẩn)
-> - [NEXA_REVIEW_LATEST_FOR_AGENT.md](file:///c:/nexa/NEXA_REVIEW_LATEST_FOR_AGENT.md) (Báo cáo thẩm định code tại commit `7c8fbde`)
-> 
-> **Kỹ năng áp dụng:** `planning-and-task-breakdown`  
+> - [NEXA_PERSONAL_DASHBOARD_UX_PRODUCT_REVIEW_2026-10-30 (1).md](file:///c:/nexa/NEXA_PERSONAL_DASHBOARD_UX_PRODUCT_REVIEW_2026-10-30%20(1).md) (Tài liệu Review & Đề xuất Sản phẩm)
+> - [AGENTS.md](file:///c:/nexa/AGENTS.md) (Quy tắc kiến trúc & UI bất biến của NEXA)
+> - [NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md](file:///c:/nexa/NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md) (Đặc tả không gian làm việc)
+>
+> **Kỹ năng áp dụng:** `using-agent-skills`, `planning-and-task-breakdown`  
 > **Trạng thái:** Kế hoạch thực thi chính thức (Active Master Plan)
 
 ---
 
-## 1. Tổng Quan & Nhận Xét Chuyên Sâu
+## 1. Đánh Giá Chuyên Môn Về Bản Review UX & Sản Phẩm
 
-### 1.1. Nhận Xét Độc Lập Về 2 Tài Liệu Căn Cứ
-1. **Tài liệu Đặc Tả Sản Phẩm (`PRODUCT_SPEC`):**
-   - Đặt nền móng triết lý đúng đắn: Xóa bỏ sự phân mảnh `LEARNER` vs `EVALUATOR`, chuyển sang **1 Danh tính Cá nhân Thống nhất** với 3 ngữ cảnh (`PERSONAL`, `ORGANIZATION`, `PLATFORM_ADMIN`).
-   - Cung cấp công thức bảo mật bất biến: `Quyền = Auth.uid + Workspace + Ownership/Org Role + Resource Permission + Quota + State`.
-   - Vạch ra ranh giới dữ liệu không được phép nhầm lẫn:
-     - `CLASS` (Lớp học dài hạn) $\ne$ `LIVE ROOM` (Phòng thi mã PIN tạm thời).
-     - `ASSIGNMENT` (Bài tập giao theo lớp) $\ne$ `ROOM PARTICIPANT` (Thí sinh vào phòng thi).
-     - `PERSONAL RESOURCE` $\ne$ `ORGANIZATION RESOURCE`.
-     - `AI Gợi ý Rubric` $\ne$ `Điểm chốt của Giảng viên`.
+Bản review ngày 30/10/2026 là một phân tích **xuất sắc, sắc bén và bám sát thực tế vận hành**. Tài liệu đã bóc tách chính xác các mâu thuẫn cốt lõi đang xuất hiện trên Dashboard cá nhân:
 
-2. **Tài liệu Báo Cáo Thẩm Định Code (`REVIEW_LATEST`):**
-   - Đánh giá thẳng thắn, chi tiết đến từng file và dòng code tại commit `7c8fbde`.
-   - Ghi nhận chính xác các điểm commit trước đã sửa (Superadmin authorization, Email invite check, Demo mode disabled on production, Storage 500 error handling, Webhook secret check, 5 regression tests).
-   - Chỉ ra chính xác các "khoảng trống nguy hiểm":
-     - **P0:** Thanh toán chưa an toàn ở cấp Database SQL (`CURRENT_USER` bypass, `PUBLIC` execute) và Webhook thiếu ép buộc amount/currency.
-     - **P1:** Bốn use case cốt lõi đang bị "chắp vá" hoặc làm giả bằng UI state (Nhóm học tập tìm nhầm ID phòng thi, Nộp bài dùng `setTimeout`, Tạo đề trong Org bị nhảy sang Personal, Role lời mời vi phạm Check constraint trong DB).
-     - **P2:** UX trùng lặp và các route chưa persistence vào database thật.
-
-### 1.2. Mục Tiêu Đích Đến Của Kế Hoạch
-Giải quyết dứt điểm các lỗ hổng P0, khép kín các luồng nghiệp vụ P1 bằng dữ liệu thật trong Supabase, dọn dẹp UX P2, và đưa hệ sinh thái NEXA AI đạt chuẩn sẵn sàng cho môi trường kiểm thử thực tế và sản xuất.
+1. **Nguyên tắc "Đúng 5 Miền Năng Lực" (Abolish 21 micro-skills UI tracking):**
+   - *Thực trạng:* Code và UI đang cố gắng đo đạc, hiển thị "0/21 kỹ năng", khiến giao diện vụn vặt và người học bị ngợp. Đánh giá trắc nghiệm/thực hành không thể bao phủ 21 kỹ năng vi mô với độ tin cậy thống kê cao.
+   - *Đột phá:* Cố định việc đo lường, công bố điểm và lộ trình ở **đúng 5 miền DigComp**. 21 kỹ năng thành phần chỉ là metadata nội bộ trong CSDL.
+2. **Xóa bỏ hiện tượng "Đa giác rỗng" (Empty Polygon) & Phân biệt `null` vs `0`:**
+   - Người mới toanh vào thấy 5 đỉnh Radar đều 0%, nhưng bên dưới lại báo "0 miền cần cải thiện". `null` (chưa có bằng chứng) bị đánh đồng với `0` (đã thi và bị 0 điểm).
+   - Giải pháp: Chỉ vẽ Radar khi có đủ bằng chứng 5 miền. Khi chưa đủ, hiển thị thanh tiến độ "Đã đánh giá x/5 miền" và CTA làm bài đầu vào.
+3. **NEXA là Nền Tảng Đánh Giá & Phát Triển Năng Lực, KHÔNG PHẢI Sàn Bán Khóa Học:**
+   - NEXA không có giỏ hàng, không kinh doanh khóa học đối tác, không ưu tiên thương mại vì tiền hoa hồng.
+   - Khóa học là **tài nguyên tuyển chọn (Curated Catalog)** từ nguồn uy tín (Google, Coursera, Vinschool, MOOCs...) nhằm khắc phục khoảng trống năng lực (< 70%). Điểm khác biệt sống còn của NEXA là **vòng lặp kín**: *Đánh giá → Xác định khoảng trống → Gợi ý khóa tuyển chọn → Học/Thực hành → Đánh giá lại cùng miền → Đo lường tiến bộ*.
+4. **Tách biệt 3 Thang Đo (Tri-Metric Separation):**
+   - *Điểm hoạt động (XP)* $\ne$ *Điểm bài thi* $\ne$ *Hồ sơ năng lực 5 miền*.
+   - Bug nghiêm trọng: `profiles.points >= 450` (điểm danh đăng nhập) đang tự động mở khóa chứng chỉ Master Certificate trong `profile-stats/route.ts`. Chứng chỉ năng lực phải dựa trên bằng chứng khảo thí hợp lệ.
+5. **Tinh gọn IA Sidebar & Chuỗi Thanh Toán Trang Riêng (payOS):**
+   - Loại bỏ `Bàn chấm bài` và `Gói & Nâng cấp` khỏi sidebar cấp 1 (đưa vào ngữ cảnh cụ thể khi có bài nộp hoặc menu tài khoản).
+   - Thay thế Modal QR thanh toán bằng chuỗi trang riêng: `/personal/billing` $\rightarrow$ `/personal/checkout/[orderId]` $\rightarrow$ `/personal/billing/result`, kết nối trực tiếp với cổng payOS đã cấu hình.
 
 ---
 
 ## 2. Quyết Định Kiến Trúc Then Chốt (Architecture Decisions)
 
-1. **ADR-01: Bảo mật Thanh toán Hai Lớp (Two-Layer Payment Enforcement):**
-   - *Lớp DB:* Hàm RPC `fulfill_payment_transaction` bị thu hồi quyền thực thi từ `PUBLIC, anon, authenticated` và CHỈ cấp cho `service_role`. Loại bỏ mọi điều kiện dựa vào `CURRENT_USER`.
-   - *Lớp API:* Webhook thanh toán cưỡng chế schema Zod nghiêm ngặt (`amount`, `currency`, `provider_tx_id`, `reference_code`, `status = PAID`). Thiếu bất kỳ trường nào sẽ fail-closed ngay lập tức. Cấm hoàn toàn mock client-side payment trên production.
-
-2. **ADR-02: Tách Rời Hoàn Toàn Domain Lớp Học (`CLASS`) và Phòng Thi Trực Tiếp (`LIVE ROOM`):**
-   - `/personal/groups/*` và `/org/[slug]/classes/*` chỉ tương tác với bảng `evaluator_classes`, `class_members`, `class_assignments`, `assignment_submissions`.
-   - `/personal/live-room` và `/personal/live-pin` chỉ tương tác với `exam_rooms`, `room_participants`.
-   - Mã tham gia lớp (`class_code`) độc lập với mã PIN 6 số của phòng thi (`room_code`).
-
-3. **ADR-03: Khép Kín Vòng Đời Bài Tập (Real Assignment Lifecycle):**
-   - Sinh viên nộp bài qua API `/api/classes/assignments/[id]/submit`.
-   - File minh chứng được tải lên bucket private `nexa-evidence`, lưu vào `assignment_submissions`.
-   - Giảng viên xem bài nộp thật tại bàn chấm `/personal/grading`. Refresh trình duyệt dữ liệu không bao giờ bị mất.
-
-4. **ADR-04: Giữ Ngữ Cảnh Tổ Chức Khi Thao Tác (Tenant Context Retention):**
-   - Khi ở `/org/[slug]/*`, các nút tạo đề/tạo lớp mở modal hoặc route con `/org/[slug]/assessments/new`, `/org/[slug]/classes/new`.
-   - Mọi tài nguyên sinh ra phải gắn `organization_id` và xác thực quyền `ORG_ADMIN` hoặc `ASSESSOR` tại backend.
+1. **ADR-05: Chuẩn Hóa Dữ Liệu Năng Lực 5 Miền (Domain-Level Competency Contract):**
+   - Toàn bộ API (`/api/personal/competency-profile`, `/api/personal/competency-radar`, `/api/ai/analyze-competency`) và dịch vụ `CompetencyAggregationService` chỉ trả về mảng 5 phần tử tương ứng 5 miền DigComp.
+   - Trạng thái miền: `INSUFFICIENT_DATA` (score = null), `NEEDS_IMPROVEMENT` (score < 70), `MEETS_TARGET` (score >= 70).
+2. **ADR-06: Tách Rời Hoàn Toàn Gamification XP Khỏi Chứng Chỉ Năng Lực:**
+   - Cột `points` trong `profiles` chỉ là "Điểm tích lũy hoạt động" (XP).
+   - Cột `isCertificateUnlocked` trong `profile-stats` chỉ `true` khi người dùng có bản ghi hợp lệ trong bảng `credentials` (được cấp từ bài thi khảo thí hoặc hội đồng thẩm định).
+3. **ADR-07: Kho Khóa Học Tuyển Chọn Độc Lập (Curated Course Catalog):**
+   - Bảng mới `course_catalog` lưu trữ các khóa học được tuyển chọn thủ công, gắn với 1 hoặc nhiều trong 5 miền, có URL chính thức đã kiểm định.
+   - AI chỉ được phép gợi ý `course_id` từ danh mục này; server sẽ validate ID trước khi trả về cho client.
+4. **ADR-08: On-Demand Contextual Routing Cho Chấm Bài & Thanh Toán:**
+   - `Bàn chấm bài` (`/personal/grading`) được kích hoạt thông qua CTA "Bài chờ chấm (n)" trên Dashboard hoặc từ danh sách bài tập của lớp học.
+   - Nâng cấp gói chuyển hướng sang `/personal/checkout/[orderId]` sử dụng payOS SDK, loại bỏ hoàn toàn `showQrModal`.
 
 ---
 
 ## 3. Lộ Trình Triển Khai Chi Tiết (Vertical Slices)
 
-### Giai Đoạn 1: P0 — Khóa Chết Thanh Toán & Bảo Mật RPC Database
-- [x] **Task 1.1**: Migration 21 — Siết chặt RPC `fulfill_payment_transaction` và kiểm tra caller context
-- [x] **Task 1.2**: Chuẩn hóa Webhook Thanh toán: Validate Schema bắt buộc & Chặn Client Mock trên Production
-- [x] **Checkpoint 1: Hoàn tất P0, chạy bộ test thanh toán & bảo mật SQL**
+```mermaid
+flowchart TD
+    subgraph Phase1["Giai Đoạn 1: Nền Tảng Dữ Liệu 5 Miền & Tinh Gọn Sidebar"]
+        T11["Task 1.1: Chuẩn hóa 5 Miền & Tách XP khỏi Chứng Chỉ"]
+        T12["Task 1.2: Tái cấu trúc PersonalSidebar theo 3 nhóm ngữ cảnh"]
+        T13["Task 1.3: Nâng cấp Dashboard 4 trạng thái & Fix Onboarding Catalog"]
+        T11 --> T12 --> T13
+    end
 
-### Giai Đoạn 2: P1 — Khép Kín Vòng Đời Lớp Học → Giao Bài → Nộp Bài → Bàn Chấm
-- [x] **Task 2.1**: Tách Domain Nhóm Học Tập (`evaluator_classes`) khỏi Phòng Thi Live (`exam_rooms`)
-- [x] **Task 2.2**: Nộp Bài Thật: Persistence `assignment_submissions` & Quản Lý File Minh Chứng
-- [x] **Task 2.3**: Bảo Mật File Minh Chứng: On-Demand Signed URLs & Quyền Theo Tài Nguyên
-- [x] **Task 2.4**: Kiểm Tra Quyền Theo Tài Nguyên Khi Chấm Bài Thủ Công & AI Grading
-- [x] **Checkpoint 2: Hoàn tất P1 Core Loop, kiểm thử luồng học tập end-to-end**
+    subgraph Phase2["Giai Đoạn 2: Kho Khóa Học Tuyển Chọn & Lộ Trình 4 Bước"]
+        T21["Task 2.1: Migration course_catalog & Seed khóa học 5 miền"]
+        T22["Task 2.2: Redesign Lộ trình học tập gắn với miền ưu tiên"]
+        T23["Task 2.3: Ràng buộc AI Recommender vào Catalog hợp lệ"]
+        T21 --> T22 --> T23
+    end
 
-### Giai Đoạn 3: P1 — Chuẩn Hóa Không Gian Tổ Chức & Lời Mời Thành Viên
-- [x] **Task 3.1**: Migration 22 — Đồng bộ Constraint `organization_invitations.org_role`
-- [x] **Task 3.2**: Giữ Ngữ Cảnh Tổ Chức Khi Tạo Đề và Quản Lý Lớp Học
-- [x] **Checkpoint 3: Hoàn tất P1 Organization, kiểm thử mời thành viên & cô lập dữ liệu**
+    subgraph Phase3["Giai Đoạn 3: Quản Lý Tác Vụ, Chấm Bài & Bảng Xếp Hạng"]
+        T31["Task 3.1: Tab mặc định 'Cần xử lý' trong Submissions"]
+        T32["Task 3.2: Tích hợp Bàn chấm bài theo ngữ cảnh"]
+        T33["Task 3.3: Dọn dẹp mock data Bảng xếp hạng"]
+        T31 --> T32 --> T33
+    end
 
-### Giai Đoạn 4: P2 — Dọn Dẹp Route, UX & Hoàn Thiện Vận Hành
-- [x] **Task 4.1**: Chuẩn Hóa Trang Kết Quả Khảo Thí (Result Page Deduplication) Theo `submissionId`
-- [x] **Task 4.2**: Phân Tách Rõ Ràng Phân Tích Năng Lực (Analysis) & Lộ Trình Học Tập (Learning Path)
-- [x] **Task 4.3**: Persistence Dữ Liệu Cài Đặt Người Dùng (`personal/settings`) Vào Database Thật
-- [x] **Task 4.4**: Cấu Hình Fail-Closed Cho Supabase Admin Client
-- [x] **Checkpoint 4: Toàn bộ kiểm thử hồi quy, Typecheck 0 lỗi, Build thành công**
+    subgraph Phase4["Giai Đoạn 4: Thanh Toán Checkout Trang Riêng (payOS) & Đánh Bóng UI"]
+        T41["Task 4.1: Xây dựng chuỗi trang Billing Checkout Result"]
+        T42["Task 4.2: Audit UI, JetBrains Mono font & WCAG AA"]
+        T41 --> T42
+    end
+
+    Phase1 --> Phase2 --> Phase3 --> Phase4
+```
 
 ---
 
@@ -88,16 +89,17 @@ Giải quyết dứt điểm các lỗ hổng P0, khép kín các luồng nghi�
 
 | Rủi ro | Mức độ | Biện pháp giảm thiểu |
 | :--- | :---: | :--- |
-| **Gãy tương thích dữ liệu cũ khi tách Class khỏi Room** | Cao | Migration kiểm tra foreign key, giữ nguyên dữ liệu các bảng `evaluator_classes` hiện hữu, không drop bảng cũ. |
-| **Tắc nghẽn Webhook thanh toán khi provider đổi định dạng** | Trung bình | Định nghĩa Zod parser linh hoạt cho các trường hợp alias (ví dụ `amount` hoặc `order_amount`), ghi log cảnh báo chi tiết. |
-| **Mất quyền truy cập file minh chứng khi chuyển bucket private** | Trung bình | Cung cấp helper sinh Signed URL có TTL 60-300 giây tại thời điểm người dùng có quyền bấm xem file. |
-| **Trùng lặp role khi chuyển đổi giữa Personal và Organization** | Thấp | Server đọc `user_organizations` và cookie `nexa_active_workspace`, luôn ưu tiên quyền tại backend thay vì tin cậy frontend. |
+| **Gãy tương thích giao diện cũ khi bỏ 21 kỹ năng** | Trung bình | Giữ nguyên schema bảng `competencies` trong CSDL; chỉ thay đổi tầng service aggregation và API response; không xóa cột/bảng. |
+| **Học viên mới không có bài thi đầu vào nào khả dụng** | Cao | Thêm cơ chế fallback hoặc kiểm tra seed để bảo đảm luôn có ít nhất 1 bài đánh giá DigComp Baseline ở trạng thái `PUBLISHED`. |
+| **AI tự ý sinh ra URL hoặc tên khóa học ảo** | Trung bình | Backend cưỡng chế chỉ chấp nhận `course_id` tồn tại trong bảng `course_catalog`. Mọi gợi ý không khớp ID sẽ bị loại bỏ. |
+| **Trải nghiệm thanh toán bị đứt quãng khi chuyển từ Modal sang Trang riêng** | Thấp | Lưu `orderId` vào `payment_transactions` và cookie/query params để người dùng F5 hoặc quay lại vẫn giữ nguyên phiên thanh toán. |
 
 ---
 
 ## 5. Tiêu Chuẩn Nghiệm Thu (Definition of Done)
-1. **P0:** Không thể thực thi `fulfill_payment_transaction` từ `PUBLIC`, `anon` hoặc `authenticated`; Webhook thiếu amount bị từ chối; unit test thanh toán pass 100%.
-2. **P1:** Danh sách nhóm tải đúng `evaluator_classes`; sinh viên nộp bài lưu DB thật; tải lại trang không mất bài; Giảng viên thấy bài nộp trên Bàn chấm.
-3. **P1:** Tạo bài trong Org giữ đúng `organization_id`; lời mời tổ chức chấp nhận đúng mọi role hợp lệ.
-4. **P2:** Không còn mock UI `setTimeout`; trang kết quả thống nhất theo `submissionId`.
-5. **Chất lượng:** `npm run typecheck` đạt 0 lỗi, `npm test` vượt qua 100% test suites, `npm run build` thành công.
+
+1. **5 Miền Năng Lực:** Chỉ hiển thị 5 miền; không còn xuất hiện chỉ số "0/21 kỹ năng"; phân biệt rõ ràng giữa `null` (chưa đo) và `0%` (đã thi 0 điểm); Radar chỉ vẽ khi đủ 5 miền.
+2. **Hành Trình Khép Kín:** Học viên làm bài đầu vào → Nhận kết quả 5 miền → Xem lộ trình với khóa học tuyển chọn thực tế → Đánh giá lại cùng miền.
+3. **Sidebar Chuẩn:** Bỏ `Bàn chấm bài` và `Gói & Nâng cấp` khỏi cấp 1; sidebar chia đúng 3 nhóm: `HỌC TẬP & PHÁT TRIỂN`, `NHÓM & CÔNG VIỆC`, `CÔNG CỤ TẠO & TỔ CHỨC`.
+4. **Thanh Toán payOS:** Nâng cấp gói đi qua 3 trang riêng biệt; QR payOS hiển thị chính xác; webhook cập nhật gói idempotent.
+5. **Chất Lượng Kỹ Thuật:** `npm run typecheck` đạt 0 lỗi, toàn bộ test suites `npm test` vượt qua 100%, tuân thủ nghiêm ngặt quy chuẩn UI trong `AGENTS.md`.

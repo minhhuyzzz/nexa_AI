@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -9,41 +9,38 @@ import {
   Home,
   CheckSquare,
   Compass,
-  Trophy,
   Award,
   Users,
   History,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
-  PlusCircle,
   FilePlus,
   Radio,
-  CreditCard,
   BarChart2,
   Database,
+  Settings,
+  Share2,
 } from 'lucide-react';
 
-const mainNavItems = [
+const learningNavItems = [
   { name: 'Tổng quan', href: '/personal/dashboard', icon: Home },
-  { name: 'Bài khảo thí', href: '/personal/assessments', icon: CheckSquare },
-  { name: 'Lộ trình học tập', href: '/personal/learning-path', icon: Compass },
-  { name: 'Radar 5 Miền', href: '/personal/competency', icon: BarChart2 },
-  { name: 'Bảng xếp hạng', href: '/personal/leaderboard', icon: Trophy },
+  { name: 'Bài đánh giá', href: '/personal/assessments', icon: CheckSquare },
+  { name: 'Hồ sơ năng lực', href: '/personal/competency', icon: BarChart2 },
+  { name: 'Lộ trình của tôi', href: '/personal/learning-path', icon: Compass },
+  { name: 'Chứng chỉ', href: '/personal/credentials', icon: Award },
 ];
 
-const personalNavItems = [
-  { name: 'Nhóm học tập', href: '/personal/groups', icon: Users },
-  { name: 'Nhiệm vụ & Hạn nộp', href: '/personal/submissions', icon: History },
-  { name: 'Chứng chỉ của tôi', href: '/personal/credentials', icon: Award },
+const workNavItems = [
+  { name: 'Nhóm của tôi', href: '/personal/groups', icon: Users },
+  { name: 'Bài được giao', href: '/personal/submissions', icon: History },
 ];
 
 const creatorNavItems = [
-  { name: 'Đề thi của tôi', href: '/personal/authoring', icon: FilePlus },
-  { name: 'Phòng thi trực tiếp', href: '/personal/live-room', icon: Radio },
-  { name: 'Bàn chấm bài', href: '/personal/grading', icon: CheckSquare },
+  { name: 'Đề đánh giá của tôi', href: '/personal/authoring', icon: FilePlus },
   { name: 'Ngân hàng câu hỏi', href: '/personal/item-bank', icon: Database },
-  { name: 'Gói & Nâng cấp', href: '/personal/billing', icon: CreditCard },
+  { name: 'Phòng thi trực tiếp', href: '/personal/live-room', icon: Radio },
+  { name: 'Góp đề cộng đồng', href: '/personal/contribute', icon: Share2 },
 ];
 
 export function PersonalSidebar() {
@@ -55,7 +52,6 @@ export function PersonalSidebar() {
     if (href === '/personal/dashboard' || href === '/dashboard') {
       return (
         pathname === '/dashboard' ||
-        pathname === '/personal/dashboard' ||
         pathname === '/personal/dashboard'
       );
     }
@@ -94,31 +90,17 @@ export function PersonalSidebar() {
             </button>
           </div>
 
-          {/* Quick Action Button: Góp đề thi cộng đồng */}
-          <div className="p-3 shrink-0">
-            <Link
-              href="/personal/contribute"
-              className={`w-full flex items-center justify-center gap-2 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors shadow-xs ${
-                isCollapsed ? 'px-0' : 'px-3'
-              }`}
-              title="Góp đề thi cộng đồng"
-            >
-              <PlusCircle className="w-4 h-4 shrink-0 text-sky-400" strokeWidth={1.75} />
-              {!isCollapsed && <span className="truncate">Góp đề thi cộng đồng</span>}
-            </Link>
-          </div>
-
           {/* Navigation Items (Scrollable) */}
-          <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
-            {/* 1. Khám phá & Học tập */}
+          <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+            {/* 1. Học tập & Phát triển */}
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                  Học tập & Năng lực
+                <div className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold font-mono">
+                  Học tập &amp; Phát triển
                 </div>
               )}
-              <div className="space-y-1">
-                {mainNavItems.map((item) => {
+              <div className="space-y-0.5">
+                {learningNavItems.map((item) => {
                   const active = isRouteActive(item.href);
                   const Icon = item.icon;
                   return (
@@ -145,15 +127,15 @@ export function PersonalSidebar() {
               </div>
             </div>
 
-            {/* 2. Cá nhân */}
+            {/* 2. Nhóm & Công việc */}
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                  Cá nhân
+                <div className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold font-mono">
+                  Nhóm &amp; Công việc
                 </div>
               )}
-              <div className="space-y-1">
-                {personalNavItems.map((item) => {
+              <div className="space-y-0.5">
+                {workNavItems.map((item) => {
                   const active = isRouteActive(item.href);
                   const Icon = item.icon;
                   return (
@@ -180,14 +162,14 @@ export function PersonalSidebar() {
               </div>
             </div>
 
-            {/* 3. Tạo & Tổ chức */}
+            {/* 3. Công cụ tạo & Tổ chức */}
             <div>
               {!isCollapsed && (
-                <div className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                  Tạo & Tổ chức
+                <div className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold font-mono">
+                  Công cụ tạo &amp; Tổ chức
                 </div>
               )}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {creatorNavItems.map((item) => {
                   const active = isRouteActive(item.href);
                   const Icon = item.icon;
@@ -216,22 +198,28 @@ export function PersonalSidebar() {
             </div>
           </nav>
 
-          {/* Feedback Button at Sidebar Bottom */}
-          <div className="p-3 border-t border-slate-100 shrink-0">
+          {/* Footer Items: Settings & Feedback */}
+          <div className="p-3 border-t border-slate-100 shrink-0 space-y-1">
+            <Link
+              href="/personal/settings"
+              title={isCollapsed ? 'Cài đặt' : undefined}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors ${
+                isCollapsed ? 'justify-center px-0' : ''
+              } ${isRouteActive('/personal/settings') ? 'bg-slate-100 text-slate-900 font-semibold' : ''}`}
+            >
+              <Settings className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={1.75} />
+              {!isCollapsed && <span>Cài đặt</span>}
+            </Link>
+
             <button
               onClick={() => setShowFeedback(true)}
               title="Đóng góp ý kiến cho NEXA"
-              className={`w-full flex items-center gap-2.5 p-2 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-xs text-slate-700 transition-colors ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors ${
                 isCollapsed ? 'justify-center px-0' : ''
               }`}
             >
               <MessageSquare className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
-              {!isCollapsed && (
-                <div className="text-left">
-                  <div className="font-semibold text-slate-900 leading-tight">Đóng góp ý kiến</div>
-                  <div className="text-[10px] text-slate-500">Giúp hoàn thiện NEXA</div>
-                </div>
-              )}
+              {!isCollapsed && <span>Góp ý kiến</span>}
             </button>
           </div>
         </div>

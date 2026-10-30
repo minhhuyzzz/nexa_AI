@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
@@ -6,19 +6,23 @@ import {
   Compass,
   CheckCircle2,
   Clock,
-  RotateCcw,
   ChevronDown,
+  ChevronUp,
   Check,
-  Lock,
   ArrowRight,
+  ExternalLink,
   Loader2,
   HelpCircle,
   Sparkles,
   RefreshCw,
   AlertCircle,
+  BookOpen,
+  Award,
+  Globe,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
+import { DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
+import { CuratedCourse } from '@/features/courses/data/curated-courses';
 
 interface RoadmapStep {
   id: string;
@@ -30,7 +34,7 @@ interface RoadmapStep {
   description: string;
   durationMinutes: number;
   pointReward: number;
-  status: 'completed' | 'in_progress' | 'locked';
+  status: 'completed' | 'in_progress';
   completedAt?: string;
   contentMarkdown: string;
 }
@@ -76,7 +80,7 @@ interface CompetencyProfileData {
   hasTakenAssessment?: boolean;
   totalAssessmentsCompleted?: number;
   latestSubmissionId?: string | null;
-  overallScore: number;
+  overallScore: number | null;
   radarData: DomainScore[];
   insights?: {
     strongest: { code: string; name: string; score: number; level: string } | null;
@@ -88,6 +92,7 @@ interface CompetencyProfileData {
 function LearningPathContent() {
   const supabase = createClient();
   const [steps, setSteps] = useState<RoadmapStep[]>([]);
+  const [curatedCourses, setCuratedCourses] = useState<CuratedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -98,7 +103,7 @@ function LearningPathContent() {
     connected: false,
   });
 
-  // Competency Profile & Radar State
+  // Competency Profile State
   const [competencyProfile, setCompetencyProfile] = useState<CompetencyProfileData | null>(null);
 
   // Interactive AI Analysis State
@@ -136,7 +141,7 @@ function LearningPathContent() {
     }
   }, []);
 
-  // 2. Fetch Competency Profile for Radar & Insights
+  // 2. Fetch Competency Profile
   const fetchCompetencyProfile = useCallback(async () => {
     try {
       const res = await fetch('/api/personal/competency-profile');
@@ -151,6 +156,19 @@ function LearningPathContent() {
       }
     } catch {
       // Fallback handled by component defaults
+    }
+  }, []);
+
+  // 3. Fetch Curated External Courses
+  const fetchCuratedCourses = useCallback(async () => {
+    try {
+      const res = await fetch('/api/courses');
+      if (res.ok) {
+        const json = await res.json();
+        setCuratedCourses(json.courses || []);
+      }
+    } catch {
+      // Fallback
     }
   }, []);
 
@@ -185,7 +203,7 @@ function LearningPathContent() {
     }
   };
 
-  // 3. Fetch Learning Modules & User Progress
+  // 4. Fetch Learning Modules & User Progress
   const fetchLearningPath = useCallback(async () => {
     setLoading(true);
     try {
@@ -214,34 +232,23 @@ function LearningPathContent() {
         const prog = userProgressMap.get(m.id);
         const isCompleted = prog?.is_completed;
 
-        let status: 'completed' | 'in_progress' | 'locked' = 'locked';
-        if (isCompleted) {
-          status = 'completed';
-        } else if (idx === 0 || (idx > 0 && userProgressMap.get(rows[idx - 1]?.id)?.is_completed)) {
-          status = 'in_progress';
-        }
-
         return {
           id: m.id,
           stepNumber: idx + 1,
-          domainCode: m.domain_code || `D${idx + 1}`,
-          competencyCode: m.skill_code || `${idx + 1}.1`,
+          domainCode: m.domain_code || `D${(idx % 5) + 1}`,
+          competencyCode: m.skill_code || `${(idx % 5) + 1}.1`,
           skillName: m.skill_code ? `Kỹ năng ${m.skill_code}` : 'Kỹ năng số cốt lõi',
           title: m.title,
           description: m.description || 'Chuyên đề bồi dưỡng năng lực số theo khung chuẩn DigComp 3.0.',
           durationMinutes: m.duration_minutes || 20,
           pointReward: m.point_reward || 30,
-          status,
+          status: isCompleted ? 'completed' : 'in_progress',
           completedAt: prog?.completed_at ? new Date(prog.completed_at).toLocaleDateString('vi-VN') : undefined,
           contentMarkdown: m.content_markdown || 'Nội dung học liệu đang được biên tập.',
         };
       });
 
       setSteps(mapped);
-      if (mapped.length > 0) {
-        const firstActive = mapped.find((s) => s.status === 'in_progress') || mapped[0];
-        setExpandedStepId(firstActive.id);
-      }
     } catch (err) {
       console.error('Error loading learning path:', err);
     } finally {
@@ -252,16 +259,13 @@ function LearningPathContent() {
   useEffect(() => {
     checkAIConnection();
     fetchCompetencyProfile();
+    fetchCuratedCourses();
     fetchLearningPath();
-  }, [checkAIConnection, fetchCompetencyProfile, fetchLearningPath]);
+  }, [checkAIConnection, fetchCompetencyProfile, fetchCuratedCourses, fetchLearningPath]);
 
   const completedCount = steps.filter((s) => s.status === 'completed').length;
-  const progressPercent = steps.length > 0 ? Math.round((completedCount / steps.length) * 100) : 0;
 
   const handleCompleteStep = async (stepId: string) => {
-    const targetStep = steps.find((s) => s.id === stepId);
-    if (!targetStep) return;
-
     try {
       const res = await fetch('/api/learning/complete', {
         method: 'POST',
@@ -277,18 +281,15 @@ function LearningPathContent() {
       }
 
       setSteps((prev) =>
-        prev.map((step, idx) => {
+        prev.map((step) => {
           if (step.id === stepId) {
             return { ...step, status: 'completed', completedAt: 'Vừa xong' };
-          }
-          if (idx > 0 && prev[idx - 1].id === stepId && step.status === 'locked') {
-            return { ...step, status: 'in_progress' };
           }
           return step;
         })
       );
 
-      setToastMessage(data.message || 'Tuyệt vời! Bạn đã hoàn thành học liệu, nhận điểm thưởng và mở khóa bước tiếp theo.');
+      setToastMessage(data.message || 'Tuyệt vời! Bạn đã hoàn thành học liệu và nhận điểm thưởng rèn luyện.');
       setTimeout(() => setToastMessage(null), 5000);
     } catch (err) {
       console.error('Error completing module:', err);
@@ -297,9 +298,22 @@ function LearningPathContent() {
     }
   };
 
+  const radarData = competencyProfile?.radarData || [
+    { code: 'D1', name: 'Thông tin & Dữ liệu', score: null, target: 70 },
+    { code: 'D2', name: 'Giao tiếp & Hợp tác', score: null, target: 70 },
+    { code: 'D3', name: 'Sáng tạo Nội dung số', score: null, target: 70 },
+    { code: 'D4', name: 'An toàn & Bảo mật', score: null, target: 70 },
+    { code: 'D5', name: 'Giải quyết Vấn đề', score: null, target: 70 },
+  ];
+
+  const assessedDomains = radarData.filter((d) => d.score !== null);
+  const gapDomains = assessedDomains.filter((d) => (d.score as number) < 70);
+  const proficientDomains = assessedDomains.filter((d) => (d.score as number) >= 70);
+  const unassessedDomains = radarData.filter((d) => d.score === null);
+
   return (
     <div className="space-y-6">
-      {/* 1. Page Header & AI Connectivity Live Status */}
+      {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -309,438 +323,322 @@ function LearningPathContent() {
             </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Lộ Trình Bồi Dưỡng &amp; Khung Năng Lực AI
+            Lộ Trình Của Tôi
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Theo dõi sơ đồ radar 5 miền, nhận xét sư phạm AI và học tập các chuyên đề bồi dưỡng khoảng trống kỹ năng (&lt; 70%).
+            Củng cố 5 miền năng lực số DigComp: học liệu thực hành trong NEXA kết hợp khóa học tuyển chọn từ nguồn uy tín.
           </p>
         </div>
 
-        {/* AI Live Status Badge */}
+        {/* On-Demand AI Action Button */}
         <div className="flex items-center gap-2">
-          <div
-            className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 shadow-2xs transition-colors ${
-              aiStatus.loading
-                ? 'bg-slate-50 border-slate-200 text-slate-500'
-                : aiStatus.connected
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-amber-50 border-amber-200 text-amber-800'
-            }`}
+          <button
+            type="button"
+            onClick={handleTriggerAIAnalysis}
+            disabled={isAnalyzing || !competencyProfile?.hasTakenAssessment}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors shadow-xs"
           >
-            {aiStatus.loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
-            ) : aiStatus.connected ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
+                <span>AI đang phân tích...</span>
+              </>
             ) : (
-              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+              <>
+                <Sparkles className="w-4 h-4 text-sky-200" strokeWidth={1.75} />
+                <span>Phân tích AI theo yêu cầu</span>
+              </>
             )}
-
-            <span>
-              {aiStatus.loading
-                ? 'Đang kiểm tra hệ thống AI...'
-                : aiStatus.connected
-                ? 'Hệ thống Đánh giá AI • Sẵn sàng'
-                : 'Hệ thống AI • Ngoại tuyến'}
-            </span>
-
-            <button
-              type="button"
-              onClick={checkAIConnection}
-              disabled={aiStatus.loading}
-              title="Kiểm tra lại kết nối AI"
-              className="ml-1 p-0.5 text-slate-400 hover:text-slate-700 transition-colors"
-            >
-              <RefreshCw className={`w-3 h-3 ${aiStatus.loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-
-          <Link
-            href="/personal/assessments"
-            className="px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
-          >
-            <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Đánh giá lại</span>
-          </Link>
+          </button>
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast notification */}
       {toastMessage && (
-        <div className="p-4 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-medium shadow-xs flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
+        <div className="p-3.5 rounded-md bg-slate-900 text-white text-xs font-medium flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
           <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white text-xs ml-4 font-mono">
+            Đóng
+          </button>
         </div>
       )}
 
-      {/* 2. Top Section: Radar Chart + Interactive AI Pedagogical Review */}
-      <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-100 gap-2">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">
-              Sơ đồ năng lực 5 miền &amp; Chẩn đoán AI
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Phân tích trực quan mạng nhện DigComp 3.0 và nhận xét chẩn đoán sư phạm trực tiếp từ AI.
-            </p>
+      {/* Error notification */}
+      {analysisError && (
+        <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
+            <span>{analysisError}</span>
           </div>
-          <Link
-            href="/personal/competency/analysis"
-            className="text-xs font-semibold text-sky-600 hover:text-sky-700 inline-flex items-center gap-1"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>Xem trang phân tích đầy đủ</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <button onClick={() => setAnalysisError(null)} className="text-rose-500 hover:text-rose-700 text-xs font-mono">
+            Bỏ qua
+          </button>
+        </div>
+      )}
+
+      {/* 2. Overview Metric Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
+          <div className="text-xs text-slate-500 font-medium">Miền đã đánh giá</div>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono tabular-nums mt-1">
+            {assessedDomains.length}
+            <span className="text-sm font-normal text-slate-400 ml-1">/ 5 miền</span>
+          </div>
+          <div className="text-[11px] text-slate-500 mt-1">Khảo thí chuẩn hóa theo DigComp</div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
-          {/* Radar Chart (6 cols) */}
-          <div className="lg:col-span-6 flex justify-center py-2">
-            <CompetencyRadarChart data={competencyProfile?.radarData} size={320} />
+        <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
+          <div className="text-xs text-slate-500 font-medium">Khoảng trống cần bồi dưỡng (&lt; 70%)</div>
+          <div className="text-2xl font-extrabold text-amber-600 font-mono tabular-nums mt-1">
+            {gapDomains.length}
+            <span className="text-sm font-normal text-slate-400 ml-1">miền ưu tiên</span>
           </div>
+          <div className="text-[11px] text-amber-700 mt-1">Dựa trên kết quả khảo thí thực tế</div>
+        </div>
 
-          {/* Interactive AI Diagnostic Column (6 cols) */}
-          <div className="lg:col-span-6 space-y-4">
-            <div className="p-5 rounded-md bg-slate-50 border border-slate-200 space-y-3.5 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                    Nhận xét Sư phạm &amp; Chẩn đoán AI
-                  </span>
-                  {aiAnalysis && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Đã chẩn đoán
-                    </span>
-                  )}
-                </div>
-                <span className="font-bold text-slate-900 bg-white px-2.5 py-0.5 rounded border border-slate-200 font-mono">
-                  {competencyProfile?.hasTakenAssessment
-                    ? `Điểm: ${competencyProfile.overallScore}/100`
-                    : 'Chưa khảo thí'}
-                </span>
-              </div>
-
-              {/* Case 1: Learner hasn't completed any assessment */}
-              {!competencyProfile?.hasTakenAssessment ? (
-                <div className="space-y-3 py-2">
-                  <div className="p-3.5 rounded-md bg-white border border-slate-200 space-y-2">
-                    <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
-                      <Compass className="w-4 h-4 text-sky-600" />
-                      <span>Sơ đồ 5 miền đang ở mức khởi điểm 0%</span>
-                    </div>
-                    <p className="text-slate-600 leading-relaxed text-[11px]">
-                      Bạn chưa hoàn thành bài khảo thí nào. Hãy làm bài khảo thí đầu tiên để hệ thống ghi nhận điểm thực và kích hoạt nhận xét sư phạm cá nhân hóa từ AI.
-                    </p>
-                  </div>
-                  <Link
-                    href="/personal/assessments"
-                    className="w-full py-2.5 px-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
-                  >
-                    <span>Làm bài khảo thí ngay</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              ) : isAnalyzing ? (
-                /* Case 2: AI is currently analyzing */
-                <div className="py-8 text-center space-y-3">
-                  <Loader2 className="w-7 h-7 text-sky-600 animate-spin mx-auto" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-slate-900">AI đang phân tích dữ liệu khảo thí...</p>
-                    <p className="text-[11px] text-slate-500">Đang đối chiếu rubric DigComp 3.0 và tạo nhận xét sư phạm.</p>
-                  </div>
-                </div>
-              ) : aiAnalysis ? (
-                /* Case 3: AI analysis is available */
-                <div className="space-y-3">
-                  {/* Overall Pedagogical Feedback */}
-                  <div className="p-3 rounded-md bg-white border border-slate-200 text-slate-700 text-[11px] leading-relaxed">
-                    <span className="font-semibold text-slate-900 block mb-1">
-                      Nhận xét tổng thể ({aiAnalysis.overallLevel || 'Đạt chuẩn'}):
-                    </span>
-                    {aiAnalysis.pedagogicalFeedback || aiAnalysis.overallSummary || 'Người học đã hoàn thành bài thi với kết quả được ghi nhận trên hệ thống.'}
-                  </div>
-
-                  {/* Strengths */}
-                  {aiAnalysis.strengths && aiAnalysis.strengths.length > 0 && (
-                    <div className="space-y-1">
-                      <span className="font-semibold text-slate-900 text-[11px] block">Miền thế mạnh:</span>
-                      <div className="space-y-1">
-                        {aiAnalysis.strengths.slice(0, 2).map((s, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-[11px] text-slate-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
-                            <span>{s}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Weaknesses / Gaps */}
-                  {((aiAnalysis.weaknesses && aiAnalysis.weaknesses.length > 0) || (aiAnalysis.skillGaps && aiAnalysis.skillGaps.length > 0)) && (
-                    <div className="space-y-1 pt-1">
-                      <span className="font-semibold text-amber-900 text-[11px] block">Khoảng trống cần cải thiện:</span>
-                      <div className="space-y-1">
-                        {(aiAnalysis.weaknesses || []).slice(0, 2).map((w, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-[11px] text-amber-800 bg-[#FEF3C7]/60 p-2 rounded border border-[#FDE68A]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1 shrink-0" />
-                            <span>{w}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action buttons */}
-                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={handleTriggerAIAnalysis}
-                      disabled={isAnalyzing}
-                      className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>Phân tích lại</span>
-                    </button>
-                    <a
-                      href="#roadmap-steps"
-                      className="px-3 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors inline-flex items-center gap-1"
-                    >
-                      <span>Xem lộ trình bồi dưỡng</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                /* Case 4: Assessment completed, ready for AI trigger */
-                <div className="space-y-3.5">
-                  <div className="p-3.5 rounded-md bg-white border border-slate-200 space-y-2">
-                    <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
-                      <span>Sẵn sàng chẩn đoán năng lực với AI</span>
-                    </div>
-                    <p className="text-slate-600 leading-relaxed text-[11px]">
-                      Hệ thống đã ghi nhận điểm thi của bạn. Nhấn nút bên dưới để AI tiến hành nhận xét sư phạm chi tiết, chỉ ra điểm mạnh, điểm yếu và gợi ý chuyên đề khắc phục khoảng trống năng lực.
-                    </p>
-                  </div>
-
-                  {analysisError && (
-                    <div className="p-2.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[11px] flex items-center gap-2">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{analysisError}</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleTriggerAIAnalysis}
-                    disabled={isAnalyzing}
-                    className="w-full py-2.5 px-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-300" />
-                    <span>Kích hoạt AI Nhận xét &amp; Đề xuất Lộ trình</span>
-                  </button>
-                </div>
-              )}
-            </div>
+        <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
+          <div className="text-xs text-slate-500 font-medium">Học phần NEXA hoàn thành</div>
+          <div className="text-2xl font-extrabold text-sky-600 font-mono tabular-nums mt-1">
+            {completedCount}
+            <span className="text-sm font-normal text-slate-400 ml-1">/ {steps.length} bài</span>
           </div>
+          <div className="text-[11px] text-slate-500 mt-1">Học tự do không khóa tuần tự</div>
         </div>
       </div>
 
-      {/* 3. Bottom Section: Roadmap 4-Step Breakdown Placed Below */}
-      <div id="roadmap-steps" className="space-y-4 pt-2">
-        {/* Section Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">
-              Lộ Trình Bồi Dưỡng Khoảng Trống Năng Lực (4 Bước)
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chuyên đề học tập tự định hướng theo chuẩn DigComp 3.0, hoàn thành từng bước để mở khóa bước kế tiếp.
-            </p>
+      {/* AI Pedagogical Feedback Box (if available) */}
+      {aiAnalysis && (
+        <div className="p-4 rounded-md bg-sky-50/60 border border-sky-200 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-sky-900">
+            <Sparkles className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+            <span>Đánh Giá Sư Phạm Từ AI Gateway ({aiAnalysis.overallLevel || 'INTERMEDIATE'})</span>
           </div>
+          <p className="text-xs text-slate-700 leading-relaxed">
+            {aiAnalysis.pedagogicalFeedback || aiAnalysis.overallSummary || 'Hệ thống đã cập nhật gợi ý lộ trình bồi dưỡng.'}
+          </p>
         </div>
+      )}
 
-        {/* Gap Domains Highlight Banner */}
-        {competencyProfile?.hasTakenAssessment && (
-          (() => {
-            const gapDomains = competencyProfile.radarData.filter((d) => d.score < 70);
-            if (gapDomains.length === 0) {
-              return (
-                <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
-                  <span>Xuất sắc! Cả 5 miền năng lực của bạn đều đạt chuẩn &ge; 70%. Bạn có thể tiếp tục học các chuyên đề nâng cao bên dưới.</span>
-                </div>
-              );
-            }
-            return (
-              <div className="p-4 rounded-md bg-amber-50/70 border border-amber-200 space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                  <span>Gợi ý ưu tiên bồi dưỡng khoảng trống năng lực ({gapDomains.length} miền &lt; 70%)</span>
-                </div>
-                <p className="text-xs text-amber-800">
-                  Dựa trên kết quả chẩn đoán, người học còn đang yếu ở các miền sau. Hệ thống khuyến nghị ưu tiên học tập các chuyên đề tương ứng:
-                </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {gapDomains.map((d) => (
-                    <span
-                      key={d.code}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white text-slate-800 border border-amber-300 text-xs font-medium shadow-2xs"
-                    >
-                      <span className="font-mono font-bold text-amber-700">{d.code}</span>
-                      <span>{d.name}</span>
-                      <span className="font-mono text-slate-500">({d.score}% / 70%)</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          })()
-        )}
+      {/* 3. Section: PRIORITY GAP DOMAINS (< 70%) */}
+      {gapDomains.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 font-mono">
+              Miền Năng Lực Cần Ưu Tiên Cải Thiện (&lt; 70%)
+            </h2>
+          </div>
 
-
-        {/* Step Cards List */}
-        <div className="space-y-3">
-          {loading ? (
-            <div className="py-16 flex flex-col items-center justify-center text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
-              <p className="text-xs">Đang tải chuyên đề bồi dưỡng từ CSDL Supabase...</p>
-            </div>
-          ) : steps.length === 0 ? (
-            <div className="p-12 text-center rounded-md border border-slate-200 bg-white">
-              <HelpCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
-              <h3 className="text-sm font-semibold text-slate-900 mb-1">Chưa có học phần bồi dưỡng</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-                Hệ thống đang chuẩn bị các học liệu bồi dưỡng theo chuẩn DigComp 3.0.
-              </p>
-            </div>
-          ) : (
-            steps.map((step) => {
-              const isExpanded = expandedStepId === step.id;
-              const isCompleted = step.status === 'completed';
-              const isLocked = step.status === 'locked';
-              const isInProgress = step.status === 'in_progress';
-              const isGapStep =
-                competencyProfile?.hasTakenAssessment &&
-                competencyProfile.radarData.some((d) => d.code === step.domainCode && d.score < 70);
+          <div className="space-y-4">
+            {gapDomains.map((dom) => {
+              const domModules = steps.filter((s) => s.domainCode === dom.code);
+              const domCourses = curatedCourses.filter((c) => c.domain_codes.includes(dom.code));
 
               return (
                 <div
-                  key={step.id}
-                  className={`rounded-md border transition-all bg-white shadow-xs overflow-hidden ${
-                    isInProgress
-                      ? 'border-sky-300 ring-1 ring-sky-200'
-                      : isCompleted
-                      ? 'border-emerald-200'
-                      : 'border-slate-200 opacity-80'
-                  }`}
+                  key={dom.code}
+                  className="rounded-md border border-amber-200 bg-white shadow-xs overflow-hidden"
                 >
-                  {/* Step Header */}
-                  <div
-                    onClick={() => !isLocked && setExpandedStepId(isExpanded ? null : step.id)}
-                    className={`p-4 flex items-start sm:items-center justify-between gap-3 cursor-pointer select-none ${
-                      isExpanded ? 'bg-slate-50/50 border-b border-slate-100' : ''
-                    }`}
-                  >
-                    <div className="flex items-start sm:items-center gap-3 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold text-xs font-mono ${
-                          isCompleted
-                            ? 'bg-emerald-600 text-white'
-                            : isInProgress
-                            ? 'bg-sky-600 text-white'
-                            : 'bg-slate-100 text-slate-400'
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <Check className="w-4 h-4 stroke-[3]" />
-                        ) : isLocked ? (
-                          <Lock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                        ) : (
-                          step.stepNumber
-                        )}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
-                            {step.competencyCode}
-                          </span>
-                          <span className="text-[11px] text-slate-500 font-medium truncate">
-                            {step.skillName}
-                          </span>
-                          {isGapStep && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-                              Cần cải thiện ({step.domainCode})
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                          {step.title}
-                        </h3>
+                  {/* Domain Header */}
+                  <div className="p-4 bg-amber-50/40 border-b border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 rounded bg-amber-100 text-amber-800 text-xs font-mono font-bold">
+                        {dom.code}
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900">{dom.name}</h3>
+                        <p className="text-[11px] text-amber-800 mt-0.5">
+                          Điểm hiện tại: <strong className="font-mono">{dom.score}%</strong> / Chuẩn mục tiêu 70%
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0 text-xs">
-                      <div className="hidden sm:flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
-                        <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
-                        <span>{step.durationMinutes}p</span>
+                    <Link
+                      href="/personal/assessments"
+                      className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shrink-0 shadow-2xs"
+                    >
+                      <span>Đánh giá lại miền này</span>
+                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    </Link>
+                  </div>
+
+                  {/* 2-Column Pathway */}
+                  <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Column A: Học liệu thực hành trong NEXA */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 pb-1 border-b border-slate-100">
+                        <BookOpen className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+                        <span>Học liệu thực hành trên NEXA</span>
                       </div>
 
-                      <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded text-emerald-700 bg-emerald-50 border border-emerald-200">
-                        +{step.pointReward} điểm
+                      {domModules.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic">Đang cập nhật học liệu NEXA cho miền này.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {domModules.map((mod) => (
+                            <div
+                              key={mod.id}
+                              className="p-3 rounded-md border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors space-y-2"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="text-xs font-bold text-slate-900">{mod.title}</h4>
+                                  <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{mod.description}</p>
+                                </div>
+                                {mod.status === 'completed' && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                    Đã học
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                  <span>{mod.durationMinutes} phút</span>
+                                </span>
+
+                                <div className="flex items-center gap-2">
+                                  {mod.status !== 'completed' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCompleteStep(mod.id)}
+                                      className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-semibold transition-colors shadow-2xs"
+                                    >
+                                      Đánh dấu đã học
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Column B: Khóa học tuyển chọn từ đối tác uy tín */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 pb-1 border-b border-slate-100">
+                        <Globe className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
+                        <span>Khóa học được tuyển chọn (NEXA Curated)</span>
                       </div>
 
-                      {!isLocked && (
-                        <ChevronDown
-                          className={`w-4 h-4 text-slate-400 transition-transform ${
-                            isExpanded ? 'rotate-180' : ''
-                          }`}
-                          strokeWidth={1.75}
-                        />
+                      {domCourses.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic">Chưa có khóa học ngoài được tuyển chọn cho miền này.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {domCourses.map((crs) => (
+                            <div
+                              key={crs.id}
+                              className="p-3 rounded-md border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors space-y-2"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">
+                                      {crs.provider}
+                                    </span>
+                                    <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      {crs.price_type === 'FREE' ? 'Miễn phí' : 'Có phí'}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-xs font-bold text-slate-900">{crs.title}</h4>
+                                  <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{crs.short_description}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                  <span>{crs.duration}</span>
+                                </span>
+
+                                <a
+                                  href={crs.official_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-semibold inline-flex items-center gap-1 transition-colors shadow-2xs"
+                                >
+                                  <span>Xem tại nguồn</span>
+                                  <ExternalLink className="w-3 h-3 text-slate-500" strokeWidth={1.75} />
+                                </a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {/* Step Body */}
-                  {isExpanded && !isLocked && (
-                    <div className="p-5 space-y-4 bg-white text-xs leading-relaxed text-slate-700">
-                      <p className="text-slate-600">{step.description}</p>
-
-                      <div className="p-4 rounded-md bg-slate-50 border border-slate-200 font-mono text-xs whitespace-pre-line leading-relaxed text-slate-800">
-                        {step.contentMarkdown}
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <div className="text-[11px] text-slate-400 font-mono">
-                          {isCompleted && step.completedAt && (
-                            <span>Hoàn thành ngày: {step.completedAt}</span>
-                          )}
-                        </div>
-
-                        {!isCompleted ? (
-                          <button
-                            onClick={() => handleCompleteStep(step.id)}
-                            className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs"
-                          >
-                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Đánh dấu đã hoàn thành</span>
-                          </button>
-                        ) : (
-                          <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
-                            <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
-                            <span>Đã đạt yêu cầu</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
-            })
-          )}
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 4. Section: PROFICIENT DOMAINS (>= 70%) */}
+      {proficientDomains.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 font-mono">
+              Miền Đã Đạt Chuẩn Mục Tiêu (&ge; 70%)
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {proficientDomains.map((dom) => (
+              <div
+                key={dom.code}
+                className="p-3.5 rounded-md border border-slate-200 bg-white shadow-xs flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-mono font-bold">
+                    {dom.code}
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">{dom.name}</h4>
+                    <p className="text-[11px] text-emerald-700 font-medium">Đạt chuẩn mục tiêu</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold font-mono text-slate-900 tabular-nums">
+                  {dom.score}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 5. Section: UNASSESSED DOMAINS */}
+      {unassessedDomains.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-slate-400" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 font-mono">
+              Miền Chưa Có Dữ Liệu Đánh Giá
+            </h2>
+          </div>
+
+          <div className="p-4 rounded-md border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-slate-700">
+                Bạn còn <strong>{unassessedDomains.length} miền</strong> ({unassessedDomains.map((d) => d.code).join(', ')}) chưa có dữ liệu khảo thí.
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Làm bài đánh giá để hệ thống đo lường và đưa ra gợi ý chính xác thay vì gán nhãn yếu ngẫu nhiên.
+              </p>
+            </div>
+            <Link
+              href="/personal/assessments"
+              className="px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1 transition-colors shrink-0 shadow-xs"
+            >
+              <span>Làm bài khảo thí ngay</span>
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -749,8 +647,9 @@ export default function LearnerLearningPathPage() {
   return (
     <Suspense
       fallback={
-        <div className="py-20 text-center text-xs text-slate-400">
-          Đang tải lộ trình bồi dưỡng...
+        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
+          <p className="text-xs">Đang tải lộ trình học tập cá nhân...</p>
         </div>
       }
     >

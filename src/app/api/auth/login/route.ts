@@ -59,10 +59,59 @@ export async function POST(request: Request) {
     }
 
     let redirectUrl = '/personal/dashboard';
+    let targetOrgId: string | null = null;
+    let targetOrgSlug: string | null = null;
+
     if (role === 'ADMIN') {
       redirectUrl = '/admin/dashboard';
     } else {
-      redirectUrl = '/personal/dashboard';
+      // 3. Check organization memberships
+      const { data: userOrgs } = await supabase
+        .from('user_organizations')
+        .select(`
+          organization_id,
+          org_role,
+          organizations (
+            id,
+            name,
+            slug,
+            is_active
+          )
+        `)
+        .eq('user_id', authData.user.id)
+        .eq('status', 'ACTIVE');
+
+      interface OrgMemberRow {
+        organization_id: string;
+        org_role: string;
+        organizations: {
+          id: string;
+          name: string;
+          slug: string;
+          is_active?: boolean;
+        } | null;
+      }
+
+      const activeOrgs = ((userOrgs as unknown as OrgMemberRow[]) || [])
+        .filter((m) => m.organizations && m.organizations.is_active !== false)
+        .map((m) => ({
+          id: m.organization_id,
+          slug: m.organizations!.slug,
+          name: m.organizations!.name,
+          role: m.org_role,
+        }));
+
+      if (activeOrgs.length > 0) {
+        const isOrgLeader = activeOrgs.some((o) =>
+          ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(o.role)
+        );
+        if (isOrgLeader || role === 'EVALUATOR') {
+          const primaryOrg = activeOrgs[0];
+          redirectUrl = `/org/${primaryOrg.slug}`;
+          targetOrgId = primaryOrg.id;
+          targetOrgSlug = primaryOrg.slug;
+        }
+      }
     }
 
     if (role === 'LEARNER') {
@@ -110,6 +159,26 @@ export async function POST(request: Request) {
       redirectUrl,
     });
     response.cookies.delete('nexa_demo_role');
+
+    if (targetOrgId && targetOrgSlug) {
+      response.cookies.set('nexa_active_workspace', `org_${targetOrgId}`, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+      response.cookies.set('nexa_active_org_slug', targetOrgSlug, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+    } else if (role !== 'ADMIN') {
+      response.cookies.set('nexa_active_workspace', 'personal', {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+    }
+
     return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

@@ -118,6 +118,19 @@ export async function getEffectiveUser(supabase: SupabaseClient): Promise<Effect
           org_role: matchedOrg.org_role,
         };
       }
+    } else if (!activeWsCookie && organizations.length > 0) {
+      const primaryOrg = organizations[0];
+      if (
+        ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(primaryOrg.org_role) ||
+        profile?.role === 'EVALUATOR'
+      ) {
+        active_workspace = {
+          type: 'ORGANIZATION',
+          organization_id: primaryOrg.organization_id,
+          organization_name: primaryOrg.organization_name,
+          org_role: primaryOrg.org_role,
+        };
+      }
     }
 
     return {

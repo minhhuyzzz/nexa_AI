@@ -8,6 +8,7 @@ import {
   QuestionMistakeInput,
 } from '@/features/ai-gateway/types/competency.types';
 import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
+import { FALLBACK_CURATED_COURSES } from '@/features/courses/data/curated-courses';
 
 const requestSchema = z.object({
   submissionId: z.string().uuid('Mã bài thi (submissionId) không hợp lệ'),
@@ -237,7 +238,7 @@ export async function POST(request: Request) {
     const rawAssessment = Array.isArray(submission.assessments) ? submission.assessments[0] : submission.assessments;
     const assessmentTitle = rawAssessment?.title || 'Bài đánh giá năng lực số';
 
-    // 8. Fetch real learning modules from database to ground AI pathway recommendations
+    // 8. Fetch real learning modules and curated courses from database to ground AI pathway recommendations
     const { data: dbModules } = await supabase
       .from('learning_modules')
       .select('id, skill_code, title, duration_minutes')
@@ -249,6 +250,23 @@ export async function POST(request: Request) {
       title: m.title,
       durationMinutes: m.duration_minutes || 20,
     }));
+
+    const { data: dbCourses } = await supabase
+      .from('course_catalog')
+      .select('id, title, provider, domain_codes, official_url')
+      .eq('review_status', 'APPROVED');
+
+    interface CourseRef {
+      id: string;
+      title: string;
+      provider: string;
+      domain_codes: string[];
+      official_url: string;
+    }
+
+    const validCourses: CourseRef[] = (
+      dbCourses && dbCourses.length > 0 ? dbCourses : FALLBACK_CURATED_COURSES
+    ) as CourseRef[];
 
     // 9. Call AI Gateway
     const startTime = performance.now();
@@ -273,6 +291,25 @@ export async function POST(request: Request) {
     }
 
     const latencyMs = Math.round(performance.now() - startTime);
+
+    // Enforce grounding: Recommended courses must match verified course catalog
+    if (aiOutput && aiOutput.recommendedCourses && Array.isArray(aiOutput.recommendedCourses)) {
+      aiOutput.recommendedCourses = aiOutput.recommendedCourses.map((rc) => {
+        const found = validCourses.find(
+          (c) => c.id === rc.id || c.domain_codes.includes(rc.domainCode)
+        );
+        if (found) {
+          return {
+            ...rc,
+            id: found.id,
+            title: found.title,
+            provider: found.provider,
+            actionUrl: found.official_url,
+          };
+        }
+        return rc;
+      });
+    }
 
     // Log AI Usage Event
     await AIUsageLoggerService.logUsage(supabase, {

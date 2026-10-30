@@ -5,7 +5,7 @@ import React from 'react';
 export interface DomainScore {
   code: string;
   name: string;
-  score: number; // 0 to 100
+  score: number | null; // 0 to 100 or null if unassessed
   target: number; // baseline benchmark
   level?: string;
 }
@@ -67,10 +67,11 @@ export function CompetencyRadarChart({
     })
     .join(' ');
 
-  // Actual score polygon
+  // Actual score polygon (only when score is not null)
   const scorePolygon = data
     .map((d, i) => {
-      const { x, y } = getPoint(i, d.score / 100);
+      const val = d.score !== null ? d.score / 100 : 0;
+      const { x, y } = getPoint(i, val);
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(' ');
@@ -283,7 +284,7 @@ export function CompetencyRadarChart({
         />
 
         {/* Learner Score Polygon with true visual depth */}
-        {!data.every((d) => (d.score ?? 0) === 0) ? (
+        {!data.every((d) => d.score === null || d.score === 0) ? (
           <polygon
             points={scorePolygon}
             fill={isHero ? 'url(#radarScoreElevationGrad)' : 'rgba(2, 132, 199, 0.16)'}
@@ -302,8 +303,9 @@ export function CompetencyRadarChart({
 
         {/* Points and Standardized Clean Labels */}
         {data.map((d, i) => {
-          const isZero = (d.score ?? 0) === 0;
-          const pt = getPoint(i, d.score / 100);
+          const isUnassessed = d.score === null;
+          const isZero = isUnassessed || d.score === 0;
+          const pt = getPoint(i, d.score !== null ? d.score / 100 : 0);
           const cfg = getLabelConfig(i);
 
           return (
@@ -364,9 +366,11 @@ export function CompetencyRadarChart({
                   y={cfg.scoreY}
                   textAnchor={cfg.anchor}
                   dominantBaseline="central"
-                  className="text-[11px] font-sans fill-sky-600 dark:fill-sky-400 font-bold"
+                  className={`text-[11px] font-sans font-bold ${
+                    d.score === null ? 'fill-slate-400 dark:fill-zinc-500' : 'fill-sky-600 dark:fill-sky-400'
+                  }`}
                 >
-                  {d.score}%
+                  {d.score !== null ? `${d.score}%` : '—'}
                 </text>
               )}
             </g>

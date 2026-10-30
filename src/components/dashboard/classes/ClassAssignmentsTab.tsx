@@ -316,9 +316,19 @@ export function ClassAssignmentsTab({
                       <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
                     </Link>
                   ) : (
-                    <span className="text-xs px-2.5 py-1 rounded bg-slate-100 font-mono text-slate-700 font-semibold border border-slate-200">
-                      Đang hoạt động
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Link
+                        href={`/personal/grading?assessmentId=${asg.assessment_id}&classId=${classId}`}
+                        className="px-3 py-1.5 rounded bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="Mở Bàn chấm bài cho bài khảo thí này"
+                      >
+                        <span>Bàn chấm</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                      </Link>
+                      <span className="text-xs px-2.5 py-1 rounded bg-slate-100 font-mono text-slate-700 font-semibold border border-slate-200">
+                        Đang hoạt động
+                      </span>
+                    </div>
                   )}
                 </div>
 

@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Check,
-  QrCode,
-  CheckCircle2,
-  X,
-  Copy,
   Loader2,
-  RefreshCw,
   Sparkles,
+  ShieldCheck,
+  AlertCircle,
+  ArrowRight,
 } from 'lucide-react';
 
 interface ServicePlan {
@@ -22,34 +21,13 @@ interface ServicePlan {
   features: string[];
 }
 
-interface PaymentIntent {
-  transactionId: string;
-  referenceCode: string;
-  amount: number;
-  currency: string;
-  planCode: string;
-  planName: string;
-  accountNumber: string;
-  bankName: string;
-  accountName: string;
-  qrCodeUrl: string;
-  transferContent: string;
-}
-
 export default function LearnerBillingPage() {
+  const router = useRouter();
   const [plans, setPlans] = useState<ServicePlan[]>([]);
   const [currentPlanCode, setCurrentPlanCode] = useState<string>('LEARNER_FREE');
   const [credits, setCredits] = useState<number>(0);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
-
-  const [showQrModal, setShowQrModal] = useState(false);
-  const [isCreatingIntent, setIsCreatingIntent] = useState(false);
-  const [activeIntent, setActiveIntent] = useState<PaymentIntent | null>(null);
-
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isSimulatingWebhook, setIsSimulatingWebhook] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [loadingPlanCode, setLoadingPlanCode] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchData = async () => {
@@ -84,18 +62,9 @@ export default function LearnerBillingPage() {
     fetchData();
   }, []);
 
-  const handleCopy = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
   const handleOpenUpgrade = async (planCode: string) => {
-    setIsCreatingIntent(true);
+    setLoadingPlanCode(planCode);
     setErrorMsg(null);
-    setShowQrModal(true);
-    setActiveIntent(null);
-    setUpgradeSuccess(false);
 
     try {
       const res = await fetch('/api/billing/create-intent', {
@@ -109,97 +78,43 @@ export default function LearnerBillingPage() {
         throw new Error(data.error || 'Không thể tạo phiên thanh toán');
       }
 
-      setActiveIntent(data.intent);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setIsCreatingIntent(false);
-    }
-  };
-
-  const handleCheckPaymentStatus = async () => {
-    if (!activeIntent) return;
-    setIsVerifying(true);
-    setErrorMsg(null);
-
-    try {
-      const res = await fetch(`/api/billing/status?transactionId=${activeIntent.transactionId}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Lỗi kiểm tra giao dịch');
-      }
-
-      if (data.transaction?.status === 'SUCCESS') {
-        setUpgradeSuccess(true);
-        setCurrentPlanCode(activeIntent.planCode);
-        await fetchData();
-        setTimeout(() => {
-          setShowQrModal(false);
-          setUpgradeSuccess(false);
-          setActiveIntent(null);
-        }, 2500);
+      const orderKey = data.intent?.orderCode || data.intent?.transactionId;
+      if (orderKey) {
+        router.push(`/personal/checkout/${orderKey}`);
       } else {
-        setErrorMsg('Hệ thống chưa ghi nhận tiền chuyển. Quý khách vui lòng thử lại sau 30-60 giây.');
+        throw new Error('Dữ liệu phiên thanh toán không hợp lệ');
       }
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Lỗi khi kiểm tra giao dịch');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleSimulateWebhook = async () => {
-    if (!activeIntent) return;
-    setIsSimulatingWebhook(true);
-    setErrorMsg(null);
-
-    try {
-      const res = await fetch('/api/billing/mock-pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          referenceCode: activeIntent.referenceCode,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Giả lập thanh toán thất bại');
-      }
-
-      setUpgradeSuccess(true);
-      setCurrentPlanCode(activeIntent.planCode);
-      await fetchData();
-      setTimeout(() => {
-        setShowQrModal(false);
-        setUpgradeSuccess(false);
-        setActiveIntent(null);
-      }, 2500);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Lỗi giả lập thanh toán');
-    } finally {
-      setIsSimulatingWebhook(false);
+      setErrorMsg(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo đơn hàng');
+      setLoadingPlanCode(null);
     }
   };
 
   return (
-    <div className="max-w-6xl space-y-8">
+    <div className="max-w-6xl space-y-8 pb-16">
       {/* Page Header */}
       <div className="pb-2">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            TÀI KHOẢN & HẠN MỨC
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider font-mono">
+            TÀI KHOẢN &amp; HẠN MỨC
           </span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Gói Dịch Vụ & Thanh Toán Cá Nhân
+          Gói Dịch Vụ &amp; Thanh Toán Cá Nhân
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
           Quản lý gói tài khoản người học, nhận chứng chỉ số có mã QR tra cứu và nâng cấp AI credits cho lộ trình cá nhân.
         </p>
       </div>
+
+      {/* Error alert if any */}
+      {errorMsg && (
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-md text-xs font-medium flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {/* Current Subscription Status */}
       <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -230,6 +145,7 @@ export default function LearnerBillingPage() {
           {plans.map((p) => {
             const isCurrent = currentPlanCode === p.code;
             const isFree = p.price_vnd === 0;
+            const isLoadingThis = loadingPlanCode === p.code;
 
             return (
               <div
@@ -281,14 +197,26 @@ export default function LearnerBillingPage() {
                 ) : (
                   <button
                     onClick={() => handleOpenUpgrade(p.code)}
-                    disabled={isCurrent}
-                    className={`w-full py-2.5 rounded-md text-xs font-semibold transition-colors shadow-xs ${
+                    disabled={isCurrent || isLoadingThis}
+                    className={`w-full py-2.5 rounded-md text-xs font-semibold transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 ${
                       isCurrent
                         ? 'bg-slate-100 text-slate-600 border border-slate-200 cursor-default'
-                        : 'bg-sky-600 hover:bg-sky-700 text-white'
+                        : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-60'
                     }`}
                   >
-                    {isCurrent ? 'Đang kích hoạt' : `Nâng cấp ${p.name}`}
+                    {isLoadingThis ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />
+                        <span>Đang chuyển trang thanh toán...</span>
+                      </>
+                    ) : isCurrent ? (
+                      'Đang kích hoạt'
+                    ) : (
+                      <>
+                        <span>Nâng cấp {p.name}</span>
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      </>
+                    )}
                   </button>
                 )}
               </div>
@@ -297,153 +225,16 @@ export default function LearnerBillingPage() {
         </div>
       )}
 
-      {/* Real Payment Modal */}
-      {showQrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-md border border-slate-200 shadow-sm max-w-md w-full p-6 text-slate-900 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center">
-                  <QrCode className="w-4 h-4" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    {activeIntent ? `Gia hạn ${activeIntent.planName}` : 'Khởi tạo phiên thanh toán'}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">Mã QR đối soát máy chủ tự động NAPAS 24/7</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowQrModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {isCreatingIntent ? (
-              <div className="py-12 text-center space-y-2">
-                <Loader2 className="w-6 h-6 animate-spin text-sky-600 mx-auto" />
-                <p className="text-xs text-slate-500">Đang khởi tạo mã đối soát trên máy chủ...</p>
-              </div>
-            ) : upgradeSuccess ? (
-              <div className="py-8 text-center space-y-3">
-                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                <h4 className="text-base font-bold text-slate-900">
-                  Xác thực thanh toán thành công!
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Hạn mức AI credits và các tính năng mới đã được cập nhật vào tài khoản của bạn.
-                </p>
-              </div>
-            ) : activeIntent ? (
-              <>
-                {/* VietQR Image Container */}
-                <div className="flex flex-col items-center justify-center p-4 rounded-md bg-slate-50 border border-slate-200">
-                  <img
-                    src={activeIntent.qrCodeUrl}
-                    alt="VietQR Payment Code"
-                    className="w-52 h-52 object-contain rounded-md border border-slate-200 bg-white p-2 shadow-xs"
-                  />
-                  <div className="text-[10px] text-slate-400 mt-2 font-medium">
-                    Quét bằng ứng dụng Ngân hàng (VietQR / Mobile Banking)
-                  </div>
-                </div>
-
-                {errorMsg && (
-                  <div className="p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                    {errorMsg}
-                  </div>
-                )}
-
-                {/* Transfer Info */}
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2.5 rounded-md bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500">Số tài khoản:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-slate-800">
-                        {activeIntent.accountNumber} ({activeIntent.bankName})
-                      </span>
-                      <button
-                        onClick={() => handleCopy(activeIntent.accountNumber, 'acc')}
-                        className="text-sky-600 hover:text-sky-700 text-[11px] font-semibold"
-                      >
-                        {copiedField === 'acc' ? 'Đã chép' : 'Sao chép'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2.5 rounded-md bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500">Chủ tài khoản:</span>
-                    <span className="font-semibold text-slate-800">{activeIntent.accountName}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2.5 rounded-md bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500">Số tiền:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-sky-700">
-                        {activeIntent.amount.toLocaleString('vi-VN')} VNĐ
-                      </span>
-                      <button
-                        onClick={() => handleCopy(String(activeIntent.amount), 'amount')}
-                        className="text-sky-600 hover:text-sky-700 text-[11px] font-semibold"
-                      >
-                        {copiedField === 'amount' ? 'Đã chép' : 'Sao chép'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2.5 rounded-md bg-sky-50/70 border border-sky-200">
-                    <div>
-                      <span className="text-slate-600 font-medium">Nội dung chuyển:</span>
-                      <p className="text-[10px] text-sky-700">Bắt buộc giữ nguyên mã này</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-sky-900 bg-white px-2 py-0.5 rounded border border-sky-300">
-                        {activeIntent.transferContent}
-                      </span>
-                      <button
-                        onClick={() => handleCopy(activeIntent.transferContent, 'content')}
-                        className="text-sky-600 hover:text-sky-700 text-[11px] font-semibold"
-                      >
-                        {copiedField === 'content' ? 'Đã chép' : 'Sao chép'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-2 pt-2">
-                  <button
-                    onClick={handleCheckPaymentStatus}
-                    disabled={isVerifying}
-                    className="w-full py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
-                  >
-                    {isVerifying ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" strokeWidth={1.75} />
-                    )}
-                    <span>Kiểm tra trạng thái thanh toán</span>
-                  </button>
-
-                  {/* Dev/Demo Simulator Button (Chỉ hiển thị ngoài môi trường Production) */}
-                  {process.env.NODE_ENV !== 'production' && (
-                    <button
-                      onClick={handleSimulateWebhook}
-                      disabled={isSimulatingWebhook}
-                      className="w-full py-2 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-mono flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      {isSimulatingWebhook && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      <span>[Thử nghiệm Dev] Giả lập hoàn tất thanh toán</span>
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : null}
-          </div>
+      {/* Security Guarantee Note */}
+      <div className="p-4 rounded-md border border-slate-200 bg-white flex items-start gap-3 shadow-2xs">
+        <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+        <div className="text-xs text-slate-600 space-y-1">
+          <span className="font-semibold text-slate-800 block">Thanh toán bảo mật chuẩn Open Banking payOS</span>
+          <p className="leading-relaxed">
+            Hệ thống áp dụng thanh toán tự động qua mã VietQR chuẩn Napas 24/7. Toàn bộ giao dịch được kiểm tra và kích hoạt tức thì không cần gửi biên lai.
+          </p>
         </div>
-      )}
+      </div>
     </div>
   );
 }

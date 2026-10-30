@@ -60,7 +60,7 @@ interface AssignmentItem {
 export default function LearnerSubmissionsPage() {
   const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'overdue' | 'completed'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'action_required' | 'overdue' | 'upcoming' | 'completed'>('action_required');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentItem | null>(null);
 
@@ -236,11 +236,23 @@ export default function LearnerSubmissionsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filter items
-  const filteredList = assignments.filter((item) => {
-    const matchesTab = item.status === activeTab;
-    const matchesDate = !selectedDate || item.dateKey === selectedDate;
-    return matchesTab && matchesDate;
-  });
+  const filteredList = assignments
+    .filter((item) => {
+      let matchesTab = true;
+      if (activeTab === 'action_required') {
+        matchesTab = item.status === 'overdue' || item.status === 'upcoming';
+      } else {
+        matchesTab = item.status === activeTab;
+      }
+      const matchesDate = !selectedDate || item.dateKey === selectedDate;
+      return matchesTab && matchesDate;
+    })
+    .sort((a, b) => {
+      // Prioritize overdue items on top
+      if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+      if (b.status === 'overdue' && a.status !== 'overdue') return 1;
+      return 0;
+    });
 
   // Group by date
   const groupedByDate: Record<string, AssignmentItem[]> = {};
@@ -394,7 +406,29 @@ export default function LearnerSubmissionsPage() {
       </div>
 
       {/* Teams Navigation Tabs */}
-      <div className="flex items-center gap-2 pb-2 text-xs font-semibold">
+      <div className="flex items-center gap-2 pb-2 text-xs font-semibold overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('action_required')}
+          className={`px-3 py-1.5 rounded-md transition-colors ${
+            activeTab === 'action_required'
+              ? 'bg-slate-900 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Cần xử lý ({countOverdue + countUpcoming})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('overdue')}
+          className={`px-3 py-1.5 rounded-md transition-colors ${
+            activeTab === 'overdue'
+              ? 'bg-amber-600 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Quá hạn ({countOverdue})
+        </button>
+
         <button
           onClick={() => setActiveTab('upcoming')}
           className={`px-3 py-1.5 rounded-md transition-colors ${
@@ -407,17 +441,6 @@ export default function LearnerSubmissionsPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('overdue')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'overdue'
-              ? 'bg-amber-600 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Quá hạn / Cần nộp lại ({countOverdue})
-        </button>
-
-        <button
           onClick={() => setActiveTab('completed')}
           className={`px-3 py-1.5 rounded-md transition-colors ${
             activeTab === 'completed'
@@ -425,7 +448,7 @@ export default function LearnerSubmissionsPage() {
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          Đã hoàn thành ({countCompleted})
+          Đã nộp ({countCompleted})
         </button>
       </div>
 
@@ -443,7 +466,9 @@ export default function LearnerSubmissionsPage() {
               Không có bài tập nào cần nộp
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 leading-relaxed">
-              {activeTab === 'upcoming'
+              {activeTab === 'action_required'
+                ? 'Tuyệt vời! Bạn không còn bài tập nào cần xử lý lúc này.'
+                : activeTab === 'upcoming'
                 ? 'Hiện tại bạn không có bài tập nào sắp đến hạn. Khi tham gia các nhóm học tập và được giao bài tập, hạn nộp sẽ hiển thị tại đây.'
                 : activeTab === 'overdue'
                 ? 'Bạn không có bài tập nào bị quá hạn.'

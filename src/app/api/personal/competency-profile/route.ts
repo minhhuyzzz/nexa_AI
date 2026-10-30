@@ -55,16 +55,16 @@ export async function GET() {
     const hasTakenAssessment = submissionIds.length > 0;
     const latestSubmissionId = submissions?.[0]?.id ?? null;
 
-    // 3. If user has NOT completed any assessment, return pure 0% baseline
+    // 3. If user has NOT completed any assessment, return unassessed baseline with score: null
     if (!hasTakenAssessment) {
       const radarData = [1, 2, 3, 4, 5].map((idx) => {
         const dom = defaultDomains[idx];
         return {
           code: dom.code,
           name: dom.name,
-          score: 0,
+          score: null as number | null, // Explicitly null: unassessed, not 0%!
           target: 70,
-          level: 'Chưa khảo thí',
+          level: 'Chưa đủ dữ liệu',
           questionsCount: 0,
         };
       });
@@ -73,8 +73,10 @@ export async function GET() {
         success: true,
         hasTakenAssessment: false,
         totalAssessmentsCompleted: 0,
+        assessedDomainsCount: 0,
+        totalDomainsCount: 5,
         latestSubmissionId: null,
-        overallScore: 0,
+        overallScore: null,
         radarData,
         insights: null,
         latestAnalysis: null,
@@ -132,16 +134,21 @@ export async function GET() {
       }
     }
 
-    // 5. Calculate real percentages for each domain (NO mock baseline!)
+    // 5. Calculate real percentages for each domain (score is null if no questions assessed)
     const radarData = [1, 2, 3, 4, 5].map((idx) => {
       const dom = defaultDomains[idx];
-      const score = dom.max > 0 ? Math.min(100, Math.max(0, Math.round((dom.earned / dom.max) * 100))) : 0;
+      const hasData = dom.max > 0;
+      const score = hasData
+        ? Math.min(100, Math.max(0, Math.round((dom.earned / dom.max) * 100)))
+        : null;
 
-      let level = 'Level 1: Cơ bản';
-      if (score >= 85) level = 'Level 4: Rất nâng cao';
-      else if (score >= 70) level = 'Level 3: Nâng cao';
-      else if (score >= 55) level = 'Level 2: Trung cấp';
-      else if (score === 0) level = 'Chưa khảo thí';
+      let level = 'Chưa đủ dữ liệu';
+      if (score !== null) {
+        if (score >= 85) level = 'Level 4: Rất nâng cao';
+        else if (score >= 70) level = 'Level 3: Nâng cao (Đạt chuẩn)';
+        else if (score >= 55) level = 'Level 2: Trung cấp';
+        else level = 'Level 1: Cơ bản';
+      }
 
       return {
         code: dom.code,
@@ -153,14 +160,42 @@ export async function GET() {
       };
     });
 
-    // 6. Determine Strengths and Skill Gaps (< 70%)
-    const sortedDomains = [...radarData].sort((a, b) => b.score - a.score);
-    const strongest = sortedDomains[0];
-    const weakest = sortedDomains[sortedDomains.length - 1];
-
-    const overallScore = Math.round(
-      radarData.reduce((acc, curr) => acc + curr.score, 0) / radarData.length
+    // 6. Determine Strengths and Skill Gaps exclusively from assessed domains
+    const assessedDomains = radarData.filter(
+      (d): d is typeof d & { score: number } => d.score !== null
     );
+
+    let overallScore: number | null = null;
+    let insights: {
+      strongest: { code: string; name: string; score: number; level: string } | null;
+      weakest: { code: string; name: string; score: number; level: string; isGap: boolean } | null;
+    } | null = null;
+
+    if (assessedDomains.length > 0) {
+      overallScore = Math.round(
+        assessedDomains.reduce((acc, curr) => acc + curr.score, 0) / assessedDomains.length
+      );
+
+      const sorted = [...assessedDomains].sort((a, b) => b.score - a.score);
+      const strongest = sorted[0];
+      const weakest = sorted[sorted.length - 1];
+
+      insights = {
+        strongest: {
+          code: strongest.code,
+          name: strongest.name,
+          score: strongest.score,
+          level: strongest.level,
+        },
+        weakest: {
+          code: weakest.code,
+          name: weakest.name,
+          score: weakest.score,
+          level: weakest.level,
+          isGap: weakest.score < 70,
+        },
+      };
+    }
 
     // 7. Check if AI competency analysis already exists for latest submission
     let latestAnalysis = null;
@@ -189,26 +224,14 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      hasTakenAssessment: true,
+      hasTakenAssessment: assessedDomains.length > 0,
       totalAssessmentsCompleted: submissions.length,
+      assessedDomainsCount: assessedDomains.length,
+      totalDomainsCount: 5,
       latestSubmissionId,
       overallScore,
       radarData,
-      insights: {
-        strongest: {
-          code: strongest.code,
-          name: strongest.name,
-          score: strongest.score,
-          level: strongest.level,
-        },
-        weakest: {
-          code: weakest.code,
-          name: weakest.name,
-          score: weakest.score,
-          level: weakest.level,
-          isGap: weakest.score < 70,
-        },
-      },
+      insights,
       latestAnalysis,
     });
   } catch (err) {

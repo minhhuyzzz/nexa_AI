@@ -67,31 +67,26 @@ export async function GET() {
 
     const lastLoginDate = todayStr;
 
-    // 4. Calculate Level Tier (4 Levels)
+    // 4. Activity Level (Gamification XP only - NOT competency certification!)
     let levelNumber = 1;
     let levelCode = 'Level 1: Basic';
     let levelNextTarget = 150;
 
     if (points >= 450) {
       levelNumber = 4;
-      levelCode = 'Level 4: Highly Advanced';
+      levelCode = 'Level 4: Highly Active';
       levelNextTarget = 450;
     } else if (points >= 300) {
       levelNumber = 3;
-      levelCode = 'Level 3: Advanced';
+      levelCode = 'Level 3: Active';
       levelNextTarget = 450;
     } else if (points >= 150) {
       levelNumber = 2;
-      levelCode = 'Level 2: Intermediate';
+      levelCode = 'Level 2: Engaged';
       levelNextTarget = 300;
     }
 
-    // 5. Single Master Certificate Status (Unlocks exclusively at Level 4 >= 450 pts)
-    const isCertificateUnlocked = points >= 450;
-    const pointsNeededForCert = Math.max(0, 450 - points);
-    const certProgressPercentage = Math.min(100, Number(((points / 450) * 100).toFixed(1)));
-
-    // Fetch existing master credential if any
+    // 5. Official Competency Credentials - ONLY issued via valid assessment records (not XP points)
     const { data: credentials } = await supabase
       .from('credentials')
       .select('*')
@@ -101,43 +96,48 @@ export async function GET() {
       .limit(1);
 
     const masterCredential = credentials && credentials.length > 0 ? credentials[0] : null;
+    const isCertificateUnlocked = masterCredential !== null;
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: effectiveUserId,
-        email: profile.email || user?.email || '',
-        nickname: profile.nickname,
-        avatarUrl: profile.avatar_url || null,
-        role: profile.role,
-      },
-      stats: {
-        points,
-        totalLoginDays,
-        loginStreak,
-        lastLoginDate: lastLoginDate || null,
-        newLoginToday,
-        level: {
-          number: levelNumber,
-          code: levelCode,
-          nextTarget: levelNextTarget,
+    return NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: effectiveUserId,
+          email: profile.email || user?.email || '',
+          nickname: profile.nickname,
+          avatarUrl: profile.avatar_url || null,
+          role: profile.role,
         },
-        certificate: {
-          isUnlocked: isCertificateUnlocked,
-          requiredPoints: 450,
-          currentPoints: points,
-          pointsNeeded: pointsNeededForCert,
-          progressPercentage: certProgressPercentage,
-          masterCredential,
+        stats: {
+          points, // Activity/gamification XP
+          totalLoginDays,
+          loginStreak,
+          lastLoginDate: lastLoginDate || null,
+          newLoginToday,
+          level: {
+            number: levelNumber,
+            code: levelCode,
+            nextTarget: levelNextTarget,
+            progressPercentage: Math.min(100, Math.round((points / levelNextTarget) * 100)),
+          },
+          certificate: {
+            isUnlocked: isCertificateUnlocked,
+            credentialId: masterCredential?.id || null,
+            credentialTitle: masterCredential?.title || null,
+            issuedAt: masterCredential?.issued_at || null,
+            status: isCertificateUnlocked ? 'ISSUED' : 'UNEARNED',
+            masterCredential,
+          },
         },
       },
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-      },
-    });
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi lấy thông tin học viên';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -15,11 +15,16 @@ export async function GET(request: NextRequest) {
     }
 
     const transactionId = request.nextUrl.searchParams.get('transactionId');
-    if (!transactionId) {
-      return NextResponse.json({ error: 'Thiếu transactionId' }, { status: 400 });
+    const orderCode = request.nextUrl.searchParams.get('orderCode');
+    const orderId = request.nextUrl.searchParams.get('orderId');
+    const id = request.nextUrl.searchParams.get('id');
+    const identifier = orderId || transactionId || orderCode || id;
+
+    if (!identifier) {
+      return NextResponse.json({ error: 'Thiếu mã định danh đơn hàng (orderId, orderCode hoặc transactionId)' }, { status: 400 });
     }
 
-    const tx = await PaymentVerifierService.getTransactionStatus(transactionId, user.id);
+    const tx = await PaymentVerifierService.getTransactionStatus(identifier, user.id);
     if (!tx) {
       return NextResponse.json({ error: 'Không tìm thấy giao dịch' }, { status: 404 });
     }

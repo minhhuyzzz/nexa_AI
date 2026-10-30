@@ -26,6 +26,8 @@ export interface DomainScore {
 export interface LongitudinalRadarResult {
   overallScore: number | null;
   overallStatus: 'ASSESSED' | 'INSUFFICIENT_DATA';
+  assessedDomainsCount: number;
+  totalDomainsCount: number;
   domains: DomainScore[];
   totalEvidenceCount: number;
   baselineSnapshot?: {
@@ -162,15 +164,18 @@ export class CompetencyAggregationService {
         assessedDomainsCount++;
         domainScoreSum += domainScore;
 
-        if (domainScore >= 80) {
+        if (domainScore >= 85) {
           status = 'MASTERED';
-          level = 'Nâng cao (Advanced)';
-        } else if (domainScore >= 60) {
+          level = 'Rất nâng cao (Level 4)';
+        } else if (domainScore >= 70) {
           status = 'PROFICIENT';
-          level = 'Trung cấp (Intermediate)';
+          level = 'Nâng cao - Đạt chuẩn (Level 3)';
+        } else if (domainScore >= 55) {
+          status = 'DEVELOPING';
+          level = 'Trung cấp (Level 2)';
         } else {
           status = 'DEVELOPING';
-          level = 'Cần củng cố (Basic)';
+          level = 'Cơ bản (Level 1)';
         }
       }
 
@@ -205,6 +210,8 @@ export class CompetencyAggregationService {
     return {
       overallScore,
       overallStatus: overallScore !== null ? 'ASSESSED' : 'INSUFFICIENT_DATA',
+      assessedDomainsCount,
+      totalDomainsCount: domains.length,
       domains,
       totalEvidenceCount,
       baselineSnapshot: baseline
