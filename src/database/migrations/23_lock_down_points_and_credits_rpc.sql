@@ -122,7 +122,9 @@ BEGIN
         RAISE EXCEPTION 'Credit deduction must be positive' USING ERRCODE = '22023';
     END IF;
 
-    IF auth.uid() IS DISTINCT FROM p_user_id AND NOT public.is_admin_or_service() THEN
+    -- Credits are charged by a verified API route using the backend service role.
+    -- Do not expose this billing-related RPC to client-side Supabase calls.
+    IF auth.role() IS DISTINCT FROM 'service_role' THEN
         RAISE EXCEPTION 'Unauthorized to deduct credits' USING ERRCODE = '42501';
     END IF;
 
@@ -147,8 +149,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.deduct_ai_credits(UUID, INTEGER)
-FROM PUBLIC, anon;
+FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.deduct_ai_credits(UUID, INTEGER)
-TO authenticated, service_role;
+TO service_role;
 
 COMMIT;
