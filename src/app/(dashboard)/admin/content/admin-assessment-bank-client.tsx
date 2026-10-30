@@ -26,6 +26,7 @@ import {
   FileText,
   HelpCircle,
   Sparkles,
+  Copy,
 } from 'lucide-react';
 import {
   downloadMCQTemplate,
@@ -77,6 +78,7 @@ export function AdminAssessmentBankClient({
   const [editingAssessment, setEditingAssessment] = useState<AssessmentItemRecord | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
 
   // Form State for Create / Edit Assessment
   const [formTitle, setFormTitle] = useState('');
@@ -183,7 +185,10 @@ export function AdminAssessmentBankClient({
           }),
         });
 
-        if (!res.ok) throw new Error('Không thể cập nhật đề thi');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Không thể cập nhật đề thi');
+        }
 
         setAssessments((prev) =>
           prev.map((item) =>
@@ -336,6 +341,46 @@ export function AdminAssessmentBankClient({
       showToast(err.message || 'Lỗi khi xóa bài thi');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // Clone Assessment to new Version (DRAFT)
+  const handleCloneAssessment = async (exam: AssessmentItemRecord) => {
+    setCloningId(exam.id);
+    try {
+      const res = await fetch(`/api/admin/assessments/${exam.id}/clone`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Lỗi khi nhân bản bài khảo thí');
+      }
+
+      const created = data.assessment;
+      const clonedRecord: AssessmentItemRecord = {
+        id: created.id,
+        title: created.title,
+        description: created.description,
+        duration_minutes: created.duration_minutes,
+        passing_score: Number(created.passing_score),
+        point_reward: created.point_reward,
+        is_published: false,
+        is_vip: created.is_vip || created.access_tier === 'VIP',
+        access_tier: created.access_tier || 'FREE',
+        created_at: created.created_at,
+        questionCount: exam.questionCount,
+        types: exam.types,
+        typeLabel: exam.typeLabel,
+        domainName: exam.domainName,
+        domainCodes: exam.domainCodes,
+      };
+
+      setAssessments((prev) => [clonedRecord, ...prev]);
+      showToast('Đã nhân bản đề thi sang phiên bản mới (Bản nháp)!');
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi nhân bản bài khảo thí');
+    } finally {
+      setCloningId(null);
     }
   };
 
@@ -717,6 +762,16 @@ export function AdminAssessmentBankClient({
                             >
                               <Eye className="w-3.5 h-3.5" strokeWidth={1.75} />
                             </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCloneAssessment(exam)}
+                              disabled={cloningId === exam.id}
+                              className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors disabled:opacity-50"
+                              title="Nhân bản sang phiên bản mới (Clone to v2 / DRAFT)"
+                            >
+                              <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            </button>
 
                             <button
                               type="button"

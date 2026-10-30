@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,20 +30,11 @@ interface ProfileRow {
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-
-    // Strictly enforce Superadmin authorization
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user || !isSuperadminEmail(user.email)) {
-      return NextResponse.json(
-        { error: 'Forbidden: Yêu cầu quyền Superadmin' },
-        { status: 403 }
-      );
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
+    const supabase = await createClient();
 
     // Fetch profiles with user_organizations
     const { data: profiles, error: profileErr } = await supabase
@@ -113,20 +105,11 @@ interface PatchBody {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Strictly enforce Superadmin authorization
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user || !isSuperadminEmail(user.email)) {
-      return NextResponse.json(
-        { error: 'Forbidden: Yêu cầu quyền Superadmin' },
-        { status: 403 }
-      );
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
+    const supabase = await createClient();
 
     const body: PatchBody = await request.json();
     const { userId, role, planTier, organizationId } = body;
@@ -174,6 +157,16 @@ export async function PATCH(request: NextRequest) {
           { onConflict: 'user_id,organization_id' }
         );
     }
+
+    // Record audit log
+    await recordAdminAudit({
+      adminId: auth.user?.id,
+      adminEmail: auth.user?.email,
+      action: 'USER_ROLE_OR_PLAN_UPDATED',
+      targetType: 'USER',
+      targetId: userId,
+      details: { role, planTier, organizationId },
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

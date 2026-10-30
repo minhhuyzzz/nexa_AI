@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { AdminSidebar } from '@/components/dashboard/admin/AdminSidebar';
 import { AdminTopbar } from '@/components/dashboard/admin/AdminTopbar';
 
@@ -9,16 +8,12 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requirePlatformAdmin();
 
-  if (!user) {
-    redirect('/login');
-  }
-
-  if (!isSuperadminEmail(user.email)) {
+  if (!auth.isAuthorized) {
+    if (!auth.user) {
+      redirect('/login');
+    }
     redirect('/login?error=unauthorized_admin_access');
   }
 

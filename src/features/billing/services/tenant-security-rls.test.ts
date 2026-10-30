@@ -51,4 +51,36 @@ describe('Tenant Security RLS Migration 25 & Role Isolation Rules', () => {
     expect(content).toContain('CREATE POLICY "org_select_member" ON public.organizations');
     expect(content).toContain("uo.status = 'ACTIVE'");
   });
+
+  describe('Migration 29: Sửa lỗ hổng is_admin_or_service() trong RLS (SEC-01)', () => {
+    const migration29Path = path.resolve(
+      process.cwd(),
+      'src/database/migrations/29_fix_security_definer_and_admin_helper.sql'
+    );
+
+    it('file migration 29 tồn tại và định nghĩa lại hàm is_admin_or_service', () => {
+      expect(fs.existsSync(migration29Path)).toBe(true);
+      const content = fs.readFileSync(migration29Path, 'utf8');
+      expect(content).toContain('CREATE OR REPLACE FUNCTION public.is_admin_or_service');
+      expect(content).toContain('SECURITY DEFINER');
+    });
+
+    it('loại bỏ hoàn toàn current_user IN (\'postgres\', \'service_role\') để chống leo thang quyền', () => {
+      const content = fs.readFileSync(migration29Path, 'utf8');
+      expect(content).not.toContain("current_user IN ('postgres', 'service_role')");
+    });
+
+    it('xác thực service_role thông qua JWT claim hoặc session_user', () => {
+      const content = fs.readFileSync(migration29Path, 'utf8');
+      expect(content).toContain("v_jwt_role = 'service_role'");
+      expect(content).toContain("SET search_path = public, auth");
+    });
+
+    it('thu hồi quyền thực thi từ public/anon và chỉ cấp cho authenticated và service_role', () => {
+      const content = fs.readFileSync(migration29Path, 'utf8');
+      expect(content).toContain('REVOKE EXECUTE ON FUNCTION public.is_admin_or_service() FROM PUBLIC;');
+      expect(content).toContain('REVOKE EXECUTE ON FUNCTION public.is_admin_or_service() FROM anon;');
+      expect(content).toContain('GRANT EXECUTE ON FUNCTION public.is_admin_or_service() TO authenticated;');
+    });
+  });
 });

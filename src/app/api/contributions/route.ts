@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PointLedgerService } from '@/features/gamification/services/point-ledger.service';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
 const createContributionSchema = z.object({
   title: z.string().min(5, 'Tiêu đề tối thiểu 5 ký tự'),
@@ -173,30 +175,12 @@ export async function POST(request: NextRequest) {
 // PATCH: Admin reviews a contribution (Approve, Request Revision, Reject)
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Chỉ Quản trị viên mới có quyền thẩm định đề cộng đồng' },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
     const validation = reviewContributionSchema.safeParse(body);
     if (!validation.success) {
@@ -211,7 +195,7 @@ export async function PATCH(request: NextRequest) {
     // Get contribution record
     const { data: contrib, error: getErr } = await adminSupabase
       .from('community_contributions')
-      .select('id, user_id, code, title, status')
+      .select('id, user_id, code, title, status, prompt, domain, question_type, difficulty, solution_notes, attached_files')
       .eq('id', id)
       .single();
 
@@ -227,12 +211,42 @@ export async function PATCH(request: NextRequest) {
         admin_feedback: adminFeedback,
         points_rewarded: status === 'APPROVED' ? pointsRewarded : 0,
         reviewed_at: new Date().toISOString(),
-        reviewed_by: user.id,
+        reviewed_by: auth.user!.id,
       })
       .eq('id', id);
 
     if (updateErr) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    // If approved and not previously approved, add to central question bank items
+    if (status === 'APPROVED' && contrib.status !== 'APPROVED') {
+      const typeMapping: Record<string, string> = {
+        PRACTICAL_FILE: 'PRACTICE_FILE',
+        DIGITAL_LINK: 'PRACTICE_URL',
+        MCQ: 'MCQ',
+        SCENARIO: 'SCENARIO',
+      };
+      const qbType = typeMapping[contrib.question_type] || 'SCENARIO';
+
+      const difficultyMapping: Record<string, string> = {
+        FOUNDATION: 'FOUNDATION',
+        INTERMEDIATE: 'INTERMEDIATE',
+        ADVANCED: 'ADVANCED',
+        EXPERT: 'HIGHLY_SPECIALIZED',
+      };
+      const qbDifficulty = difficultyMapping[contrib.difficulty] || 'INTERMEDIATE';
+
+      const qbCode = contrib.code ? `QB-${contrib.code}` : `QB-CB-${contrib.id.slice(0, 8)}`;
+      await adminSupabase.from('question_bank_items').insert({
+        code: qbCode,
+        prompt: contrib.prompt,
+        type: qbType,
+        difficulty_level: qbDifficulty,
+        default_points: pointsRewarded || 10,
+        status: 'APPROVED',
+        created_by: contrib.user_id,
+      });
     }
 
     // If approved, reward points to user via PointLedgerService
@@ -255,6 +269,18 @@ export async function PATCH(request: NextRequest) {
         console.error('Failed to grant reward points for contribution', e);
       }
     }
+
+    await recordAdminAudit({
+      actorId: auth.user!.id,
+      action: status === 'APPROVED' ? 'APPROVE' : 'UPDATE',
+      targetType: 'COMMUNITY_CONTRIBUTION',
+      targetId: id,
+      newValues: {
+        status,
+        adminFeedback,
+        pointsRewarded,
+      },
+    });
 
     return NextResponse.json({
       success: true,

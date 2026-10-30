@@ -42,9 +42,18 @@ interface ProctoringEvent {
   };
 }
 
+interface ComplianceTelemetry {
+  totalProfiles: number;
+  totalConsents: number;
+  consentRate: number;
+  totalProctoringEvents: number;
+  highSeverityCount: number;
+}
+
 export default function AdminCompliancePage() {
   const [consentLogs, setConsentLogs] = useState<ConsentLog[]>([]);
   const [proctoringEvents, setProctoringEvents] = useState<ProctoringEvent[]>([]);
+  const [telemetry, setTelemetry] = useState<ComplianceTelemetry | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'consent' | 'proctoring'>('consent');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,6 +63,7 @@ export default function AdminCompliancePage() {
       setLoading(true);
       const res = await fetch('/api/admin/compliance');
       const data = await res.json();
+      if (data.telemetry) setTelemetry(data.telemetry);
       if (data.consentLogs) setConsentLogs(data.consentLogs);
       if (data.proctoringEvents) setProctoringEvents(data.proctoringEvents);
     } catch (e) {
@@ -67,7 +77,12 @@ export default function AdminCompliancePage() {
     fetchData();
   }, []);
 
-  const highSeverityCount = proctoringEvents.filter((e) => e.severity === 'HIGH').length;
+  const totalConsents = telemetry?.totalConsents ?? consentLogs.length;
+  const consentRate = telemetry?.consentRate ?? 0;
+  const totalEvents = telemetry?.totalProctoringEvents ?? proctoringEvents.length;
+  const highSeverityCount =
+    telemetry?.highSeverityCount ??
+    proctoringEvents.filter((e) => e.severity === 'HIGH').length;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -107,10 +122,10 @@ export default function AdminCompliancePage() {
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
           </div>
           <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {consentLogs.length}
+            {totalConsents}
           </div>
           <div className="text-[10px] text-emerald-700 mt-1 font-mono">
-            100% người dùng đã cấp quyền
+            {consentRate}% người dùng đã cấp quyền
           </div>
         </div>
 
@@ -133,7 +148,7 @@ export default function AdminCompliancePage() {
             <Eye className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
           </div>
           <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {proctoringEvents.length}
+            {totalEvents}
           </div>
           <div className="text-[10px] text-slate-500 mt-1 font-mono">
             Tab switch, blur, fullscreen

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +12,12 @@ function escapeCsvCell(val: unknown): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user || !isSuperadminEmail(user.email)) {
-      return NextResponse.json({ error: 'Truy cập bị từ chối' }, { status: 403 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
+
+    const supabase = await createClient();
 
     const { searchParams } = new URL(request.url);
     const orgId = searchParams.get('organization_id') || searchParams.get('orgId');

@@ -40,49 +40,42 @@ interface NavSection {
 const adminNavSections: NavSection[] = [
   {
     id: 'operations',
-    label: 'Điều hành & Báo cáo',
+    label: 'ĐIỀU HÀNH',
     icon: LayoutDashboard,
     items: [
-      { name: 'Tổng quan hệ thống', href: '/admin/dashboard', icon: Home, exact: true },
-      { name: 'Báo cáo phân tích', href: '/admin/analytics', icon: BarChart3, exact: false },
+      { name: 'Trung tâm điều hành', href: '/admin/dashboard', icon: Home, exact: true },
+      { name: 'Báo cáo nền tảng (5 Miền)', href: '/admin/analytics', icon: BarChart3, exact: false },
     ],
   },
   {
-    id: 'identities',
-    label: 'Người dùng & Tổ chức',
+    id: 'business',
+    label: 'KHÁCH HÀNG & KINH DOANH',
     icon: Users,
     items: [
       { name: 'Quản lý người dùng', href: '/admin/users', icon: Users, exact: false },
-      { name: 'Trường học & Doanh nghiệp', href: '/admin/organizations', icon: Building2, exact: false },
+      { name: 'Khách hàng Business & Trường học', href: '/admin/organizations', icon: Building2, exact: false },
+      { name: 'Gói & Quyền lợi', href: '/admin/plans', icon: CreditCard, exact: false },
+      { name: 'Thanh toán & Đối soát', href: '/admin/transactions', icon: Receipt, exact: false },
     ],
   },
   {
     id: 'content',
-    label: 'Nội dung & Khảo thí',
+    label: 'NỘI DUNG & KHẢO THÍ',
     icon: BookOpenCheck,
     items: [
-      { name: 'Đề thi hệ thống', href: '/admin/content', icon: BookOpenCheck, exact: false },
-      { name: 'Khung năng lực số', href: '/admin/frameworks', icon: Layers, exact: false },
-      { name: 'Duyệt đề cộng đồng', href: '/admin/contributions', icon: FileCheck2, exact: false },
-    ],
-  },
-  {
-    id: 'finance',
-    label: 'Tài chính & Gói dịch vụ',
-    icon: CreditCard,
-    items: [
-      { name: 'Cấu hình gói dịch vụ', href: '/admin/plans', icon: CreditCard, exact: false },
-      { name: 'Giao dịch & Đối soát', href: '/admin/transactions', icon: Receipt, exact: false },
+      { name: 'Ngân hàng đề & Học liệu', href: '/admin/content', icon: BookOpenCheck, exact: false },
+      { name: 'Khung 5 miền năng lực', href: '/admin/frameworks', icon: Layers, exact: false },
+      { name: 'Kiểm duyệt nội dung', href: '/admin/contributions', icon: FileCheck2, exact: false },
     ],
   },
   {
     id: 'system',
-    label: 'Hệ thống & AI',
+    label: 'HẠ TẦNG & AN TOÀN',
     icon: Settings,
     items: [
-      { name: 'Quản trị AI Gateway', href: '/admin/ai-gateway', icon: Cpu, exact: false },
-      { name: 'Tuân thủ & Dữ liệu (ND13)', href: '/admin/compliance', icon: Shield, exact: false },
-      { name: 'Cài đặt hệ thống', href: '/admin/settings', icon: Settings, exact: false },
+      { name: 'AI Gateway & Chi phí', href: '/admin/ai-gateway', icon: Cpu, exact: false },
+      { name: 'Bảo mật & Kiểm toán', href: '/admin/compliance', icon: Shield, exact: false },
+      { name: 'Cài đặt nền tảng', href: '/admin/settings', icon: Settings, exact: false },
     ],
   },
 ];
@@ -96,9 +89,8 @@ export function AdminSidebar() {
     // Default open section matching current route
     const initial: Record<string, boolean> = {
       operations: true,
-      identities: true,
+      business: true,
       content: true,
-      finance: true,
       system: true,
     };
     return initial;

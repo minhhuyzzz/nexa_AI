@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
     const { id: assessmentId, itemId } = await params;
     const supabase = await createClient();
     const body = await req.json();
@@ -120,6 +126,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
     const { id: assessmentId, itemId } = await params;
     const supabase = await createClient();
 

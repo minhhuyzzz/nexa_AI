@@ -110,18 +110,33 @@ export default function AdminSettingsPage() {
   async function loadAuditLogs() {
     try {
       setLoadingAudit(true);
-      const res = await fetch('/api/admin/compliance');
+      const res = await fetch('/api/admin/audit-logs');
       if (res.ok) {
         const data = await res.json();
-        const logs = (data.consentLogs || []).map((l: any) => ({
+        const logs = (data.logs || []).map((l: any) => ({
           id: l.id,
           timestamp: new Date(l.created_at).toLocaleString('vi-VN'),
-          actor: l.profiles?.email || 'Người dùng',
-          action: 'Đồng thuận dữ liệu NĐ 13/2023',
-          resource: l.consent_version || 'v1.0',
-          ipAddress: l.ip_address || '127.0.0.1',
+          actor: l.admin_email || 'Platform Admin',
+          action: `${l.action} (${l.target_type}${l.target_id ? `: ${l.target_id.slice(0, 8)}...` : ''})`,
+          resource: l.details ? JSON.stringify(l.details) : 'Hệ thống',
+          ipAddress: l.ip_address || 'Internal RPC',
         }));
         setAuditLogs(logs);
+      } else {
+        // Fallback to compliance logs
+        const compRes = await fetch('/api/admin/compliance');
+        if (compRes.ok) {
+          const compData = await compRes.json();
+          const logs = (compData.consentLogs || []).map((l: any) => ({
+            id: l.id,
+            timestamp: new Date(l.created_at).toLocaleString('vi-VN'),
+            actor: l.profiles?.email || 'Người dùng',
+            action: 'Đồng thuận dữ liệu NĐ 13/2023',
+            resource: l.consent_version || 'v1.0',
+            ipAddress: l.ip_address || '127.0.0.1',
+          }));
+          setAuditLogs(logs);
+        }
       }
     } catch (err) {
       console.warn('Failed to load audit logs:', err);

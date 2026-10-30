@@ -1,31 +1,43 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
+
+    // 1. Telemetry counts
+    const { count: totalProfiles } = await adminSupabase
       .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+      .select('*', { count: 'exact', head: true });
 
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Không có quyền truy cập' }, { status: 403 });
-    }
+    const { count: totalConsents } = await adminSupabase
+      .from('consent_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_granted', true);
 
-    // Fetch real consent logs (Nghị định 13/2023/NĐ-CP)
+    const { count: totalProctoringEvents } = await adminSupabase
+      .from('proctoring_events')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: totalHighSeverity } = await adminSupabase
+      .from('proctoring_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('severity', 'HIGH');
+
+    const totalUsers = totalProfiles || 0;
+    const grantedUsers = totalConsents || 0;
+    const consentRate =
+      totalUsers > 0 ? Math.min(100, Math.round((grantedUsers / totalUsers) * 100)) : 0;
+
+    // 2. Fetch real consent logs (Nghị định 13/2023/NĐ-CP)
     const { data: consentLogs, error: consentErr } = await adminSupabase
       .from('consent_logs')
       .select(`
@@ -41,8 +53,12 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(50);
 
-    // Fetch proctoring suspicious events
-    const { data: proctoringEvents } = await adminSupabase
+    if (consentErr) {
+      console.warn('consent_logs query error:', consentErr.message);
+    }
+
+    // 3. Fetch proctoring suspicious events
+    const { data: proctoringEvents, error: procErr } = await adminSupabase
       .from('proctoring_events')
       .select(`
         id,
@@ -57,8 +73,19 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(50);
 
+    if (procErr) {
+      console.warn('proctoring_events query error:', procErr.message);
+    }
+
     return NextResponse.json({
       success: true,
+      telemetry: {
+        totalProfiles: totalUsers,
+        totalConsents: grantedUsers,
+        consentRate,
+        totalProctoringEvents: totalProctoringEvents || 0,
+        highSeverityCount: totalHighSeverity || 0,
+      },
       consentLogs: consentLogs || [],
       proctoringEvents: proctoringEvents || [],
     });

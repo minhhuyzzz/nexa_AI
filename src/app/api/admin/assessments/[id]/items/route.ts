@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
     const { id: assessmentId } = await params;
     const supabase = await createClient();
     const body = await req.json();

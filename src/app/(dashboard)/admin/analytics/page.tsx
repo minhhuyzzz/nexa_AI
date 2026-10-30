@@ -22,7 +22,7 @@ interface DomainStat {
   code: string;
   title: string;
   description: string;
-  averageScore: number;
+  averageScore: number | null;
   evaluationsCount: number;
   benchmarkStandard: number;
 }
@@ -247,8 +247,9 @@ export default function AdminAnalyticsPage() {
 
         <div className="space-y-4">
           {data.domains.map((dom) => {
-            const hasData = dom.evaluationsCount > 0;
-            const isAboveBenchmark = dom.averageScore >= dom.benchmarkStandard;
+            const hasData = dom.averageScore !== null && dom.evaluationsCount > 0;
+            const scoreVal = dom.averageScore ?? 0;
+            const isAboveBenchmark = hasData && scoreVal >= dom.benchmarkStandard;
 
             return (
               <div key={dom.code} className="space-y-1.5">
@@ -263,10 +264,10 @@ export default function AdminAnalyticsPage() {
                   <div className="flex items-center gap-3 font-mono">
                     {hasData ? (
                       <span className={`font-semibold ${isAboveBenchmark ? 'text-emerald-700' : 'text-slate-800'}`}>
-                        {dom.averageScore}%
+                        {scoreVal}%
                       </span>
                     ) : (
-                      <span className="text-slate-400 text-[11px]">Chưa có bài thi</span>
+                      <span className="text-slate-400 text-[11px] italic">Chưa có dữ liệu</span>
                     )}
                     <span className="text-[10px] text-slate-400">({dom.evaluationsCount} đánh giá)</span>
                   </div>
@@ -283,7 +284,7 @@ export default function AdminAnalyticsPage() {
                           : 'bg-sky-600'
                         : 'bg-transparent'
                     }`}
-                    style={{ width: `${Math.min(100, Math.max(0, dom.averageScore))}%` }}
+                    style={{ width: `${hasData ? Math.min(100, Math.max(0, scoreVal)) : 0}%` }}
                   />
 
                   {/* Benchmark line at 70% */}

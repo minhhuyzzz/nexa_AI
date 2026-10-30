@@ -138,6 +138,9 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
         if (table === 'organization_invitations') {
           return { insert: mockInviteInsert };
         }
+        if (table === 'admin_audit_logs') {
+          return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        }
         return {};
       }),
     } as unknown as ReturnType<typeof createAdminClient>);
@@ -162,5 +165,79 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     expect(body.inviteUrl).toContain('/personal/accept-invite?token=');
     expect(mockOrgInsert).toHaveBeenCalledTimes(1);
     expect(mockEntitlementInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('rollback tổ chức nếu cấp entitlement thất bại', async () => {
+    vi.mocked(requirePlatformAdmin).mockResolvedValueOnce({
+      isAuthorized: true,
+      user: { id: 'admin-uuid', email: 'admin.nexa@gmail.com' },
+    });
+
+    const mockInquiry = {
+      id: '22222222-2222-2222-2222-222222222222',
+      org_name: 'Trường Test Rollback',
+      contact_name: 'Admin Test',
+      contact_email: 'test@rollback.edu.vn',
+      status: 'NEW',
+    };
+
+    const mockOrgDelete = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+
+    vi.mocked(createAdminClient).mockReturnValue({
+      from: vi.fn((table: string) => {
+        if (table === 'business_inquiries') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: mockInquiry, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'organizations') {
+          return {
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'org-fail-uuid', name: 'Trường Test Rollback', code: 'FAIL-CODE' },
+                  error: null,
+                }),
+              }),
+            }),
+            delete: mockOrgDelete,
+          };
+        }
+        if (table === 'organization_entitlements') {
+          return {
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { message: 'Database constraint violation on entitlements' },
+                }),
+              }),
+            }),
+          };
+        }
+        return {};
+      }),
+    } as unknown as ReturnType<typeof createAdminClient>);
+
+    const req = new NextRequest('http://localhost:3000/api/admin/organizations/approve', {
+      method: 'POST',
+      body: JSON.stringify({
+        inquiryId: '22222222-2222-2222-2222-222222222222',
+        contractNumber: 'NEXA-FAIL-001',
+        orgCode: 'FAIL-CODE',
+      }),
+    });
+
+    const res = await approveInquiry(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toContain('Không thể cấp hạn mức hợp đồng');
+    expect(mockOrgDelete).toHaveBeenCalledTimes(1);
   });
 });

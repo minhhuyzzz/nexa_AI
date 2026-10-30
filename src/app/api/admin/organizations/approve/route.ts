@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,14 +125,19 @@ export async function POST(request: NextRequest | Request) {
       .single();
 
     if (entError) {
-      console.warn('Could not insert into organization_entitlements:', entError.message);
+      // Atomic rollback: remove created organization if entitlement provisioning fails
+      await adminSupabase.from('organizations').delete().eq('id', org.id);
+      return NextResponse.json(
+        { error: `Không thể cấp hạn mức hợp đồng (Entitlement): ${entError.message}` },
+        { status: 500 }
+      );
     }
 
     // 5. Generate secure invitation for organization representative
     const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
     const inviteExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
 
-    await adminSupabase.from('organization_invitations').insert({
+    const { error: inviteErr } = await adminSupabase.from('organization_invitations').insert({
       organization_id: org.id,
       email: inquiry.contact_email.trim().toLowerCase(),
       org_role: 'ORG_OWNER',
@@ -139,6 +145,16 @@ export async function POST(request: NextRequest | Request) {
       status: 'PENDING',
       expires_at: inviteExpiry.toISOString(),
     });
+
+    if (inviteErr) {
+      // Atomic rollback: remove created entitlement and organization
+      await adminSupabase.from('organization_entitlements').delete().eq('organization_id', org.id);
+      await adminSupabase.from('organizations').delete().eq('id', org.id);
+      return NextResponse.json(
+        { error: `Không thể tạo lời mời ORG_OWNER: ${inviteErr.message}` },
+        { status: 500 }
+      );
+    }
 
     // 6. Mark inquiry as APPROVED
     await adminSupabase
@@ -149,6 +165,24 @@ export async function POST(request: NextRequest | Request) {
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', inquiryId);
+
+    // 7. Record admin audit log
+    await recordAdminAudit({
+      adminId: authCheck.user?.id,
+      adminEmail: authCheck.user?.email,
+      action: 'ORG_APPROVED',
+      targetType: 'ORGANIZATION',
+      targetId: org.id,
+      details: {
+        orgName: org.name,
+        orgCode: cleanCode,
+        inquiryId,
+        contractNumber,
+        maxSeats,
+        maxAssessments,
+        aiCredits,
+      },
+    });
 
     const origin = 'nextUrl' in request ? request.nextUrl.origin : new URL(request.url).origin;
     const inviteUrl = `${origin}/personal/accept-invite?token=${token}`;

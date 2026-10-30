@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +22,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
     const { id } = await params;
     const supabase = await createClient();
 
@@ -85,6 +92,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
     const { id } = await params;
     const supabase = await createClient();
     const body = await req.json();
@@ -95,6 +107,23 @@ export async function PUT(
         { error: 'Dữ liệu không hợp lệ', details: parsed.error.format() },
         { status: 400 }
       );
+    }
+
+    if (parsed.data.passing_score !== undefined || parsed.data.duration_minutes !== undefined) {
+      const { count: submissionCount } = await supabase
+        .from('assessment_submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('assessment_id', id);
+
+      if (submissionCount && submissionCount > 0) {
+        return NextResponse.json(
+          {
+            error:
+              'Đề thi đã có học viên nộp bài làm. Không được phép thay đổi điểm đạt hoặc thời gian làm bài. Vui lòng tạo phiên bản mới (Clone as Version).',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const updatePayload: Record<string, any> = {
@@ -120,6 +149,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Không thể cập nhật bài khảo thí' }, { status: 500 });
     }
 
+    await recordAdminAudit({
+      actorId: auth.user!.id,
+      action: 'UPDATE',
+      targetType: 'ASSESSMENT',
+      targetId: id,
+      newValues: updatePayload,
+    });
+
     return NextResponse.json({ assessment: updated });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
@@ -132,6 +169,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
     const { id } = await params;
     const supabase = await createClient();
 
@@ -152,6 +194,14 @@ export async function DELETE(
         return NextResponse.json({ error: 'Không thể ẩn bài khảo thí' }, { status: 500 });
       }
 
+      await recordAdminAudit({
+        actorId: auth.user!.id,
+        action: 'UPDATE',
+        targetType: 'ASSESSMENT',
+        targetId: id,
+        newValues: { is_published: false, reason: 'Soft deleted due to existing submissions' },
+      });
+
       return NextResponse.json({
         message: 'Bài thi đã có thí sinh nộp bài nên được chuyển sang trạng thái Ẩn thay vì xóa cứng',
         softDeleted: true,
@@ -168,6 +218,14 @@ export async function DELETE(
       console.error('Error deleting assessment:', error);
       return NextResponse.json({ error: 'Không thể xóa bài khảo thí' }, { status: 500 });
     }
+
+    await recordAdminAudit({
+      actorId: auth.user!.id,
+      action: 'DELETE',
+      targetType: 'ASSESSMENT',
+      targetId: id,
+      newValues: { softDeleted: false },
+    });
 
     return NextResponse.json({ success: true, message: 'Đã xóa bài khảo thí thành công' });
   } catch (err) {

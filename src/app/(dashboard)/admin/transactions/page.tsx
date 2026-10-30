@@ -10,10 +10,12 @@ import {
   XCircle,
   Check,
   RefreshCw,
-  ExternalLink,
   CreditCard,
   Building2,
   AlertCircle,
+  FileCheck2,
+  X,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface TransactionItem {
@@ -26,7 +28,7 @@ interface TransactionItem {
   provider: string;
   transaction_reference: string;
   idempotency_key: string;
-  status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  status: 'PENDING' | 'SUCCESS' | 'COMPLETED' | 'FAILED';
   verified_at?: string;
   created_at: string;
   profiles?: {
@@ -40,8 +42,14 @@ export default function AdminTransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'success' | 'all'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+
+  // Reconcile Modal State
+  const [reconcileTx, setReconcileTx] = useState<TransactionItem | null>(null);
+  const [proofReference, setProofReference] = useState('');
+  const [reconcileReason, setReconcileReason] = useState('');
+  const [reconcileSubmitting, setReconcileSubmitting] = useState(false);
+  const [reconcileError, setReconcileError] = useState('');
 
   const fetchTransactions = async () => {
     try {
@@ -63,16 +71,18 @@ export default function AdminTransactionsPage() {
   }, []);
 
   const pendingList = transactions.filter((t) => t.status === 'PENDING');
-  const successList = transactions.filter((t) => t.status === 'SUCCESS');
-  const failedList = transactions.filter((t) => t.status === 'FAILED');
+  const successList = transactions.filter(
+    (t) => t.status === 'SUCCESS' || t.status === 'COMPLETED'
+  );
 
   const totalVerifiedRevenue = successList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   const filteredList = transactions.filter((item) => {
+    const isSuccess = item.status === 'SUCCESS' || item.status === 'COMPLETED';
     const matchesTab =
       activeTab === 'all' ||
       (activeTab === 'pending' && item.status === 'PENDING') ||
-      (activeTab === 'success' && item.status === 'SUCCESS');
+      (activeTab === 'success' && isSuccess);
 
     const matchesSearch =
       !searchQuery.trim() ||
@@ -84,31 +94,46 @@ export default function AdminTransactionsPage() {
     return matchesTab && matchesSearch;
   });
 
-  const handleManualFulfill = async (transactionId: string) => {
-    try {
-      setActionLoadingId(transactionId);
-      setActionSuccessMsg('');
+  const handleOpenReconcileModal = (tx: TransactionItem) => {
+    setReconcileTx(tx);
+    setProofReference(`BANK-REF-${new Date().getFullYear()}-`);
+    setReconcileReason('Xác nhận biến động số dư tài khoản ngân hàng thụ hưởng NEXA');
+    setReconcileError('');
+  };
 
+  const handleReconcileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reconcileTx) return;
+
+    setReconcileSubmitting(true);
+    setReconcileError('');
+
+    try {
       const res = await fetch('/api/admin/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transactionId,
-          note: 'Admin verified bank transfer manually via Control Plane',
+          transactionId: reconcileTx.id,
+          proofReference: proofReference.trim(),
+          reason: reconcileReason.trim(),
         }),
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
-        setActionSuccessMsg(`Đã xác nhận và kích hoạt gói cho giao dịch thành công.`);
-        await fetchTransactions();
-      } else {
-        alert(data.error || 'Lỗi khi kích hoạt giao dịch');
+      if (!res.ok) {
+        setReconcileError(data.error || 'Lỗi khi đối soát giao dịch');
+        return;
       }
+
+      setActionSuccessMsg(
+        `Đã đối soát thành công giao dịch "${reconcileTx.transaction_reference}". Quyền hạn tài khoản đã được cấp.`
+      );
+      setReconcileTx(null);
+      await fetchTransactions();
     } catch (e) {
-      alert('Lỗi kết nối máy chủ');
+      setReconcileError('Lỗi kết nối máy chủ');
     } finally {
-      setActionLoadingId(null);
+      setReconcileSubmitting(false);
     }
   };
 
@@ -120,14 +145,14 @@ export default function AdminTransactionsPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-              FINANCIAL LEDGER &amp; RECONCILIATION
+              FINANCIAL LEDGER &amp; AUDIT RECONCILIATION
             </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Sổ Cái Giao Dịch &amp; Đối Soát Doanh Thu
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kiểm soát thanh toán nâng cấp gói, đối soát chuyển khoản ngân hàng và tự động cấp quyền tài khoản qua giao dịch thực tế.
+            Kiểm soát thanh toán nâng cấp gói, đối soát chuyển khoản ngân hàng có căn cứ minh chứng và ghi nhận audit trail.
           </p>
         </div>
 
@@ -190,7 +215,7 @@ export default function AdminTransactionsPage() {
             {pendingList.length}
           </div>
           <div className="text-[10px] text-amber-700 mt-1 font-mono">
-            Cần rà soát sao kê ngân hàng
+            Cần đối chiếu sao kê ngân hàng
           </div>
         </div>
 
@@ -203,20 +228,20 @@ export default function AdminTransactionsPage() {
             {transactions.length}
           </div>
           <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            {failedList.length} đơn hủy / quá hạn
+            Toàn bộ lịch sử hệ thống
           </div>
         </div>
 
         <div className="p-2.5 bg-white rounded border border-slate-200/80">
           <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
-            <span>Phương thức thanh toán</span>
-            <Building2 className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+            <span>Cơ chế đối soát</span>
+            <ShieldAlert className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
           </div>
-          <div className="text-base font-bold text-slate-900 font-mono pt-1">
-            Chuyển khoản QR
+          <div className="text-base font-bold text-slate-900 font-mono mt-1">
+            FAIL-CLOSED
           </div>
-          <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            SePay API &bull; VietQR NAPAS 24/7
+          <div className="text-[10px] text-sky-700 mt-0.5 font-mono">
+            Bắt buộc mã chứng từ &amp; Audit Log
           </div>
         </div>
       </div>
@@ -232,7 +257,9 @@ export default function AdminTransactionsPage() {
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'pending' ? 'bg-white' : 'bg-amber-500'}`} />
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${activeTab === 'pending' ? 'bg-white' : 'bg-amber-500'}`}
+            />
             <span>Chờ đối soát ({pendingList.length})</span>
           </button>
 
@@ -244,8 +271,10 @@ export default function AdminTransactionsPage() {
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'success' ? 'bg-white' : 'bg-emerald-600'}`} />
-            <span>Đã xác nhận ({successList.length})</span>
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${activeTab === 'success' ? 'bg-white' : 'bg-emerald-600'}`}
+            />
+            <span>Thành công ({successList.length})</span>
           </button>
 
           <button
@@ -321,7 +350,7 @@ export default function AdminTransactionsPage() {
                       {Number(tx.amount || 0).toLocaleString('vi-VN')} {tx.currency || 'VND'}
                     </td>
                     <td className="py-3 px-3.5 text-center">
-                      {tx.status === 'SUCCESS' ? (
+                      {tx.status === 'SUCCESS' || tx.status === 'COMPLETED' ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           Thành công
@@ -350,12 +379,11 @@ export default function AdminTransactionsPage() {
                     <td className="py-3 px-3.5 text-right">
                       {tx.status === 'PENDING' ? (
                         <button
-                          onClick={() => handleManualFulfill(tx.id)}
-                          disabled={actionLoadingId === tx.id}
-                          className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold text-[11px] transition-colors shadow-xs disabled:opacity-50 inline-flex items-center gap-1"
+                          onClick={() => handleOpenReconcileModal(tx)}
+                          className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold text-[11px] transition-colors shadow-xs inline-flex items-center gap-1"
                         >
-                          <Check className="w-3 h-3" />
-                          <span>{actionLoadingId === tx.id ? 'Đang duyệt...' : 'Duyệt thủ công'}</span>
+                          <FileCheck2 className="w-3 h-3" />
+                          <span>Đối soát thủ công</span>
                         </button>
                       ) : (
                         <span className="text-[11px] text-slate-400 font-mono">
@@ -370,6 +398,103 @@ export default function AdminTransactionsPage() {
           </table>
         </div>
       </div>
+
+      {/* RECONCILE MODAL */}
+      {reconcileTx && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  Đối Soát Chuyển Khoản Ngân Hàng
+                </h2>
+                <div className="text-[11px] text-slate-500 font-mono">
+                  Mã giao dịch: {reconcileTx.transaction_reference}
+                </div>
+              </div>
+              <button
+                onClick={() => setReconcileTx(null)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {reconcileError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{reconcileError}</span>
+              </div>
+            )}
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded space-y-1 font-mono text-[11px]">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Khách hàng:</span>
+                <span className="text-slate-900 font-semibold">{reconcileTx.profiles?.email || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Gói đăng ký:</span>
+                <span className="text-slate-900 font-semibold">{reconcileTx.plan_code}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Số tiền cần khớp:</span>
+                <span className="text-slate-900 font-bold">{Number(reconcileTx.amount).toLocaleString('vi-VN')} VND</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleReconcileSubmit} className="space-y-3.5">
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">
+                  Mã chứng từ / Sao kê ngân hàng (Proof Reference): <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: VCB-20261030-99214 hoặc FT243019882234"
+                  value={proofReference}
+                  onChange={(e) => setProofReference(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono text-xs uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">
+                  Lý do đối soát &amp; căn cứ xác minh: <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="Ví dụ: Đã đối chiếu biến động số dư Vietcombank lúc 14:32, nội dung CK khớp mã..."
+                  value={reconcileReason}
+                  onChange={(e) => setReconcileReason(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
+                />
+              </div>
+
+              <div className="p-2.5 bg-amber-50 rounded border border-amber-200 text-[11px] text-amber-900">
+                Hành động này sẽ kích hoạt quyền hạn gói cước ngay lập tức và ghi nhận vào Audit Log nền tảng.
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReconcileTx(null)}
+                  className="px-3 py-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={reconcileSubmitting || !proofReference.trim() || !reconcileReason.trim()}
+                  className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                >
+                  {reconcileSubmitting ? 'Đang kích hoạt...' : 'Xác nhận đối soát & Duyệt'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

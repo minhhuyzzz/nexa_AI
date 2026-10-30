@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
     supabase.from('assessment_submissions').select('*', { count: 'exact', head: true }),
     supabase.from('credentials').select('*', { count: 'exact', head: true }),
     supabase.from('organizations').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
-    supabase.from('organizations').select('*', { count: 'exact', head: true }).eq('status', 'PENDING_CONTACT'),
+    adminSupabase.from('business_inquiries').select('*', { count: 'exact', head: true }).in('status', ['NEW', 'CONTACTED']),
     adminSupabase.from('community_contributions').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
     adminSupabase.from('payment_transactions').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
     supabase
@@ -99,11 +99,11 @@ export default async function AdminDashboardPage() {
             <span>Báo cáo vận hành</span>
           </Link>
           <Link
-            href="/admin/content"
+            href="/admin/organizations"
             className="px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-1.5"
           >
-            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
-            <span>Soạn đề thi mới</span>
+            <Building2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>Xử lý hồ sơ B2B ({pendingInquiries})</span>
           </Link>
         </div>
       </div>

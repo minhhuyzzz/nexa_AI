@@ -98,7 +98,7 @@ export default function AdminContributionsPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setActionSuccessMsg('Đã phê duyệt đề thi thành công! Học viên được cộng +100 điểm thưởng tự động.');
+        setActionSuccessMsg('Đã phê duyệt và chuyển vào Ngân hàng câu hỏi dùng chung! Học viên được cộng +100 điểm thưởng tự động.');
         await fetchContributions();
         setSelectedItem((prev) =>
           prev

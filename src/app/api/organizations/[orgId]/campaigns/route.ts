@@ -16,6 +16,27 @@ const campaignSchema = z.object({
   passingScore: z.number().min(0).max(100).default(70.0),
 });
 
+async function checkOrgMember(userId: string, orgId: string) {
+  const adminSupabase = createAdminClient();
+  const { data: profile } = await adminSupabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (profile?.role === 'ADMIN') return true;
+
+  const { data: member } = await adminSupabase
+    .from('user_organizations')
+    .select('org_role, status')
+    .eq('user_id', userId)
+    .eq('organization_id', orgId)
+    .eq('status', 'ACTIVE')
+    .maybeSingle();
+
+  return Boolean(member);
+}
+
 async function checkOrgManagerOrAssessor(userId: string, orgId: string) {
   const adminSupabase = createAdminClient();
   const { data: profile } = await adminSupabase
@@ -32,7 +53,7 @@ async function checkOrgManagerOrAssessor(userId: string, orgId: string) {
     .eq('user_id', userId)
     .eq('organization_id', orgId)
     .eq('status', 'ACTIVE')
-    .single();
+    .maybeSingle();
 
   return (
     member &&
@@ -54,6 +75,15 @@ export async function GET(
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    }
+
+    // SEC-02: Enforce tenant authorization before querying with service-role
+    const isMember = await checkOrgMember(user.id, orgId);
+    if (!isMember) {
+      return NextResponse.json(
+        { error: 'Bạn không có quyền truy cập đợt đánh giá của tổ chức này' },
+        { status: 403 }
+      );
     }
 
     const adminSupabase = createAdminClient();
@@ -123,10 +153,10 @@ export async function POST(
 
     const adminSupabase = createAdminClient();
 
-    // 1. Verify assessment exists and belongs to this organization
+    // SEC-03 1. Verify assessment exists AND belongs to org or is public
     const { data: assessment, error: assessErr } = await adminSupabase
       .from('assessments')
-      .select('id, title, is_published, version')
+      .select('id, title, is_published, version, organization_id, visibility')
       .eq('id', assessmentId)
       .single();
 
@@ -134,7 +164,50 @@ export async function POST(
       return NextResponse.json({ error: 'Đề thi không tồn tại' }, { status: 404 });
     }
 
-    // 2. Lock version of assessment (freezes content for test integrity)
+    const isOrgAssessment = assessment.organization_id === orgId;
+    const isPublicTemplate = assessment.visibility === 'PUBLIC';
+    if (!isOrgAssessment && !isPublicTemplate) {
+      return NextResponse.json(
+        { error: 'Đề thi không thuộc quyền quản lý của tổ chức này' },
+        { status: 403 }
+      );
+    }
+
+    // SEC-03 2. Verify all classIds strictly belong to this orgId
+    if (classIds && classIds.length > 0) {
+      const { data: validClasses } = await adminSupabase
+        .from('evaluator_classes')
+        .select('id')
+        .eq('organization_id', orgId)
+        .in('id', classIds);
+
+      if (!validClasses || validClasses.length !== classIds.length) {
+        return NextResponse.json(
+          { error: 'Một hoặc nhiều lớp học được chọn không thuộc tổ chức này' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // SEC-03 3. Verify all assessorIds are active members in this orgId
+    if (assessorIds && assessorIds.length > 0) {
+      const { data: validAssessors } = await adminSupabase
+        .from('user_organizations')
+        .select('user_id')
+        .eq('organization_id', orgId)
+        .eq('status', 'ACTIVE')
+        .in('org_role', ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'])
+        .in('user_id', assessorIds);
+
+      if (!validAssessors || validAssessors.length !== assessorIds.length) {
+        return NextResponse.json(
+          { error: 'Một hoặc nhiều người chấm được chọn không có quyền trong tổ chức này' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 4. Lock version of assessment (freezes content for test integrity)
     await adminSupabase
       .from('assessments')
       .update({
@@ -149,7 +222,7 @@ export async function POST(
       ? new Date(endsAt)
       : new Date(startTime.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    // 3. Insert Campaign record
+    // 5. Insert Campaign record
     const { data: campaign, error: campErr } = await adminSupabase
       .from('assessment_campaigns')
       .insert({
@@ -168,13 +241,13 @@ export async function POST(
       .select()
       .single();
 
-    if (campErr) {
-      return NextResponse.json({ error: campErr.message }, { status: 500 });
+    if (campErr || !campaign) {
+      return NextResponse.json({ error: campErr?.message || 'Không thể tạo đợt đánh giá' }, { status: 500 });
     }
 
-    // 4. Automatically generate class_assignments for participating cohorts
+    // SEC-03 6. Atomic assignment generation with rollback on failure
     for (const cid of classIds) {
-      await adminSupabase.from('class_assignments').upsert(
+      const { error: assignErr } = await adminSupabase.from('class_assignments').upsert(
         {
           class_id: cid,
           assessment_id: assessmentId,
@@ -182,6 +255,15 @@ export async function POST(
         },
         { onConflict: 'class_id, assessment_id' }
       );
+
+      if (assignErr) {
+        // Rollback campaign to prevent dangling record
+        await adminSupabase.from('assessment_campaigns').delete().eq('id', campaign.id);
+        return NextResponse.json(
+          { error: 'Lỗi khi giao đề thi cho các lớp học, đã hủy đợt đánh giá dở dang' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({

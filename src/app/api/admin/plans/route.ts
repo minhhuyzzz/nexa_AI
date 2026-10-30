@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 
 const planSchema = z.object({
   id: z.string().uuid().optional(),
@@ -18,26 +18,12 @@ const planSchema = z.object({
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Không có quyền truy cập' }, { status: 403 });
-    }
 
     const { data: plans, error } = await adminSupabase
       .from('service_plans')
@@ -57,26 +43,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
-    }
 
     const body = await request.json();
     const validation = planSchema.safeParse(body);
@@ -115,26 +87,12 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
-    }
 
     const body = await request.json();
     if (!body.id) {

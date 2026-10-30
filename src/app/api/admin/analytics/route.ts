@@ -1,20 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user || !isSuperadminEmail(user.email)) {
-      return NextResponse.json({ error: 'Truy cập bị từ chối' }, { status: 403 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
+
+    const supabase = await createClient();
 
     // 1. Lấy danh sách 5 Miền DigComp chuẩn hóa
     const { data: domains } = await supabase
@@ -84,8 +81,7 @@ export async function GET() {
       };
     });
 
-    // Compute DigComp 5 domains scores
-    // Parse radar_data from competency_analyses if present
+    // Compute DigComp 5 domains scores mapped strictly by code / ID, distinguishing null vs 0
     const domainScoresMap: Record<number, { total: number; count: number; name: string }> = {};
 
     (domains || []).forEach((d) => {
@@ -94,27 +90,49 @@ export async function GET() {
 
     (analyses || []).forEach((ana) => {
       if (Array.isArray(ana.radar_data)) {
-        ana.radar_data.forEach((r: { domainCode?: string; score?: number }, idx: number) => {
-          const domIdx = idx + 1;
-          if (domainScoresMap[domIdx] && typeof r.score === 'number') {
-            domainScoresMap[domIdx].total += r.score;
-            domainScoresMap[domIdx].count += 1;
+        ana.radar_data.forEach(
+          (r: { domainCode?: string; code?: string; domainIndex?: number; score?: number }) => {
+            if (typeof r.score !== 'number') return;
+
+            let targetDomIdx: number | null = null;
+            const codeStr = (r.domainCode || r.code || '').trim().toUpperCase();
+            if (codeStr) {
+              const numMatch = codeStr.match(/[1-5]/);
+              if (numMatch) {
+                targetDomIdx = parseInt(numMatch[0], 10);
+              }
+            }
+            if (
+              targetDomIdx === null &&
+              typeof r.domainIndex === 'number' &&
+              r.domainIndex >= 1 &&
+              r.domainIndex <= 5
+            ) {
+              targetDomIdx = r.domainIndex;
+            }
+
+            if (targetDomIdx !== null && domainScoresMap[targetDomIdx]) {
+              domainScoresMap[targetDomIdx].total += r.score;
+              domainScoresMap[targetDomIdx].count += 1;
+            }
           }
-        });
+        );
       }
     });
 
     const domainAnalytics = (domains || []).map((d) => {
       const stat = domainScoresMap[d.domain_index];
-      const avg = stat && stat.count > 0 ? Number((stat.total / stat.count).toFixed(1)) : 0;
+      const hasEvaluations = stat && stat.count > 0;
+      const avg = hasEvaluations ? Number((stat.total / stat.count).toFixed(1)) : null;
+
       return {
         domainIndex: d.domain_index,
         code: `0${d.domain_index}`,
         title: d.title,
         description: d.description,
-        averageScore: avg,
+        averageScore: avg, // null if no evaluations, real numeric score otherwise
         evaluationsCount: stat ? stat.count : 0,
-        benchmarkStandard: 70, // Ngưỡng chuẩn DigComp Châu Âu: 70%
+        benchmarkStandard: 70, // Chuẩn mục tiêu DigComp NEXA: 70%
       };
     });
 

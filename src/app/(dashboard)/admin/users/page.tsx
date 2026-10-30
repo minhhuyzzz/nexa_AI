@@ -45,6 +45,7 @@ function UsersContent() {
   const [newTier, setNewTier] = useState<'FREE' | 'PRO' | 'ENTERPRISE'>('FREE');
   const [saving, setSaving] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
+  const [editError, setEditError] = useState('');
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -70,6 +71,7 @@ function UsersContent() {
     setNewRole(user.role);
     setNewTier(user.planTier);
     setActionMsg('');
+    setEditError('');
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
@@ -78,24 +80,23 @@ function UsersContent() {
 
     setSaving(true);
     setActionMsg('');
+    setEditError('');
 
     try {
-      // Update role if changed
-      if (newRole !== editingUser.role) {
-        await fetch('/api/admin/users', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: editingUser.id, role: newRole }),
-        });
-      }
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editingUser.id,
+          role: newRole,
+          planTier: newTier,
+        }),
+      });
 
-      // Update tier if changed
-      if (newTier !== editingUser.planTier) {
-        await fetch('/api/admin/users', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: editingUser.id, planTier: newTier }),
-        });
+      const data = await res.json();
+      if (!res.ok) {
+        setEditError(data.error || 'Lỗi cập nhật người dùng từ máy chủ');
+        return;
       }
 
       setUsers((prev) =>
@@ -105,10 +106,10 @@ function UsersContent() {
       );
 
       setEditingUser(null);
-      setActionMsg('Đã cập nhật vai trò và gói dịch vụ thành công');
+      setActionMsg('Đã cập nhật vai trò và gói dịch vụ thành công.');
       setTimeout(() => setActionMsg(''), 3000);
     } catch (err) {
-      alert('Lỗi cập nhật người dùng');
+      setEditError('Lỗi kết nối máy chủ khi cập nhật');
     } finally {
       setSaving(false);
     }
@@ -367,6 +368,13 @@ function UsersContent() {
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {editError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div>

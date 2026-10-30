@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
 // GET: Fetch framework with all domains & competencies
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
@@ -64,26 +60,12 @@ export async function GET() {
 // PATCH: Update Domain or Competency
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Không có quyền quản trị' }, { status: 403 });
-    }
 
     const body = await request.json();
     const { entityType, id, title, code, skill_code, description, target_level } = body;
@@ -108,6 +90,15 @@ export async function PATCH(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+
+      await recordAdminAudit({
+        actorId: auth.user!.id,
+        action: 'UPDATE',
+        targetType: 'FRAMEWORK_DOMAIN',
+        targetId: id,
+        newValues: updates,
+      });
+
       return NextResponse.json({ success: true, domain: data });
     }
 
@@ -128,6 +119,15 @@ export async function PATCH(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+
+      await recordAdminAudit({
+        actorId: auth.user!.id,
+        action: 'UPDATE',
+        targetType: 'FRAMEWORK_COMPETENCY',
+        targetId: id,
+        newValues: updates,
+      });
+
       return NextResponse.json({ success: true, competency: data });
     }
 
@@ -141,26 +141,12 @@ export async function PATCH(request: NextRequest) {
 // POST: Add new competency to a domain
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
-
-    if (authErr || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
     }
 
     const adminSupabase = createAdminClient();
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Không có quyền quản trị' }, { status: 403 });
-    }
 
     const body = await request.json();
     const { domain_id, skill_code, title, description, target_level } = body;
@@ -185,6 +171,19 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await recordAdminAudit({
+      actorId: auth.user!.id,
+      action: 'CREATE',
+      targetType: 'FRAMEWORK_COMPETENCY',
+      targetId: data.id,
+      newValues: {
+        domain_id,
+        skill_code,
+        title,
+        target_level,
+      },
+    });
 
     return NextResponse.json({ success: true, competency: data });
   } catch (err) {

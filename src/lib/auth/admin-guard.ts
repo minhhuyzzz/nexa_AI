@@ -50,6 +50,7 @@ export async function requirePlatformAdmin(): Promise<AdminAuthResult> {
 
   return {
     isAuthorized: false,
+    user: { id: user.id, email: user.email },
     errorResponse: NextResponse.json(
       { error: 'Bạn không có quyền truy cập khu vực quản trị nền tảng (Platform Admin)' },
       { status: 403 }
