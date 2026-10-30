@@ -7,8 +7,8 @@ const inviteSchema = z.object({
   organizationId: z.string().uuid('ID tổ chức không hợp lệ'),
   email: z.string().email('Email không đúng định dạng'),
   orgRole: z
-    .enum(['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'])
-    .default('ASSESSOR'),
+    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'])
+    .default('MEMBER'),
 });
 
 export async function POST(request: NextRequest) {

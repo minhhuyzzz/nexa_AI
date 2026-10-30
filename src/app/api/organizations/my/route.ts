@@ -14,10 +14,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
-    const adminSupabase = createAdminClient();
-
-    // Fetch user organizations
-    const { data: userOrgs, error } = await adminSupabase
+    // Fetch user organizations using authenticated user client (satisfies RLS user_org_select_own)
+    const { data: userOrgs, error } = await supabase
       .from('user_organizations')
       .select(`
         id,

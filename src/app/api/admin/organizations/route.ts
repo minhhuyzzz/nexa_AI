@@ -1,13 +1,39 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
+const createOrgSchema = z.object({
+  name: z.string().trim().min(2, 'Tên tổ chức tối thiểu 2 ký tự').max(100),
+  code: z.string().trim().min(2, 'Mã tổ chức tối thiểu 2 ký tự').max(30),
+  type: z.enum(['ACADEMY', 'EDUCATIONAL', 'ENTERPRISE', 'COMMUNITY']).default('EDUCATIONAL'),
+  contactName: z.string().trim().optional(),
+  contactEmail: z.string().trim().email('Email liên hệ không hợp lệ').optional().or(z.literal('')),
+  contactPhone: z.string().trim().optional(),
+  expectedLearners: z.number().int().positive().default(500),
+  notes: z.string().optional(),
+});
+
+const patchOrgSchema = z.object({
+  id: z.string().uuid('ID tổ chức không hợp lệ'),
+  status: z.enum(['ACTIVE', 'PENDING_CONTACT', 'PROVISIONING', 'SUSPENDED', 'CLOSED']).optional(),
+  code: z.string().trim().min(2).max(30).optional(),
+  notes: z.string().optional(),
+});
+
 export async function GET() {
   try {
-    const supabase = await createClient();
+    // 1. Enforce Platform Admin authorization
+    const authCheck = await requirePlatformAdmin();
+    if (!authCheck.isAuthorized || authCheck.errorResponse) {
+      return authCheck.errorResponse!;
+    }
 
-    // 1. Fetch organizations
+    const supabase = createAdminClient();
+
+    // 2. Fetch organizations
     const { data: orgs, error } = await supabase
       .from('organizations')
       .select('*')
@@ -18,7 +44,7 @@ export async function GET() {
       return NextResponse.json({ organizations: [] });
     }
 
-    // 2. Fetch member counts per organization
+    // 3. Fetch member counts per organization
     const { data: userOrgs } = await supabase
       .from('user_organizations')
       .select('organization_id');
@@ -47,27 +73,34 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ organizations: formatted });
+    return NextResponse.json({ success: true, organizations: formatted });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';
-    console.warn('GET /api/admin/organizations exception:', message);
-    return NextResponse.json({ organizations: [] });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request | NextRequest) {
   try {
-    const body = await request.json();
-    const { name, code, contactName, contactEmail, contactPhone, expectedLearners, notes, type } = body;
+    // 1. Enforce Platform Admin authorization
+    const authCheck = await requirePlatformAdmin();
+    if (!authCheck.isAuthorized || authCheck.errorResponse) {
+      return authCheck.errorResponse!;
+    }
 
-    if (!name || !code) {
+    const body = await request.json();
+    const validation = createOrgSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Tên và mã tổ chức (org_code) là bắt buộc' },
+        { error: validation.error.errors[0]?.message || 'Dữ liệu không hợp lệ' },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
+    const { name, code, contactName, contactEmail, contactPhone, expectedLearners, notes, type } =
+      validation.data;
+
+    const supabase = createAdminClient();
     const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
     const cleanSlug = cleanCode.toLowerCase();
 
@@ -77,13 +110,13 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         code: cleanCode,
         slug: cleanSlug,
-        type: type === 'ACADEMY' ? 'EDUCATIONAL' : (type || 'EDUCATIONAL'),
+        type: type === 'ACADEMY' ? 'EDUCATIONAL' : type,
         contact_name: (contactName || '').trim(),
         contact_email: (contactEmail || '').trim().toLowerCase(),
         contact_phone: (contactPhone || '').trim(),
-        expected_learners: Number(expectedLearners) || 500,
-        max_members: Number(expectedLearners) || 500,
-        quota_assessments: (Number(expectedLearners) || 500) * 10,
+        expected_learners: expectedLearners,
+        max_members: expectedLearners,
+        quota_assessments: expectedLearners * 10,
         status: 'ACTIVE',
         is_active: true,
         notes: (notes || '').trim(),
@@ -93,14 +126,18 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       if (error.code === '23505') {
-        return NextResponse.json({ error: `Mã tổ chức "${cleanCode}" đã tồn tại. Vui lòng chọn mã khác.` }, { status: 400 });
+        return NextResponse.json(
+          { error: `Mã tổ chức "${cleanCode}" đã tồn tại. Vui lòng chọn mã khác.` },
+          { status: 400 }
+        );
       }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     let inviteUrl = '';
     if (contactEmail && contactEmail.trim()) {
-      const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+      const token =
+        crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -113,7 +150,7 @@ export async function POST(request: NextRequest) {
         expires_at: expiresAt.toISOString(),
       });
 
-      const origin = request.nextUrl.origin || 'http://localhost:3000';
+      const origin = 'nextUrl' in request ? request.nextUrl.origin : new URL(request.url).origin;
       inviteUrl = `${origin}/personal/accept-invite?token=${token}`;
     }
 
@@ -124,17 +161,27 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
+export async function PATCH(request: Request | NextRequest) {
   try {
-    const body = await request.json();
-    const { id, status, code, notes } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'Thiếu ID tổ chức' }, { status: 400 });
+    // 1. Enforce Platform Admin authorization
+    const authCheck = await requirePlatformAdmin();
+    if (!authCheck.isAuthorized || authCheck.errorResponse) {
+      return authCheck.errorResponse!;
     }
 
-    const supabase = await createClient();
-    const updates: Record<string, any> = {};
+    const body = await request.json();
+    const validation = patchOrgSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.errors[0]?.message || 'Dữ liệu không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    const { id, status, code, notes } = validation.data;
+
+    const supabase = createAdminClient();
+    const updates: Record<string, unknown> = {};
 
     if (status) {
       updates.status = status;

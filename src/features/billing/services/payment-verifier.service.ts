@@ -19,12 +19,10 @@ export interface PaymentIntentResult {
 }
 
 export class PaymentVerifierService {
-  private static readonly BANK_ID = 'MB'; // MBBank
-  private static readonly ACCOUNT_NO = '0901234567';
-  private static readonly ACCOUNT_NAME = 'CONG TY CP CONG NGHE NEXA';
-
   /**
    * Tạo phiên thanh toán nâng cấp gói dịch vụ với mã đối soát giao dịch duy nhất
+   * Áp dụng nguyên tắc Fail-Closed: bắt buộc phải có cổng payOS hợp lệ để bảo đảm
+   * việc đối soát và kích hoạt quyền lợi diễn ra hoàn toàn tự động, minh bạch.
    */
   static async createPaymentIntent(
     userId: string,
@@ -50,110 +48,75 @@ export class PaymentVerifierService {
 
     // 2. Generate unique numeric orderCode for payOS (positive safe integer)
     const orderCode = Number(String(Date.now()).slice(-6) + String(Math.floor(100 + Math.random() * 900)));
-    const referenceCode = `NEXA${orderCode}`;
     const idempotencyKey = `idemp_${userId}_${planCode}_${Date.now()}`;
 
-    // 3. Try payOS API if configured
+    // 3. payOS Gateway - Fail-Closed: Bắt buộc cấu hình cổng thanh toán tự động
     const payOS = getPayOSClient();
-    if (payOS) {
-      try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const payosResponse = await payOS.paymentRequests.create({
-          orderCode,
-          amount: Number(plan.price_vnd),
-          description: `NEXA ${orderCode}`.slice(0, 25),
-          returnUrl: `${appUrl}/personal/billing/result?orderCode=${orderCode}&status=success`,
-          cancelUrl: `${appUrl}/personal/billing/result?orderCode=${orderCode}&status=cancelled`,
-          items: [
-            {
-              name: plan.name,
-              quantity: 1,
-              price: Number(plan.price_vnd),
-            },
-          ],
-        });
+    if (!payOS) {
+      throw new Error(
+        'Cổng thanh toán tự động payOS hiện chưa được cấu hình trên máy chủ. Vui lòng liên hệ quản trị viên.'
+      );
+    }
 
-        const { data: tx, error: txErr } = await adminSupabase
-          .from('payment_transactions')
-          .insert({
-            user_id: userId,
-            organization_id: organizationId || null,
-            plan_id: plan.id,
-            plan_code: plan.code,
-            amount: plan.price_vnd,
-            currency: 'VND',
-            provider: 'PAYOS',
-            transaction_reference: String(orderCode),
-            idempotency_key: idempotencyKey,
-            status: 'PENDING',
-            raw_payload: payosResponse,
-          })
-          .select('id')
-          .single();
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const payosResponse = await payOS.paymentRequests.create({
+        orderCode,
+        amount: Number(plan.price_vnd),
+        description: `NEXA ${orderCode}`.slice(0, 25),
+        returnUrl: `${appUrl}/personal/billing/result?orderCode=${orderCode}&status=success`,
+        cancelUrl: `${appUrl}/personal/billing/result?orderCode=${orderCode}&status=cancelled`,
+        items: [
+          {
+            name: plan.name,
+            quantity: 1,
+            price: Number(plan.price_vnd),
+          },
+        ],
+      });
 
-        if (txErr || !tx) {
-          throw new Error(`Không thể khởi tạo giao dịch payOS: ${txErr?.message}`);
-        }
-
-        return {
-          transactionId: tx.id,
-          referenceCode: String(orderCode),
-          orderCode,
-          amount: Number(plan.price_vnd),
+      const { data: tx, error: txErr } = await adminSupabase
+        .from('payment_transactions')
+        .insert({
+          user_id: userId,
+          organization_id: organizationId || null,
+          plan_id: plan.id,
+          plan_code: plan.code,
+          amount: plan.price_vnd,
           currency: 'VND',
-          planCode: plan.code,
-          planName: plan.name,
-          accountNumber: payosResponse.accountNumber,
-          bankName: payosResponse.bin ? `Ngân hàng (BIN: ${payosResponse.bin})` : 'VietQR payOS',
-          accountName: payosResponse.accountName,
-          qrCodeUrl: payosResponse.qrCode,
-          transferContent: payosResponse.description,
-          checkoutUrl: payosResponse.checkoutUrl,
-          paymentLinkId: payosResponse.paymentLinkId,
-        };
-      } catch (payosErr) {
-        console.warn('payOS initialization failed, falling back to standard VietQR:', payosErr);
+          provider: 'PAYOS',
+          transaction_reference: String(orderCode),
+          idempotency_key: idempotencyKey,
+          status: 'PENDING',
+          raw_payload: payosResponse,
+        })
+        .select('id')
+        .single();
+
+      if (txErr || !tx) {
+        throw new Error(`Không thể khởi tạo giao dịch payOS: ${txErr?.message}`);
       }
-    }
 
-    // 4. Fallback to standard VietQR if payOS is not configured or fails
-    const { data: tx, error: txErr } = await adminSupabase
-      .from('payment_transactions')
-      .insert({
-        user_id: userId,
-        organization_id: organizationId || null,
-        plan_id: plan.id,
-        plan_code: plan.code,
-        amount: plan.price_vnd,
+      return {
+        transactionId: tx.id,
+        referenceCode: String(orderCode),
+        orderCode,
+        amount: Number(plan.price_vnd),
         currency: 'VND',
-        provider: 'VIETQR',
-        transaction_reference: referenceCode,
-        idempotency_key: idempotencyKey,
-        status: 'PENDING',
-      })
-      .select('id')
-      .single();
-
-    if (txErr || !tx) {
-      throw new Error(`Không thể khởi tạo giao dịch: ${txErr?.message}`);
+        planCode: plan.code,
+        planName: plan.name,
+        accountNumber: payosResponse.accountNumber,
+        bankName: payosResponse.bin ? `Ngân hàng (BIN: ${payosResponse.bin})` : 'VietQR payOS',
+        accountName: payosResponse.accountName,
+        qrCodeUrl: payosResponse.qrCode,
+        transferContent: payosResponse.description,
+        checkoutUrl: payosResponse.checkoutUrl,
+        paymentLinkId: payosResponse.paymentLinkId,
+      };
+    } catch (payosErr) {
+      const msg = payosErr instanceof Error ? payosErr.message : 'Lỗi kết nối cổng thanh toán';
+      throw new Error(`Không thể khởi tạo phiên thanh toán payOS: ${msg}`);
     }
-
-    const transferContent = referenceCode;
-    const qrCodeUrl = `https://img.vietqr.io/image/${this.BANK_ID}-${this.ACCOUNT_NO}-compact2.png?amount=${plan.price_vnd}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(this.ACCOUNT_NAME)}`;
-
-    return {
-      transactionId: tx.id,
-      referenceCode,
-      amount: plan.price_vnd,
-      currency: 'VND',
-      planCode: plan.code,
-      planName: plan.name,
-      accountNumber: this.ACCOUNT_NO,
-      bankName: 'MBBank (Ngân hàng Quân Đội)',
-      accountName: this.ACCOUNT_NAME,
-      qrCodeUrl,
-      transferContent,
-    };
   }
 
   /**
@@ -312,11 +275,7 @@ export class PaymentVerifierService {
       transferContent = typeof payload.description === 'string' ? payload.description : tx.transaction_reference;
       checkoutUrl = typeof payload.checkoutUrl === 'string' ? payload.checkoutUrl : undefined;
     } else {
-      accountNumber = this.ACCOUNT_NO;
-      accountName = this.ACCOUNT_NAME;
-      bankName = 'MBBank (Ngân hàng Quân Đội)';
       transferContent = tx.transaction_reference;
-      qrCodeUrl = `https://img.vietqr.io/image/${this.BANK_ID}-${this.ACCOUNT_NO}-compact2.png?amount=${tx.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(this.ACCOUNT_NAME)}`;
     }
 
     return {

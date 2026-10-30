@@ -86,7 +86,7 @@ export default async function OrgClassesPage({
 
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <Link
-                  href={`/personal/groups/${cls.id}`}
+                  href={`/org/${slug}/classes/${cls.id}`}
                   className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1"
                 >
                   <span>Vào lớp</span>

@@ -80,14 +80,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Fetch organization info
-    const { data: org } = await adminSupabase
+    // 3. Fetch organization info & verify active status and seats availability
+    const { data: org, error: orgError } = await adminSupabase
       .from('organizations')
-      .select('id, name')
+      .select('id, name, slug, is_active, max_members')
       .eq('id', invitation.organization_id)
       .single();
 
-    // 3. Upsert into user_organizations
+    if (orgError || !org) {
+      return NextResponse.json({ error: 'Tổ chức không tồn tại' }, { status: 404 });
+    }
+
+    if (org.is_active === false) {
+      return NextResponse.json(
+        { error: 'Tổ chức này hiện đang bị tạm ngưng hoạt động. Không thể chấp nhận lời mời.' },
+        { status: 403 }
+      );
+    }
+
+    // Check seat capacity
+    const { count: memberCount, error: countErr } = await adminSupabase
+      .from('user_organizations')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', org.id)
+      .eq('status', 'ACTIVE');
+
+    const maxAllowedSeats = org.max_members || 50;
+    if (!countErr && typeof memberCount === 'number' && memberCount >= maxAllowedSeats) {
+      return NextResponse.json(
+        {
+          error: `Tổ chức đã đạt giới hạn thành viên tối đa (${maxAllowedSeats} ghế). Vui lòng liên hệ quản trị viên tổ chức.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 4. Upsert into user_organizations
     const { error: memberError } = await adminSupabase
       .from('user_organizations')
       .upsert(
@@ -107,7 +135,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Mark invitation as ACCEPTED
+    // 5. Mark invitation as ACCEPTED
     await adminSupabase
       .from('organization_invitations')
       .update({
@@ -122,6 +150,7 @@ export async function POST(request: NextRequest) {
       organization: {
         id: invitation.organization_id,
         name: org?.name,
+        slug: org?.slug,
         role: invitation.org_role,
       },
     });
@@ -149,7 +178,7 @@ export async function GET(request: NextRequest) {
         status,
         expires_at,
         created_at,
-        organizations ( id, name, code )
+        organizations ( id, name, slug, code )
       `)
       .eq('token', token)
       .single();

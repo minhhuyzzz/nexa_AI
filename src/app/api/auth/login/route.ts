@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createClientJs } from '@supabase/supabase-js';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 const loginSchema = z.object({
@@ -42,8 +43,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Fetch profile and enforce Superadmin Authority (email only)
-    const { data: profile } = await supabase
+    // 2. Build authenticated Supabase client using current session token to satisfy RLS
+    const authHeaders: Record<string, string> = authData.session?.access_token
+      ? { Authorization: `Bearer ${authData.session.access_token}` }
+      : {};
+
+    const authedClient = createClientJs(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
+      {
+        global: {
+          headers: authHeaders,
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
+
+    // Fetch profile and enforce Superadmin Authority (email only)
+    const { data: profile } = await authedClient
       .from('profiles')
       .select('role')
       .eq('id', authData.user.id)
@@ -66,7 +86,7 @@ export async function POST(request: Request) {
       redirectUrl = '/admin/dashboard';
     } else {
       // 3. Check organization memberships
-      const { data: userOrgs } = await supabase
+      const { data: userOrgs } = await authedClient
         .from('user_organizations')
         .select(`
           organization_id,
@@ -127,7 +147,7 @@ export async function POST(request: Request) {
         const todayStr = formatter.format(now);
         const yesterdayStr = formatter.format(new Date(now.getTime() - 24 * 60 * 60 * 1000));
 
-        const { data: p } = await supabase
+        const { data: p } = await authedClient
           .from('profiles')
           .select('points, total_login_days, login_streak, last_login_date')
           .eq('id', authData.user.id)
@@ -138,7 +158,7 @@ export async function POST(request: Request) {
           const nextTotalDays = (p.total_login_days ?? 1) + 1;
           const nextStreak = p.last_login_date === yesterdayStr ? (p.login_streak ?? 1) + 1 : 1;
 
-          await supabase
+          await authedClient
             .from('profiles')
             .update({
               points: nextPoints,

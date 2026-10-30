@@ -1,7 +1,21 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/lib/payos/payos-client', () => ({
+  getPayOSClient: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
+}));
+
 import { PaymentVerifierService } from './payment-verifier.service';
+import { getPayOSClient } from '@/lib/payos/payos-client';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 describe('PaymentVerifierService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
   it('should parse reference codes matching NEXA[0-9]{6}', () => {
     const rawContent = 'Nguoi nop tien: NEXA849201 chuyen tien hoc phi';
     const match = rawContent.match(/(NEXA\d{6})/i);
@@ -38,5 +52,26 @@ describe('PaymentVerifierService', () => {
 
     const url = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(ref)}&accountName=${encodeURIComponent(accountName)}`;
     expect(url).toBe('https://img.vietqr.io/image/MB-0901234567-compact2.png?amount=299000&addInfo=NEXA123456&accountName=CONG%20TY%20CP%20CONG%20NGHE%20NEXA');
+  });
+
+  it('should fail closed when attempting payment intent without proper gateway configuration', async () => {
+    vi.mocked(createAdminClient).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { code: 'LEARNER_PRO', price_vnd: 199000 },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    } as unknown as ReturnType<typeof createAdminClient>);
+
+    vi.mocked(getPayOSClient).mockReturnValue(null);
+
+    await expect(
+      PaymentVerifierService.createPaymentIntent('00000000-0000-0000-0000-000000000000', 'LEARNER_PRO')
+    ).rejects.toThrow('Cổng thanh toán tự động payOS hiện chưa được cấu hình');
   });
 });

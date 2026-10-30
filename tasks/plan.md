@@ -1,105 +1,115 @@
-# Kế Hoạch Triển Khai: Tối Ưu Personal Dashboard UX & Chuẩn Hóa 5 Miền Năng Lực (DigComp)
+# Kế Hoạch Triển Khai Toàn Diện: NEXA AI Business Architecture & Security Overhaul (Phase 0 -> Phase 4)
 
 > **Căn cứ tài liệu:**
-> - [NEXA_PERSONAL_DASHBOARD_UX_PRODUCT_REVIEW_2026-10-30 (1).md](file:///c:/nexa/NEXA_PERSONAL_DASHBOARD_UX_PRODUCT_REVIEW_2026-10-30%20(1).md) (Tài liệu Review & Đề xuất Sản phẩm)
-> - [AGENTS.md](file:///c:/nexa/AGENTS.md) (Quy tắc kiến trúc & UI bất biến của NEXA)
-> - [NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md](file:///c:/nexa/NEXA_AI_PRODUCT_SPEC_PERSONAL_ORGANIZATION_WORKSPACES.md) (Đặc tả không gian làm việc)
+> - [NEXA_REVIEW_PERSONAL_ORG_BUSINESS_2026-10-30_d7934984.md](file:///c:/Users/CPS/Downloads/NEXA_REVIEW_PERSONAL_ORG_BUSINESS_2026-10-30_d7934984.md)
+> - [AGENTS.md](file:///c:/nexa/AGENTS.md)
 >
-> **Kỹ năng áp dụng:** `using-agent-skills`, `planning-and-task-breakdown`  
+> **Kỹ năng áp dụng:** `planning-and-task-breakdown`, `incremental-implementation`  
 > **Trạng thái:** Kế hoạch thực thi chính thức (Active Master Plan)
 
 ---
 
-## 1. Đánh Giá Chuyên Môn Về Bản Review UX & Sản Phẩm
+## 1. Tầm Nhìn Kiến Trúc & Mục Tiêu
 
-Bản review ngày 30/10/2026 là một phân tích **xuất sắc, sắc bén và bám sát thực tế vận hành**. Tài liệu đã bóc tách chính xác các mâu thuẫn cốt lõi đang xuất hiện trên Dashboard cá nhân:
-
-1. **Nguyên tắc "Đúng 5 Miền Năng Lực" (Abolish 21 micro-skills UI tracking):**
-   - *Thực trạng:* Code và UI đang cố gắng đo đạc, hiển thị "0/21 kỹ năng", khiến giao diện vụn vặt và người học bị ngợp. Đánh giá trắc nghiệm/thực hành không thể bao phủ 21 kỹ năng vi mô với độ tin cậy thống kê cao.
-   - *Đột phá:* Cố định việc đo lường, công bố điểm và lộ trình ở **đúng 5 miền DigComp**. 21 kỹ năng thành phần chỉ là metadata nội bộ trong CSDL.
-2. **Xóa bỏ hiện tượng "Đa giác rỗng" (Empty Polygon) & Phân biệt `null` vs `0`:**
-   - Người mới toanh vào thấy 5 đỉnh Radar đều 0%, nhưng bên dưới lại báo "0 miền cần cải thiện". `null` (chưa có bằng chứng) bị đánh đồng với `0` (đã thi và bị 0 điểm).
-   - Giải pháp: Chỉ vẽ Radar khi có đủ bằng chứng 5 miền. Khi chưa đủ, hiển thị thanh tiến độ "Đã đánh giá x/5 miền" và CTA làm bài đầu vào.
-3. **NEXA là Nền Tảng Đánh Giá & Phát Triển Năng Lực, KHÔNG PHẢI Sàn Bán Khóa Học:**
-   - NEXA không có giỏ hàng, không kinh doanh khóa học đối tác, không ưu tiên thương mại vì tiền hoa hồng.
-   - Khóa học là **tài nguyên tuyển chọn (Curated Catalog)** từ nguồn uy tín (Google, Coursera, Vinschool, MOOCs...) nhằm khắc phục khoảng trống năng lực (< 70%). Điểm khác biệt sống còn của NEXA là **vòng lặp kín**: *Đánh giá → Xác định khoảng trống → Gợi ý khóa tuyển chọn → Học/Thực hành → Đánh giá lại cùng miền → Đo lường tiến bộ*.
-4. **Tách biệt 3 Thang Đo (Tri-Metric Separation):**
-   - *Điểm hoạt động (XP)* $\ne$ *Điểm bài thi* $\ne$ *Hồ sơ năng lực 5 miền*.
-   - Bug nghiêm trọng: `profiles.points >= 450` (điểm danh đăng nhập) đang tự động mở khóa chứng chỉ Master Certificate trong `profile-stats/route.ts`. Chứng chỉ năng lực phải dựa trên bằng chứng khảo thí hợp lệ.
-5. **Tinh gọn IA Sidebar & Chuỗi Thanh Toán Trang Riêng (payOS):**
-   - Loại bỏ `Bàn chấm bài` và `Gói & Nâng cấp` khỏi sidebar cấp 1 (đưa vào ngữ cảnh cụ thể khi có bài nộp hoặc menu tài khoản).
-   - Thay thế Modal QR thanh toán bằng chuỗi trang riêng: `/personal/billing` $\rightarrow$ `/personal/checkout/[orderId]` $\rightarrow$ `/personal/billing/result`, kết nối trực tiếp với cổng payOS đã cấu hình.
+Chuyển đổi NEXA từ một hệ thống các dashboard phân tán thành một **nền tảng SaaS đánh giá và phát triển năng lực số B2B thực sự vận hành được**, phục vụ trường học và doanh nghiệp với chu trình khép kín:
+1. **Bảo mật & Phân quyền Đa Tenant (Multi-Tenant Isolation):** Độc lập tuyệt đối giữa Personal Workspace và Organization Workspace. Không có bất kỳ kẽ hở RLS hay API nào cho phép rò rỉ dữ liệu chéo giữa các tổ chức.
+2. **Vòng đời Khách hàng Business Hợp chuẩn:** Khách hàng B2B trải qua luồng thẩm duyệt hợp đồng (`Inquiry → Review → Contract → Entitlements → Activation`), không tự mua gói qua checkout cá nhân.
+3. **Onboarding Quy mô lớn:** Link/mã tham gia có kiểm soát, hàng đợi phê duyệt (Approval Queue), import hàng loạt bằng file CSV/Excel với validation chặt chẽ.
+4. **Vận hành Khảo thí Tập thể (Assessment Campaigns):** Lấy "Đợt đánh giá" làm trung tâm điều phối: Giao đề → Nộp bài → Chấm Rubric HITL → Phê duyệt → Báo cáo 5 miền.
+5. **Độc quyền Quản trị AI:** Toàn bộ việc lựa chọn model, provider, latency và API key thuộc Platform Admin; khách hàng chỉ quản lý Quota và Credits.
+6. **Chuẩn hóa 5 Miền Năng Lực (DigComp):** Báo cáo và đề xuất học liệu dựa trên đúng 5 miền cốt lõi, không chia vụn vặt 21 kỹ năng con; phân biệt rõ `null` (chưa đo) và `0` (đạt 0 điểm).
 
 ---
 
-## 2. Quyết Định Kiến Trúc Then Chốt (Architecture Decisions)
+## 2. Các Quyết Định Kiến Trúc Then Chốt (ADR)
 
-1. **ADR-05: Chuẩn Hóa Dữ Liệu Năng Lực 5 Miền (Domain-Level Competency Contract):**
-   - Toàn bộ API (`/api/personal/competency-profile`, `/api/personal/competency-radar`, `/api/ai/analyze-competency`) và dịch vụ `CompetencyAggregationService` chỉ trả về mảng 5 phần tử tương ứng 5 miền DigComp.
-   - Trạng thái miền: `INSUFFICIENT_DATA` (score = null), `NEEDS_IMPROVEMENT` (score < 70), `MEETS_TARGET` (score >= 70).
-2. **ADR-06: Tách Rời Hoàn Toàn Gamification XP Khỏi Chứng Chỉ Năng Lực:**
-   - Cột `points` trong `profiles` chỉ là "Điểm tích lũy hoạt động" (XP).
-   - Cột `isCertificateUnlocked` trong `profile-stats` chỉ `true` khi người dùng có bản ghi hợp lệ trong bảng `credentials` (được cấp từ bài thi khảo thí hoặc hội đồng thẩm định).
-3. **ADR-07: Kho Khóa Học Tuyển Chọn Độc Lập (Curated Course Catalog):**
-   - Bảng mới `course_catalog` lưu trữ các khóa học được tuyển chọn thủ công, gắn với 1 hoặc nhiều trong 5 miền, có URL chính thức đã kiểm định.
-   - AI chỉ được phép gợi ý `course_id` từ danh mục này; server sẽ validate ID trước khi trả về cho client.
-4. **ADR-08: On-Demand Contextual Routing Cho Chấm Bài & Thanh Toán:**
-   - `Bàn chấm bài` (`/personal/grading`) được kích hoạt thông qua CTA "Bài chờ chấm (n)" trên Dashboard hoặc từ danh sách bài tập của lớp học.
-   - Nâng cấp gói chuyển hướng sang `/personal/checkout/[orderId]` sử dụng payOS SDK, loại bỏ hoàn toàn `showQrModal`.
+- **ADR-09: Fail-Closed Security & Strict Tenant RLS (Phase 0)**
+  - Hủy bỏ toàn bộ chính sách RLS quá rộng (`auth.uid() IS NOT NULL`, `SELECT USING (true)`).
+  - Thu hồi các quyền cấp thừa cho `anon` trên các bảng thành viên và tổ chức.
+  - Tách bạch rõ quyền: Người dùng chỉ xem được membership của chính mình; Quản trị viên chỉ quản lý thành viên trong tổ chức của mình.
+  - Cổng thanh toán payOS chuyển sang **fail-closed**: nếu payOS không cấu hình hoặc khởi tạo lỗi, API lập tức từ chối và báo lỗi, tuyệt đối không xuất mã QR tài khoản cá nhân hardcoded.
+- **ADR-10: Ẩn Giấu Hoàn Toàn Metadata Model AI Khỏi Client (Phase 0)**
+  - Client Personal và Organization Dashboard không bao giờ nhận tên model (`gemini-1.5-flash`), tên provider hay thời gian phản hồi (latency).
+  - Client chỉ nhận: Trạng thái (Khả dụng / Đang xử lý / Tạm gián đoạn), số dư credits và kết quả đánh giá.
+- **ADR-11: Vòng Đời Organization Business Thẩm Duyệt (Phase 1)**
+  - Form liên hệ doanh nghiệp tạo bản ghi trong bảng `business_inquiries` với trạng thái `PENDING_CONTACT`.
+  - Chỉ Platform Admin (được kiểm tra quyền server-side) mới có quyền tạo hoặc chuyển trạng thái Organization sang `ACTIVE`, đồng thời cấp `organization_entitlements` (số ghế, hạn mức AI, số bài thi, ngày hết hạn).
+- **ADR-12: Onboarding Thành Viên Đa Kênh An Toàn (Phase 1)**
+  - Link/mã tham gia (`join_codes`): có thời hạn (mặc định 7 ngày), giới hạn số lượt dùng (max_uses), có thể thu hồi (revoke), vai trò mặc định là `MEMBER`.
+  - Hàng đợi yêu cầu (`membership_requests`): ứng viên gửi yêu cầu sẽ rơi vào trạng thái `PENDING`, yêu cầu Org Admin duyệt mới trở thành `ACTIVE` (có kiểm tra trần số ghế còn lại).
+  - Import CSV: kiểm tra định dạng email, loại bỏ trùng lặp, kiểm tra số ghế trước khi tạo hàng loạt.
+- **ADR-13: Thực Thể Đợt Đánh Giá - Assessment Campaigns (Phase 2)**
+  - Tạo bảng `assessment_campaigns`: liên kết Đề đánh giá (đã khóa version) với Danh sách Lớp/Nhóm, Hạn nộp, Người chấm và Quy chế.
+  - Toàn bộ giao diện quản lý lớp và bài tập của tổ chức chạy hoàn toàn trong Shell Org (`/org/[slug]/*`), không bao giờ chuyển hướng sang `/personal/groups/[id]`.
+- **ADR-14: Đo Lường 5 Miền & Can Thiệp Đào Tạo Cấp Cohort (Phase 3)**
+  - Báo cáo tổ chức đo lường tỷ lệ tham gia, tỷ lệ đạt chuẩn (>= 70%) trên 5 miền.
+  - Phân biệt rõ `null` (chưa có bằng chứng) và `0` (đạt 0 điểm).
+  - Đề xuất khóa học từ `course_catalog` theo nhóm khoảng trống năng lực của tập thể, giữ vững nguyên tắc NEXA không phải sàn thương mại điện tử bán khóa học.
 
 ---
 
-## 3. Lộ Trình Triển Khai Chi Tiết (Vertical Slices)
+## 3. Lộ Trình Triển Khai 5 Giai Đoạn
 
 ```mermaid
 flowchart TD
-    subgraph Phase1["Giai Đoạn 1: Nền Tảng Dữ Liệu 5 Miền & Tinh Gọn Sidebar"]
-        T11["Task 1.1: Chuẩn hóa 5 Miền & Tách XP khỏi Chứng Chỉ"]
-        T12["Task 1.2: Tái cấu trúc PersonalSidebar theo 3 nhóm ngữ cảnh"]
-        T13["Task 1.3: Nâng cấp Dashboard 4 trạng thái & Fix Onboarding Catalog"]
-        T11 --> T12 --> T13
+    subgraph Phase0["Phase 0: Bảo Mật & Toàn Vẹn Dữ Liệu (Security Gate)"]
+        T01["Task 0.1: Sửa RLS user_organizations & Thu hồi quyền bảng (ORG-F01)"]
+        T02["Task 0.2: Server Guard Platform Admin cho /api/admin/organizations (ORG-F02)"]
+        T03["Task 0.3: Chuyển payOS sang Fail-Closed & Xóa Bank Hardcoded (PERS-F01)"]
+        T04["Task 0.4: Ẩn tên model AI, provider, latency khỏi Personal/Org UI (PERS-F03, ORG-F06)"]
+        T01 --> T02 --> T03 --> T04
     end
 
-    subgraph Phase2["Giai Đoạn 2: Kho Khóa Học Tuyển Chọn & Lộ Trình 4 Bước"]
-        T21["Task 2.1: Migration course_catalog & Seed khóa học 5 miền"]
-        T22["Task 2.2: Redesign Lộ trình học tập gắn với miền ưu tiên"]
-        T23["Task 2.3: Ràng buộc AI Recommender vào Catalog hợp lệ"]
-        T21 --> T22 --> T23
+    subgraph Phase1["Phase 1: Business Onboarding & Quản Lý Thành Viên"]
+        T11["Task 1.1: Tách Business Inquiries & Quy trình Platform Admin duyệt Org"]
+        T12["Task 1.2: Join Link / Join Code có hạn & Hàng đợi phê duyệt (Approval Queue)"]
+        T13["Task 1.3: Import học viên hàng loạt qua CSV/Excel có validation"]
+        T14["Task 1.4: Harden Invite/Accept: Chống leo thang quyền & Đảm bảo nguyên tử"]
+        T11 --> T12 --> T13 --> T14
     end
 
-    subgraph Phase3["Giai Đoạn 3: Quản Lý Tác Vụ, Chấm Bài & Bảng Xếp Hạng"]
-        T31["Task 3.1: Tab mặc định 'Cần xử lý' trong Submissions"]
-        T32["Task 3.2: Tích hợp Bàn chấm bài theo ngữ cảnh"]
-        T33["Task 3.3: Dọn dẹp mock data Bảng xếp hạng"]
+    subgraph Phase2["Phase 2: Workflow Khảo Thí Tổ Chức (Assessment Campaigns)"]
+        T21["Task 2.1: Quản lý Đề thi Tổ chức & Khóa Version Đề"]
+        T22["Task 2.2: Thực thể Đợt đánh giá (Campaigns) & Giao bài cho Lớp"]
+        T23["Task 2.3: Chuyển toàn bộ Org Class Detail về Shell Org"]
+        T24["Task 2.4: Bàn chấm bài Tổ chức với AI Rubric gợi ý (HITL)"]
+        T21 --> T22 --> T23 --> T24
+    end
+
+    subgraph Phase3["Phase 3: Báo Cáo Năng Lực 5 Miền & Đề Xuất Đào Tạo"]
+        T31["Task 3.1: Canonical Analytics 5 Miền cấp Tổ chức (Tách biệt null vs 0)"]
+        T32["Task 3.2: So sánh tiến bộ giữa các đợt thi & Báo cáo tỷ lệ đạt"]
+        T33["Task 3.3: Gợi ý học liệu/khóa tuyển chọn theo khoảng trống tập thể"]
         T31 --> T32 --> T33
     end
 
-    subgraph Phase4["Giai Đoạn 4: Thanh Toán Checkout Trang Riêng (payOS) & Đánh Bóng UI"]
-        T41["Task 4.1: Xây dựng chuỗi trang Billing Checkout Result"]
-        T42["Task 4.2: Audit UI, JetBrains Mono font & WCAG AA"]
-        T41 --> T42
+    subgraph Phase4["Phase 4: Hạn Mức Thực Tế, Phân Quyền Sidebar & Hoàn Thiện UI/UX"]
+        T41["Task 4.1: Quota & AI Credits Ledger theo Hợp đồng Business"]
+        T42["Task 4.2: Tái cấu trúc Sidebar Organization theo vai trò"]
+        T43["Task 4.3: Seed bài thi Baseline thật trong DB & Kiểm thử toàn trình E2E"]
+        T41 --> T42 --> T43
     end
 
-    Phase1 --> Phase2 --> Phase3 --> Phase4
+    Phase0 --> Phase1 --> Phase2 --> Phase3 --> Phase4
 ```
 
 ---
 
-## 4. Quản Trị Rủi Ro (Risks & Mitigations)
+## 4. Quản Trị Rủi Ro & Biện Pháp Phòng Ngừa
 
 | Rủi ro | Mức độ | Biện pháp giảm thiểu |
 | :--- | :---: | :--- |
-| **Gãy tương thích giao diện cũ khi bỏ 21 kỹ năng** | Trung bình | Giữ nguyên schema bảng `competencies` trong CSDL; chỉ thay đổi tầng service aggregation và API response; không xóa cột/bảng. |
-| **Học viên mới không có bài thi đầu vào nào khả dụng** | Cao | Thêm cơ chế fallback hoặc kiểm tra seed để bảo đảm luôn có ít nhất 1 bài đánh giá DigComp Baseline ở trạng thái `PUBLISHED`. |
-| **AI tự ý sinh ra URL hoặc tên khóa học ảo** | Trung bình | Backend cưỡng chế chỉ chấp nhận `course_id` tồn tại trong bảng `course_catalog`. Mọi gợi ý không khớp ID sẽ bị loại bỏ. |
-| **Trải nghiệm thanh toán bị đứt quãng khi chuyển từ Modal sang Trang riêng** | Thấp | Lưu `orderId` vào `payment_transactions` và cookie/query params để người dùng F5 hoặc quay lại vẫn giữ nguyên phiên thanh toán. |
+| **RLS đệ quy vô hạn (Infinite recursion)** | Cao | Khi kiểm tra quyền quản trị của caller trong RLS, sử dụng hàm `SECURITY DEFINER` được tối ưu hóa hoặc bảng helper không tự tham chiếu trực tiếp. |
+| **Ảnh hưởng đến người dùng Personal khi vá RLS** | Cao | Đảm bảo policy cho phép user đọc bản ghi của chính họ (`auth.uid() = user_id`) luôn được bảo tồn độc lập. |
+| **PayOS sandbox gián đoạn thanh toán thử nghiệm** | Trung bình | Cơ chế fail-closed chặn tạo QR ảo, nhưng cung cấp nút kiểm thử giả lập rõ ràng trong môi trường dev/staging có gắn cờ môi trường. |
+| **Lỗi lệch Tenant khi điều phối bài thi** | Cao | Mọi bảng bài thi, lớp học, đợt đánh giá đều bắt buộc có ràng buộc khóa ngoại `organization_id` và RLS kiểm tra membership chặt chẽ. |
 
 ---
 
-## 5. Tiêu Chuẩn Nghiệm Thu (Definition of Done)
+## 5. Định Nghĩa Hoàn Thành (Definition of Done)
 
-1. **5 Miền Năng Lực:** Chỉ hiển thị 5 miền; không còn xuất hiện chỉ số "0/21 kỹ năng"; phân biệt rõ ràng giữa `null` (chưa đo) và `0%` (đã thi 0 điểm); Radar chỉ vẽ khi đủ 5 miền.
-2. **Hành Trình Khép Kín:** Học viên làm bài đầu vào → Nhận kết quả 5 miền → Xem lộ trình với khóa học tuyển chọn thực tế → Đánh giá lại cùng miền.
-3. **Sidebar Chuẩn:** Bỏ `Bàn chấm bài` và `Gói & Nâng cấp` khỏi cấp 1; sidebar chia đúng 3 nhóm: `HỌC TẬP & PHÁT TRIỂN`, `NHÓM & CÔNG VIỆC`, `CÔNG CỤ TẠO & TỔ CHỨC`.
-4. **Thanh Toán payOS:** Nâng cấp gói đi qua 3 trang riêng biệt; QR payOS hiển thị chính xác; webhook cập nhật gói idempotent.
-5. **Chất Lượng Kỹ Thuật:** `npm run typecheck` đạt 0 lỗi, toàn bộ test suites `npm test` vượt qua 100%, tuân thủ nghiêm ngặt quy chuẩn UI trong `AGENTS.md`.
+- [ ] Toàn bộ các Phase thực hiện tuần tự và vượt qua kiểm tra chất lượng.
+- [ ] `npm run typecheck` đạt 0 lỗi TypeScript (`tsc --noEmit`).
+- [ ] `npx vitest run` đạt 100% test suites pass.
+- [ ] Kiểm thử bảo mật đa vai trò (Anonymous, Member Org A, Admin Org A, Member Org B, Platform Admin) chứng minh cách ly tenant hoàn hảo.
+- [ ] Tuân thủ tuyệt đối quy tắc giao diện trong `AGENTS.md`.

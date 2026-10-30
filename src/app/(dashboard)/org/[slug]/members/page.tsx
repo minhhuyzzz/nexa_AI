@@ -95,6 +95,7 @@ export default async function OrgMembersPage({
         organizationId={org.id}
         organizationName={org.name}
         members={members}
+        maxMembers={org.max_members || 50}
         isManager={Boolean(isManager)}
       />
     </div>

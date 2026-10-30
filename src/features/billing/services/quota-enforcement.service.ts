@@ -18,6 +18,18 @@ export interface AICreditsCheckResult {
   planTier: PlanTier;
 }
 
+export interface OrgEntitlementSummary {
+  contractNumber: string;
+  maxSeats: number;
+  maxAssessments: number;
+  aiCreditsGranted: number;
+  aiCreditsUsed: number;
+  remainingCredits: number;
+  startsAt: string;
+  expiresAt: string;
+  isActive: boolean;
+}
+
 /**
  * Service quản lý và cưỡng chế hạn mức tập trung cho Personal Workspace & Organization Workspace
  * Đảm bảo gói FREE có giá trị sử dụng thực tế và chặn vượt hạn mức ở cấp máy chủ.
@@ -254,6 +266,93 @@ export class QuotaEnforcementService {
           ? `Số dư AI Credits hiện tại (${currentCredits}) không đủ cho tác vụ này (Cần: ${requiredCredits}). Vui lòng nâng cấp hoặc nạp thêm credits.`
           : undefined,
       planTier,
+    };
+  }
+
+  /**
+   * Lấy thông tin hợp đồng và hạn mức cấp cho tổ chức
+   */
+  static async getOrgEntitlements(
+    supabase: SupabaseClient,
+    organizationId: string
+  ): Promise<OrgEntitlementSummary> {
+    const { data: entitlement } = await supabase
+      .from('organization_entitlements')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (entitlement) {
+      const granted = entitlement.ai_credits_granted ?? 0;
+      const used = entitlement.ai_credits_used ?? 0;
+      return {
+        contractNumber: entitlement.contract_number || 'NEXA-B2B-STD',
+        maxSeats: entitlement.max_seats ?? 50,
+        maxAssessments: entitlement.max_assessments ?? 500,
+        aiCreditsGranted: granted,
+        aiCreditsUsed: used,
+        remainingCredits: Math.max(0, granted - used),
+        startsAt: entitlement.starts_at || new Date().toISOString(),
+        expiresAt: entitlement.expires_at || new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        isActive: Boolean(entitlement.is_active),
+      };
+    }
+
+    // Fallback: nếu chưa có bản ghi entitlements riêng, đọc từ bảng organizations
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name, slug, quota_assessments, is_active')
+      .eq('id', organizationId)
+      .single();
+
+    return {
+      contractNumber: `HD-${(org?.slug || 'ENTERPRISE').toUpperCase()}`,
+      maxSeats: 50,
+      maxAssessments: org?.quota_assessments ?? 500,
+      aiCreditsGranted: 1000,
+      aiCreditsUsed: 0,
+      remainingCredits: 1000,
+      startsAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+      isActive: org?.is_active ?? true,
+    };
+  }
+
+  /**
+   * Kiểm tra và cưỡng chế số dư AI Credits của tổ chức
+   */
+  static async checkOrgAICreditsQuota(
+    supabase: SupabaseClient,
+    organizationId: string,
+    requiredCredits: number = 1
+  ): Promise<{
+    allowed: boolean;
+    remainingCredits: number;
+    requiredCredits: number;
+    reason?: string;
+  }> {
+    const entitlements = await this.getOrgEntitlements(supabase, organizationId);
+
+    if (!entitlements.isActive) {
+      return {
+        allowed: false,
+        remainingCredits: 0,
+        requiredCredits,
+        reason: 'Hợp đồng tổ chức đang bị tạm ngưng hoặc đã hết hạn.',
+      };
+    }
+
+    const allowed = entitlements.remainingCredits >= requiredCredits;
+    return {
+      allowed,
+      remainingCredits: entitlements.remainingCredits,
+      requiredCredits,
+      reason: allowed
+        ? undefined
+        : `Hạn mức AI Credits của tổ chức không đủ (Còn: ${entitlements.remainingCredits}, Cần: ${requiredCredits}). Vui lòng liên hệ quản trị viên để mở rộng hạn mức hợp đồng.`,
     };
   }
 }

@@ -18,7 +18,7 @@ function AcceptInviteContent() {
     orgRole: string;
     status: string;
     expiresAt: string;
-    organization: { id: string; name: string; code: string };
+    organization: { id: string; name: string; slug: string; code: string };
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -67,7 +67,7 @@ function AcceptInviteContent() {
 
       setSuccess(true);
       setTimeout(() => {
-        const orgSlug = inviteData?.organization?.code?.toLowerCase() || 'default';
+        const orgSlug = data.organization?.slug || inviteData?.organization?.slug || inviteData?.organization?.code?.toLowerCase() || 'default';
         router.push(`/org/${orgSlug}`);
       }, 1500);
     } catch (err) {
