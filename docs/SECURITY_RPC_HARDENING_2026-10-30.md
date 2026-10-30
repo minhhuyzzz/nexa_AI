@@ -11,16 +11,16 @@ The old `grant_points_atomic` function was callable without an explicit server-r
 ## Changes
 
 1. Migration `23_lock_down_points_and_credits_rpc.sql` removes point-grant execute access from PUBLIC/anon/authenticated, requires the service-role JWT, validates positive deltas, and retains ledger idempotency.
-2. `deduct_ai_credits` rejects zero/negative amounts and uses null-safe caller comparison; only authenticated and service-role callers can execute it.
+2. `deduct_ai_credits` rejects zero/negative amounts and requires service-role; public/anon/authenticated SQL callers cannot execute it directly.
 3. `is_admin_or_service` no longer trusts SECURITY DEFINER `CURRENT_USER`. Note: its existing email/profile admin checks are retained for compatibility and should be standardized separately.
-4. The assessment submission and lesson completion handlers use `createAdminClient()` for the point-grant call after their existing authenticated-user/domain checks. Their other Supabase queries remain user-scoped.
+4. The assessment submission and lesson completion handlers use `createAdminClient()` for the point-grant call after their existing authenticated-user/domain checks. The AI grading handler also uses the server role when deducting credits. Their other Supabase queries remain user-scoped.
 
 ## Required staging validation (do before production)
 
 - Apply migration 23 **after** migrations 21–22. Confirm role grants using PostgreSQL's `has_function_privilege`.
 - As an ordinary authenticated user, verify calling `grant_points_atomic` is denied even with self-owned `p_user_id`; repeat for another user ID and for anonymous requests.
 - As a service-role server caller, verify exactly one point grant, duplicate idempotency request returns `already_awarded=true`, and points tally matches the ledger.
-- With authenticated user JWT, call `deduct_ai_credits` with negative, zero, positive, too-large, and another user's ID: only positive permitted self-deduction should succeed.
+- As authenticated/anon users, verify all direct `deduct_ai_credits` calls fail. As service role, verify zero/negative/too-large amounts fail; positive bounded deduction works. Verify a normal AI grading request deducts credits through the authenticated API, not the browser.
 - Test a normal learner completing a learning module and passing an assessment. Point grant and ledger must remain functional.
 - Test a caller attempting to modify profile role/credits/points with normal Supabase client: must fail.
 - Test org A and org B users cannot query protected data via `is_admin_or_service`-guarded policies.
