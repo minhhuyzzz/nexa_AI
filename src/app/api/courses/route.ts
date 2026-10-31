@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { FALLBACK_CURATED_COURSES } from '@/features/courses/data/curated-courses';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +12,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('course_catalog')
-      .select('*')
+      .select('id, title, provider, official_url, domain_codes, level, language, format, duration, price_type, review_status, short_description, learning_outcomes')
       .eq('review_status', 'APPROVED');
 
     if (domain) {
@@ -22,23 +21,14 @@ export async function GET(request: Request) {
 
     const { data, error } = await query;
 
-    if (error || !data || data.length === 0) {
-      // Fallback to in-memory curated catalog if table is not yet populated
-      const filtered = domain
-        ? FALLBACK_CURATED_COURSES.filter((c) => c.domain_codes.includes(domain))
-        : FALLBACK_CURATED_COURSES;
-
-      return NextResponse.json({
-        success: true,
-        source: 'fallback',
-        courses: filtered,
-      });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
       source: 'database',
-      courses: data,
+      courses: data || [],
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi tải danh mục khóa học';

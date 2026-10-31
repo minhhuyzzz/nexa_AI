@@ -94,7 +94,7 @@ describe('Join Codes & Human-In-The-Loop Membership Approval Queue (DEC-05)', ()
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(body.joinCode.code).toBeDefined();
-    expect(body.joinCode.joinUrl).toContain('/join?code=');
+    expect(body.joinCode.joinUrl).toContain('/join/org/');
   });
 
   it('từ chối yêu cầu gia nhập nếu mã tham gia đã bị thu hồi (is_revoked = true)', async () => {

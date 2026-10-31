@@ -200,8 +200,8 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
           },
           {
             name: 'Kết quả của tôi',
-            href: `/org/${orgSlug}/analytics`,
-            icon: BarChart2,
+            href: `/org/${orgSlug}/my-results`,
+            icon: Award,
           },
         ],
       },

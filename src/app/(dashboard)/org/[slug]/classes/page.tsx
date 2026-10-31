@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import { FolderKanban, Users, Plus, ArrowRight, BookOpen } from 'lucide-react';
 import { CreateOrgClassButton } from '@/components/dashboard/org/CreateOrgClassButton';
 
@@ -12,17 +12,8 @@ export default async function OrgClassesPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
   const adminSupabase = createAdminClient();
-
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) {
-    notFound();
-  }
 
   // Fetch organization classes
   const { data: classes } = await adminSupabase

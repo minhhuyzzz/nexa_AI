@@ -96,7 +96,7 @@ export class CompetencyAggregationService {
           )
         `)
         .eq('user_id', userId)
-        .eq('status', 'SUBMITTED');
+        .in('status', ['SUBMITTED', 'EVALUATED']);
 
       (submissions || []).forEach((sub) => {
         (sub.submission_answers || []).forEach((ans: any) => {

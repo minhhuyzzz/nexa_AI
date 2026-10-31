@@ -25,7 +25,7 @@ interface UserRecord {
   role: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
   planTier: 'FREE' | 'PRO' | 'ENTERPRISE';
   points: number;
-  organization: { id: string; name: string; code: string } | null;
+  organization: { id: string; name: string; code: string; orgRole?: string } | null;
   submissionsCount: number;
   createdAt: string;
 }
@@ -33,6 +33,7 @@ interface UserRecord {
 function UsersContent() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -50,13 +51,16 @@ function UsersContent() {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const res = await fetch('/api/admin/users');
+      const json = await res.json();
       if (res.ok) {
-        const json = await res.json();
         setUsers(json.users || []);
+      } else {
+        setFetchError(json.error || 'Không thể tải danh sách người dùng từ máy chủ.');
       }
     } catch {
-      setUsers([]);
+      setFetchError('Lỗi kết nối máy chủ khi tải danh sách người dùng.');
     } finally {
       setLoading(false);
     }
@@ -165,6 +169,21 @@ function UsersContent() {
         <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
           <span>{actionMsg}</span>
+        </div>
+      )}
+
+      {fetchError && (
+        <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
+            <span>{fetchError}</span>
+          </div>
+          <button
+            onClick={fetchUsers}
+            className="px-2.5 py-1 bg-white hover:bg-rose-100 text-rose-700 rounded border border-rose-200 text-xs font-semibold cursor-pointer"
+          >
+            Thử lại
+          </button>
         </div>
       )}
 

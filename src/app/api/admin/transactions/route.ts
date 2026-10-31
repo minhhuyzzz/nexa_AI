@@ -115,6 +115,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ADM-03: Kiểm tra tính duy nhất của mã chứng từ ngân hàng proofReference
+    const { data: existingProof } = await adminSupabase
+      .from('payment_transactions')
+      .select('id, transaction_reference')
+      .neq('id', transactionId)
+      .eq('transaction_reference', proofReference)
+      .in('status', ['COMPLETED', 'SUCCESS'])
+      .maybeSingle();
+
+    if (existingProof) {
+      return NextResponse.json(
+        {
+          error: `Mã chứng từ ngân hàng "${proofReference}" đã được đối soát cho giao dịch ${existingProof.transaction_reference}. Không được phép dùng trùng lặp mã chứng từ.`,
+        },
+        { status: 400 }
+      );
+    }
+
     // 2. Fulfill transaction via atomic database RPC
     const { data: rpcResult, error: rpcErr } = await adminSupabase.rpc(
       'fulfill_payment_transaction',

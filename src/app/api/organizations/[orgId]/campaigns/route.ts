@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgApiPermission } from '@/lib/auth/org-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,74 +16,15 @@ const campaignSchema = z.object({
   passingScore: z.number().min(0).max(100).default(70.0),
 });
 
-async function checkOrgMember(userId: string, orgId: string) {
-  const adminSupabase = createAdminClient();
-  const { data: profile } = await adminSupabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  if (profile?.role === 'ADMIN') return true;
-
-  const { data: member } = await adminSupabase
-    .from('user_organizations')
-    .select('org_role, status')
-    .eq('user_id', userId)
-    .eq('organization_id', orgId)
-    .eq('status', 'ACTIVE')
-    .maybeSingle();
-
-  return Boolean(member);
-}
-
-async function checkOrgManagerOrAssessor(userId: string, orgId: string) {
-  const adminSupabase = createAdminClient();
-  const { data: profile } = await adminSupabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  if (profile?.role === 'ADMIN') return true;
-
-  const { data: member } = await adminSupabase
-    .from('user_organizations')
-    .select('org_role, status')
-    .eq('user_id', userId)
-    .eq('organization_id', orgId)
-    .eq('status', 'ACTIVE')
-    .maybeSingle();
-
-  return (
-    member &&
-    ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(member.org_role)
-  );
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
     const { orgId } = await params;
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
-    }
-
-    // SEC-02: Enforce tenant authorization before querying with service-role
-    const isMember = await checkOrgMember(user.id, orgId);
-    if (!isMember) {
-      return NextResponse.json(
-        { error: 'Bạn không có quyền truy cập đợt đánh giá của tổ chức này' },
-        { status: 403 }
-      );
+    const authResult = await requireOrgApiPermission(orgId, 'VIEW_WORKSPACE');
+    if (!authResult.authorized) {
+      return authResult.response!;
     }
 
     const adminSupabase = createAdminClient();
@@ -113,23 +54,11 @@ export async function POST(
 ) {
   try {
     const { orgId } = await params;
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+    const authResult = await requireOrgApiPermission(orgId, 'MANAGE_CAMPAIGNS');
+    if (!authResult.authorized) {
+      return authResult.response!;
     }
-
-    const isAuthorized = await checkOrgManagerOrAssessor(user.id, orgId);
-    if (!isAuthorized) {
-      return NextResponse.json(
-        { error: 'Bạn không có quyền tạo đợt đánh giá cho tổ chức này' },
-        { status: 403 }
-      );
-    }
+    const user = authResult.context!.user;
 
     const body = await request.json();
     const validation = campaignSchema.safeParse(body);
@@ -270,6 +199,96 @@ export async function POST(
       success: true,
       message: `Đã khởi tạo đợt đánh giá "${title}" và phân công bài thi tới ${classIds.length} lớp`,
       campaign,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+const updateCampaignSchema = z.object({
+  campaignId: z.string().uuid('ID đợt đánh giá không hợp lệ'),
+  status: z.enum(['SCHEDULED', 'ACTIVE', 'GRADING', 'COMPLETED', 'ARCHIVED']),
+});
+
+const ALLOWED_CAMPAIGN_TRANSITIONS: Record<string, string[]> = {
+  SCHEDULED: ['ACTIVE', 'ARCHIVED'],
+  ACTIVE: ['GRADING', 'COMPLETED', 'ARCHIVED'],
+  GRADING: ['ACTIVE', 'COMPLETED', 'ARCHIVED'],
+  COMPLETED: ['ARCHIVED'],
+  ARCHIVED: [],
+};
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgId: string }> }
+) {
+  try {
+    const { orgId } = await params;
+    const authResult = await requireOrgApiPermission(orgId, 'MANAGE_CAMPAIGNS');
+    if (!authResult.authorized) {
+      return authResult.response!;
+    }
+
+    const body = await request.json();
+    const validation = updateCampaignSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.errors[0]?.message || 'Dữ liệu không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    const { campaignId, status: nextStatus } = validation.data;
+    const adminSupabase = createAdminClient();
+
+    // 1. Fetch current campaign
+    const { data: campaign, error: fetchErr } = await adminSupabase
+      .from('assessment_campaigns')
+      .select('id, organization_id, status, title')
+      .eq('id', campaignId)
+      .eq('organization_id', orgId)
+      .single();
+
+    if (fetchErr || !campaign) {
+      return NextResponse.json(
+        { error: 'Không tìm thấy đợt đánh giá trong tổ chức này' },
+        { status: 404 }
+      );
+    }
+
+    const currentStatus = campaign.status;
+
+    // 2. Validate state machine transition
+    const allowed = ALLOWED_CAMPAIGN_TRANSITIONS[currentStatus] || [];
+    if (!allowed.includes(nextStatus)) {
+      return NextResponse.json(
+        {
+          error: `Không thể chuyển trạng thái đợt đánh giá từ "${currentStatus}" sang "${nextStatus}". Các trạng thái hợp lệ: ${allowed.join(', ') || 'Không có (đã kết thúc)'}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 3. Update status
+    const { data: updatedCampaign, error: updateErr } = await adminSupabase
+      .from('assessment_campaigns')
+      .update({
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', campaignId)
+      .select()
+      .single();
+
+    if (updateErr) {
+      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Đã chuyển đợt đánh giá sang trạng thái "${nextStatus}" thành công`,
+      campaign: updatedCampaign,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';

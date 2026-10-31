@@ -193,6 +193,7 @@ export default function LearnerDashboardPage() {
 
   // Calculate Level progress circle
   const progressRatio = Math.min(100, Math.round((stats.points / (stats.levelNextTarget || 450)) * 100));
+  const baselineTestId = assessments[0]?.id || 'a0000000-0000-0000-0000-000000000001';
 
   return (
     <div className="space-y-8">
@@ -527,8 +528,8 @@ export default function LearnerDashboardPage() {
                               </span>
                             )
                           ) : (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200 font-mono">
-                              Chưa đo
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                              Chưa đánh giá
                             </span>
                           )}
                           <span
@@ -578,10 +579,10 @@ export default function LearnerDashboardPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
-                      href="/personal/assessments"
+                      href={`/personal/take/${baselineTestId}`}
                       className="px-3 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 shadow-xs"
                     >
-                      <span>Bắt đầu khảo thí</span>
+                      <span>Bắt đầu khảo thí đầu vào</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
@@ -734,10 +735,10 @@ export default function LearnerDashboardPage() {
                 Hoàn thành bài khảo thí đầu tiên để hệ thống AI phát hiện khoảng trống năng lực và thiết kế lộ trình bồi dưỡng riêng cho bạn.
               </p>
               <Link
-                href="/personal/assessments"
+                href={`/personal/take/${baselineTestId}`}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium transition-colors shadow-xs"
               >
-                <span>Bắt đầu khảo thí ngay</span>
+                <span>Bắt đầu đánh giá năng lực đầu vào</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

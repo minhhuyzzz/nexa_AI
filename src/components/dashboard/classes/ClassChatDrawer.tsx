@@ -191,6 +191,7 @@ export function ClassChatDrawer({
             type="text"
             required
             placeholder="Nhập tin nhắn..."
+            aria-label="Nội dung tin nhắn"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"
@@ -200,6 +201,7 @@ export function ClassChatDrawer({
             disabled={isSending || !inputText.trim()}
             className="p-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition-colors disabled:opacity-50 cursor-pointer shrink-0"
             title="Gửi tin nhắn"
+            aria-label="Gửi tin nhắn"
           >
             <Send className="w-3.5 h-3.5" strokeWidth={1.75} />
           </button>

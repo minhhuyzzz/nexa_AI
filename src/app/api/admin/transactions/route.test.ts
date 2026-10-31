@@ -90,23 +90,36 @@ describe('Platform Admin Transactions & Reconciliation API (/api/admin/transacti
     const mockRpc = vi.fn().mockResolvedValue({ data: { success: true }, error: null });
 
     vi.mocked(createAdminClient).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: {
-                id: transactionId,
-                status: 'PENDING',
-                amount: 500000,
-                plan_code: 'PRO',
-                user_id: 'user-1',
-                transaction_reference: 'TX-9988',
-              },
-              error: null,
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockImplementation((columns: string) => {
+          if (columns === 'id, transaction_reference') {
+            return {
+              neq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  in: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  id: transactionId,
+                  status: 'PENDING',
+                  amount: 500000,
+                  plan_code: 'PRO',
+                  user_id: 'user-1',
+                  transaction_reference: 'TX-9988',
+                },
+                error: null,
+              }),
             }),
-          }),
+          };
         }),
-      }),
+      })),
       rpc: mockRpc,
     } as any);
 

@@ -185,6 +185,7 @@ export function InContextGradingDrawer({
                 disabled={!onPrev || currentIndex === 0}
                 className="p-1.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-colors"
                 title="Bài trước"
+                aria-label="Bài trước"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -197,6 +198,7 @@ export function InContextGradingDrawer({
                 disabled={!onNext || currentIndex + 1 >= totalSubmissions}
                 className="p-1.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-colors"
                 title="Bài tiếp theo"
+                aria-label="Bài tiếp theo"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -218,6 +220,7 @@ export function InContextGradingDrawer({
               type="button"
               className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               title="Đóng bảng chấm bài"
+              aria-label="Đóng bảng chấm bài"
             >
               <X className="w-5 h-5" strokeWidth={1.75} />
             </button>

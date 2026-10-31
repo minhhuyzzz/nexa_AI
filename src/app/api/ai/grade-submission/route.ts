@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAIAdapter } from '@/features/ai-gateway/adapters';
 import { RubricDef } from '@/features/ai-gateway/types/grading.types';
 import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
+import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
 const requestSchema = z.object({
   submissionId: z.string().uuid('Mã bài nộp (submissionId) không hợp lệ'),
@@ -46,16 +47,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Không tìm thấy hồ sơ người dùng' }, { status: 404 });
     }
 
-    // Learners must have at least 1 credit (Evaluators & Admins have institutional quota)
-    if (profile.role === 'LEARNER' && (profile.credits ?? 0) <= 0) {
-      return NextResponse.json(
-        {
-          error: 'Bạn đã hết AI credits. Vui lòng nâng cấp gói để nhận thêm credits.',
-          code: 'OUT_OF_CREDITS',
-        },
-        { status: 403 }
-      );
-    }
+
 
     // 3. Verify submission existence and strict resource-level authorization
     const { data: submission, error: subError } = await supabase
@@ -66,6 +58,34 @@ export async function POST(request: Request) {
 
     if (subError || !submission) {
       return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
+    }
+
+    // AI-01: Xác định chủ thể chi trả AI Credits (Tổ chức vs Cá nhân)
+    const payer = await QuotaEnforcementService.resolveSubmissionPayer(supabase, submissionId);
+    if (payer.isOrg && payer.organizationId) {
+      const orgQuota = await QuotaEnforcementService.checkOrgAICreditsQuota(supabase, payer.organizationId, 1);
+      if (!orgQuota.allowed) {
+        return NextResponse.json(
+          {
+            error: orgQuota.reason || 'Hạn mức AI Credits của tổ chức không đủ.',
+            code: 'OUT_OF_ORG_CREDITS',
+          },
+          { status: 403 }
+        );
+      }
+    } else {
+      if (profile.role === 'LEARNER') {
+        const userQuota = await QuotaEnforcementService.checkAICreditsQuota(supabase, user.id, 1);
+        if (!userQuota.allowed) {
+          return NextResponse.json(
+            {
+              error: userQuota.reason || 'Bạn đã hết AI credits. Vui lòng nâng cấp gói để nhận thêm credits.',
+              code: 'OUT_OF_CREDITS',
+            },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     // Kiểm tra quyền hạn theo tài nguyên (Resource-Level Authorization):
@@ -250,15 +270,9 @@ export async function POST(request: Request) {
       console.error('Failed to save AI evaluation:', saveError);
     }
 
-    // 7. Update answer score in submission_answers and mark submission as AI_DRAFT
-    await supabase
-      .from('submission_answers')
-      .update({
-        score_awarded: evaluation.totalScore,
-        auto_graded: false, // Mark as AI graded with Rubric
-      })
-      .eq('id', answer.id);
-
+    // 7. GRADE-01: Keep AI score in ai_evaluations as DRAFT only.
+    // Do NOT write to submission_answers.score_awarded or assessment_submissions.final_score.
+    // Mark submission grading_status as AI_DRAFT so evaluators see that an AI suggestion is ready for review.
     await supabase
       .from('assessment_submissions')
       .update({
@@ -266,19 +280,20 @@ export async function POST(request: Request) {
       })
       .eq('id', submissionId);
 
-    // 8. Atomic Credit Deduction for Learner (Zero race conditions, enforced by DB trigger)
-    let remainingCredits = profile.credits;
-    if (profile.role === 'LEARNER') {
-      const { data: newCredits, error: deductError } = await supabase.rpc('deduct_ai_credits', {
-        p_user_id: user.id,
-        p_amount: 1,
-      });
-
-      if (!deductError && typeof newCredits === 'number') {
-        remainingCredits = newCredits;
-      } else {
-        remainingCredits = Math.max(0, (profile.credits ?? 1) - 1);
+    // 8. AI-01: Trừ AI Credits nguyên tử theo đúng chủ thể chi trả (Tổ chức hoặc Cá nhân)
+    let remainingCredits = profile.credits ?? 0;
+    if (payer.isOrg && payer.organizationId) {
+      const deductRes = await QuotaEnforcementService.deductOrgAICredits(supabase, payer.organizationId, 1);
+      if (!deductRes.success) {
+        return NextResponse.json({ error: deductRes.error || 'Lỗi trừ AI Credits của tổ chức' }, { status: 500 });
       }
+      remainingCredits = deductRes.remainingCredits;
+    } else if (profile.role === 'LEARNER') {
+      const deductRes = await QuotaEnforcementService.deductPersonalAICredits(supabase, user.id, 1);
+      if (!deductRes.success) {
+        return NextResponse.json({ error: deductRes.error || 'Lỗi trừ AI Credits cá nhân' }, { status: 500 });
+      }
+      remainingCredits = deductRes.remainingCredits;
     }
 
     return NextResponse.json({

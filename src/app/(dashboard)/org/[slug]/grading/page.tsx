@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { OrgGradingClientView } from './OrgGradingClientView';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
+import { OrgGradingClientView, SubmissionItem } from './OrgGradingClientView';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,18 +10,10 @@ export default async function OrgGradingPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_GRADING');
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch organization
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) notFound();
-
-  // 2. Fetch organization assessments
+  // 1. Fetch organization assessments
   const { data: orgAssessments } = await adminSupabase
     .from('assessments')
     .select('id, title, passing_score')
@@ -29,8 +21,8 @@ export default async function OrgGradingPage({
 
   const assessmentIds = (orgAssessments || []).map((a) => a.id);
 
-  // 3. Fetch submissions
-  let submissions: any[] = [];
+  // 2. Fetch submissions
+  let submissions: SubmissionItem[] = [];
   if (assessmentIds.length > 0) {
     const { data: subs } = await adminSupabase
       .from('assessment_submissions')
@@ -51,7 +43,7 @@ export default async function OrgGradingPage({
       .in('status', ['SUBMITTED', 'EVALUATED'])
       .order('submitted_at', { ascending: false });
 
-    submissions = subs || [];
+    submissions = (subs as unknown as SubmissionItem[]) || [];
   }
 
   return (

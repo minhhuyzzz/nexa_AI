@@ -1,9 +1,7 @@
-import { notFound } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
-import { Users, FileText, Zap, Calendar, CheckCircle } from 'lucide-react';
+import { Users, FileText, Zap, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default async function OrgAIQuotaPage({
   params,
@@ -11,17 +9,8 @@ export default async function OrgAIQuotaPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_AI_QUOTA');
   const adminSupabase = createAdminClient();
-
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug, is_active')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) {
-    notFound();
-  }
 
   // 1. Get real contractual entitlements
   const entitlements = await QuotaEnforcementService.getOrgEntitlements(adminSupabase, org.id);
@@ -70,7 +59,13 @@ export default async function OrgAIQuotaPage({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">Gói Dịch Vụ &amp; Hạn Mức</h1>
-            <span className="px-2 py-0.5 text-[10px] font-semibold font-mono rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span
+              className={`px-2 py-0.5 text-[10px] font-semibold font-mono rounded border ${
+                entitlements.isActive
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
+            >
               Hợp đồng: {entitlements.contractNumber}
             </span>
           </div>
@@ -79,12 +74,35 @@ export default async function OrgAIQuotaPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold font-mono bg-slate-50 border border-slate-200 text-slate-700">
-            <CheckCircle className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
-            <span>{entitlements.isActive ? 'Hợp đồng Hiệu lực' : 'Tạm ngưng'}</span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold font-mono border ${
+              entitlements.isActive
+                ? 'bg-slate-50 border-slate-200 text-slate-700'
+                : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}
+          >
+            <CheckCircle
+              className={`w-4 h-4 ${entitlements.isActive ? 'text-emerald-600' : 'text-amber-500'}`}
+              strokeWidth={1.75}
+            />
+            <span>{entitlements.isActive ? 'Hợp đồng Hiệu lực' : 'Chưa kích hoạt hợp đồng'}</span>
           </span>
         </div>
       </div>
+
+      {/* Contract Alert when Inactive */}
+      {!entitlements.isActive && (
+        <div className="p-4 rounded-md border border-amber-200 bg-amber-50/50 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+          <div>
+            <h3 className="text-xs font-bold text-amber-900">Tổ chức chưa kích hoạt gói hợp đồng</h3>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Đơn vị hiện chưa có bản ghi quyền lợi hợp đồng (Entitlement) hoặc hợp đồng đã kết thúc thời hạn.
+              Vui lòng liên hệ ban quản trị NEXA qua email <span className="font-mono font-medium">sales@nexa.edu.vn</span> để ký kết hoặc gia hạn hợp đồng B2B.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

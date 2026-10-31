@@ -1,9 +1,5 @@
-import { notFound, redirect } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
-import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import {
   Building2,
   Shield,
@@ -23,43 +19,11 @@ export default async function OrgSettingsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org, role, isSuperadmin } = await requireOrgPagePermission(slug, 'MANAGE_SETTINGS');
   const adminSupabase = createAdminClient();
-  const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect(`/login?redirect=/org/${slug}/settings`);
-  }
-
-  // 1. Fetch organization
-  const { data: org, error: orgError } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug, type, logo_url, max_members, quota_assessments, is_active, created_at')
-    .eq('slug', slug)
-    .single();
-
-  if (orgError || !org) {
-    notFound();
-  }
-
-  // 2. Check user membership & role
-  const isSuperadmin = isSuperadminEmail(user.email);
-  const { data: membership } = await adminSupabase
-    .from('user_organizations')
-    .select('org_role, status')
-    .eq('user_id', user.id)
-    .eq('organization_id', org.id)
-    .single();
-
-  if (!isSuperadmin && (!membership || membership.status !== 'ACTIVE')) {
-    redirect('/dashboard');
-  }
-
-  const userRole = isSuperadmin ? 'ORG_ADMIN' : membership?.org_role || 'MEMBER';
-  const isManager = userRole === 'ORG_OWNER' || userRole === 'ORG_ADMIN';
+  const userRole = isSuperadmin ? 'ORG_ADMIN' : role;
+  const isManager = true;
 
   // 3. Count current active members
   const { count: memberCount } = await adminSupabase
@@ -161,7 +125,7 @@ export default async function OrgSettingsPage({
               <label className="block text-slate-500 font-medium mb-1.5">Ngày khởi tạo không gian</label>
               <div className="flex items-center gap-1.5 px-3 py-2 rounded border border-slate-200 bg-slate-50 text-slate-700 font-mono">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>{new Date(org.created_at).toLocaleDateString('vi-VN')}</span>
+                <span>{org.created_at ? new Date(org.created_at).toLocaleDateString('vi-VN') : '—'}</span>
               </div>
             </div>
           </div>

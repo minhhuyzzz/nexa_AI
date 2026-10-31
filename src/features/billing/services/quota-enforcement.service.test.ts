@@ -22,6 +22,7 @@ describe('QuotaEnforcementService', () => {
             select: () => ({
               eq: () => ({
                 single: async () => ({ data: { plan_tier: 'FREE' }, error: null }),
+                maybeSingle: async () => ({ data: { plan_tier: 'FREE' }, error: null }),
               }),
             }),
           };
@@ -57,6 +58,7 @@ describe('QuotaEnforcementService', () => {
             select: () => ({
               eq: () => ({
                 single: async () => ({ data: { plan_tier: 'FREE' }, error: null }),
+                maybeSingle: async () => ({ data: { plan_tier: 'FREE' }, error: null }),
               }),
             }),
           };

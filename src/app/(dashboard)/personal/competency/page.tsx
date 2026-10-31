@@ -29,6 +29,16 @@ interface DomainProgress {
   status: 'MASTERED' | 'PROFICIENT' | 'DEVELOPING' | 'INSUFFICIENT_DATA';
 }
 
+interface RawDomainApi {
+  domainCode: string;
+  domainTitle: string;
+  score: number | null;
+  level: string;
+  totalSkillsCount: number;
+  assessedSkillsCount: number;
+  status: 'MASTERED' | 'PROFICIENT' | 'DEVELOPING' | 'INSUFFICIENT_DATA';
+}
+
 export default function LearnerCompetencyHubPage() {
   const [domains, setDomains] = useState<DomainProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +57,7 @@ export default function LearnerCompetencyHubPage() {
       setTotalEvidenceCount(data.totalEvidenceCount || 0);
       setBaselineSnapshot(data.baselineSnapshot || null);
 
-      const mapped: DomainProgress[] = (data.domains || []).map((dom: any) => ({
+      const mapped: DomainProgress[] = ((data.domains as RawDomainApi[]) || []).map((dom) => ({
         domainCode: dom.domainCode,
         name: dom.domainTitle,
         score: dom.score,

@@ -136,7 +136,7 @@ export function QuestionBankDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
+      <div className="w-full max-w-2xl bg-white h-full shadow-sm flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div>

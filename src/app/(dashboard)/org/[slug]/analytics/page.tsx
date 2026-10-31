@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import { CheckCircle2, Award, Users, BarChart2, TrendingUp } from 'lucide-react';
 import { OrgCompetencyAnalyticsService } from '@/features/analytics/services/org-competency-analytics.service';
 import { CampaignComparisonChart } from '@/components/dashboard/org/CampaignComparisonChart';
@@ -7,26 +7,24 @@ import { CohortLearningRecommendations } from '@/components/dashboard/org/Cohort
 
 export const dynamic = 'force-dynamic';
 
+interface AnalyticsSubmission {
+  id: string;
+  status: string;
+  percentage?: number | null;
+  is_passed?: boolean | null;
+  total_score?: number | null;
+}
+
 export default async function OrgAnalyticsPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_ANALYTICS');
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch organization
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) {
-    notFound();
-  }
-
-  // 2. Fetch total submissions for this organization's assessments
+  // 1. Fetch total submissions for this organization's assessments
   const { data: orgAssessments } = await adminSupabase
     .from('assessments')
     .select('id')
@@ -34,14 +32,14 @@ export default async function OrgAnalyticsPage({
 
   const assessmentIds = (orgAssessments || []).map((a) => a.id);
 
-  let rawSubmissions: any[] = [];
+  let rawSubmissions: AnalyticsSubmission[] = [];
   if (assessmentIds.length > 0) {
     const { data: subs } = await adminSupabase
       .from('assessment_submissions')
       .select('id, status, percentage, is_passed, total_score')
       .in('assessment_id', assessmentIds);
 
-    rawSubmissions = subs || [];
+    rawSubmissions = (subs as AnalyticsSubmission[]) || [];
   }
 
   const summary = OrgCompetencyAnalyticsService.aggregateOrgCompetency(rawSubmissions);

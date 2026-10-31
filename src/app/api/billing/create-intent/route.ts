@@ -32,6 +32,17 @@ export async function POST(request: NextRequest) {
 
     const { planCode, organizationId } = validation.data;
 
+    // ADM-03: Chặn thanh toán tự phục vụ cho gói tổ chức/doanh nghiệp
+    const upperPlan = planCode.toUpperCase();
+    if (upperPlan.includes('BUSINESS') || upperPlan.includes('ENTERPRISE') || upperPlan.startsWith('ORG_')) {
+      return NextResponse.json(
+        {
+          error: 'Gói tổ chức & doanh nghiệp (Business/Enterprise) không hỗ trợ thanh toán tự phục vụ qua cổng cá nhân. Vui lòng gửi yêu cầu tư vấn tại trang Bảng giá (/pricing) để được cấp hợp đồng và hạn mức chính thức.',
+        },
+        { status: 400 }
+      );
+    }
+
     // Verify organization authority if billing for an organization
     if (organizationId) {
       const isSuperadmin = isSuperadminEmail(user.email);

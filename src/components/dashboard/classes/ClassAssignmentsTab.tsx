@@ -115,24 +115,53 @@ export function ClassAssignmentsTab({
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      // Fetch class details with assignments
-      const res = await fetch(`/api/evaluator/classes/${classId}`);
+      // Fetch class details with assignments and real submissions
+      const res = await fetch(`/api/classes/${classId}`);
       if (res.ok) {
         const data = await res.json();
         setAssignments(data.group?.assignments || []);
         
-        // Transform members and mock/real submissions
+        // Transform members and map real submissions
         const members = data.group?.members || [];
+        const realSubs: Array<{
+          id: string;
+          user_id: string;
+          assessment_id: string;
+          class_assignment_id?: string | null;
+          status: string;
+          total_score?: number | null;
+          percentage?: number | null;
+          submitted_at?: string | null;
+        }> = data.group?.submissions || [];
+
         const subList: StudentSubmission[] = [];
         
         (data.group?.assignments || []).forEach((asg: AssignmentItem) => {
           members.forEach((m: { user_id: string; profiles?: { nickname?: string; email?: string } }) => {
+            const matchedSub = realSubs.find(
+              (s) => s.user_id === m.user_id && (s.class_assignment_id === asg.id || s.assessment_id === asg.assessment_id)
+            );
+
+            let status: 'PENDING' | 'GRADED' | 'NOT_SUBMITTED' = 'NOT_SUBMITTED';
+            let score: number | undefined;
+
+            if (matchedSub) {
+              if (matchedSub.status === 'EVALUATED') {
+                status = 'GRADED';
+                score = matchedSub.total_score ?? (matchedSub.percentage ?? undefined);
+              } else if (matchedSub.status === 'SUBMITTED' || matchedSub.status === 'EVALUATING') {
+                status = 'PENDING';
+              }
+            }
+
             subList.push({
-              id: `sub-${m.user_id}-${asg.id}`,
+              id: matchedSub ? matchedSub.id : `sub-${m.user_id}-${asg.id}`,
               studentId: m.user_id,
               studentName: m.profiles?.nickname || 'Học viên',
               studentEmail: m.profiles?.email || 'learner@nexa.edu.vn',
-              status: 'NOT_SUBMITTED',
+              status,
+              score,
+              submittedAt: matchedSub?.submitted_at || undefined,
               assignmentId: asg.id,
               assignmentTitle: asg.assessments?.title || 'Bài khảo thí',
             });

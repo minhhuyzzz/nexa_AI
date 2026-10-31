@@ -31,6 +31,7 @@ describe('CompetencyAggregationService', () => {
           return {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
+                in: vi.fn().mockResolvedValue({ data: [] }),
                 eq: vi.fn().mockResolvedValue({ data: [] }),
               }),
             }),

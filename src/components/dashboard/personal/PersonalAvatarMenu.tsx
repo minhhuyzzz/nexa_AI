@@ -114,6 +114,7 @@ export function PersonalAvatarMenu() {
           onClick={() => setIsOpen(!isOpen)}
           className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all focus:outline-none overflow-hidden font-mono cursor-pointer"
           title="Tài khoản cá nhân"
+          aria-label="Tài khoản cá nhân"
           aria-expanded={isOpen}
         >
           {avatarUrl ? (

@@ -152,7 +152,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
             {/* Mega Dropdown Panel */}
             <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[920px] max-w-[95vw] hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-              <div className="bg-white rounded-md border border-slate-200 shadow-lg p-5 text-slate-900">
+              <div className="bg-white rounded-md border border-slate-200 shadow-sm p-5 text-slate-900">
                 <div className="grid grid-cols-5 divide-x divide-slate-100">
                   {frameworkDomains.map((domain) => (
                     <div key={domain.title} className="px-3.5 first:pl-0 last:pr-0 flex flex-col">

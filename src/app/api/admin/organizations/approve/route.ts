@@ -48,24 +48,19 @@ export async function POST(request: NextRequest | Request) {
 
     const adminSupabase = createAdminClient();
 
-    // 2. Fetch inquiry
+    // 2. Atomic lock: Transition inquiry from PENDING to PROCESSING to prevent concurrent approvals
     const { data: inquiry, error: inqError } = await adminSupabase
       .from('business_inquiries')
-      .select('*')
+      .update({ status: 'PROCESSING' })
       .eq('id', inquiryId)
-      .single();
+      .eq('status', 'PENDING')
+      .select()
+      .maybeSingle();
 
     if (inqError || !inquiry) {
       return NextResponse.json(
-        { error: 'Không tìm thấy yêu cầu tư vấn' },
-        { status: 404 }
-      );
-    }
-
-    if (inquiry.status === 'APPROVED') {
-      return NextResponse.json(
-        { error: 'Yêu cầu này đã được phê duyệt và khởi tạo tổ chức trước đó' },
-        { status: 400 }
+        { error: 'Yêu cầu này đã được xử lý hoặc đang trong tiến trình phê duyệt bởi quản trị viên khác.' },
+        { status: 409 }
       );
     }
 
@@ -93,6 +88,7 @@ export async function POST(request: NextRequest | Request) {
       .single();
 
     if (orgError) {
+      await adminSupabase.from('business_inquiries').update({ status: 'PENDING' }).eq('id', inquiryId);
       if (orgError.code === '23505') {
         return NextResponse.json(
           { error: `Mã tổ chức hoặc slug "${cleanCode}" đã tồn tại. Vui lòng chọn mã khác.` },
@@ -125,8 +121,9 @@ export async function POST(request: NextRequest | Request) {
       .single();
 
     if (entError) {
-      // Atomic rollback: remove created organization if entitlement provisioning fails
+      // Atomic rollback: remove created organization and reset inquiry status if entitlement provisioning fails
       await adminSupabase.from('organizations').delete().eq('id', org.id);
+      await adminSupabase.from('business_inquiries').update({ status: 'PENDING' }).eq('id', inquiryId);
       return NextResponse.json(
         { error: `Không thể cấp hạn mức hợp đồng (Entitlement): ${entError.message}` },
         { status: 500 }
@@ -147,9 +144,10 @@ export async function POST(request: NextRequest | Request) {
     });
 
     if (inviteErr) {
-      // Atomic rollback: remove created entitlement and organization
+      // Atomic rollback: remove created entitlement, organization, and reset inquiry status
       await adminSupabase.from('organization_entitlements').delete().eq('organization_id', org.id);
       await adminSupabase.from('organizations').delete().eq('id', org.id);
+      await adminSupabase.from('business_inquiries').update({ status: 'PENDING' }).eq('id', inquiryId);
       return NextResponse.json(
         { error: `Không thể tạo lời mời ORG_OWNER: ${inviteErr.message}` },
         { status: 500 }

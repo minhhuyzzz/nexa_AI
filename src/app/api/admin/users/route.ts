@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
@@ -13,6 +14,7 @@ interface OrgRelation {
 
 interface UserOrgRelation {
   organization_id: string;
+  org_role?: string;
   organizations: OrgRelation | null;
 }
 
@@ -34,10 +36,10 @@ export async function GET() {
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
 
     // Fetch profiles with user_organizations
-    const { data: profiles, error: profileErr } = await supabase
+    const { data: profiles, error: profileErr } = await adminSupabase
       .from('profiles')
       .select(`
         id,
@@ -48,17 +50,19 @@ export async function GET() {
         plan_tier,
         points,
         created_at,
-        user_organizations(organization_id, organizations(id, name, code))
+        user_organizations(organization_id, org_role, organizations(id, name, code))
       `)
       .order('created_at', { ascending: false });
 
     if (profileErr) {
-      console.warn('GET /api/admin/users query error:', profileErr.message);
-      return NextResponse.json({ users: [] });
+      return NextResponse.json(
+        { error: 'Không thể tải danh sách người dùng: ' + profileErr.message },
+        { status: 500 }
+      );
     }
 
     // Fetch submission counts per user
-    const { data: subData } = await supabase
+    const { data: subData } = await adminSupabase
       .from('assessment_submissions')
       .select('user_id');
 
@@ -69,10 +73,11 @@ export async function GET() {
 
     const rows = (profiles || []) as unknown as ProfileRow[];
     const formatted = rows.map((p) => {
-      const orgRel =
+      const firstOrg =
         Array.isArray(p.user_organizations) && p.user_organizations.length > 0
-          ? p.user_organizations[0]?.organizations
+          ? p.user_organizations[0]
           : null;
+      const orgRel = firstOrg?.organizations || null;
 
       return {
         id: p.id,
@@ -82,7 +87,9 @@ export async function GET() {
         role: p.role || 'LEARNER',
         planTier: p.plan_tier || 'FREE',
         points: p.points || 0,
-        organization: orgRel ? { id: orgRel.id, name: orgRel.name, code: orgRel.code } : null,
+        organization: orgRel
+          ? { id: orgRel.id, name: orgRel.name, code: orgRel.code, orgRole: firstOrg?.org_role || 'MEMBER' }
+          : null,
         submissionsCount: subCountMap[p.id] || 0,
         createdAt: p.created_at,
       };

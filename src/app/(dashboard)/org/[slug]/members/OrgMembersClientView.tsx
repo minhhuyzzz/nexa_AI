@@ -124,6 +124,14 @@ export function OrgMembersClientView({
   const [codeMaxUses, setCodeMaxUses] = useState(100);
   const [codeExpiryDays, setCodeExpiryDays] = useState(30);
   const [isCreatingCode, setIsCreatingCode] = useState(false);
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+
+  const handleCopyJoinLink = (codeStr: string, codeId: string) => {
+    const url = `${window.location.origin}/join/org/${codeStr}`;
+    navigator.clipboard.writeText(url);
+    setCopiedCodeId(codeId);
+    setTimeout(() => setCopiedCodeId(null), 2500);
+  };
 
   const remainingSeats = Math.max(0, maxMembers - members.length);
 
@@ -602,14 +610,35 @@ export function OrgMembersClientView({
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right">
-                          {!code.is_revoked && !isExpired && (
-                            <button
-                              onClick={() => handleRevokeCode(code.id)}
-                              className="px-2 py-1 text-[11px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded font-medium transition-colors"
-                            >
-                              Thu hồi
-                            </button>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!code.is_revoked && !isExpired && (
+                              <button
+                                onClick={() => handleCopyJoinLink(code.code, code.id)}
+                                title="Sao chép liên kết tham gia"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] text-sky-700 hover:text-sky-800 hover:bg-sky-50 rounded font-medium border border-sky-200 transition-colors cursor-pointer"
+                              >
+                                {copiedCodeId === code.id ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-600" strokeWidth={1.75} />
+                                    <span>Đã chép link</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 text-sky-600" strokeWidth={1.75} />
+                                    <span>Sao chép link</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            {!code.is_revoked && !isExpired && (
+                              <button
+                                onClick={() => handleRevokeCode(code.id)}
+                                className="px-2 py-1 text-[11px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded font-medium transition-colors cursor-pointer"
+                              >
+                                Thu hồi
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

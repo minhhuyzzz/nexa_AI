@@ -1,10 +1,21 @@
-import { notFound } from 'next/navigation';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
+import { OrgMembersClientView } from './OrgMembersClientView';
 
 export const dynamic = 'force-dynamic';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
-import { Users, Mail, Shield, UserCheck, Plus } from 'lucide-react';
-import { OrgMembersClientView } from './OrgMembersClientView';
+
+interface MemberRow {
+  id: string;
+  user_id: string;
+  org_role: string;
+  status: string;
+  created_at: string;
+  profiles: {
+    id: string;
+    email: string;
+    nickname: string;
+  } | null;
+}
 
 export default async function OrgMembersPage({
   params,
@@ -12,25 +23,10 @@ export default async function OrgMembersPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org, user, role, isSuperadmin } = await requireOrgPagePermission(slug, 'MANAGE_MEMBERS');
   const adminSupabase = createAdminClient();
-  const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // 1. Fetch organization
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug, max_members')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) {
-    notFound();
-  }
-
-  // 2. Fetch all members with profile details
+  // Fetch all members with profile details
   const { data: membersRaw } = await adminSupabase
     .from('user_organizations')
     .select(`
@@ -48,19 +44,6 @@ export default async function OrgMembersPage({
     .eq('organization_id', org.id)
     .order('created_at', { ascending: true });
 
-  interface MemberRow {
-    id: string;
-    user_id: string;
-    org_role: string;
-    status: string;
-    created_at: string;
-    profiles: {
-      id: string;
-      email: string;
-      nickname: string;
-    } | null;
-  }
-
   const members = ((membersRaw as unknown as MemberRow[]) || []).map((m) => ({
     membershipId: m.id,
     userId: m.user_id,
@@ -69,11 +52,10 @@ export default async function OrgMembersPage({
     role: m.org_role,
     status: m.status,
     createdAt: m.created_at,
-    isCurrentUser: m.user_id === user?.id,
+    isCurrentUser: m.user_id === user.id,
   }));
 
-  const currentMember = members.find((m) => m.userId === user?.id);
-  const isManager = currentMember?.role === 'ORG_OWNER' || currentMember?.role === 'ORG_ADMIN';
+  const isManager = isSuperadmin || role === 'ORG_OWNER' || role === 'ORG_ADMIN';
 
   return (
     <div className="space-y-6">
@@ -86,7 +68,7 @@ export default async function OrgMembersPage({
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Quản trị nhân sự tham gia tổ chức {org.name} theo mô hình phân quyền RBAC 5 cấp.
+            Quản trị nhân sự tham gia tổ chức {org.name} theo mô hình phân quyền RBAC.
           </p>
         </div>
       </div>

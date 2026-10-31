@@ -46,7 +46,7 @@ export function PublishValidationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-white border border-slate-200 rounded-md shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="w-full max-w-xl bg-white border border-slate-200 rounded-md shadow-sm flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
           <div className="flex items-center gap-2">

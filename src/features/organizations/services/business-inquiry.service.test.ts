@@ -1,18 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST as submitInquiry } from '@/app/api/organizations/inquiry/route';
-import { POST as approveInquiry } from '@/app/api/admin/organizations/approve/route';
 import { NextRequest } from 'next/server';
-
-vi.mock('@/lib/auth/admin-guard', () => ({
-  requirePlatformAdmin: vi.fn(),
-}));
+import { POST as approveInquiry } from '@/app/api/admin/organizations/approve/route';
+import { POST as submitInquiry } from '@/app/api/organizations/inquiry/route';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
 }));
 
-import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
-import { createAdminClient } from '@/lib/supabase/admin';
+vi.mock('@/lib/auth/admin-guard', () => ({
+  requirePlatformAdmin: vi.fn(),
+}));
+
+vi.mock('@/lib/audit/admin-audit.service', () => ({
+  recordAdminAudit: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
   beforeEach(() => {
@@ -23,17 +26,11 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     const mockInsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         single: vi.fn().mockResolvedValue({
-          data: {
-            id: 'inq-123',
-            org_name: 'Đại Học Quốc Tế',
-            status: 'NEW',
-            created_at: new Date().toISOString(),
-          },
+          data: { id: 'inq-1', org_name: 'Trường Đại Học Công Nghệ ABC', status: 'NEW' },
           error: null,
         }),
       }),
     });
-
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn((table: string) => {
         if (table === 'business_inquiries') {
@@ -46,13 +43,12 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     const req = new NextRequest('http://localhost:3000/api/organizations/inquiry', {
       method: 'POST',
       body: JSON.stringify({
-        name: 'Đại Học Quốc Tế',
-        contactName: 'Thầy Hiệu Trưởng',
-        email: 'rector@intl.edu.vn',
+        name: 'Trường Đại Học Công Nghệ ABC',
+        contactName: 'Thầy Nguyễn Văn A',
+        email: 'contact@abc.edu.vn',
         phone: '0901234567',
-        type: 'EDUCATIONAL',
         expectedLearners: 500,
-        notes: 'Cần tư vấn triển khai DigComp',
+        notes: 'Cần tích hợp đánh giá cho 500 sinh viên kỳ 1.',
       }),
     });
 
@@ -60,8 +56,13 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.inquiry.status).toBe('NEW');
     expect(mockInsert).toHaveBeenCalledTimes(1);
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        org_name: 'Trường Đại Học Công Nghệ ABC',
+        status: 'NEW',
+      })
+    );
   });
 
   it('Platform Admin duyệt inquiry: khởi tạo tổ chức ACTIVE và cấp entitlement', async () => {
@@ -73,12 +74,13 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     const mockInquiry = {
       id: '11111111-1111-1111-1111-111111111111',
       org_name: 'Trường Đại Học Mới',
-      contact_name: 'Trưởng Khoa CNTT',
-      contact_email: 'khoa.cntt@uni.edu.vn',
-      contact_phone: '0988888888',
       org_type: 'EDUCATIONAL',
+      contact_name: 'Nguyễn Văn A',
+      contact_email: 'nva@daihocmoi.edu.vn',
+      contact_phone: '0912345678',
+      estimated_learners: 200,
       notes: 'Hợp đồng 200 thí sinh',
-      status: 'NEW',
+      status: 'PENDING',
     };
 
     const mockOrgInsert = vi.fn().mockReturnValue({
@@ -113,20 +115,20 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     });
 
     const mockInviteInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-    const mockInquiryUpdate = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-    });
 
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn((table: string) => {
         if (table === 'business_inquiries') {
           return {
-            select: vi.fn().mockReturnValue({
+            update: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: mockInquiry, error: null }),
+                eq: vi.fn().mockReturnValue({
+                  select: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: mockInquiry, error: null }),
+                  }),
+                }),
               }),
             }),
-            update: mockInquiryUpdate,
           };
         }
         if (table === 'organizations') {
@@ -178,7 +180,7 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
       org_name: 'Trường Test Rollback',
       contact_name: 'Admin Test',
       contact_email: 'test@rollback.edu.vn',
-      status: 'NEW',
+      status: 'PENDING',
     };
 
     const mockOrgDelete = vi.fn().mockReturnValue({
@@ -189,9 +191,13 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
       from: vi.fn((table: string) => {
         if (table === 'business_inquiries') {
           return {
-            select: vi.fn().mockReturnValue({
+            update: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: mockInquiry, error: null }),
+                eq: vi.fn().mockReturnValue({
+                  select: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: mockInquiry, error: null }),
+                  }),
+                }),
               }),
             }),
           };

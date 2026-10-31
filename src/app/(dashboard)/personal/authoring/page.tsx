@@ -219,7 +219,7 @@ export default function EvaluatorAssessmentsPage() {
     if (!confirm(`Bạn có chắc chắn muốn xóa bài khảo thí "${title}" không?`)) return;
 
     try {
-      const res = await fetch(`/api/admin/assessments/${id}`, {
+      const res = await fetch(`/api/personal/assessments/${id}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -227,9 +227,10 @@ export default function EvaluatorAssessmentsPage() {
       if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa bài thi');
 
       setAssessments((prev) => prev.filter((item) => item.id !== id));
-      showToast('Đã xóa bài khảo thí thành công!');
-    } catch (err: any) {
-      alert(err.message || 'Lỗi khi xóa bài thi');
+      showToast(data.message || 'Đã xóa bài khảo thí thành công!');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Lỗi khi xóa bài thi';
+      alert(message);
     }
   };
 

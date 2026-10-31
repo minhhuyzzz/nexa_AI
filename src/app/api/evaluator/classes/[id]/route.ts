@@ -56,6 +56,27 @@ export async function GET(
       return NextResponse.json({ error: 'Bạn không có quyền quản lý nhóm này' }, { status: 403 });
     }
 
+    const assessmentIds = (cls.class_assignments || []).map((a: { assessment_id: string }) => a.assessment_id);
+    let realSubmissions: Array<{
+      id: string;
+      user_id: string;
+      assessment_id: string;
+      class_assignment_id?: string | null;
+      status: string;
+      total_score?: number | null;
+      percentage?: number | null;
+      is_passed?: boolean | null;
+      submitted_at?: string | null;
+    }> = [];
+
+    if (assessmentIds.length > 0) {
+      const { data: subsData } = await supabase
+        .from('assessment_submissions')
+        .select('id, user_id, assessment_id, class_assignment_id, status, total_score, percentage, is_passed, submitted_at')
+        .in('assessment_id', assessmentIds);
+      realSubmissions = (subsData as typeof realSubmissions) || [];
+    }
+
     return NextResponse.json({
       group: {
         id: cls.id,
@@ -68,6 +89,7 @@ export async function GET(
         assignmentCount: cls.class_assignments?.length || 0,
         members: cls.class_members || [],
         assignments: cls.class_assignments || [],
+        submissions: realSubmissions,
       },
     });
   } catch (err: unknown) {

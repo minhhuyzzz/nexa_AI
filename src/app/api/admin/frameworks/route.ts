@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { FrameworkService } from '@/features/framework/services/framework.service';
 
 // GET: Fetch framework with all domains & competencies
 export async function GET() {
@@ -21,6 +22,8 @@ export async function GET() {
     if (fwErr || !framework) {
       return NextResponse.json({ error: 'Không tìm thấy khung năng lực' }, { status: 404 });
     }
+
+    const lockInfo = await FrameworkService.isFrameworkLocked(adminSupabase, framework.id);
 
     const { data: domains, error: domErr } = await adminSupabase
       .from('competency_domains')
@@ -48,7 +51,11 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      framework,
+      framework: {
+        ...framework,
+        isLocked: lockInfo.isLocked,
+        historicalSubmissionsCount: lockInfo.historicalSubmissionsCount,
+      },
       domains: domains || [],
     });
   } catch (err) {
@@ -57,7 +64,7 @@ export async function GET() {
   }
 }
 
-// PATCH: Update Domain or Competency
+// PATCH: Update Domain/Competency OR Create New Framework Version
 export async function PATCH(request: NextRequest) {
   try {
     const auth = await requirePlatformAdmin();
@@ -66,12 +73,60 @@ export async function PATCH(request: NextRequest) {
     }
 
     const adminSupabase = createAdminClient();
-
     const body = await request.json();
-    const { entityType, id, title, code, skill_code, description, target_level } = body;
+
+    // 1. Branch: Create New Framework Version (ADM-04)
+    if (body.action === 'CREATE_NEW_VERSION') {
+      const { frameworkId, nextVersion, description } = body;
+      if (!frameworkId || !nextVersion) {
+        return NextResponse.json(
+          { error: 'Vui lòng cung cấp frameworkId và số hiệu phiên bản mới (ví dụ: 1.1)' },
+          { status: 400 }
+        );
+      }
+
+      const newFw = await FrameworkService.createNewVersion(
+        adminSupabase,
+        frameworkId,
+        nextVersion.trim(),
+        description
+      );
+
+      await recordAdminAudit({
+        actorId: auth.user!.id,
+        action: 'CREATE',
+        targetType: 'FRAMEWORK_VERSION',
+        targetId: newFw.id,
+        newValues: { version: nextVersion, previousId: frameworkId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã phát hành phiên bản khung năng lực ${nextVersion} thành công`,
+        framework: newFw,
+      });
+    }
+
+    const { entityType, id, title, code, skill_code, description, target_level, allowLockedEdit } = body;
 
     if (!id || !entityType) {
       return NextResponse.json({ error: 'Thiếu thông tin entityType hoặc id' }, { status: 400 });
+    }
+
+    // 2. ADM-04: Enforce version immutability if historical submissions exist
+    const { count: subCount } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id', { count: 'exact', head: true });
+
+    if ((subCount ?? 0) > 0 && !allowLockedEdit) {
+      return NextResponse.json(
+        {
+          error: `Khung năng lực hiện tại đã có ${subCount} bài khảo thí lịch sử của học viên. Để bảo đảm toàn vẹn học thuật và tính pháp lý, không được sửa đổi trực tiếp. Vui lòng tạo phiên bản mới (v1.1, v2.0).`,
+          isLocked: true,
+          historicalSubmissionsCount: subCount,
+        },
+        { status: 400 }
+      );
     }
 
     if (entityType === 'DOMAIN') {
@@ -153,6 +208,21 @@ export async function POST(request: NextRequest) {
 
     if (!domain_id || !skill_code || !title) {
       return NextResponse.json({ error: 'Vui lòng nhập đầy đủ Miền, Mã kỹ năng và Tên kỹ năng' }, { status: 400 });
+    }
+
+    // ADM-04: Enforce version immutability if historical submissions exist
+    const { count: subCount } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id', { count: 'exact', head: true });
+
+    if ((subCount ?? 0) > 0 && !body.allowLockedEdit) {
+      return NextResponse.json(
+        {
+          error: `Khung năng lực hiện tại đã có ${subCount} bài khảo thí lịch sử của học viên. Không được thêm kỹ năng trực tiếp. Vui lòng tạo phiên bản mới (v1.1, v2.0).`,
+          isLocked: true,
+        },
+        { status: 400 }
+      );
     }
 
     const { data, error } = await adminSupabase

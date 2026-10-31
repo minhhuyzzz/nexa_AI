@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import {
   FolderKanban,
   Users,
@@ -46,16 +47,8 @@ export default async function OrgClassDetailPage({
   params: Promise<{ slug: string; classId: string }>;
 }) {
   const { slug, classId } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
   const adminSupabase = createAdminClient();
-
-  // 1. Fetch organization
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) notFound();
 
   // 2. Fetch class record (scoped to organization)
   const { data: classRecord } = await adminSupabase

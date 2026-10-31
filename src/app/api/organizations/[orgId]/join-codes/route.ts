@@ -15,6 +15,17 @@ const revokeJoinCodeSchema = z.object({
   codeId: z.string().uuid('ID mã tham gia không hợp lệ'),
 });
 
+// Simple sliding window rate limit for join code generation: max 10 requests per minute
+const rateLimitMap = new Map<string, number[]>();
+function checkRateLimit(key: string, limit = 10, windowMs = 60000): boolean {
+  const now = Date.now();
+  const timestamps = (rateLimitMap.get(key) || []).filter((t) => now - t < windowMs);
+  if (timestamps.length >= limit) return false;
+  timestamps.push(now);
+  rateLimitMap.set(key, timestamps);
+  return true;
+}
+
 async function checkOrgManager(userId: string, orgId: string) {
   const adminSupabase = createAdminClient();
   const { data: profile } = await adminSupabase
@@ -112,11 +123,20 @@ export async function POST(
     }
 
     const { title, maxUses, expiresInDays } = validation.data;
-    const randomCode =
-      'NX-' +
-      Math.random().toString(36).substring(2, 6).toUpperCase() +
-      '-' +
-      Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    // Rate limit check
+    if (!checkRateLimit(`org-join-gen:${user.id}:${orgId}`, 10, 60000)) {
+      return NextResponse.json(
+        { error: 'Bạn đã tạo quá nhiều mã trong thời gian ngắn. Vui lòng thử lại sau 1 phút.' },
+        { status: 429 }
+      );
+    }
+
+    // Cryptographically secure token generation
+    const randomBytes = new Uint8Array(4);
+    globalThis.crypto.getRandomValues(randomBytes);
+    const hex = Array.from(randomBytes).map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const randomCode = `NX-${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
 
     const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
 
@@ -141,7 +161,7 @@ export async function POST(
     }
 
     const origin = request.nextUrl.origin || 'http://localhost:3000';
-    const joinUrl = `${origin}/join?code=${randomCode}`;
+    const joinUrl = `${origin}/join/org/${randomCode}`;
 
     return NextResponse.json({
       success: true,

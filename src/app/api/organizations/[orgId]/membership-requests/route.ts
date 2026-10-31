@@ -295,7 +295,33 @@ export async function PATCH(
       );
     }
 
-    // 3. Upsert user into user_organizations with strict MEMBER role (cannot self-escalate)
+    // 3. Check join code validity & capacity before approval
+    let linkedJoinCode: { id: string; used_count: number; max_uses: number } | null = null;
+    if (reqRecord.join_code_id) {
+      const { data: jc } = await adminSupabase
+        .from('organization_join_codes')
+        .select('id, used_count, max_uses, is_revoked, expires_at')
+        .eq('id', reqRecord.join_code_id)
+        .single();
+
+      if (jc) {
+        if (jc.is_revoked || new Date(jc.expires_at) < new Date()) {
+          return NextResponse.json(
+            { error: 'Mã tham gia gắn với yêu cầu này đã bị thu hồi hoặc hết hạn hiệu lực.' },
+            { status: 400 }
+          );
+        }
+        if (jc.used_count >= jc.max_uses) {
+          return NextResponse.json(
+            { error: `Mã tham gia đã đạt giới hạn tối đa (${jc.max_uses} lượt). Không thể phê duyệt thêm học viên qua mã này.` },
+            { status: 400 }
+          );
+        }
+        linkedJoinCode = jc;
+      }
+    }
+
+    // 4. Upsert user into user_organizations with strict MEMBER role (cannot self-escalate)
     const { error: upsertErr } = await adminSupabase
       .from('user_organizations')
       .upsert(
@@ -315,7 +341,7 @@ export async function PATCH(
       );
     }
 
-    // 4. Update request status to APPROVED
+    // 5. Update request status to APPROVED
     await adminSupabase
       .from('organization_membership_requests')
       .update({
@@ -325,20 +351,13 @@ export async function PATCH(
       })
       .eq('id', requestId);
 
-    // 5. Increment join code used_count if linked
-    if (reqRecord.join_code_id) {
-      const { data: jc } = await adminSupabase
+    // 6. Atomically increment join code used_count
+    if (linkedJoinCode) {
+      await adminSupabase
         .from('organization_join_codes')
-        .select('used_count')
-        .eq('id', reqRecord.join_code_id)
-        .single();
-
-      if (jc) {
-        await adminSupabase
-          .from('organization_join_codes')
-          .update({ used_count: (jc.used_count || 0) + 1 })
-          .eq('id', reqRecord.join_code_id);
-      }
+        .update({ used_count: (linkedJoinCode.used_count || 0) + 1 })
+        .eq('id', linkedJoinCode.id)
+        .lt('used_count', linkedJoinCode.max_uses);
     }
 
     return NextResponse.json({

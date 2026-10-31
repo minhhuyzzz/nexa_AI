@@ -224,12 +224,6 @@ export async function POST(
       return NextResponse.json({ error: reqErr.message }, { status: 500 });
     }
 
-    // 5. Increment used_count on join code
-    await adminSupabase
-      .from('organization_join_codes')
-      .update({ used_count: (codeRow.used_count || 0) + 1 })
-      .eq('id', codeRow.id);
-
     return NextResponse.json({
       success: true,
       message: 'Yêu cầu tham gia tổ chức đã được gửi thành công. Vui lòng chờ quản trị viên xét duyệt.',

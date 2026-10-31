@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import {
   CalendarRange,
   Plus,
@@ -39,18 +39,8 @@ export default async function OrgCampaignsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CAMPAIGNS');
   const adminSupabase = createAdminClient();
-
-  // 1. Fetch organization
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .single();
-
-  if (!org) {
-    notFound();
-  }
 
   // 2. Fetch campaigns with assessment details
   const { data: campaignsRaw } = await adminSupabase
@@ -95,11 +85,11 @@ export default async function OrgCampaignsPage({
         </div>
 
         <Link
-          href={`/org/${slug}/classes`}
+          href={`/org/${slug}/campaigns/new`}
           className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors shrink-0"
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>Giao bài theo Lớp</span>
+          <span>Tạo đợt đánh giá mới</span>
         </Link>
       </div>
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
 export const dynamic = 'force-dynamic';
@@ -23,17 +23,8 @@ export default async function OrgOverviewPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_WORKSPACE');
   const adminSupabase = createAdminClient();
-
-  const { data: org } = await adminSupabase
-    .from('organizations')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
-  if (!org || !org.is_active) {
-    notFound();
-  }
 
   // 1. Get entitlements & member count
   const entitlements = await QuotaEnforcementService.getOrgEntitlements(adminSupabase, org.id);
@@ -58,8 +49,8 @@ export default async function OrgOverviewPage({
       id,
       title,
       status,
-      start_date,
-      end_date,
+      starts_at,
+      ends_at,
       created_at,
       assessments (
         title
@@ -70,7 +61,7 @@ export default async function OrgOverviewPage({
     .limit(5);
 
   const activeCampaigns = (campaigns || []).filter(
-    (c) => c.status === 'OPEN' || c.status === 'SCHEDULED'
+    (c) => c.status === 'ACTIVE' || c.status === 'SCHEDULED'
   );
 
   // 4. Pending Submissions to Grade
@@ -106,7 +97,7 @@ export default async function OrgOverviewPage({
 
           <div className="flex items-center gap-2.5 shrink-0">
             <Link
-              href={`/org/${slug}/campaigns`}
+              href={`/org/${slug}/campaigns/new`}
               className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
             >
               <Calendar className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -319,7 +310,7 @@ export default async function OrgOverviewPage({
                           <td className="py-3 px-4 font-semibold text-slate-900">{c.title}</td>
                           <td className="py-3 px-4 text-slate-600 max-w-[200px] truncate">{assessmentTitle}</td>
                           <td className="py-3 px-4 font-mono text-[11px] text-slate-500">
-                            {new Date(c.start_date).toLocaleDateString('vi-VN')}
+                            {c.starts_at ? new Date(c.starts_at).toLocaleDateString('vi-VN') : '—'}
                           </td>
                           <td className="py-3 px-4">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-sky-50 text-sky-700 border border-sky-200">

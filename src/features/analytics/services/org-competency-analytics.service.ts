@@ -81,18 +81,7 @@ export class OrgCompetencyAnalyticsService {
         }
       }
 
-      // If specific domain_scores not provided, fallback to overall assessment percentage for tested items
-      if (domainTested === 0 && evaluatedCount > 0) {
-        // Fallback proportional representation for baseline tests
-        const avg = overallAverageScore;
-        return {
-          ...d,
-          score: avg,
-          testedCount: evaluatedCount,
-          passedCount: passedSubs.length,
-        };
-      }
-
+      // Strictly truthful: If a domain was not tested, return null (never interpolate from overall assessment average)
       const domainScore =
         domainTested > 0 ? Math.round((domainSum / domainTested) * 10) / 10 : null;
 

@@ -82,11 +82,12 @@ export default function ForgotPasswordPage() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label htmlFor="email" className="block text-xs font-semibold text-slate-700 mb-1">
               Địa chỉ Email tài khoản
             </label>
             <div className="relative">
               <input
+                id="email"
                 type="email"
                 required
                 value={email}

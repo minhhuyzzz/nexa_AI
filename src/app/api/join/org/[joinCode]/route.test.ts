@@ -217,6 +217,7 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
     expect(body.success).toBe(true);
     expect(body.request.status).toBe('PENDING');
     expect(mockUpsert).toHaveBeenCalledTimes(1);
-    expect(mockUpdateCode).toHaveBeenCalledTimes(1);
+    // ORG-02: used_count is only incremented when approved, not on initial request creation
+    expect(mockUpdateCode).not.toHaveBeenCalled();
   });
 });

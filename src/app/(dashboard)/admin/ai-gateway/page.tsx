@@ -42,15 +42,18 @@ export default function AdminAiGatewayPage() {
   const [stats, setStats] = useState<AiGatewayStats | null>(null);
   const [events, setEvents] = useState<AiEventLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
+  const [sampleSize, setSampleSize] = useState<number>(0);
 
-  const fetchData = async () => {
+  const fetchData = async (selectedPeriod = period) => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/ai-gateway');
+      const res = await fetch(`/api/admin/ai-gateway?period=${selectedPeriod}`);
       const data = await res.json();
       if (data.stats) {
         setStats(data.stats);
         setEvents(data.recentEvents || []);
+        setSampleSize(data.sampleSize || data.stats.totalRequests || 0);
       }
     } catch (e) {
       console.error('Failed to load AI gateway stats', e);
@@ -60,8 +63,12 @@ export default function AdminAiGatewayPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(period);
+  }, [period]);
+
+  const handlePeriodChange = (newPeriod: '24h' | '7d' | '30d' | 'all') => {
+    setPeriod(newPeriod);
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -84,10 +91,11 @@ export default function AdminAiGatewayPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={fetchData}
-            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5"
+            onClick={() => fetchData(period)}
+            disabled={loading}
+            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </button>
           <Link
@@ -100,7 +108,39 @@ export default function AdminAiGatewayPage() {
         </div>
       </div>
 
-      {/* 2. Key Metrics Strip */}
+      {/* 2. Period Filter Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-white border border-slate-200 rounded-md text-xs">
+        <div className="flex items-center gap-1.5 font-mono text-slate-600">
+          <span className="text-[11px] font-semibold text-slate-500">KỲ THỐNG KÊ:</span>
+          <span className="text-[11px] text-slate-400">
+            (Mẫu: {sampleSize} sự kiện)
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {(
+            [
+              { id: '24h', label: '24 giờ' },
+              { id: '7d', label: '7 ngày qua' },
+              { id: '30d', label: '30 ngày qua' },
+              { id: 'all', label: 'Toàn thời gian' },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handlePeriodChange(item.id)}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                period === item.id
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Key Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 rounded-md bg-slate-50 border border-slate-200">
         <div className="p-2.5 bg-white rounded border border-slate-200/80">
           <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
@@ -157,7 +197,7 @@ export default function AdminAiGatewayPage() {
         </div>
       </div>
 
-      {/* 3. Models & Features Breakdown */}
+      {/* 4. Models & Features Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Model Distribution */}
         <div className="p-4 rounded-md border border-slate-200 bg-white space-y-3">
@@ -189,7 +229,7 @@ export default function AdminAiGatewayPage() {
               })
             ) : (
               <div className="p-3 bg-slate-50 rounded border border-slate-200/80 text-slate-500">
-                gemini-2.5-flash &bull; 100% lưu lượng mặc định
+                gemini-3.5-flash &bull; 100% lưu lượng mặc định
               </div>
             )}
           </div>
@@ -211,11 +251,11 @@ export default function AdminAiGatewayPage() {
               Object.entries(stats.features).map(([feat, count]) => {
                 const pct = stats.totalRequests > 0 ? Math.round((count / stats.totalRequests) * 100) : 0;
                 const label =
-                  feat === 'grade-submission'
+                  feat === 'RUBRIC_GRADING' || feat === 'grade-submission'
                     ? 'Chấm Rubric thực hành tự động'
-                    : feat === 'analyze-competency'
+                    : feat === 'COMPETENCY_ANALYSIS' || feat === 'analyze-competency'
                     ? 'Phân tích năng lực & Đề xuất lộ trình'
-                    : feat === 'tutor-chat'
+                    : feat === 'TUTOR_CHAT' || feat === 'tutor-chat'
                     ? 'Trợ lý gia sư AI DigComp'
                     : feat;
 
@@ -234,14 +274,14 @@ export default function AdminAiGatewayPage() {
               })
             ) : (
               <div className="p-3 bg-slate-50 rounded border border-slate-200/80 text-slate-500">
-                grade-submission &bull; Chấm bài thực hành theo Rubric
+                Chưa có dữ liệu phân bổ nghiệp vụ trong kỳ được chọn.
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* 4. Recent Event Logs Table */}
+      {/* 5. Recent Event Logs Table */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -272,7 +312,7 @@ export default function AdminAiGatewayPage() {
                 {events.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-10 text-center text-slate-400">
-                      Chưa ghi nhận sự kiện gọi AI nào trong phiên này.
+                      Chưa ghi nhận sự kiện gọi AI nào trong kỳ được chọn.
                     </td>
                   </tr>
                 ) : (

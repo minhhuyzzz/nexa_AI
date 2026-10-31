@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   Check,
   Loader2,
-  Sparkles,
-  ShieldCheck,
   AlertCircle,
   ArrowRight,
 } from 'lucide-react';
@@ -21,10 +19,20 @@ interface ServicePlan {
   features: string[];
 }
 
+interface PlanDetails {
+  planCode: string;
+  planName: string;
+  tier: string;
+  credits: number;
+  billingCycle: string;
+  expiresAt: string | null;
+}
+
 export default function LearnerBillingPage() {
   const router = useRouter();
   const [plans, setPlans] = useState<ServicePlan[]>([]);
   const [currentPlanCode, setCurrentPlanCode] = useState<string>('LEARNER_FREE');
+  const [planDetails, setPlanDetails] = useState<PlanDetails | null>(null);
   const [credits, setCredits] = useState<number>(0);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [loadingPlanCode, setLoadingPlanCode] = useState<string | null>(null);
@@ -34,7 +42,7 @@ export default function LearnerBillingPage() {
     try {
       const [plansRes, profileRes] = await Promise.all([
         fetch('/api/plans?role=LEARNER'),
-        fetch('/api/profile'),
+        fetch('/api/personal/profile'),
       ]);
 
       if (plansRes.ok) {
@@ -44,11 +52,16 @@ export default function LearnerBillingPage() {
 
       if (profileRes.ok) {
         const prData = await profileRes.json();
-        if (prData.data?.plan_tier) {
-          setCurrentPlanCode(prData.data.plan_tier);
-        }
-        if (prData.data?.credits !== undefined) {
-          setCredits(prData.data.credits);
+        const details = prData.profile?.planDetails || prData.data?.planDetails;
+        if (details) {
+          setPlanDetails(details);
+          setCurrentPlanCode(details.planCode);
+          setCredits(details.credits);
+        } else {
+          const rawCode = prData.profile?.plan_tier || prData.data?.plan_tier;
+          if (rawCode) setCurrentPlanCode(rawCode);
+          const rawCreds = prData.profile?.credits ?? prData.data?.credits;
+          if (rawCreds !== undefined) setCredits(rawCreds);
         }
       }
     } catch (e) {
@@ -121,17 +134,24 @@ export default function LearnerBillingPage() {
         <div className="space-y-1">
           <div className="text-xs text-slate-500">Gói tài khoản hiện tại</div>
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold font-mono text-slate-900">
-              {currentPlanCode}
+            <h2 className="text-xl font-bold text-slate-900">
+              {planDetails?.planName || currentPlanCode}
             </h2>
             <span className="text-xs px-2.5 py-0.5 rounded-md font-semibold bg-sky-50 text-sky-700 border border-sky-200">
               Đang hoạt động
             </span>
           </div>
-          <p className="text-xs text-slate-500">
-            Số dư AI credits khả dụng:{' '}
-            <span className="font-mono font-bold text-slate-800">{credits} credits</span>
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+            <span>
+              Số dư AI credits khả dụng:{' '}
+              <span className="font-mono font-bold text-slate-800">{credits} credits</span>
+            </span>
+            {planDetails?.expiresAt && (
+              <span>
+                &bull; Hạn dùng đến: <span className="font-mono font-semibold text-slate-800">{new Date(planDetails.expiresAt).toLocaleDateString('vi-VN')}</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -143,98 +163,105 @@ export default function LearnerBillingPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((p) => {
-            const isCurrent = currentPlanCode === p.code;
+            const isCurrent =
+              currentPlanCode === p.code ||
+              (currentPlanCode === 'FREE' && p.code === 'LEARNER_FREE') ||
+              (currentPlanCode === 'PRO' && p.code === 'LEARNER_PRO');
             const isFree = p.price_vnd === 0;
             const isLoadingThis = loadingPlanCode === p.code;
 
             return (
               <div
                 key={p.id}
-                className={`p-6 rounded-md border flex flex-col justify-between transition-all ${
+                className={`flex flex-col justify-between rounded-md border p-6 transition-all duration-200 ${
                   isCurrent
-                    ? 'border-sky-500 bg-sky-50/10 shadow-xs ring-1 ring-sky-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300 shadow-xs'
+                    ? 'border-sky-600 bg-sky-50/20 shadow-xs'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900">{p.name}</h3>
-                      <p className="text-xs text-slate-500">{p.description}</p>
-                    </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono font-bold text-slate-700">
+                      {p.code}
+                    </span>
                     {isCurrent && (
-                      <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-sky-600 text-white shadow-xs">
-                        HIỆN TẠI
+                      <span className="text-[11px] font-bold px-2 py-0.5 bg-sky-600 text-white rounded">
+                        Gói hiện tại
                       </span>
                     )}
                   </div>
 
-                  <div className="mb-6">
-                    <span className="text-3xl font-bold font-mono text-slate-900">
-                      {isFree ? '0 đ' : `${p.price_vnd.toLocaleString('vi-VN')} đ`}
-                    </span>
-                    <span className="text-xs text-slate-500 ml-1">/ tháng</span>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                    {p.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 min-h-[32px] leading-relaxed">
+                    {p.description}
+                  </p>
+
+                  <div className="my-5 pb-5 border-b border-slate-200">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold font-mono tracking-tight text-slate-900">
+                        {isFree ? 'Miễn phí' : `${p.price_vnd.toLocaleString('vi-VN')} đ`}
+                      </span>
+                      {!isFree && (
+                        <span className="text-xs text-slate-500">/ tháng</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-600 mt-1 flex items-center gap-1">
+                      <span>Bao gồm:</span>
+                      <strong className="font-mono text-slate-800">
+                        {p.credits_included} AI credits
+                      </strong>
+                    </div>
                   </div>
 
-                  <ul className="space-y-3 text-xs text-slate-700 mb-6">
+                  <div className="space-y-2.5 mb-6">
+                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Quyền lợi bao gồm
+                    </div>
                     {Array.isArray(p.features) &&
                       p.features.map((feat, idx) => (
-                        <li key={idx} className="flex items-center gap-2.5">
-                          <Check className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
+                        <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                          <Check className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" strokeWidth={2} />
                           <span>{feat}</span>
-                        </li>
+                        </div>
                       ))}
-                  </ul>
+                  </div>
                 </div>
 
-                {isFree ? (
-                  <button
-                    disabled
-                    className="w-full py-2.5 rounded-md border border-slate-200 text-xs font-semibold text-slate-400 bg-slate-50 cursor-default"
-                  >
-                    {isCurrent ? 'Gói hiện tại' : 'Gói cơ bản'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleOpenUpgrade(p.code)}
-                    disabled={isCurrent || isLoadingThis}
-                    className={`w-full py-2.5 rounded-md text-xs font-semibold transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 ${
-                      isCurrent
-                        ? 'bg-slate-100 text-slate-600 border border-slate-200 cursor-default'
-                        : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-60'
-                    }`}
-                  >
-                    {isLoadingThis ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />
-                        <span>Đang chuyển trang thanh toán...</span>
-                      </>
-                    ) : isCurrent ? (
-                      'Đang kích hoạt'
-                    ) : (
-                      <>
-                        <span>Nâng cấp {p.name}</span>
-                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-                      </>
-                    )}
-                  </button>
-                )}
+                <div>
+                  {isCurrent ? (
+                    <button
+                      disabled
+                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 cursor-default"
+                    >
+                      Đang sử dụng
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenUpgrade(p.code)}
+                      disabled={Boolean(loadingPlanCode)}
+                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isLoadingThis ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Đang khởi tạo...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{isFree ? 'Chuyển sang gói này' : 'Nâng cấp ngay'}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       )}
-
-      {/* Security Guarantee Note */}
-      <div className="p-4 rounded-md border border-slate-200 bg-white flex items-start gap-3 shadow-2xs">
-        <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" strokeWidth={1.75} />
-        <div className="text-xs text-slate-600 space-y-1">
-          <span className="font-semibold text-slate-800 block">Thanh toán bảo mật chuẩn Open Banking payOS</span>
-          <p className="leading-relaxed">
-            Hệ thống áp dụng thanh toán tự động qua mã VietQR chuẩn Napas 24/7. Toàn bộ giao dịch được kiểm tra và kích hoạt tức thì không cần gửi biên lai.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

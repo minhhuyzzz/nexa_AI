@@ -422,12 +422,13 @@ export default function PricingPage() {
                               }
                               className="text-slate-400 hover:text-slate-600 p-0.5"
                               title={feat.tooltip}
+                              aria-label={feat.tooltip}
                             >
                               <HelpCircle className="w-3 h-3" />
                             </button>
 
                             {activeTooltip === `${plan.id}-lea-${idx}` && (
-                              <div className="absolute right-0 bottom-full mb-1 w-48 p-2 rounded-md bg-slate-900 text-white text-[11px] leading-tight z-30 shadow-lg pointer-events-none animate-in fade-in-50">
+                              <div className="absolute right-0 bottom-full mb-1 w-48 p-2 rounded-md bg-slate-900 border border-slate-700 text-white text-[11px] leading-tight z-30 shadow-sm pointer-events-none animate-in fade-in-50">
                                 {feat.tooltip}
                               </div>
                             )}
@@ -462,12 +463,13 @@ export default function PricingPage() {
                               }
                               className="text-slate-400 hover:text-slate-600 p-0.5"
                               title={feat.tooltip}
+                              aria-label={feat.tooltip}
                             >
                               <HelpCircle className="w-3 h-3" />
                             </button>
 
                             {activeTooltip === `${plan.id}-eva-${idx}` && (
-                              <div className="absolute right-0 bottom-full mb-1 w-48 p-2 rounded-md bg-slate-900 text-white text-[11px] leading-tight z-30 shadow-lg pointer-events-none animate-in fade-in-50">
+                              <div className="absolute right-0 bottom-full mb-1 w-48 p-2 rounded-md bg-slate-900 border border-slate-700 text-white text-[11px] leading-tight z-30 shadow-sm pointer-events-none animate-in fade-in-50">
                                 {feat.tooltip}
                               </div>
                             )}

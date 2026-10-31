@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -212,7 +212,7 @@ function WaitingRoomContent() {
 
       {/* Starting Notification Banner */}
       {startingNotice && (
-        <div className="my-4 p-4 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-center gap-2 animate-bounce">
+        <div className="my-4 p-4 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
           <span>Chuyên gia đã phát lệnh bắt đầu! Đang chuyển hướng bạn vào màn hình làm bài...</span>
         </div>

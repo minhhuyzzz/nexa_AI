@@ -34,7 +34,7 @@ const updateAiConfigSchema = z.object({
   maxLoginAttempts: z.number().int().positive().optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest | Request) {
   try {
     const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
@@ -42,12 +42,31 @@ export async function GET() {
     }
 
     const adminSupabase = createAdminClient();
+    const url = new URL(request.url);
+    const period = url.searchParams.get('period') || '7d';
 
-    const { data: events, error } = await adminSupabase
+    let fromDate: string | null = null;
+    const now = Date.now();
+    if (period === '24h') {
+      fromDate = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+    } else if (period === '7d') {
+      fromDate = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (period === '30d') {
+      fromDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    let query = adminSupabase
       .from('ai_usage_events')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+      .order('created_at', { ascending: false });
+
+    if (fromDate) {
+      query = query.gte('created_at', fromDate);
+    } else {
+      query = query.limit(500);
+    }
+
+    const { data: events, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -77,8 +96,8 @@ export async function GET() {
     const avgLatency = allEvents.length > 0 ? Math.round(totalLatencyMs / allEvents.length) : 0;
     const estimatedCostVnd = Math.round(totalCostUsd * 25400);
 
-    // AI Gateway Settings from service
-    const currentConfig = AIConfigService.getConfig();
+    // AI Gateway Settings persistently from platform_settings table (AI-02)
+    const currentConfig = await AIConfigService.getConfigAsync(adminSupabase);
     const maskedApiKey = currentConfig.apiKey
       ? currentConfig.apiKey.length > 8
         ? currentConfig.apiKey.slice(0, 4) + '••••••••' + currentConfig.apiKey.slice(-4)
@@ -87,6 +106,8 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      period,
+      sampleSize: allEvents.length,
       config: {
         provider: currentConfig.provider,
         defaultModel: currentConfig.defaultModel,
@@ -121,6 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     const adminUser = auth.user!;
+    const adminSupabase = createAdminClient();
     const body = await request.json();
     const validation = updateAiConfigSchema.safeParse(body);
 
@@ -147,7 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (flows) {
-      const current = AIConfigService.getConfig();
+      const current = await AIConfigService.getConfigAsync(adminSupabase);
       patchPayload.flows = {
         rubricGrading: {
           ...current.flows.rubricGrading,
@@ -160,7 +182,8 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    const updated = AIConfigService.saveConfig(patchPayload);
+    // Persist configuration in database via AIConfigService.saveConfigAsync (AI-02)
+    const updated = await AIConfigService.saveConfigAsync(patchPayload, adminUser.id, adminSupabase);
 
     // Record audit log
     await recordAdminAudit({
@@ -177,7 +200,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Đã lưu cấu hình AI Gateway thành công',
+      message: 'Đã lưu cấu hình AI Gateway thành công vào cơ sở dữ liệu',
       config: {
         provider: updated.provider,
         defaultModel: updated.defaultModel,

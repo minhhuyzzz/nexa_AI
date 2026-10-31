@@ -19,11 +19,11 @@ interface CompetencyRadarChartProps {
 }
 
 const defaultDomains: DomainScore[] = [
-  { code: 'D1', name: 'Thông tin & Dữ liệu', score: 0, target: 70 },
-  { code: 'D2', name: 'Giao tiếp & Hợp tác', score: 0, target: 70 },
-  { code: 'D3', name: 'Sáng tạo Nội dung số', score: 0, target: 70 },
-  { code: 'D4', name: 'An toàn & Bảo mật', score: 0, target: 70 },
-  { code: 'D5', name: 'Giải quyết Vấn đề', score: 0, target: 70 },
+  { code: 'D1', name: 'Thông tin & Dữ liệu', score: null, target: 70 },
+  { code: 'D2', name: 'Giao tiếp & Hợp tác', score: null, target: 70 },
+  { code: 'D3', name: 'Sáng tạo Nội dung số', score: null, target: 70 },
+  { code: 'D4', name: 'An toàn & Bảo mật', score: null, target: 70 },
+  { code: 'D5', name: 'Giải quyết Vấn đề', score: null, target: 70 },
 ];
 
 export function CompetencyRadarChart({

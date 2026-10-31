@@ -83,7 +83,7 @@ export default function LearnerGroupsPage() {
               created_at,
               evaluator_id,
               class_members ( id ),
-              class_assignments ( id )
+              class_assignments ( id, assessment_id )
             )
           `)
           .eq('user_id', user.id);
@@ -99,9 +99,23 @@ export default function LearnerGroupsPage() {
             created_at,
             evaluator_id,
             class_members ( id ),
-            class_assignments ( id )
+            class_assignments ( id, assessment_id )
           `)
           .eq('evaluator_id', user.id);
+
+        // 3. Lấy danh sách các bài thi người dùng đã nộp để tính chính xác bài tập còn nợ
+        const { data: mySubs } = await supabase
+          .from('assessment_submissions')
+          .select('class_assignment_id, assessment_id')
+          .eq('user_id', user.id)
+          .in('status', ['SUBMITTED', 'EVALUATED']);
+
+        const submittedAssignmentIds = new Set(
+          (mySubs || []).map((s) => s.class_assignment_id).filter(Boolean)
+        );
+        const submittedAssessmentIds = new Set(
+          (mySubs || []).map((s) => s.assessment_id).filter(Boolean)
+        );
 
         const combinedMap = new Map<string, any>();
 
@@ -116,18 +130,25 @@ export default function LearnerGroupsPage() {
           }
         });
 
-        classList = Array.from(combinedMap.values()).map((c) => ({
-          id: c.id,
-          name: c.name,
-          code: c.class_code,
-          shortCode: (c.name || 'CL').slice(0, 2).toUpperCase(),
-          memberCount: c.class_members?.length || 1,
-          evaluatorName: c.isOwner ? 'Bạn (Chủ nhiệm)' : 'Giảng viên phụ trách',
-          institution: 'Học viện Số NEXA',
-          unreadPostsCount: 0,
-          pendingAssignmentsCount: c.class_assignments?.length || 0,
-          filesCount: 0,
-        }));
+        classList = Array.from(combinedMap.values()).map((c) => {
+          const pendingCount = (c.class_assignments || []).filter(
+            (asg: { id: string; assessment_id: string }) =>
+              !submittedAssignmentIds.has(asg.id) && !submittedAssessmentIds.has(asg.assessment_id)
+          ).length;
+
+          return {
+            id: c.id,
+            name: c.name,
+            code: c.class_code,
+            shortCode: (c.name || 'CL').slice(0, 2).toUpperCase(),
+            memberCount: c.class_members?.length || 1,
+            evaluatorName: c.isOwner ? 'Bạn (Chủ nhiệm)' : 'Giảng viên phụ trách',
+            institution: 'Học viện Số NEXA',
+            unreadPostsCount: 0,
+            pendingAssignmentsCount: pendingCount,
+            filesCount: 0,
+          };
+        });
       }
 
       setGroups(classList);
@@ -255,7 +276,7 @@ export default function LearnerGroupsPage() {
                 <button
                   type="submit"
                   disabled={joining || !joinCode.trim()}
-                  className="w-full py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                  className="w-full py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                 >
                   {joining ? (
                     <>

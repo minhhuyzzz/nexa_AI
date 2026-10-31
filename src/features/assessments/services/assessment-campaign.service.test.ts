@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET as getCampaigns, POST as createCampaign } from '@/app/api/organizations/[orgId]/campaigns/route';
 import { POST as submitGrade } from '@/app/api/organizations/[orgId]/grading/route';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
@@ -11,8 +11,13 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
 }));
 
+vi.mock('@/lib/auth/org-guard', () => ({
+  requireOrgApiPermission: vi.fn(),
+}));
+
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireOrgApiPermission } from '@/lib/auth/org-guard';
 
 describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SEC-03)', () => {
   const orgId = '11111111-1111-1111-1111-111111111111';
@@ -27,42 +32,13 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
   });
 
   it('SEC-02: chặn người dùng ngoài tổ chức gọi GET đợt đánh giá', async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: 'outsider-user', email: 'outsider@other.com' } },
-          error: null,
-        }),
-      },
-    } as any);
-
-    vi.mocked(createAdminClient).mockReturnValue({
-      from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: { role: 'LEARNER' } }),
-              }),
-            }),
-          };
-        }
-        if (table === 'user_organizations') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockReturnValue({
-                    maybeSingle: vi.fn().mockResolvedValue({ data: null }),
-                  }),
-                }),
-              }),
-            }),
-          };
-        }
-        return {};
-      }),
-    } as any);
+    vi.mocked(requireOrgApiPermission).mockResolvedValueOnce({
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Bạn không có quyền truy cập đợt đánh giá của tổ chức này' },
+        { status: 403 }
+      ),
+    });
 
     const req = new NextRequest(`http://localhost:3000/api/organizations/${orgId}/campaigns`);
     const res = await getCampaigns(req, { params: Promise.resolve({ orgId }) });
@@ -72,41 +48,19 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
   });
 
   it('SEC-03: chặn tạo đợt đánh giá nếu đề thi thuộc tổ chức khác', async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: assessorUserId, email: 'assessor@org.com' } },
-          error: null,
-        }),
+    vi.mocked(requireOrgApiPermission).mockResolvedValueOnce({
+      authorized: true,
+      context: {
+        isAuthorized: true,
+        user: { id: assessorUserId, email: 'assessor@org.com' },
+        organization: { id: orgId, name: 'Org Test', slug: 'org-test', is_active: true },
+        role: 'ORG_ADMIN',
+        isSuperadmin: false,
       },
-    } as any);
+    });
 
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: { role: 'LEARNER' } }),
-              }),
-            }),
-          };
-        }
-        if (table === 'user_organizations') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockReturnValue({
-                    maybeSingle: vi.fn().mockResolvedValue({
-                      data: { org_role: 'ASSESSOR', status: 'ACTIVE' },
-                    }),
-                  }),
-                }),
-              }),
-            }),
-          };
-        }
         if (table === 'assessments') {
           return {
             select: vi.fn().mockReturnValue({
@@ -144,14 +98,16 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
   });
 
   it('tạo đợt đánh giá tự động khóa phiên bản đề thi và giao bài cho các lớp', async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: assessorUserId, email: 'assessor@org.com' } },
-          error: null,
-        }),
+    vi.mocked(requireOrgApiPermission).mockResolvedValueOnce({
+      authorized: true,
+      context: {
+        isAuthorized: true,
+        user: { id: assessorUserId, email: 'assessor@org.com' },
+        organization: { id: orgId, name: 'Org Test', slug: 'org-test', is_active: true },
+        role: 'ORG_ADMIN',
+        isSuperadmin: false,
       },
-    } as any);
+    });
 
     const mockAssessmentUpdate = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -161,10 +117,12 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
       select: vi.fn().mockReturnValue({
         single: vi.fn().mockResolvedValue({
           data: {
-            id: 'camp-123',
-            title: 'Khảo thí Giữa kỳ K24',
+            id: 'campaign-123',
             organization_id: orgId,
             assessment_id: assessmentId,
+            title: 'Khảo thí Giữa kỳ K24',
+            class_ids: [classId1, classId2],
+            assessor_ids: [assessorUserId],
             status: 'ACTIVE',
           },
           error: null,
@@ -172,34 +130,10 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
       }),
     });
 
-    const mockAssignmentUpsert = vi.fn().mockResolvedValue({ error: null });
+    const mockAssignmentUpsert = vi.fn().mockResolvedValue({ data: null, error: null });
 
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: { role: 'LEARNER' } }),
-              }),
-            }),
-          };
-        }
-        if (table === 'user_organizations') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockReturnValue({
-                    maybeSingle: vi.fn().mockResolvedValue({
-                      data: { org_role: 'ASSESSOR', status: 'ACTIVE' },
-                    }),
-                  }),
-                }),
-              }),
-            }),
-          };
-        }
         if (table === 'assessments') {
           return {
             select: vi.fn().mockReturnValue({
@@ -268,14 +202,16 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
   });
 
   it('giảng viên phê duyệt điểm: cập nhật trạng thái EVALUATED và tính chuẩn đạt', async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: assessorUserId, email: 'assessor@org.com' } },
-          error: null,
-        }),
+    vi.mocked(requireOrgApiPermission).mockResolvedValueOnce({
+      authorized: true,
+      context: {
+        isAuthorized: true,
+        user: { id: assessorUserId, email: 'assessor@org.com' },
+        organization: { id: orgId, name: 'Org Test', slug: 'org-test', is_active: true },
+        role: 'ORG_ADMIN',
+        isSuperadmin: false,
       },
-    } as any);
+    });
 
     const mockSubUpdate = vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
@@ -296,30 +232,6 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
 
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: { role: 'LEARNER' } }),
-              }),
-            }),
-          };
-        }
-        if (table === 'user_organizations') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockReturnValue({
-                    single: vi.fn().mockResolvedValue({
-                      data: { org_role: 'ASSESSOR', status: 'ACTIVE' },
-                    }),
-                  }),
-                }),
-              }),
-            }),
-          };
-        }
         if (table === 'assessment_submissions') {
           return {
             select: vi.fn().mockReturnValue({

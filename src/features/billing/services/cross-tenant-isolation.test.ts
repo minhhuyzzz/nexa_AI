@@ -10,6 +10,7 @@ describe('Cross-Tenant Security & Workspace Isolation', () => {
             select: () => ({
               eq: () => ({
                 single: async () => ({ data: { plan_tier: 'ENTERPRISE' }, error: null }),
+                maybeSingle: async () => ({ data: { plan_tier: 'ENTERPRISE' }, error: null }),
               }),
             }),
           };
@@ -48,6 +49,7 @@ describe('Cross-Tenant Security & Workspace Isolation', () => {
             select: () => ({
               eq: () => ({
                 single: async () => ({ data: { plan_tier: 'FREE' }, error: null }),
+                maybeSingle: async () => ({ data: { plan_tier: 'FREE' }, error: null }),
               }),
             }),
           };

@@ -1,16 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { DomainAssessmentSummaryService } from '@/features/competency/services/domain-assessment-summary.service';
 
 export const dynamic = 'force-dynamic';
-
-interface DomainAggregation {
-  index: number;
-  code: string;
-  name: string;
-  earned: number;
-  max: number;
-  count: number;
-}
 
 export async function GET() {
   try {
@@ -22,160 +14,27 @@ export async function GET() {
       error: authError,
     } = await supabase.auth.getUser();
 
-    const effectiveUserId = user?.id;
-
-    if (!effectiveUserId) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Fetch completed submissions for this learner
-    const { data: submissions, error: subError } = await supabase
-      .from('assessment_submissions')
-      .select('id, assessment_id, total_score, max_score, percentage, is_passed, submitted_at')
-      .eq('user_id', effectiveUserId)
-      .eq('status', 'SUBMITTED')
-      .order('submitted_at', { ascending: false });
+    // 2. Compute canonical 5-domain competency summary
+    const summary = await DomainAssessmentSummaryService.getUserCompetencySummary(
+      supabase,
+      user.id
+    );
 
-    if (subError) {
-      return NextResponse.json(
-        { error: 'Lỗi khi tải lịch sử khảo thí', details: subError.message },
-        { status: 500 }
-      );
-    }
-
-    const defaultDomains: Record<number, DomainAggregation> = {
-      1: { index: 1, code: 'D1', name: 'Thông tin & Dữ liệu', earned: 0, max: 0, count: 0 },
-      2: { index: 2, code: 'D2', name: 'Giao tiếp & Hợp tác', earned: 0, max: 0, count: 0 },
-      3: { index: 3, code: 'D3', name: 'Sáng tạo Nội dung số', earned: 0, max: 0, count: 0 },
-      4: { index: 4, code: 'D4', name: 'An toàn & Bảo mật', earned: 0, max: 0, count: 0 },
-      5: { index: 5, code: 'D5', name: 'Giải quyết Vấn đề', earned: 0, max: 0, count: 0 },
-    };
-
-    const submissionIds = (submissions || []).map((s) => s.id);
-    const hasTakenAssessment = submissionIds.length > 0;
-    const latestSubmissionId = submissions?.[0]?.id ?? null;
-
-    // 3. If user has NOT completed any assessment, return unassessed baseline with score: null
-    if (!hasTakenAssessment) {
-      const radarData = [1, 2, 3, 4, 5].map((idx) => {
-        const dom = defaultDomains[idx];
-        return {
-          code: dom.code,
-          name: dom.name,
-          score: null as number | null, // Explicitly null: unassessed, not 0%!
-          target: 70,
-          level: 'Chưa đủ dữ liệu',
-          questionsCount: 0,
-        };
-      });
-
-      return NextResponse.json({
-        success: true,
-        hasTakenAssessment: false,
-        totalAssessmentsCompleted: 0,
-        assessedDomainsCount: 0,
-        totalDomainsCount: 5,
-        latestSubmissionId: null,
-        overallScore: null,
-        radarData,
-        insights: null,
-        latestAnalysis: null,
-      });
-    }
-
-    // 4. Aggregate question-level scores by domain from real submissions
-    const { data: answers, error: ansError } = await supabase
-      .from('submission_answers')
-      .select(`
-        id,
-        score_awarded,
-        is_correct,
-        assessment_items (
-          id,
-          points,
-          competencies (
-            id,
-            skill_code,
-            competency_domains (
-              id,
-              domain_index,
-              title
-            )
-          )
-        )
-      `)
-      .in('submission_id', submissionIds);
-
-    if (!ansError && answers) {
-      for (const ans of answers) {
-        const item = ans.assessment_items as {
-          id?: string;
-          points?: number;
-          competencies?: {
-            id?: string;
-            skill_code?: string;
-            competency_domains?: {
-              id?: string;
-              domain_index?: number;
-              title?: string;
-            } | null;
-          } | null;
-        } | null;
-
-        const domainIndex = item?.competencies?.competency_domains?.domain_index ?? 0;
-        const points = Number(item?.points || 1);
-        const scoreAwarded = Number(ans.score_awarded || 0);
-
-        if (domainIndex >= 1 && domainIndex <= 5) {
-          defaultDomains[domainIndex].earned += scoreAwarded;
-          defaultDomains[domainIndex].max += points;
-          defaultDomains[domainIndex].count += 1;
-        }
-      }
-    }
-
-    // 5. Calculate real percentages for each domain (score is null if no questions assessed)
-    const radarData = [1, 2, 3, 4, 5].map((idx) => {
-      const dom = defaultDomains[idx];
-      const hasData = dom.max > 0;
-      const score = hasData
-        ? Math.min(100, Math.max(0, Math.round((dom.earned / dom.max) * 100)))
-        : null;
-
-      let level = 'Chưa đủ dữ liệu';
-      if (score !== null) {
-        if (score >= 85) level = 'Level 4: Rất nâng cao';
-        else if (score >= 70) level = 'Level 3: Nâng cao (Đạt chuẩn)';
-        else if (score >= 55) level = 'Level 2: Trung cấp';
-        else level = 'Level 1: Cơ bản';
-      }
-
-      return {
-        code: dom.code,
-        name: dom.name,
-        score,
-        target: 70,
-        level,
-        questionsCount: dom.count,
-      };
-    });
-
-    // 6. Determine Strengths and Skill Gaps exclusively from assessed domains
-    const assessedDomains = radarData.filter(
+    // 3. Extract assessed domains for diagnostic insights
+    const assessedDomains = summary.radarData.filter(
       (d): d is typeof d & { score: number } => d.score !== null
     );
 
-    let overallScore: number | null = null;
     let insights: {
       strongest: { code: string; name: string; score: number; level: string } | null;
       weakest: { code: string; name: string; score: number; level: string; isGap: boolean } | null;
     } | null = null;
 
     if (assessedDomains.length > 0) {
-      overallScore = Math.round(
-        assessedDomains.reduce((acc, curr) => acc + curr.score, 0) / assessedDomains.length
-      );
-
       const sorted = [...assessedDomains].sort((a, b) => b.score - a.score);
       const strongest = sorted[0];
       const weakest = sorted[sorted.length - 1];
@@ -197,13 +56,13 @@ export async function GET() {
       };
     }
 
-    // 7. Check if AI competency analysis already exists for latest submission
+    // 4. Check if AI competency analysis already exists for latest submission
     let latestAnalysis = null;
-    if (latestSubmissionId) {
+    if (summary.latestSubmissionId) {
       const { data: analysisData } = await supabase
         .from('competency_analyses')
         .select('id, pedagogical_feedback, strengths, weaknesses, skill_gaps, overall_level, learning_pathway, created_at')
-        .eq('submission_id', latestSubmissionId)
+        .eq('submission_id', summary.latestSubmissionId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -224,13 +83,13 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      hasTakenAssessment: assessedDomains.length > 0,
-      totalAssessmentsCompleted: submissions.length,
-      assessedDomainsCount: assessedDomains.length,
-      totalDomainsCount: 5,
-      latestSubmissionId,
-      overallScore,
-      radarData,
+      hasTakenAssessment: summary.hasTakenAssessment,
+      totalAssessmentsCompleted: summary.totalAssessmentsCompleted,
+      assessedDomainsCount: summary.assessedDomainsCount,
+      totalDomainsCount: summary.totalDomainsCount,
+      latestSubmissionId: summary.latestSubmissionId,
+      overallScore: summary.overallScore,
+      radarData: summary.radarData,
       insights,
       latestAnalysis,
     });
