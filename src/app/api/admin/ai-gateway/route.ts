@@ -77,14 +77,22 @@ export async function GET(request: NextRequest | Request) {
     let totalCompletionTokens = 0;
     let totalLatencyMs = 0;
     let totalCostUsd = 0;
+    let errorCount = 0;
+    const latencies: number[] = [];
     const modelCounts: Record<string, number> = {};
     const featureCounts: Record<string, number> = {};
 
     allEvents.forEach((ev: any) => {
       totalPromptTokens += ev.prompt_tokens || 0;
       totalCompletionTokens += ev.completion_tokens || 0;
-      totalLatencyMs += ev.latency_ms || 0;
+      const lat = Number(ev.latency_ms || 0);
+      totalLatencyMs += lat;
+      latencies.push(lat);
       totalCostUsd += Number(ev.cost_estimated || 0);
+
+      if (ev.status === 'FAILED') {
+        errorCount++;
+      }
 
       const m = ev.model || 'gemini-3.5-flash';
       modelCounts[m] = (modelCounts[m] || 0) + 1;
@@ -94,6 +102,13 @@ export async function GET(request: NextRequest | Request) {
     });
 
     const avgLatency = allEvents.length > 0 ? Math.round(totalLatencyMs / allEvents.length) : 0;
+    latencies.sort((a, b) => a - b);
+    const p95LatencyMs =
+      latencies.length > 0
+        ? latencies[Math.min(Math.floor(latencies.length * 0.95), latencies.length - 1)]
+        : 0;
+    const errorRatePercent =
+      allEvents.length > 0 ? Math.round((errorCount / allEvents.length) * 1000) / 10 : 0;
     const estimatedCostVnd = Math.round(totalCostUsd * 25400);
 
     // AI Gateway Settings persistently from platform_settings table (AI-02)
@@ -121,6 +136,9 @@ export async function GET(request: NextRequest | Request) {
         totalCompletionTokens,
         totalTokens: totalPromptTokens + totalCompletionTokens,
         avgLatencyMs: avgLatency,
+        p95LatencyMs,
+        errorCount,
+        errorRatePercent,
         totalCostUsd: Number(totalCostUsd.toFixed(4)),
         totalCostVnd: estimatedCostVnd,
         models: modelCounts,
@@ -154,6 +172,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { provider, apiKey, defaultModel, flows } = validation.data;
+
+    if (provider && provider !== 'GOOGLE_GEMINI') {
+      return NextResponse.json(
+        {
+          error: `Nhà cung cấp "${provider}" hiện chưa có adapter hoạt động. Hệ thống hiện chỉ hỗ trợ và kích hoạt Google Gemini.`,
+        },
+        { status: 400 }
+      );
+    }
 
     // Check if new API key is provided and not masked
     const patchPayload: Record<string, any> = {

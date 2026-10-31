@@ -44,6 +44,8 @@ import {
 } from '@/features/assessments/utils/csv-helper';
 import { QuestionBankDrawer } from './QuestionBankDrawer';
 import { PublishValidationModal } from './PublishValidationModal';
+import { RubricBuilder } from '@/components/dashboard/assessments/RubricBuilder';
+import type { RubricDefinition } from '@/features/assessments/types/rubric.types';
 
 export interface AssessmentStudioProps {
   role: 'ADMIN' | 'EVALUATOR';
@@ -162,6 +164,29 @@ export function AssessmentStudio({
 
           const domainNum = Number(item.competencies?.competency_domains?.code) || 1;
 
+          let structuredRubric: RubricDefinition | undefined = undefined;
+          const rub = (item.rubrics && item.rubrics.length > 0) ? item.rubrics[0] : item.rubric;
+          if (rub && rub.rubric_criteria) {
+            structuredRubric = {
+              title: rub.title || 'Rubric chấm điểm',
+              itemId: item.id,
+              criteria: (rub.rubric_criteria || []).map((c: any) => ({
+                id: c.id,
+                name: c.name || '',
+                description: c.description || '',
+                maxPoints: Number(c.max_points) || 5,
+                weightPercent: Number(c.weight_percent) || 50,
+                orderIndex: c.order_index ?? 0,
+                levels: (c.rubric_levels || []).map((l: any) => ({
+                  id: l.id,
+                  levelName: l.name || l.levelName || '',
+                  scorePercent: Number(l.score_percent ?? l.scorePercent) || 0,
+                  description: l.description || '',
+                })),
+              })),
+            };
+          }
+
           return {
             type,
             domain: domainNum,
@@ -175,6 +200,7 @@ export function AssessmentStudio({
             correct_answer: correctKey,
             explanation: correctOpt?.explanation || '',
             rubric_guide: item.rubric_guide || '',
+            structured_rubric: structuredRubric,
             points: Number(item.points) || 10,
           };
         });
@@ -1048,98 +1074,28 @@ export function AssessmentStudio({
                     </div>
                   </div>
 
-                  {/* Rubric Criteria Table */}
-                  <div className="p-4 rounded-md border border-slate-200 bg-slate-50/60 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                          <FileCheck className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                          <span>Bảng tiêu chí chấm Rubric</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Căn cứ để Giảng viên và AI chấm điểm bài thực hành (Tổng tỷ trọng nên bằng 100%).
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentCriteria = currentQuestion.rubric_criteria || [];
-                          const updated = [...currentCriteria, { name: 'Tiêu chí mới', weight: 25 }];
-                          updateCurrentQuestion({
-                            rubric_criteria: updated,
-                            rubric_guide: updated.map((c, i) => `${i + 1}. ${c.name} (${c.weight}%)`).join('; '),
-                          });
-                        }}
-                        className="px-2.5 py-1 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-[11px] font-semibold inline-flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Thêm tiêu chí</span>
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {(currentQuestion.rubric_criteria || [
-                        { name: 'Đúng chuẩn yêu cầu sản phẩm', weight: 50 },
-                        { name: 'Kỹ năng vận dụng công cụ số & Trình bày', weight: 50 },
-                      ]).map((criterion, cIdx) => (
-                        <div
-                          key={cIdx}
-                          className="flex items-center gap-3 p-2 bg-white rounded border border-slate-200"
-                        >
-                          <span className="font-mono text-xs text-slate-400 w-5 text-center">
-                            #{cIdx + 1}
-                          </span>
-                          <input
-                            type="text"
-                            value={criterion.name}
-                            onChange={(e) => {
-                              const criteria = [...(currentQuestion.rubric_criteria || [])];
-                              criteria[cIdx] = { ...criteria[cIdx], name: e.target.value };
-                              updateCurrentQuestion({
-                                rubric_criteria: criteria,
-                                rubric_guide: criteria.map((c, i) => `${i + 1}. ${c.name} (${c.weight}%)`).join('; '),
-                              });
-                            }}
-                            placeholder="Tên tiêu chí..."
-                            className="flex-1 p-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-sky-600"
-                          />
-                          <div className="flex items-center gap-1 shrink-0">
-                            <input
-                              type="number"
-                              min={1}
-                              max={100}
-                              value={criterion.weight}
-                              onChange={(e) => {
-                                const criteria = [...(currentQuestion.rubric_criteria || [])];
-                                criteria[cIdx] = { ...criteria[cIdx], weight: Number(e.target.value) || 0 };
-                                updateCurrentQuestion({
-                                  rubric_criteria: criteria,
-                                  rubric_guide: criteria.map((c, i) => `${i + 1}. ${c.name} (${c.weight}%)`).join('; '),
-                                });
-                              }}
-                              className="w-14 p-1.5 text-xs text-center font-mono border border-slate-200 rounded"
-                            />
-                            <span className="text-xs text-slate-500">%</span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const criteria = (currentQuestion.rubric_criteria || []).filter((_, i) => i !== cIdx);
-                              updateCurrentQuestion({
-                                rubric_criteria: criteria,
-                                rubric_guide: criteria.map((c, i) => `${i + 1}. ${c.name} (${c.weight}%)`).join('; '),
-                              });
-                            }}
-                            className="p-1 text-slate-400 hover:text-rose-500 rounded"
-                            title="Xóa tiêu chí"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  {/* Rubric Criteria Builder (MOD-01) */}
+                  <div className="pt-2">
+                    <RubricBuilder
+                      itemMaxPoints={currentQuestion.points || 10}
+                      initialRubric={currentQuestion.structured_rubric}
+                      onChange={(rubric) => {
+                        updateCurrentQuestion({
+                          structured_rubric: rubric,
+                          rubric_guide: rubric
+                            ? rubric.criteria
+                                .map((c, i) => `${i + 1}. ${c.name} (${c.maxPoints}đ, ${c.weightPercent}%)`)
+                                .join('; ')
+                            : '',
+                          rubric_criteria: rubric
+                            ? rubric.criteria.map((c) => ({
+                                name: c.name,
+                                weight: c.weightPercent ?? 0,
+                              }))
+                            : [],
+                        });
+                      }}
+                    />
                   </div>
                 </div>
               )}

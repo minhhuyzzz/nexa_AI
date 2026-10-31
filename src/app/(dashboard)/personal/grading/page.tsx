@@ -290,64 +290,11 @@ function EvaluatorGradingContent() {
         setActiveAiEval(data.evaluation);
         await fetchSubmissions();
       } else {
-        // Prototype simulation response
-        const simulatedCriterionScores: CriterionScoreResult[] = (activeItem.rubric?.criteria || []).map((crit) => {
-          const level = crit.levels[0] || { level_name: 'Xuất sắc', score_percent: 100 };
-          return {
-            criterionId: crit.id,
-            criterionName: crit.name,
-            levelName: level.level_name,
-            score: Number(((crit.maxPoints * level.score_percent) / 100).toFixed(2)),
-            maxScore: crit.maxPoints,
-            justification: `Học viên trình bày rất rõ ràng các dẫn chứng, đáp ứng đầy đủ tiêu chí ${crit.name}.`,
-          };
-        });
-
-        const simScore = simulatedCriterionScores.reduce((acc, c) => acc + c.score, 0);
-        const simMax = simulatedCriterionScores.reduce((acc, c) => acc + c.maxScore, 0) || activeItem.maxPoints;
-
-        const simulatedEval: AIEvaluationData = {
-          totalScore: simScore,
-          maxScore: simMax,
-          confidenceScore: 0.94,
-          confidenceFlag: 'GREEN',
-          evidenceQuote: activeItem.textResponse.slice(0, 160) + '...',
-          strengths: 'Phương pháp phân tích mạch lạc, số liệu trích xuất chính xác và đề xuất giải pháp có tính khả thi cao.',
-          weaknesses: 'Nên bổ sung chi tiết kế hoạch đánh giá rủi ro định kỳ.',
-          feedback: 'Bài giải trình rất tốt, tư duy phản biện sắc bén và bám sát thực tiễn công việc.',
-          criterionScores: simulatedCriterionScores,
-        };
-
-        setActiveAiEval(simulatedEval);
+        const errData = await res.json().catch(() => ({}));
+        setAiError(errData.error || 'Dịch vụ AI chấm điểm không khả dụng lúc này.');
       }
-    } catch {
-      // Prototype fallback
-      const simulatedCriterionScores: CriterionScoreResult[] = (activeItem.rubric?.criteria || []).map((crit) => {
-        const level = crit.levels[0] || { level_name: 'Xuất sắc', score_percent: 100 };
-        return {
-          criterionId: crit.id,
-          criterionName: crit.name,
-          levelName: level.level_name,
-          score: Number(((crit.maxPoints * level.score_percent) / 100).toFixed(2)),
-          maxScore: crit.maxPoints,
-          justification: `Dẫn chứng đáp ứng tiêu chí ${crit.name}.`,
-        };
-      });
-
-      const simScore = simulatedCriterionScores.reduce((acc, c) => acc + c.score, 0);
-      const simMax = simulatedCriterionScores.reduce((acc, c) => acc + c.maxScore, 0) || activeItem.maxPoints;
-
-      setActiveAiEval({
-        totalScore: simScore,
-        maxScore: simMax,
-        confidenceScore: 0.92,
-        confidenceFlag: 'GREEN',
-        evidenceQuote: activeItem.textResponse.slice(0, 140) + '...',
-        strengths: 'Ý tưởng rõ ràng, dẫn chứng thực tế thuyết phục.',
-        weaknesses: 'Có thể mở rộng thêm phần đối chiếu quy chuẩn quốc tế.',
-        feedback: 'Bài nộp đạt chuẩn chất lượng cao, các tiêu chí đều đạt điểm tốt.',
-        criterionScores: simulatedCriterionScores,
-      });
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gọi AI chấm bài.');
     } finally {
       setAiLoading(false);
     }

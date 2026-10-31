@@ -26,6 +26,7 @@ export interface ParsedItemRow {
   submission_type?: 'FILE' | 'LINK' | 'BOTH';
   rubric_criteria?: RubricCriterion[];
   rubric_guide?: string;
+  structured_rubric?: any;
   points?: number;
   is_multi_competency?: boolean;
   target_competencies?: string[];

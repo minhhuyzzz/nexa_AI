@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { z } from 'zod';
+import { RubricService } from '@/features/assessments/services/rubric.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,32 @@ const updateItemSchema = z.object({
   target_competencies: z.array(z.string()).optional(),
   is_multi_competency: z.boolean().optional(),
   rubric_guide: z.string().nullable().optional(),
+  rubric: z
+    .object({
+      title: z.string().min(1, 'Tiêu đề rubric không được để trống'),
+      description: z.string().optional(),
+      criteria: z
+        .array(
+          z.object({
+            name: z.string().min(1, 'Tên tiêu chí không được để trống'),
+            weightPercent: z.number().min(0).max(100).default(100),
+            maxPoints: z.number().positive('Điểm tối đa của tiêu chí phải > 0'),
+            orderIndex: z.number().int().min(0).default(0),
+            levels: z
+              .array(
+                z.object({
+                  levelName: z.string().min(1, 'Tên mức độ không được để trống'),
+                  scorePercent: z.number().min(0).max(100),
+                  description: z.string().min(1, 'Mô tả mức độ không được để trống'),
+                })
+              )
+              .min(2, 'Mỗi tiêu chí phải có ít nhất 2 mức độ'),
+          })
+        )
+        .min(1, 'Rubric phải có ít nhất 1 tiêu chí'),
+    })
+    .nullable()
+    .optional(),
   options: z
     .array(
       z.object({
@@ -25,6 +52,39 @@ const updateItemSchema = z.object({
     )
     .optional(),
 });
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string; itemId: string }> }
+) {
+  try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
+    const { id: assessmentId, itemId } = await params;
+    const supabase = await createClient();
+
+    const { data: item, error: itemErr } = await supabase
+      .from('assessment_items')
+      .select('*, item_options(*)')
+      .eq('id', itemId)
+      .eq('assessment_id', assessmentId)
+      .single();
+
+    if (itemErr || !item) {
+      return NextResponse.json({ error: 'Không tìm thấy câu hỏi' }, { status: 404 });
+    }
+
+    const rubric = await RubricService.getRubricByItemId(supabase, itemId);
+
+    return NextResponse.json({ item, rubric });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
 
 export async function PUT(
   req: Request,
@@ -57,6 +117,7 @@ export async function PUT(
       target_competencies,
       is_multi_competency,
       rubric_guide,
+      rubric,
       options,
     } = parsed.data;
 
@@ -114,7 +175,25 @@ export async function PUT(
       await supabase.from('item_options').insert(optInserts);
     }
 
-    return NextResponse.json({ item: updatedItem });
+    // If rubric is provided, update it
+    let savedRubric = null;
+    if (rubric) {
+      const rubRes = await RubricService.saveRubricForItem(
+        supabase,
+        itemId,
+        rubric,
+        updatedItem.points
+      );
+      if (rubRes.success) {
+        savedRubric = rubRes.rubric;
+      } else {
+        console.error('Error updating rubric for item:', rubRes.errors);
+      }
+    } else {
+      savedRubric = await RubricService.getRubricByItemId(supabase, itemId);
+    }
+
+    return NextResponse.json({ item: updatedItem, rubric: savedRubric });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });

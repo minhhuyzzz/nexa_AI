@@ -75,6 +75,7 @@ export function InContextGradingDrawer({
   const [selectedLevels, setSelectedLevels] = useState<Record<string, RubricLevelOption>>({});
   const [evaluatorFeedback, setEvaluatorFeedback] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<{
     confidenceScore: number;
     evidenceQuote: string;
@@ -118,27 +119,63 @@ export function InContextGradingDrawer({
     }));
   };
 
-  const handleTriggerAiGrading = () => {
+  const handleTriggerAiGrading = async () => {
     setIsAiLoading(true);
-    // Simulate On-Demand AI Rubric Grading with 100% rubrics mapping
-    setTimeout(() => {
-      setIsAiLoading(false);
+    setAiError(null);
+
+    try {
+      const res = await fetch('/api/ai/grade-submission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionId: submission.id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Dịch vụ AI chấm điểm tạm thời gián đoạn');
+      }
+
+      const evalData = data.evaluation;
+      if (!evalData) {
+        throw new Error('AI không thể tính điểm cho bài làm này');
+      }
+
       setAiResult({
-        confidenceScore: 0.94,
-        evidenceQuote: submission.textResponse.slice(0, 95) + '...',
-        strengths: 'Phân tích logic, bố cục minh bạch và có đề xuất phương án giải quyết cụ thể.',
-        weaknesses: 'Cần chú trọng thêm khâu dự trù giải pháp dự phòng khi có rủi ro kỹ thuật.',
+        confidenceScore: evalData.confidenceScore || 0,
+        evidenceQuote: evalData.evidenceQuote || submission.textResponse.slice(0, 95) + '...',
+        strengths: evalData.strengths || '',
+        weaknesses: evalData.weaknesses || '',
       });
-      // Set high scoring levels
-      const aiSelected: Record<string, RubricLevelOption> = {};
-      submission.rubricCriteria.forEach((crit) => {
-        aiSelected[crit.id] = crit.levels[0];
-      });
-      setSelectedLevels(aiSelected);
-      setEvaluatorFeedback(
-        'Học viên nắm vững bản chất vấn đề, lập luận có căn cứ dữ liệu số rõ ràng. Đạt yêu cầu chuẩn hóa.'
-      );
-    }, 800);
+
+      if (evalData.criterionScores && Array.isArray(evalData.criterionScores)) {
+        const aiSelected: Record<string, RubricLevelOption> = {};
+        submission.rubricCriteria.forEach((crit) => {
+          const matchedScore = evalData.criterionScores.find(
+            (cs: any) =>
+              cs.criterionId === crit.id ||
+              cs.criterionName?.toLowerCase() === crit.name.toLowerCase()
+          );
+          if (matchedScore && crit.levels.length > 0) {
+            const matchedLvl =
+              crit.levels.find(
+                (l) => l.levelName.toLowerCase() === matchedScore.selectedLevel?.toLowerCase()
+              ) || crit.levels[0];
+            aiSelected[crit.id] = matchedLvl;
+          }
+        });
+        if (Object.keys(aiSelected).length > 0) {
+          setSelectedLevels((prev) => ({ ...prev, ...aiSelected }));
+        }
+      }
+
+      if (evalData.feedback) {
+        setEvaluatorFeedback(evalData.feedback);
+      }
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi chấm AI');
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   const handleSave = () => {
@@ -313,6 +350,17 @@ export function InContextGradingDrawer({
                 )}
               </button>
             </div>
+
+            {/* AI Error Alert if failed */}
+            {aiError && (
+              <div className="p-3 rounded-md border border-rose-200 bg-rose-50 text-rose-800 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+                <div className="space-y-0.5">
+                  <div className="font-semibold">AI chấm bài không khả dụng</div>
+                  <div className="text-[11px] text-rose-700">{aiError}</div>
+                </div>
+              </div>
+            )}
 
             {/* AI Result Card if triggered */}
             {aiResult && (

@@ -42,9 +42,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                // Dark mode is STRICTLY for dashboard routes (/learner, /evaluator, /admin)
+                // Dark mode is supported across Personal (/personal), Org (/org), Admin (/admin), and legacy routes (/learner, /evaluator)
                 var p = window.location.pathname;
-                var isDashboard = p.startsWith('/learner') || p.startsWith('/evaluator') || p.startsWith('/admin');
+                var isDashboard = p.startsWith('/personal') || p.startsWith('/org') || p.startsWith('/admin') || p.startsWith('/learner') || p.startsWith('/evaluator');
                 if (isDashboard) {
                   var saved = localStorage.getItem('nexa_theme');
                   if (saved === 'dark') {
@@ -60,7 +60,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning className="font-sans min-h-screen bg-white text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-900">
+      <body suppressHydrationWarning className="font-sans min-h-screen bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 antialiased selection:bg-blue-100 selection:text-blue-900 dark:selection:bg-blue-950 dark:selection:text-blue-200">
         {children}
       </body>
     </html>

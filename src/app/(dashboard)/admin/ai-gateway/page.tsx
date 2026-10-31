@@ -13,6 +13,7 @@ import {
   Sparkles,
   BarChart3,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface AiGatewayStats {
@@ -21,6 +22,9 @@ interface AiGatewayStats {
   totalCompletionTokens: number;
   totalTokens: number;
   avgLatencyMs: number;
+  p95LatencyMs?: number;
+  errorCount?: number;
+  errorRatePercent?: number;
   totalCostUsd: number;
   totalCostVnd: number;
   models: Record<string, number>;
@@ -140,31 +144,44 @@ export default function AdminAiGatewayPage() {
         </div>
       </div>
 
-      {/* 3. Key Metrics Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 rounded-md bg-slate-50 border border-slate-200">
+      {/* 3. Key Metrics Strip (MOD-05) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-3.5 rounded-md bg-slate-50 border border-slate-200">
         <div className="p-2.5 bg-white rounded border border-slate-200/80">
           <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
             <span>Tổng lượt gọi AI</span>
             <Cpu className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
             {stats?.totalRequests || 0}
           </div>
+          <div className="text-[10px] text-slate-500 mt-1 font-mono truncate">
+            {stats?.errorCount ? `${stats.errorCount} lỗi ghi nhận` : 'Hoạt động ổn định'}
+          </div>
+        </div>
+
+        <div className="p-2.5 bg-white rounded border border-slate-200/80">
+          <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
+            <span>Tỷ lệ lỗi (Error Rate)</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
+          </div>
+          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
+            {stats?.errorRatePercent !== undefined ? `${stats.errorRatePercent}%` : '0%'}
+          </div>
           <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            On-demand grading &amp; analysis
+            Mục tiêu &lt; 1.0%
           </div>
         </div>
 
         <div className="p-2.5 bg-white rounded border border-slate-200/80">
           <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
             <span>Tổng Token tiêu thụ</span>
-            <Zap className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
+            <Zap className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums truncate">
             {(stats?.totalTokens || 0).toLocaleString('vi-VN')}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            {(stats?.totalPromptTokens || 0).toLocaleString('vi-VN')} prompt &bull; {(stats?.totalCompletionTokens || 0).toLocaleString('vi-VN')} output
+          <div className="text-[10px] text-slate-500 mt-1 font-mono truncate">
+            {(stats?.totalPromptTokens || 0).toLocaleString('vi-VN')} In / {(stats?.totalCompletionTokens || 0).toLocaleString('vi-VN')} Out
           </div>
         </div>
 
@@ -173,7 +190,7 @@ export default function AdminAiGatewayPage() {
             <span>Độ trễ trung bình</span>
             <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
             {stats?.avgLatencyMs || 0}
             <span className="text-xs font-normal text-slate-400 ml-1">ms</span>
           </div>
@@ -184,14 +201,28 @@ export default function AdminAiGatewayPage() {
 
         <div className="p-2.5 bg-white rounded border border-slate-200/80">
           <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
+            <span>Độ trễ P95 (Peak)</span>
+            <Clock className="w-3.5 h-3.5 text-blue-500" strokeWidth={1.75} />
+          </div>
+          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
+            {stats?.p95LatencyMs || stats?.avgLatencyMs || 0}
+            <span className="text-xs font-normal text-slate-400 ml-1">ms</span>
+          </div>
+          <div className="text-[10px] text-slate-500 mt-1 font-mono">
+            Phân vị 95%
+          </div>
+        </div>
+
+        <div className="p-2.5 bg-white rounded border border-slate-200/80">
+          <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
             <span>Chi phí AI thực tế</span>
             <DollarSign className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+          <div className="text-xl font-bold text-slate-900 font-mono tabular-nums truncate">
             {(stats?.totalCostVnd || 0).toLocaleString('vi-VN')}
             <span className="text-xs font-normal text-slate-400 ml-1">đ</span>
           </div>
-          <div className="text-[10px] text-slate-500 mt-1 font-mono">
+          <div className="text-[10px] text-slate-500 mt-1 font-mono truncate">
             ${stats?.totalCostUsd || '0.000'} USD quy đổi
           </div>
         </div>

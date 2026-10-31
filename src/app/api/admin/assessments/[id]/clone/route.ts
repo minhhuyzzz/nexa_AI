@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { RubricService } from '@/features/assessments/services/rubric.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +90,11 @@ export async function POST(
           order_index: opt.order_index,
         }));
         await adminSupabase.from('item_options').insert(newOptions);
+      }
+
+      // Clone structured rubric if exists
+      if (!itemErr && newItem) {
+        await RubricService.cloneRubric(adminSupabase, item.id, newItem.id);
       }
     }
 

@@ -99,12 +99,21 @@ export function OrgGradingClientView({
         throw new Error(data.error || 'AI gợi ý chấm điểm không khả dụng lúc này');
       }
 
-      const score = Number(data.suggestedScore) || 75;
-      setInputScore(score);
+      const totalScore = typeof data.evaluation?.totalScore === 'number'
+        ? data.evaluation.totalScore
+        : typeof data.suggestedScore === 'number'
+        ? data.suggestedScore
+        : null;
+
+      if (totalScore === null) {
+        throw new Error('AI không thể tính điểm cho bài thi này. Vui lòng chấm điểm thủ công.');
+      }
+
+      setInputScore(totalScore);
       setAiSuggestion({
-        suggestedScore: score,
-        evidenceQuote: data.evidenceQuote || 'Minh chứng bài làm đáp ứng tiêu chí đánh giá.',
-        confidence: Number(data.confidenceScore) || 90,
+        suggestedScore: totalScore,
+        evidenceQuote: data.evaluation?.evidenceQuote || data.evidenceQuote || 'Minh chứng bài làm được ghi nhận.',
+        confidence: Number(data.evaluation?.confidenceScore ?? data.confidenceScore ?? 0),
       });
     } catch (err) {
       setGradeError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gọi AI');

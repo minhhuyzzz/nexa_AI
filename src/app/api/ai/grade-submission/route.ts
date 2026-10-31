@@ -5,10 +5,11 @@ import { getAIAdapter } from '@/features/ai-gateway/adapters';
 import { RubricDef } from '@/features/ai-gateway/types/grading.types';
 import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
+import { GradingValidatorService } from '@/features/ai-gateway/services/grading-validator.service';
 
 const requestSchema = z.object({
   submissionId: z.string().uuid('Mã bài nộp (submissionId) không hợp lệ'),
-  itemId: z.string().uuid('Mã câu hỏi/tình huống (itemId) không hợp lệ'),
+  itemId: z.string().uuid('Mã câu hỏi/tình huống (itemId) không hợp lệ').optional(),
 });
 
 export async function POST(request: Request) {
@@ -120,12 +121,32 @@ export async function POST(request: Request) {
       }
     }
 
+    // 4. Resolve target open-ended item
+    let targetItemId = itemId;
+    if (!targetItemId) {
+      const { data: firstAnswer } = await supabase
+        .from('submission_answers')
+        .select('item_id')
+        .eq('submission_id', submissionId)
+        .not('text_response', 'is', null)
+        .limit(1)
+        .maybeSingle();
+
+      if (!firstAnswer?.item_id) {
+        return NextResponse.json(
+          { error: 'Không tìm thấy câu trả lời tự luận/minh chứng nào trong bài làm để chấm' },
+          { status: 400 }
+        );
+      }
+      targetItemId = firstAnswer.item_id;
+    }
+
     // 4. Fetch candidate's response
     const { data: answer, error: answerError } = await supabase
       .from('submission_answers')
       .select('id, text_response, evidence_url')
       .eq('submission_id', submissionId)
-      .eq('item_id', itemId)
+      .eq('item_id', targetItemId)
       .single();
 
     if (answerError || !answer || !answer.text_response?.trim()) {
@@ -139,7 +160,7 @@ export async function POST(request: Request) {
     const { data: item, error: itemError } = await supabase
       .from('assessment_items')
       .select('id, prompt, points')
-      .eq('id', itemId)
+      .eq('id', targetItemId)
       .single();
 
     if (itemError || !item) {
@@ -210,7 +231,26 @@ export async function POST(request: Request) {
       })),
     };
 
-    // 5. Invoke AI Gateway via GeminiAdapter
+    // 5. Reserve Credits Fail-Closed (MOD-02 / AI-07 / AI-12)
+    const reservation = await QuotaEnforcementService.reserveCredits(
+      supabase,
+      {
+        isOrg: payer.isOrg,
+        organizationId: payer.organizationId,
+        userId: user.id,
+      },
+      1,
+      `grade_${submissionId}_${targetItemId}`
+    );
+
+    if (!reservation.success) {
+      return NextResponse.json(
+        { error: reservation.error || 'Số dư AI credits không đủ cho tác vụ chấm Rubric' },
+        { status: 402 }
+      );
+    }
+
+    // 6. Invoke AI Gateway via GeminiAdapter
     const startTime = performance.now();
     const adapter = getAIAdapter('GOOGLE_GEMINI');
     let evaluation;
@@ -242,25 +282,36 @@ export async function POST(request: Request) {
     });
 
     if (evalError || !evaluation) {
+      await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'RELEASE');
       throw evalError;
     }
 
-    // 6. Save AI evaluation result into public.ai_evaluations as DRAFT for Evaluator review
+    // Settle credits on success
+    await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
+
+    // 6. Recalculate deterministic scores & verify evidence quotes (MOD-03 / Task 3.2)
+    const validatedEvaluation = GradingValidatorService.validateAndRecalculateScores(
+      evaluation,
+      rubricDef,
+      answer.text_response
+    );
+
+    // 7. Save AI evaluation result into public.ai_evaluations as DRAFT for Evaluator review
     const { data: evalRecord, error: saveError } = await supabase
       .from('ai_evaluations')
       .insert({
         submission_id: submissionId,
-        item_id: itemId,
+        item_id: targetItemId,
         model_name: adapter.defaultModel,
-        total_score: evaluation.totalScore,
-        max_score: evaluation.maxScore,
-        confidence_score: evaluation.confidenceScore,
-        confidence_flag: evaluation.confidenceFlag,
-        evidence_quote: evaluation.evidenceQuote,
-        strengths: evaluation.strengths,
-        weaknesses: evaluation.weaknesses,
-        feedback: evaluation.feedback,
-        criterion_scores: evaluation.criterionScores,
+        total_score: validatedEvaluation.totalScore,
+        max_score: validatedEvaluation.maxScore,
+        confidence_score: validatedEvaluation.confidenceScore,
+        confidence_flag: validatedEvaluation.confidenceFlag,
+        evidence_quote: validatedEvaluation.evidenceQuote,
+        strengths: validatedEvaluation.strengths,
+        weaknesses: validatedEvaluation.weaknesses,
+        feedback: validatedEvaluation.feedback,
+        criterion_scores: validatedEvaluation.criterionScores,
         status: 'DRAFT',
       })
       .select('id, created_at')
@@ -270,7 +321,7 @@ export async function POST(request: Request) {
       console.error('Failed to save AI evaluation:', saveError);
     }
 
-    // 7. GRADE-01: Keep AI score in ai_evaluations as DRAFT only.
+    // 8. GRADE-01: Keep AI score in ai_evaluations as DRAFT only.
     // Do NOT write to submission_answers.score_awarded or assessment_submissions.final_score.
     // Mark submission grading_status as AI_DRAFT so evaluators see that an AI suggestion is ready for review.
     await supabase
@@ -280,35 +331,22 @@ export async function POST(request: Request) {
       })
       .eq('id', submissionId);
 
-    // 8. AI-01: Trừ AI Credits nguyên tử theo đúng chủ thể chi trả (Tổ chức hoặc Cá nhân)
-    let remainingCredits = profile.credits ?? 0;
-    if (payer.isOrg && payer.organizationId) {
-      const deductRes = await QuotaEnforcementService.deductOrgAICredits(supabase, payer.organizationId, 1);
-      if (!deductRes.success) {
-        return NextResponse.json({ error: deductRes.error || 'Lỗi trừ AI Credits của tổ chức' }, { status: 500 });
-      }
-      remainingCredits = deductRes.remainingCredits;
-    } else if (profile.role === 'LEARNER') {
-      const deductRes = await QuotaEnforcementService.deductPersonalAICredits(supabase, user.id, 1);
-      if (!deductRes.success) {
-        return NextResponse.json({ error: deductRes.error || 'Lỗi trừ AI Credits cá nhân' }, { status: 500 });
-      }
-      remainingCredits = deductRes.remainingCredits;
-    }
+    const remainingCredits = reservation.remainingCredits ?? profile.credits ?? 0;
 
     return NextResponse.json({
       success: true,
       evaluation: {
         id: evalRecord?.id,
-        totalScore: evaluation.totalScore,
-        maxScore: evaluation.maxScore,
-        confidenceScore: evaluation.confidenceScore,
-        confidenceFlag: evaluation.confidenceFlag, // 'GREEN' | 'AMBER' | 'RED'
-        evidenceQuote: evaluation.evidenceQuote,
-        strengths: evaluation.strengths,
-        weaknesses: evaluation.weaknesses,
-        feedback: evaluation.feedback,
-        criterionScores: evaluation.criterionScores,
+        totalScore: validatedEvaluation.totalScore,
+        maxScore: validatedEvaluation.maxScore,
+        confidenceScore: validatedEvaluation.confidenceScore,
+        confidenceFlag: validatedEvaluation.confidenceFlag, // 'GREEN' | 'AMBER' | 'RED'
+        evidenceQuote: validatedEvaluation.evidenceQuote,
+        citationStatus: validatedEvaluation.citationStatus,
+        strengths: validatedEvaluation.strengths,
+        weaknesses: validatedEvaluation.weaknesses,
+        feedback: validatedEvaluation.feedback,
+        criterionScores: validatedEvaluation.criterionScores,
         modelName: adapter.defaultModel,
       },
       creditsRemaining: remainingCredits,

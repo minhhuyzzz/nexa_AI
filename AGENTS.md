@@ -99,7 +99,7 @@
 
 ### 3.4. Quy tắc chống thiết kế rập khuôn “AI slop”
 
-- **Cấm mặc định:** gradient màu mè, neon/glow, bóng đổ lớn, card kính mờ, hero trang trí chiếm diện tích, icon/emoji vô nghĩa, watermark hoặc nhãn “AI Stop”. Không lạm dụng chuyển động, bộ màu cầu vồng hay trang trí mô phỏng chatbot.
+- **Cấm mặc định:** gradient màu mè(khi cho phép thì vẫn được), neon/glow, bóng đổ lớn, card kính mờ, hero trang trí chiếm diện tích, icon/emoji vô nghĩa, watermark hoặc nhãn “AI Stop”. Không lạm dụng chuyển động, bộ màu cầu vồng hay trang trí mô phỏng chatbot.
 - Nền **không có hoa văn**, trừ khi có lý do sản phẩm rõ. Card nền trắng ở Light / gần đen ở Dark, viền mảnh, bo góc khoảng `6px` (`rounded-md`), shadow rất nhẹ hoặc không shadow.
 - **Dùng màu có ngữ nghĩa:** đỏ cho lỗi/nguy hiểm, vàng hổ phách cho cảnh báo, xanh lá cho thành công; các màu trạng thái này là ngoại lệ có kiểm soát, không biến thành màu branding hoặc biến mỗi miền năng lực thành một màu cầu vồng.
 - `lucide-react` là thư viện icon chuẩn (`strokeWidth={1.75}` khi phù hợp); **không dùng emoji làm icon sản phẩm trong JSX**. Font sans hiện có cho văn bản; `font-mono tabular-nums` khi hiển thị ID, PIN, mã tham gia, thời gian, tiền/số liệu cần căn chữ số.

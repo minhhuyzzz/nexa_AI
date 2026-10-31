@@ -98,13 +98,13 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
           aria-label="Menu tài khoản tổ chức"
-          className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+          className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/20"
         >
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={displayName}
-              className="w-8 h-8 rounded-full object-cover border border-slate-200"
+              className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-zinc-700"
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-sky-600 text-white font-medium text-xs flex items-center justify-center shadow-xs">
@@ -119,14 +119,14 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
-            <div className="absolute right-0 mt-2 w-72 rounded-md bg-white border border-slate-200 shadow-sm py-2 z-50 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 mt-2 w-72 rounded-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-sm py-2 z-50 text-xs text-slate-700 dark:text-zinc-200 animate-in fade-in zoom-in-95 duration-100">
               {/* Profile Header */}
-              <div className="px-4 py-3 border-b border-slate-100 flex items-start gap-3">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-start gap-3">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={displayName}
-                    className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                    className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-zinc-700 shrink-0"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-sky-600 text-white font-bold text-sm flex items-center justify-center shrink-0">
@@ -134,10 +134,10 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">{displayName}</p>
-                  <p className="text-[11px] font-mono text-slate-500 truncate">{displayEmail}</p>
+                  <p className="font-semibold text-slate-900 dark:text-zinc-100 truncate">{displayName}</p>
+                  <p className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 truncate">{displayEmail}</p>
                   {orgName && (
-                    <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-sky-50 text-sky-700 font-medium border border-sky-100">
+                    <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-sky-50 dark:bg-blue-950/60 text-sky-700 dark:text-blue-400 font-medium border border-sky-100 dark:border-blue-900">
                       <Building2 className="w-3 h-3" />
                       <span className="truncate max-w-[140px]">{orgName}</span>
                     </div>
@@ -146,17 +146,17 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
               </div>
 
               {/* Workspace Jump: Back to Personal */}
-              <div className="p-2 mx-2 my-1.5 rounded bg-slate-50 border border-slate-200/80">
+              <div className="p-2 mx-2 my-1.5 rounded bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
                 <Link
                   href="/personal/dashboard"
                   onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-white hover:bg-slate-100 text-slate-800 font-medium text-[11px] border border-slate-200 transition-colors"
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-medium text-[11px] border border-slate-200 dark:border-zinc-700 transition-colors"
                 >
                   <span className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-sky-600" />
+                    <User className="w-3.5 h-3.5 text-sky-600 dark:text-blue-400" />
                     <span>Workspace Cá nhân</span>
                   </span>
-                  <ChevronRight className="w-3 h-3 text-slate-400" />
+                  <ChevronRight className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
                 </Link>
               </div>
 
@@ -166,9 +166,9 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                   <Link
                     href={`/org/${orgSlug}/settings`}
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-colors"
+                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                   >
-                    <Settings className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+                    <Settings className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
                     <span>Cài đặt Tổ chức</span>
                   </Link>
                 )}
@@ -176,21 +176,21 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                 <Link
                   href="/personal/profile"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
-                  <User className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+                  <User className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
                   <span>Hồ sơ tài khoản</span>
                 </Link>
 
                 {/* Dark/Light mode toggle switch */}
-                <div className="flex items-center justify-between px-4 py-2 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
                   <div className="flex items-center gap-2.5">
                     {isDarkMode ? (
-                      <Moon className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+                      <Moon className="w-4 h-4 text-sky-400" strokeWidth={1.75} />
                     ) : (
                       <Sun className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                     )}
-                    <span className="font-medium text-xs text-slate-700">
+                    <span className="font-medium text-xs text-slate-700 dark:text-zinc-300">
                       Giao diện {isDarkMode ? 'Tối' : 'Sáng'}
                     </span>
                   </div>
@@ -199,14 +199,15 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                     role="switch"
                     aria-checked={isDarkMode}
                     onClick={toggleTheme}
-                    className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      isDarkMode ? 'bg-sky-600' : 'bg-slate-300'
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      isDarkMode ? 'bg-sky-600' : 'bg-slate-300 dark:bg-zinc-700'
                     }`}
                   >
+                    <span className="sr-only">Bật tắt chế độ tối</span>
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
-                        isDarkMode ? 'translate-x-3' : 'translate-x-0'
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        isDarkMode ? 'translate-x-4' : 'translate-x-0'
                       }`}
                     />
                   </button>
@@ -219,20 +220,20 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                     setIsOpen(false);
                     setShowFeedback(true);
                   }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-colors text-left"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors text-left"
                 >
-                  <MessageSquare className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+                  <MessageSquare className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
                   <span>Đóng góp ý kiến</span>
                 </button>
               </div>
 
               {/* Sign out */}
-              <div className="pt-1 mt-1 border-t border-slate-100">
+              <div className="pt-1 mt-1 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 transition-colors text-left font-medium"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium"
                 >
-                  <LogOut className="w-4 h-4 text-rose-500" strokeWidth={1.75} />
+                  <LogOut className="w-4 h-4 text-rose-500 dark:text-rose-400" strokeWidth={1.75} />
                   <span>Đăng xuất</span>
                 </button>
               </div>

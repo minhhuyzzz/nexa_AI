@@ -963,5 +963,214 @@ export class QuotaEnforcementService {
       remainingCredits: nextCredits,
     };
   }
+
+  /**
+   * Khóa/giữ trước credits (Reservation) trước khi gửi prompt sang AI Gateway (MOD-02)
+   * Đảm bảo fail-closed và chặn race condition tiêu lạm credits.
+   */
+  static async reserveCredits(
+    supabase: SupabaseClient,
+    payer: { isOrg: boolean; organizationId?: string | null; userId: string },
+    amount: number = 1,
+    requestId?: string
+  ): Promise<CreditReservationResult> {
+    const reservationId = requestId || `res_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    if (payer.isOrg && payer.organizationId) {
+      const deductRes = await this.deductOrgAICredits(supabase, payer.organizationId, amount);
+      if (!deductRes.success) {
+        return {
+          success: false,
+          payerType: 'ORG',
+          payerId: payer.organizationId,
+          amount,
+          error: deductRes.error || 'Hạn mức AI Credits của tổ chức không đủ.',
+        };
+      }
+      return {
+        success: true,
+        reservationId,
+        payerType: 'ORG',
+        payerId: payer.organizationId,
+        amount,
+        remainingCredits: deductRes.remainingCredits,
+      };
+    } else {
+      const deductRes = await this.deductPersonalAICredits(supabase, payer.userId, amount);
+      if (!deductRes.success) {
+        return {
+          success: false,
+          payerType: 'PERSONAL',
+          payerId: payer.userId,
+          amount,
+          error: deductRes.error || 'Số dư AI Credits của bạn không đủ.',
+        };
+      }
+      return {
+        success: true,
+        reservationId,
+        payerType: 'PERSONAL',
+        payerId: payer.userId,
+        amount,
+        remainingCredits: deductRes.remainingCredits,
+      };
+    }
+  }
+
+  /**
+   * Quyết toán hoặc hoàn trả credits (Settle / Release) sau khi có kết quả từ AI Gateway (MOD-02)
+   */
+  static async settleOrReleaseCredits(
+    supabase: SupabaseClient,
+    reservation: CreditReservationResult,
+    action: 'SETTLE' | 'RELEASE',
+    actualAmount?: number
+  ): Promise<CreditSettleResult> {
+    if (!reservation.success) {
+      return {
+        success: false,
+        action: 'RELEASED',
+        settledAmount: 0,
+        refundedAmount: 0,
+        error: 'Không thể quyết toán lượt giữ credits không thành công.',
+      };
+    }
+
+    if (action === 'RELEASE') {
+      let refundRes: { success: boolean; remainingCredits?: number; error?: string };
+      if (reservation.payerType === 'ORG') {
+        refundRes = await this.refundOrgAICredits(supabase, reservation.payerId, reservation.amount);
+      } else {
+        refundRes = await this.refundPersonalAICredits(supabase, reservation.payerId, reservation.amount);
+      }
+      return {
+        success: refundRes.success,
+        action: 'RELEASED',
+        settledAmount: 0,
+        refundedAmount: reservation.amount,
+        remainingCredits: refundRes.remainingCredits,
+        error: refundRes.error,
+      };
+    }
+
+    const charged = actualAmount !== undefined ? Math.max(0, actualAmount) : reservation.amount;
+    const refundDiff = Math.max(0, reservation.amount - charged);
+
+    if (refundDiff > 0) {
+      if (reservation.payerType === 'ORG') {
+        await this.refundOrgAICredits(supabase, reservation.payerId, refundDiff);
+      } else {
+        await this.refundPersonalAICredits(supabase, reservation.payerId, refundDiff);
+      }
+    }
+
+    return {
+      success: true,
+      action: 'SETTLED',
+      settledAmount: charged,
+      refundedAmount: refundDiff,
+    };
+  }
+
+  /**
+   * Hoàn trả credits cho tổ chức khi tác vụ AI thất bại
+   */
+  static async refundOrgAICredits(
+    supabase: SupabaseClient,
+    organizationId: string,
+    amount: number = 1
+  ): Promise<{ success: boolean; remainingCredits?: number; error?: string }> {
+    try {
+      const { data: entitlement, error: fetchErr } = await supabase
+        .from('organization_entitlements')
+        .select('id, ai_credits_granted, ai_credits_used')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchErr || !entitlement) {
+        return { success: false, error: 'Không tìm thấy hợp đồng tổ chức để hoàn trả credit.' };
+      }
+
+      const nextUsed = Math.max(0, (entitlement.ai_credits_used ?? 0) - amount);
+      const { error: updateErr } = await supabase
+        .from('organization_entitlements')
+        .update({ ai_credits_used: nextUsed })
+        .eq('id', entitlement.id);
+
+      if (updateErr) {
+        return { success: false, error: updateErr.message };
+      }
+
+      return {
+        success: true,
+        remainingCredits: (entitlement.ai_credits_granted ?? 0) - nextUsed,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Lỗi hoàn trả credit tổ chức',
+      };
+    }
+  }
+
+  /**
+   * Hoàn trả credits cho cá nhân khi tác vụ AI thất bại
+   */
+  static async refundPersonalAICredits(
+    supabase: SupabaseClient,
+    userId: string,
+    amount: number = 1
+  ): Promise<{ success: boolean; remainingCredits?: number; error?: string }> {
+    try {
+      const { data: profile, error: fetchErr } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', userId)
+        .single();
+
+      if (fetchErr || !profile) {
+        return { success: false, error: 'Không tìm thấy hồ sơ người dùng để hoàn trả credit.' };
+      }
+
+      const nextCredits = (profile.credits ?? 0) + amount;
+      const { error: updateErr } = await supabase
+        .from('profiles')
+        .update({ credits: nextCredits })
+        .eq('id', userId);
+
+      if (updateErr) {
+        return { success: false, error: updateErr.message };
+      }
+
+      return { success: true, remainingCredits: nextCredits };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Lỗi hoàn trả credit cá nhân',
+      };
+    }
+  }
+}
+
+export interface CreditReservationResult {
+  success: boolean;
+  reservationId?: string;
+  payerType: 'ORG' | 'PERSONAL';
+  payerId: string;
+  amount: number;
+  remainingCredits?: number;
+  error?: string;
+}
+
+export interface CreditSettleResult {
+  success: boolean;
+  action: 'SETTLED' | 'RELEASED';
+  settledAmount: number;
+  refundedAmount: number;
+  remainingCredits?: number;
+  error?: string;
 }
 

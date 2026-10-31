@@ -70,6 +70,26 @@ export async function GET(
             is_correct,
             explanation,
             order_index
+          ),
+          rubrics (
+            id,
+            title,
+            max_points,
+            rubric_criteria (
+              id,
+              name,
+              description,
+              max_points,
+              weight_percent,
+              order_index,
+              rubric_levels (
+                id,
+                name,
+                score_percent,
+                description,
+                order_index
+              )
+            )
           )
         )
       `)

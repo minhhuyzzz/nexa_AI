@@ -217,10 +217,9 @@ function LearningPathContent() {
   // Interactive AI Analysis State
 
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisData | null>(null);
-
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
 
 
@@ -705,49 +704,64 @@ function LearningPathContent() {
 
 
 
-        {/* On-Demand AI Action Button */}
-
+        {/* On-Demand AI Action Button (MOD-04 / Task 4.2) */}
         <div className="flex items-center gap-2">
-
           <button
-
             type="button"
-
-            onClick={handleTriggerAIAnalysis}
-
+            onClick={() => setShowConfirmModal(true)}
             disabled={isAnalyzing || !competencyProfile?.hasTakenAssessment}
-
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors shadow-xs"
-
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors shadow-xs"
           >
-
             {isAnalyzing ? (
-
               <>
-
                 <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
-
                 <span>AI đang phân tích...</span>
-
               </>
-
             ) : (
-
               <>
-
-                <Sparkles className="w-4 h-4 text-sky-200" strokeWidth={1.75} />
-
-                <span>Phân tích AI theo yêu cầu</span>
-
+                <Sparkles className="w-4 h-4 text-blue-200" strokeWidth={1.75} />
+                <span>Phân tích bằng NEXA Guide (1 credit)</span>
               </>
-
             )}
-
           </button>
-
         </div>
-
       </div>
+
+      {/* Credit Confirmation Modal (MOD-04) */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-md bg-white p-5 shadow-lg border border-slate-200 space-y-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600" strokeWidth={1.75} />
+              <h3 className="text-sm font-bold text-slate-900">Phân tích năng lực với NEXA Guide</h3>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Tác vụ này sẽ sử dụng <strong className="text-slate-900 font-mono">1 AI Credit</strong> để
+              quét toàn diện kết quả 5 miền năng lực số của bạn, chẩn đoán khoảng trống kỹ năng và thiết
+              lập lộ trình học tập cá nhân hóa 4 bước.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="px-3 py-1.5 rounded-md border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  handleTriggerAIAnalysis();
+                }}
+                className="px-3.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition-colors"
+              >
+                Xác nhận dùng 1 Credit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
 

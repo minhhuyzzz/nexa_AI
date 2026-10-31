@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { RubricService } from '@/features/assessments/services/rubric.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,8 @@ interface ImportItemRow {
   correct_answer?: string;
   explanation?: string;
   rubric_guide?: string;
+  rubric?: any;
+  structured_rubric?: any;
   points?: number;
   is_multi_competency?: boolean;
   target_competencies?: string[];
@@ -147,6 +150,17 @@ export async function POST(
 
           await supabase.from('item_options').insert(optInserts);
         }
+      }
+
+      // If structured rubric is provided, save it
+      const rubricPayload = row.rubric || row.structured_rubric;
+      if (rubricPayload) {
+        await RubricService.saveRubricForItem(
+          supabase,
+          insertedItem.id,
+          rubricPayload,
+          insertedItem.points
+        );
       }
 
       successCount++;

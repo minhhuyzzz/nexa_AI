@@ -312,36 +312,28 @@ export default function AdminSettingsPage() {
               </div>
 
               <div
-                onClick={() => setProvider('ANTHROPIC_CLAUDE')}
-                className={`p-4 rounded-md border cursor-pointer transition-all ${
-                  provider === 'ANTHROPIC_CLAUDE'
-                    ? 'border-sky-600 bg-sky-50/40 text-slate-900 ring-1 ring-sky-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                }`}
+                className="p-4 rounded-md border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed transition-all"
+                title="Chưa hỗ trợ adapter. Đang trong lộ trình tích hợp."
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs">Anthropic Claude</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">Claude 3.5</span>
+                  <span className="font-bold text-xs text-slate-700">Anthropic Claude</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono font-semibold">Chưa hỗ trợ</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Phân tích tự luận chuyên sâu, lập luận chi tiết và chuẩn mực văn phong.
+                  Adapter đang trong kế hoạch phát triển. Hiện tại chưa thể kích hoạt.
                 </p>
               </div>
 
               <div
-                onClick={() => setProvider('OPENAI')}
-                className={`p-4 rounded-md border cursor-pointer transition-all ${
-                  provider === 'OPENAI'
-                    ? 'border-sky-600 bg-sky-50/40 text-slate-900 ring-1 ring-sky-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                }`}
+                className="p-4 rounded-md border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed transition-all"
+                title="Chưa hỗ trợ adapter. Đang trong lộ trình tích hợp."
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs">OpenAI (GPT-4o)</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">Dự phòng</span>
+                  <span className="font-bold text-xs text-slate-700">OpenAI (GPT-4o)</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono font-semibold">Chưa hỗ trợ</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Nhà cung cấp dự phòng cho các bài đánh giá tình huống phức tạp.
+                  Adapter đang trong kế hoạch phát triển. Hiện tại chưa thể kích hoạt.
                 </p>
               </div>
             </div>

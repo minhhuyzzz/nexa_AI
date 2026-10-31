@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { z } from 'zod';
+import { RubricService } from '@/features/assessments/services/rubric.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,31 @@ const createItemSchema = z.object({
   target_competencies: z.array(z.string()).optional(),
   is_multi_competency: z.boolean().default(false),
   rubric_guide: z.string().optional(),
+  rubric: z
+    .object({
+      title: z.string().min(1, 'Tiêu đề rubric không được để trống'),
+      description: z.string().optional(),
+      criteria: z
+        .array(
+          z.object({
+            name: z.string().min(1, 'Tên tiêu chí không được để trống'),
+            weightPercent: z.number().min(0).max(100).default(100),
+            maxPoints: z.number().positive('Điểm tối đa của tiêu chí phải > 0'),
+            orderIndex: z.number().int().min(0).default(0),
+            levels: z
+              .array(
+                z.object({
+                  levelName: z.string().min(1, 'Tên mức độ không được để trống'),
+                  scorePercent: z.number().min(0).max(100),
+                  description: z.string().min(1, 'Mô tả mức độ không được để trống'),
+                })
+              )
+              .min(2, 'Mỗi tiêu chí phải có ít nhất 2 mức độ'),
+          })
+        )
+        .min(1, 'Rubric phải có ít nhất 1 tiêu chí'),
+    })
+    .optional(),
   options: z
     .array(
       z.object({
@@ -56,8 +82,23 @@ export async function POST(
       target_competencies,
       is_multi_competency,
       rubric_guide,
+      rubric,
       options,
     } = parsed.data;
+
+    // Validate rubric structure early if provided
+    if (rubric) {
+      const val = RubricService.validateRubricStructure(
+        { ...rubric, itemId: '00000000-0000-0000-0000-000000000000' },
+        points
+      );
+      if (!val.valid) {
+        return NextResponse.json(
+          { error: 'Cấu trúc rubric không hợp lệ', details: val.errors },
+          { status: 400 }
+        );
+      }
+    }
 
     // Resolve competency ID if skill_code is provided
     let competencyId = rawCompId;
@@ -139,7 +180,23 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({ item: newItem }, { status: 201 });
+    // If rubric is provided, save it atomically
+    let savedRubric = null;
+    if (rubric) {
+      const rubRes = await RubricService.saveRubricForItem(
+        supabase,
+        newItem.id,
+        rubric,
+        points
+      );
+      if (rubRes.success) {
+        savedRubric = rubRes.rubric;
+      } else {
+        console.error('Error saving rubric for item:', rubRes.errors);
+      }
+    }
+
+    return NextResponse.json({ item: newItem, rubric: savedRubric }, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });

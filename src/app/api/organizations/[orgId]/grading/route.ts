@@ -223,6 +223,10 @@ export async function POST(
         percentage,
         is_passed: isPassed,
         status: 'EVALUATED',
+        grading_status: 'EVALUATOR_APPROVED',
+        evaluated_by: user.id,
+        evaluated_at: new Date().toISOString(),
+        evaluator_notes: feedback || null,
       })
       .eq('id', submissionId)
       .select()
@@ -230,6 +234,23 @@ export async function POST(
 
     if (updateErr) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    // Update AI evaluation audit status if present
+    try {
+      const aiTable = adminSupabase.from('ai_evaluations');
+      if (typeof aiTable?.update === 'function') {
+        await aiTable
+          .update({
+            status: 'ACCEPTED',
+            reviewed_by: user.id,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('submission_id', submissionId)
+          .eq('status', 'DRAFT');
+      }
+    } catch {
+      // Non-fatal if ai_evaluations audit update encounters an issue
     }
 
     return NextResponse.json({

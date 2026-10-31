@@ -533,14 +533,30 @@ export async function POST(request: Request) {
 
 
 
-    // 9. Call AI Gateway
+    // 9. Reserve Credits Fail-Closed (MOD-02 / AI-07 / AI-12)
+    const payer = await QuotaEnforcementService.resolveSubmissionPayer(supabase, submissionId);
+    const reservation = await QuotaEnforcementService.reserveCredits(
+      supabase,
+      {
+        isOrg: payer.isOrg,
+        organizationId: payer.organizationId,
+        userId: user.id,
+      },
+      1,
+      `analyze_${submissionId}`
+    );
 
+    if (!reservation.success) {
+      return NextResponse.json(
+        { error: reservation.error || 'Số dư AI credits không đủ để phân tích năng lực' },
+        { status: 402 }
+      );
+    }
+
+    // 10. Call AI Gateway
     const startTime = performance.now();
-
     const adapter = getAIAdapter('GOOGLE_GEMINI');
-
     let aiOutput;
-
     let aiError: unknown = null;
 
 
@@ -650,84 +666,36 @@ export async function POST(request: Request) {
 
 
     if (aiError || !aiOutput) {
-
+      await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'RELEASE');
       throw aiError;
-
     }
 
+    // Settle credits
+    await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
 
-
-    // 10. Store analysis in public.competency_analyses
-
+    // 11. Store analysis in public.competency_analyses
     const { data: savedRecord, error: saveError } = await supabase
-
       .from('competency_analyses')
-
       .insert({
-
         submission_id: submissionId,
-
         user_id: user.id,
-
         overall_level: aiOutput.overallLevel,
-
         radar_data: aiOutput.radarData,
-
         skill_gaps: aiOutput.skillGaps,
-
         strengths: aiOutput.strengths,
-
         weaknesses: aiOutput.weaknesses,
-
         pedagogical_feedback: aiOutput.pedagogicalFeedback,
-
         learning_pathway: aiOutput.learningPathway,
-
         model_name: adapter.defaultModel,
-
       })
-
       .select('id')
-
       .single();
 
-
-
     if (saveError) {
-
       console.error('Error saving competency analysis:', saveError);
-
     }
 
-
-
-    // 10. Atomic Credit Deduction for Learner (Zero race conditions, enforced by DB trigger)
-
-    let remainingCredits = profile.credits;
-
-    if (profile.role === 'LEARNER') {
-
-      const { data: newCredits, error: deductError } = await supabase.rpc('deduct_ai_credits', {
-
-        p_user_id: user.id,
-
-        p_amount: 1,
-
-      });
-
-
-
-      if (!deductError && typeof newCredits === 'number') {
-
-        remainingCredits = newCredits;
-
-      } else {
-
-        remainingCredits = Math.max(0, (profile.credits ?? 1) - 1);
-
-      }
-
-    }
+    const remainingCredits = reservation.remainingCredits ?? profile.credits ?? 0;
 
 
 

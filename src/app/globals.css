@@ -9,58 +9,88 @@
   --color-warm-light: #fef3c7;
   --color-warm-border: #fde68a;
   --color-warm-foreground: #92400e;
+
+  /* Cobalt Blue Scale per AGENTS.md 3.1 & 3.2 */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
+  /* Alias Sky to Cobalt Blue Scale so legacy utilities inherit the official palette */
+  --color-sky-50: #eff6ff;
+  --color-sky-100: #dbeafe;
+  --color-sky-200: #bfdbfe;
+  --color-sky-300: #93c5fd;
+  --color-sky-400: #60a5fa;
+  --color-sky-500: #3b82f6;
+  --color-sky-600: #2563eb;
+  --color-sky-700: #1d4ed8;
+  --color-sky-800: #1e40af;
+  --color-sky-900: #1e3a8a;
+  --color-sky-950: #172554;
 }
 
 @layer base {
   :root {
+    /* AGENTS.md Section 3.1 - Light Mode */
     --background: #ffffff;
-    --foreground: #0f172a;
-    --muted: #f1f5f9;
+    --foreground: #171717;
+    --muted: #f8fafc;
     --muted-foreground: #64748b;
     --card: #ffffff;
-    --card-foreground: #0f172a;
+    --card-foreground: #171717;
     --popover: #ffffff;
-    --popover-foreground: #0f172a;
+    --popover-foreground: #171717;
     --border: #e2e8f0;
     --input: #e2e8f0;
-    --primary: #0284c7;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --secondary: #f8fafc;
-    --secondary-foreground: #0f172a;
-    --accent: #f0f9ff;
-    --accent-foreground: #0369a1;
+    --secondary-foreground: #262626;
+    --accent: #eff6ff;
+    --accent-foreground: #1d4ed8;
     --warm-accent: #ff9a27;
     --warm-light: #fef3c7;
     --warm-border: #fde68a;
     --warm-foreground: #92400e;
     --destructive: #e11d48;
     --destructive-foreground: #ffffff;
-    --ring: #0284c7;
+    --ring: #2563eb;
     --radius: 6px;
   }
 
   .dark {
+    /* AGENTS.md Section 3.2 - Dark Mode (True Black & Charcoal) */
     --background: #000000;
-    --foreground: #f4f4f5;
+    --foreground: #f5f5f5;
     --muted: #18181b;
-    --muted-foreground: #a1a1aa;
-    --card: #09090b;
-    --card-foreground: #f4f4f5;
-    --popover: #09090b;
-    --popover-foreground: #f4f4f5;
+    --muted-foreground: #a3a3a3;
+    --card: #111114;
+    --card-foreground: #f5f5f5;
+    --popover: #111114;
+    --popover-foreground: #f5f5f5;
     --border: #27272a;
     --input: #27272a;
-    --primary: #0284c7;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --secondary: #18181b;
-    --secondary-foreground: #f4f4f5;
-    --accent: #121214;
-    --accent-foreground: #38bdf8;
+    --secondary-foreground: #e4e4e7;
+    --accent: #102044;
+    --accent-foreground: #60a5fa;
     --warm-accent: #ff9a27;
     --warm-light: #291805;
     --warm-border: #78350f;
     --warm-foreground: #fbbf24;
-    --ring: #0284c7;
+    --destructive: #f43f5e;
+    --destructive-foreground: #ffffff;
+    --ring: #60a5fa;
   }
 
   * {
@@ -91,21 +121,38 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Sleek Pure Black Dark Mode Overrides - STRICTLY FOR DASHBOARD SHELL ONLY */
+  /* =========================================================================
+     DASHBOARD SHELL DARK MODE (AGENTS.md 3.2 - True Black & Charcoal)
+     ========================================================================= */
   html.dark .dashboard-shell {
     background-color: #000000 !important;
-    color: #f4f4f5 !important;
+    color: #f5f5f5 !important;
   }
 
+  /* Main container in dashboard shell */
+  html.dark .dashboard-shell > div.bg-white,
+  html.dark .dashboard-shell main {
+    background-color: #000000 !important;
+  }
+
+  /* Sidebar: #0A0A0B panel hierarchy */
   html.dark .dashboard-shell aside {
+    background-color: #0a0a0b !important;
+    border-color: #27272a !important;
+  }
+
+  /* Topbar Header: #000000 */
+  html.dark .dashboard-shell header {
     background-color: #000000 !important;
     border-color: #27272a !important;
   }
 
+  /* Cards & Dropdown Surfaces: #111114 per AGENTS.md 3.2 */
   html.dark .dashboard-shell .bg-white {
-    background-color: #09090b !important;
+    background-color: #111114 !important;
   }
 
+  /* Secondary & group backgrounds */
   html.dark .dashboard-shell .bg-slate-50 {
     background-color: #000000 !important;
   }
@@ -120,48 +167,51 @@
 
   html.dark .dashboard-shell .bg-slate-900 {
     background-color: #18181b !important;
-    color: #f4f4f5 !important;
+    color: #f5f5f5 !important;
     border-color: #27272a !important;
   }
 
-  html.dark .dashboard-shell .text-slate-900 {
-    color: #f4f4f5 !important;
+  /* Text hierarchy per AGENTS.md 3.2 */
+  html.dark .dashboard-shell .text-slate-900,
+  html.dark .dashboard-shell .text-neutral-900 {
+    color: #f5f5f5 !important;
   }
 
-  html.dark .dashboard-shell .text-slate-800 {
+  html.dark .dashboard-shell .text-slate-800,
+  html.dark .dashboard-shell .text-neutral-800,
+  html.dark .dashboard-shell .text-slate-700,
+  html.dark .dashboard-shell .text-neutral-700 {
     color: #e4e4e7 !important;
   }
 
-  html.dark .dashboard-shell .text-slate-700 {
-    color: #d4d4d8 !important;
+  html.dark .dashboard-shell .text-slate-600,
+  html.dark .dashboard-shell .text-slate-500,
+  html.dark .dashboard-shell .text-neutral-500 {
+    color: #a3a3a3 !important;
   }
 
-  html.dark .dashboard-shell .text-slate-600 {
-    color: #a1a1aa !important;
-  }
-
-  html.dark .dashboard-shell .text-slate-500 {
+  html.dark .dashboard-shell .text-slate-400,
+  html.dark .dashboard-shell .text-neutral-400 {
     color: #71717a !important;
   }
 
-  html.dark .dashboard-shell .text-slate-400 {
-    color: #52525b !important;
-  }
-
+  /* Borders & Dividers: #27272A */
+  html.dark .dashboard-shell .border-slate-100,
   html.dark .dashboard-shell .border-slate-200,
   html.dark .dashboard-shell .border-slate-200\/80,
   html.dark .dashboard-shell .border-slate-200\/90,
   html.dark .dashboard-shell .border-slate-200\/70,
   html.dark .dashboard-shell .border-slate-200\/60,
-  html.dark .dashboard-shell .border-slate-100 {
-    border-color: #26262a !important;
+  html.dark .dashboard-shell .border-slate-300 {
+    border-color: #27272a !important;
   }
 
   html.dark .dashboard-shell .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
   html.dark .dashboard-shell .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #26262a !important;
+    border-color: #27272a !important;
   }
 
+  /* Hover states */
   html.dark .dashboard-shell .hover\:bg-slate-50:hover {
     background-color: #18181b !important;
   }
@@ -174,12 +224,46 @@
     background-color: #27272a !important;
   }
 
+  /* Form inputs & controls */
   html.dark .dashboard-shell input,
   html.dark .dashboard-shell textarea,
   html.dark .dashboard-shell select {
-    background-color: #121214 !important;
-    color: #f4f4f5 !important;
+    background-color: #111114 !important;
+    color: #f5f5f5 !important;
     border-color: #27272a !important;
+  }
+
+  /* Interactive Links & Icons on dark: #60A5FA */
+  html.dark .dashboard-shell a.text-blue-600,
+  html.dark .dashboard-shell a.text-sky-600,
+  html.dark .dashboard-shell button.text-blue-600,
+  html.dark .dashboard-shell button.text-sky-600 {
+    color: #60a5fa !important;
+  }
+
+  /* Notice / Selected badge in dark: #102044 per AGENTS.md 3.2 */
+  html.dark .dashboard-shell .bg-blue-50,
+  html.dark .dashboard-shell .bg-sky-50 {
+    background-color: #102044 !important;
+    border-color: #1e3a8a !important;
+    color: #60a5fa !important;
+  }
+
+  html.dark .dashboard-shell .text-blue-700,
+  html.dark .dashboard-shell .text-sky-700 {
+    color: #60a5fa !important;
+  }
+
+  /* Primary CTA Buttons keep Cobalt #2563EB and text #FFFFFF */
+  html.dark .dashboard-shell .bg-blue-600,
+  html.dark .dashboard-shell .bg-sky-600 {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  html.dark .dashboard-shell .hover\:bg-blue-700:hover,
+  html.dark .dashboard-shell .hover\:bg-sky-700:hover {
+    background-color: #1d4ed8 !important;
   }
 
   /* Custom Slim Scrollbar to eliminate layout shift and look refined */

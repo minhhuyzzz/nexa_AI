@@ -64,8 +64,8 @@ export function CampaignComparisonChart({
               <div className="mt-3 pt-2 border-t border-slate-100">
                 <div className="flex items-baseline justify-between mb-1">
                   <span className="text-[10px] text-slate-400">Điểm TB:</span>
-                  <span className="text-sm font-mono font-bold tabular-nums text-slate-900">
-                    {score !== null ? `${score}%` : 'Chưa có'}
+                  <span className="text-xs font-mono font-bold tabular-nums text-slate-900">
+                    {score !== null ? `${score}%` : 'Chưa đủ dữ liệu'}
                   </span>
                 </div>
                 <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">

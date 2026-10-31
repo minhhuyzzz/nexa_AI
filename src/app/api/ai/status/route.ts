@@ -81,26 +81,30 @@ export async function GET() {
       errorMessage.includes('UNAVAILABLE');
 
     if (isAdmin) {
-      return NextResponse.json({
-        connected: isHighDemand ? true : false,
-        isHighDemand,
-        provider: 'Google Gemini',
-        model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
-        error: isHighDemand
-          ? 'Google Gemini đã xác thực thành công (Đang trong khung giờ cao điểm, sẵn sàng đánh giá)'
-          : errorMessage,
-        latencyMs: isHighDemand ? 260 : null,
-        timestamp: new Date().toISOString(),
-      });
+      return NextResponse.json(
+        {
+          connected: false,
+          isHighDemand,
+          provider: 'Google Gemini',
+          model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+          error: isHighDemand
+            ? 'Gemini API phản hồi 503 (Dịch vụ đang quá tải/High Demand). Vui lòng thử lại sau.'
+            : errorMessage,
+          latencyMs: null,
+          timestamp: new Date().toISOString(),
+        },
+        { status: isHighDemand ? 503 : 500 }
+      );
     }
 
-    return NextResponse.json({
-      connected: isHighDemand ? true : false,
-      status: isHighDemand ? 'READY' : 'UNAVAILABLE',
-      message: isHighDemand
-        ? 'Hệ thống AI đang trong khung giờ cao điểm, sẵn sàng tiếp nhận yêu cầu.'
-        : 'Dịch vụ AI tạm thời gián đoạn. Vui lòng thử lại sau ít phút.',
-      timestamp: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        connected: false,
+        status: 'UNAVAILABLE',
+        message: 'Dịch vụ AI tạm thời gián đoạn. Vui lòng thử lại sau ít phút.',
+        timestamp: new Date().toISOString(),
+      },
+      { status: isHighDemand ? 503 : 500 }
+    );
   }
 }
