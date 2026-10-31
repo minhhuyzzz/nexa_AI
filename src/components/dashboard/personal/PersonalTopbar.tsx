@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { WorkspaceSwitcher } from '@/components/dashboard/WorkspaceSwitcher';
 import { PersonalAvatarMenu } from './PersonalAvatarMenu';
 import { NotificationBell } from '../NotificationBell';
 import { Search, Trophy } from 'lucide-react';
@@ -49,10 +48,13 @@ export function PersonalTopbar() {
           : 'bg-white border-b border-slate-100'
       }`}
     >
-      {/* Left: Workspace Switcher & Search Input (Shifted to the right) */}
-      <div className="flex items-center gap-6 sm:gap-8 flex-1 max-w-2xl">
-        <WorkspaceSwitcher />
-        <div className="relative flex-1 hidden sm:block ml-2 sm:ml-4 max-w-md">
+      {/* Left: Current Workspace Label & Search Input */}
+      <div className="flex items-center gap-4 flex-1 max-w-2xl">
+        <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-zinc-200 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-blue-600" />
+          <span>Cá nhân</span>
+        </div>
+        <div className="relative flex-1 hidden sm:block max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
           <input
             type="text"

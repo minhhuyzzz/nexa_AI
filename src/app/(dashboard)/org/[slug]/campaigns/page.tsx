@@ -138,7 +138,9 @@ export default async function OrgCampaignsPage({
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900 line-clamp-2">{c.title}</h3>
+                  <Link href={`/org/${slug}/campaigns/${c.id}`} className="hover:text-blue-600 block">
+                    <h3 className="text-sm font-bold text-slate-900 line-clamp-2">{c.title}</h3>
+                  </Link>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2">
                     {c.description || 'Đợt khảo thí năng lực số chuẩn hóa'}
                   </p>
@@ -160,13 +162,19 @@ export default async function OrgCampaignsPage({
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <Link
+                    href={`/org/${slug}/campaigns/${c.id}`}
+                    className="text-xs text-slate-700 hover:text-blue-600 font-semibold flex items-center gap-1"
+                  >
+                    <span>Chi tiết tiến độ</span>
+                    <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
+                  </Link>
                   <Link
                     href={`/org/${slug}/grading`}
-                    className="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1"
+                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
                   >
-                    <span>Vào bàn chấm bài</span>
-                    <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
+                    <span>Bàn chấm bài</span>
                   </Link>
                 </div>
               </div>

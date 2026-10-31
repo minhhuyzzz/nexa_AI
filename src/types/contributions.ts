@@ -12,7 +12,7 @@ export interface ContributionItem {
   domain: string;
   questionType: 'PRACTICAL_FILE' | 'SCENARIO' | 'MCQ' | 'DIGITAL_LINK';
   difficulty: 'FOUNDATION' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
-  status: 'pending' | 'approved' | 'needs_revision';
+  status: 'pending' | 'approved' | 'needs_revision' | 'rejected';
   submittedAt: string;
   reviewedAt?: string;
   pointsRewarded?: number;

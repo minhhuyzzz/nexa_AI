@@ -32,7 +32,7 @@ const learningNavItems = [
 ];
 
 const workNavItems = [
-  { name: 'Nhóm của tôi', href: '/personal/groups', icon: Users },
+  { name: 'Lớp & Nhóm', href: '/personal/groups', icon: Users },
   { name: 'Bài được giao', href: '/personal/submissions', icon: History },
 ];
 

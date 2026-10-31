@@ -50,7 +50,7 @@ const plans: Plan[] = [
   {
     id: 'free',
     name: 'Gói FREE',
-    badge: 'TRẢI NGHIỆM',
+    badge: 'CÁ NHÂN TRẢI NGHIỆM',
     info: 'Khởi đầu thuận tiện để cá nhân tự học và giáo viên mở lớp trải nghiệm.',
     price: {
       monthly: 0,
@@ -93,7 +93,7 @@ const plans: Plan[] = [
       },
       {
         text: 'Xuất dữ liệu: Không hỗ trợ',
-        tooltip: 'Cần nâng cấp lên gói Plus trở lên để xuất bảng điểm Excel hoặc CSV.',
+        tooltip: 'Cần nâng cấp lên gói Pro để xuất bảng điểm Excel hoặc CSV.',
       },
     ],
     btn: {
@@ -102,63 +102,9 @@ const plans: Plan[] = [
     },
   },
   {
-    id: 'plus',
-    name: 'Gói PLUS',
-    badge: 'CƠ BẢN',
-    info: 'Dành cho người học bồi dưỡng chuyên đề và giáo viên quản lý lớp nhỏ.',
-    price: {
-      monthly: 69000,
-      yearly: 690000,
-    },
-    learnerFeatures: [
-      {
-        text: 'Mở thêm bài thi tình huống thực tế',
-        tooltip: 'Luyện tập tình huống thực tế về an toàn số, xử lý sự cố dữ liệu và ứng xử số.',
-      },
-      {
-        text: '100 AI credits phân tích và gợi ý lộ trình',
-        tooltip: 'AI phân tích chi tiết khoảng trống năng lực và thiết kế lộ trình bồi dưỡng.',
-      },
-      {
-        text: 'Đánh giá lại kỹ năng sau khi học',
-        tooltip: 'Làm bài kiểm tra lại sau khi hoàn thành bài học để cải thiện điểm số radar.',
-      },
-      {
-        text: 'Kho học liệu bồi dưỡng chuẩn',
-        tooltip: 'Truy cập các bài đọc, video và bài tập chuyên đề gắn nhãn kỹ năng.',
-      },
-      {
-        text: 'Chứng chỉ',
-        tooltip: 'Chứng chỉ định dạng PDF chuẩn có mã xác thực điện tử.',
-      },
-    ],
-    evaluatorFeatures: [
-      {
-        text: '3 nhóm lớp tối đa 50 học viên mỗi lớp',
-        tooltip: 'Tạo và theo dõi tiến độ của 3 nhóm học viên độc lập.',
-      },
-      {
-        text: '3 phòng thi trực tiếp đồng thời',
-        tooltip: 'Tổ chức kiểm tra trực tiếp đồng thời cho nhiều ca thi qua mã PIN.',
-      },
-      {
-        text: '100 AI credits hỗ trợ chấm bài thực hành',
-        tooltip: 'AI chấm theo tiêu chí định sẵn, trích dẫn bằng chứng và tính độ tin cậy.',
-      },
-      {
-        text: 'Xuất bảng điểm Excel và CSV',
-        tooltip: 'Tải toàn bộ kết quả điểm số và tiến độ học tập của các lớp về máy.',
-      },
-    ],
-    btn: {
-      text: 'Chọn gói Plus',
-      href: '/register?plan=plus',
-    },
-  },
-  {
     id: 'pro',
     name: 'Gói PRO',
-    badge: 'PHỔ BIẾN NHẤT',
+    badge: 'CÁ NHÂN NÂNG CAO',
     info: 'Mở khóa trọn bộ kho đề chuyên sâu cho người học và công cụ khảo thí cao cấp cho giảng viên.',
     price: {
       monthly: 199000,
@@ -211,28 +157,28 @@ const plans: Plan[] = [
     },
   },
   {
-    id: 'enterprise',
-    name: 'Gói ENTERPRISE',
-    badge: 'DOANH NGHIỆP',
+    id: 'business',
+    name: 'Gói BUSINESS',
+    badge: 'TỔ CHỨC / TRƯỜNG HỌC',
     info: 'Giải pháp khảo thí và chuẩn hóa diện rộng cho trường đại học, viện nghiên cứu và doanh nghiệp.',
     price: {
       monthly: 0,
       yearly: 0,
     },
-    customPriceText: 'Liên hệ',
+    customPriceText: 'Liên hệ tư vấn',
     learnerFeatures: [
       {
-        text: 'Toàn bộ sinh viên được nâng cấp gói Pro',
-        tooltip: 'Toàn bộ sinh viên trong trường được mở khóa toàn bộ đề thi, học liệu chuyên sâu và chứng chỉ.',
+        text: 'Toàn bộ sinh viên được mở khóa theo đợt thi (Campaign)',
+        tooltip: 'Sinh viên làm bài đánh giá theo chiến dịch của trường, mở khóa toàn bộ đề thi chỉ định.',
       },
       {
-        text: 'Ngân hàng đề thi và học liệu riêng',
+        text: 'Ngân hàng đề thi và học liệu riêng của trường',
         tooltip: 'Luyện tập theo đúng chuẩn đầu ra của ngành nghề đào tạo tại trường.',
       },
     ],
     evaluatorFeatures: [
       {
-        text: 'Giảng viên dùng trọn bộ công cụ khảo thí',
+        text: 'Giảng viên dùng trọn bộ công cụ khảo thí & bàn chấm',
         tooltip: 'Mở phòng thi, bàn chấm chuyên nghiệp, xuất dữ liệu cho toàn thể cán bộ giảng viên.',
       },
       {
@@ -248,13 +194,13 @@ const plans: Plan[] = [
         tooltip: 'Chứng chỉ mang nhận diện chính thức và con dấu số của đơn vị.',
       },
       {
-        text: 'Báo cáo kiểm định chất lượng đào tạo',
+        text: 'Báo cáo kiểm định chất lượng đào tạo (BI Dashboard)',
         tooltip: 'Báo cáo số liệu tổng thể phục vụ công tác kiểm định chất lượng đào tạo.',
       },
     ],
     btn: {
-      text: 'Đăng ký cho Tổ chức / Nhận tư vấn',
-      href: '#enterprise-inquiry',
+      text: 'Liên hệ tư vấn Business',
+      href: '#business-inquiry',
     },
   },
 ];
@@ -482,7 +428,7 @@ export default function PricingPage() {
 
                 {/* Card Action Button */}
                 <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
-                  {plan.id === 'enterprise' ? (
+                  {plan.id === 'business' || plan.id === 'enterprise' ? (
                     <button
                       type="button"
                       onClick={() => setShowEnterpriseModal(true)}
@@ -513,9 +459,9 @@ export default function PricingPage() {
         {/* Detailed Comparison Table */}
         <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-xs">
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-slate-900">Bảng So Sánh Tính Năng Chi Tiết 4 Gói</h3>
+            <h3 className="text-xl font-bold text-slate-900">Bảng So Sánh Tính Năng Chi Tiết 3 Gói</h3>
             <p className="text-xs text-slate-500 mt-1">
-              Đối chiếu minh bạch toàn bộ các đặc quyền mở khóa giữa Người học và Người đánh giá trên cùng một biểu phí.
+              Đối chiếu minh bạch toàn bộ các đặc quyền mở khóa giữa Cá nhân và Tổ chức trên cùng một biểu phí chuẩn hóa.
             </p>
           </div>
 
@@ -525,9 +471,8 @@ export default function PricingPage() {
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="py-3 px-4 font-semibold text-slate-700 w-1/3">Tiêu chí &amp; Quyền lợi</th>
                   <th className="py-3 px-3 font-semibold text-slate-700">Gói FREE</th>
-                  <th className="py-3 px-3 font-semibold text-slate-700">Gói PLUS</th>
                   <th className="py-3 px-3 font-semibold text-sky-700 bg-sky-50/50">Gói PRO</th>
-                  <th className="py-3 px-3 font-semibold text-slate-900">Gói ENTERPRISE</th>
+                  <th className="py-3 px-3 font-semibold text-slate-900">Gói BUSINESS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -535,20 +480,18 @@ export default function PricingPage() {
                 <tr className="bg-slate-50/30">
                   <td className="py-3 px-4 font-bold text-slate-900">Mức giá đồng nhất</td>
                   <td className="py-3 px-3 font-bold text-slate-800">0 đ</td>
-                  <td className="py-3 px-3 font-bold text-slate-800">69.000 đ/tháng</td>
                   <td className="py-3 px-3 font-bold text-sky-700 bg-sky-50/30">199.000 đ/tháng</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Theo quy mô</td>
+                  <td className="py-3 px-3 font-bold text-slate-900">Theo hợp đồng</td>
                 </tr>
 
                 {/* Section Header: Learner */}
                 <tr className="bg-slate-100/60">
-                  <td colSpan={5} className="py-2 px-4 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                  <td colSpan={4} className="py-2 px-4 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
                     1. Quyền lợi dành cho Người Học
                   </td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Kho đề trắc nghiệm chung</td>
-                  <td className="py-3 px-3 text-slate-600">Không giới hạn</td>
                   <td className="py-3 px-3 text-slate-600">Không giới hạn</td>
                   <td className="py-3 px-3 text-sky-700 font-semibold bg-sky-50/30">Không giới hạn</td>
                   <td className="py-3 px-3 text-slate-800">Không giới hạn</td>
@@ -556,13 +499,11 @@ export default function PricingPage() {
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Bài thi tình huống thực tế</td>
                   <td className="py-3 px-3 text-slate-400">Khóa</td>
-                  <td className="py-3 px-3 text-emerald-600 font-semibold">Mở khóa</td>
                   <td className="py-3 px-3 text-sky-700 font-semibold bg-sky-50/30">Mở khóa</td>
                   <td className="py-3 px-3 text-slate-800">Mở khóa</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Đề thi chuyên sâu nâng cao</td>
-                  <td className="py-3 px-3 text-slate-400">Khóa</td>
                   <td className="py-3 px-3 text-slate-400">Khóa</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Mở khóa toàn bộ</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Mở khóa toàn bộ</td>
@@ -570,20 +511,17 @@ export default function PricingPage() {
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Hạn mức AI credits mỗi tháng</td>
                   <td className="py-3 px-3 text-slate-600">10 credits</td>
-                  <td className="py-3 px-3 text-slate-600">100 credits</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">1.000 credits</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Theo hợp đồng</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Đánh giá lại kỹ năng</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
-                  <td className="py-3 px-3 text-emerald-600 font-semibold">Có</td>
                   <td className="py-3 px-3 text-sky-700 font-semibold bg-sky-50/30">Có chuyên sâu</td>
                   <td className="py-3 px-3 text-slate-800 font-semibold">Có chuyên sâu</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Chứng chỉ</td>
-                  <td className="py-3 px-3 text-slate-600">Chứng chỉ</td>
                   <td className="py-3 px-3 text-slate-600">Chứng chỉ</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Chứng chỉ</td>
                   <td className="py-3 px-3 text-slate-900 font-bold">Chứng chỉ đồng thương hiệu</td>
@@ -591,27 +529,24 @@ export default function PricingPage() {
 
                 {/* Section Header: Evaluator */}
                 <tr className="bg-slate-100/60">
-                  <td colSpan={5} className="py-2 px-4 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                  <td colSpan={4} className="py-2 px-4 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
                     2. Quyền lợi dành cho Người Đánh Giá
                   </td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Số lượng nhóm lớp quản lý</td>
                   <td className="py-3 px-3 text-slate-600">1 lớp tối đa 15 học viên</td>
-                  <td className="py-3 px-3 text-slate-600">3 lớp tối đa 50 học viên</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Không giới hạn</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Không giới hạn</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Phòng thi trực tiếp mã PIN</td>
                   <td className="py-3 px-3 text-slate-600">1 phòng</td>
-                  <td className="py-3 px-3 text-slate-600">3 phòng cùng lúc</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Không giới hạn</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Không giới hạn</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Bàn chấm Split-view chuyên nghiệp</td>
-                  <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Có</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Có</td>
@@ -619,21 +554,19 @@ export default function PricingPage() {
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Hạn mức AI credits chấm bài mỗi tháng</td>
                   <td className="py-3 px-3 text-slate-600">Thủ công (0 credit)</td>
-                  <td className="py-3 px-3 text-slate-600">100 credits</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">1.000 credits</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Theo hợp đồng</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Xuất dữ liệu nghiên cứu</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
-                  <td className="py-3 px-3 text-slate-600">Bảng điểm Excel và CSV</td>
                   <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Dữ liệu nghiên cứu 26 biến số</td>
-                  <td className="py-3 px-3 text-slate-800 font-bold">Báo cáo kiểm định toàn trường</td>
+                  <td className="py-3 px-3 text-slate-800 font-bold">Báo cáo kiểm định toàn trường (BI)</td>
                 </tr>
 
                 {/* Section Header: Organization */}
                 <tr className="bg-slate-100/60">
-                  <td colSpan={5} className="py-2 px-4 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                  <td colSpan={4} className="py-2 px-4 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
                     3. Đặc quyền Cấp Tổ Chức
                   </td>
                 </tr>
@@ -641,12 +574,10 @@ export default function PricingPage() {
                   <td className="py-3 px-4 font-medium text-slate-900">Tùy biến khung năng lực số riêng</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
-                  <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-emerald-600 font-bold">Toàn quyền thiết kế</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Tích hợp đăng nhập một lần và LMS</td>
-                  <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
                   <td className="py-3 px-3 text-emerald-600 font-bold">Hỗ trợ trọn gói</td>

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { FeedbackModal } from '../FeedbackModal';
+import { AvatarWorkspaceSection } from '../AvatarWorkspaceSection';
 
 export function PersonalAvatarMenu() {
   const router = useRouter();
@@ -132,7 +133,7 @@ export function PersonalAvatarMenu() {
               onClick={() => setIsOpen(false)}
             />
 
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-md py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
+            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-md py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
               <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-850">
                 <div className="flex items-center gap-3">
@@ -154,26 +155,8 @@ export function PersonalAvatarMenu() {
                 </div>
               </div>
 
-              {/* Subscription Plan Badge & Upgrade Link */}
-              <div className="p-3 mx-2 my-2 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-slate-500 dark:text-zinc-400 text-[11px]">Gói dịch vụ</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700">
-                    CÁ NHÂN (FREE)
-                  </span>
-                </div>
-                <Link
-                  href="/personal/billing"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-medium text-[11px] transition-colors shadow-xs"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-sky-200" />
-                    <span>Nâng cấp gói dịch vụ</span>
-                  </span>
-                  <ChevronRight className="w-3 h-3 text-sky-200" />
-                </Link>
-              </div>
+              {/* Workspace Switcher in Avatar */}
+              <AvatarWorkspaceSection onClose={() => setIsOpen(false)} />
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">
@@ -183,7 +166,16 @@ export function PersonalAvatarMenu() {
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   <User className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Cài đặt hồ sơ</span>
+                  <span>Hồ sơ của tôi & Năng lực 5 miền</span>
+                </Link>
+
+                <Link
+                  href="/personal/billing"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                  <span>Gói dịch vụ & Thanh toán</span>
                 </Link>
 
                 {/* Dark/Light mode toggle switch */}

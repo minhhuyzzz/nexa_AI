@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NexaLogo } from '@/components/brand/NexaLogo';
+import { FeedbackModal } from '@/components/dashboard/FeedbackModal';
 import {
   Building2,
   Users,
@@ -17,6 +18,7 @@ import {
   FilePlus,
   Calendar,
   Award,
+  MessageSquare,
 } from 'lucide-react';
 
 interface OrgSidebarProps {
@@ -50,6 +52,7 @@ interface NavGroup {
 export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const role = userRole.toUpperCase();
   const roleLabel = ROLE_LABELS[role] || 'Thành viên';
@@ -113,7 +116,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
         label: 'QUẢN TRỊ',
         items: [
           {
-            name: 'Gói Business & Hạn mức',
+            name: 'Hợp đồng & Hạn mức',
             href: `/org/${orgSlug}/ai-quota`,
             icon: Cpu,
           },
@@ -296,7 +299,21 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
             </div>
           ))}
         </div>
+
+        {/* Feedback Trigger Button */}
+        <div className="p-3 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={() => setShowFeedback(true)}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+          >
+            <MessageSquare className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+            {!isCollapsed && <span>Đóng góp ý kiến</span>}
+          </button>
+        </div>
       </div>
+
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </aside>
   );
 }

@@ -144,6 +144,17 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', invitation.id);
 
+    // If this was an ORG_OWNER accepting, activate the organization
+    if (invitation.org_role === 'ORG_OWNER') {
+      await adminSupabase
+        .from('organizations')
+        .update({
+          status: 'ACTIVE',
+          is_active: true,
+        })
+        .eq('id', invitation.organization_id);
+    }
+
     return NextResponse.json({
       success: true,
       message: `Chào mừng bạn gia nhập ${org?.name || 'tổ chức'}!`,

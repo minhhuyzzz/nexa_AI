@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
@@ -68,7 +68,7 @@ function LiveRoomContent() {
   useEffect(() => {
     async function loadAssessments() {
       try {
-        const res = await fetch('/api/admin/assessments');
+        const res = await fetch('/api/assessments');
         if (res.ok) {
           const data = await res.json();
           const list: AssessmentOption[] = (data.assessments || []).map((a: any) => ({

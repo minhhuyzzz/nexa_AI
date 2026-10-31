@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   User,
   CheckCircle2,
@@ -17,8 +18,10 @@ import {
   Sparkles,
   Mail,
   ShieldCheck,
+  Compass,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { CompetencyProfileTab } from '@/components/dashboard/personal/CompetencyProfileTab';
 
 interface ProfileData {
   id: string;
@@ -42,9 +45,33 @@ interface CredentialItem {
 }
 
 export default function LearnerProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600 mb-2" strokeWidth={1.75} />
+        <p className="text-xs">Đang tải hồ sơ...</p>
+      </div>
+    }>
+      <LearnerProfileContent />
+    </Suspense>
+  );
+}
+
+function LearnerProfileContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [credentials, setCredentials] = useState<CredentialItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'COMPETENCY' | 'CREDENTIALS'>(
+    tabParam === 'competency' ? 'COMPETENCY' : tabParam === 'credentials' ? 'CREDENTIALS' : 'IDENTITY'
+  );
+
+  useEffect(() => {
+    if (tabParam === 'competency') setActiveTab('COMPETENCY');
+    else if (tabParam === 'credentials') setActiveTab('CREDENTIALS');
+  }, [tabParam]);
 
   // Form states
   const [nickname, setNickname] = useState('');
@@ -258,6 +285,53 @@ export default function LearnerProfilePage() {
         </p>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="border-b border-slate-200 dark:border-zinc-800 flex items-center gap-1 overflow-x-auto text-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('IDENTITY')}
+          className={`py-2.5 px-3.5 font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'IDENTITY'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+              : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+          }`}
+        >
+          <User className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>Thông tin tài khoản</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('COMPETENCY')}
+          className={`py-2.5 px-3.5 font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'COMPETENCY'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+              : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+          }`}
+        >
+          <Compass className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>Hồ sơ năng lực 5 miền</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('CREDENTIALS')}
+          className={`py-2.5 px-3.5 font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'CREDENTIALS'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+              : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+          }`}
+        >
+          <Award className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <span>Chứng chỉ đã cấp</span>
+          {credentials.length > 0 && (
+            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+              {credentials.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Notifications */}
       {successMsg && (
         <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2 text-xs">
@@ -273,7 +347,10 @@ export default function LearnerProfilePage() {
         </div>
       )}
 
-      {/* CARD 1: Identity & Profile Form */}
+      {/* TAB 1: IDENTITY & PROGRESS */}
+      {activeTab === 'IDENTITY' && (
+        <>
+          {/* CARD 1: Identity & Profile Form */}
       <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-6">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -458,8 +535,16 @@ export default function LearnerProfilePage() {
           </div>
         </div>
       </div>
+      </>
+      )}
 
-      {/* CARD 3: Earned Digital Credentials */}
+      {/* TAB 2: COMPETENCY 5 DOMAINS */}
+      {activeTab === 'COMPETENCY' && (
+        <CompetencyProfileTab userId={profile?.id} />
+      )}
+
+      {/* TAB 3: CREDENTIALS */}
+      {activeTab === 'CREDENTIALS' && (
       <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -544,6 +629,7 @@ export default function LearnerProfilePage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

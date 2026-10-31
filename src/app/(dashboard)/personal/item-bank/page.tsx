@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   Database,
   Plus,
@@ -20,8 +21,10 @@ import {
   Loader2,
   HelpCircle,
   Eye,
+  Edit3,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { ItemBankImporter } from '@/features/assessments/components/ItemBankImporter';
 
 interface QuestionItem {
   id: string;
@@ -80,36 +83,13 @@ export default function EvaluatorItemBankPage() {
   const [clonedId, setClonedId] = useState<string | null>(null);
   const [showAnswerKeys, setShowAnswerKeys] = useState(true);
 
-  // Add question modal
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newPrompt, setNewPrompt] = useState('');
-  const [newType, setNewType] = useState('MCQ');
-  const [selectedCompetencyId, setSelectedCompetencyId] = useState('');
-  const [newWeight, setNewWeight] = useState(10);
-
-  // File Upload modal
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadText, setUploadText] = useState(
-    `Câu 1: Cú pháp tìm kiếm nào lọc chính xác tập tin định dạng PDF trên Google?
-A. filetype:pdf
-B. format=pdf
-C. doc:pdf
-D. type:pdf
-Đáp án: A
-
-Câu 2: Khi nhận email yêu cầu khẩn cấp cập nhật mật khẩu từ địa chỉ lạ, giải pháp an toàn nhất là gì?
-A. Không click vào đường dẫn, xác minh với quản trị mạng nội bộ
-B. Bấm vào link để kiểm tra
-C. Chuyển tiếp cho đồng nghiệp nhờ click hộ
-D. Đăng nhập ngay để tránh khóa tài khoản
-Đáp án: A`
-  );
+  // Import Verification Wizard
+  const [showImporter, setShowImporter] = useState(false);
 
   const fetchItemBank = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch competencies for the dropdown
+      // 1. Fetch competencies
       const { data: compData } = await supabase
         .from('competencies')
         .select(`
@@ -130,9 +110,6 @@ D. Đăng nhập ngay để tránh khóa tài khoản
           domain_title: c.competency_domains?.title || 'Chung',
         }));
         setCompetencies(mappedComps);
-        if (mappedComps.length > 0 && !selectedCompetencyId) {
-          setSelectedCompetencyId(mappedComps[0].id);
-        }
       }
 
       // 2. Fetch assessment items with options & rubric guide
@@ -198,7 +175,7 @@ D. Đăng nhập ngay để tránh khóa tài khoản
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedCompetencyId]);
+  }, [supabase]);
 
   useEffect(() => {
     fetchItemBank();
@@ -236,60 +213,6 @@ D. Đăng nhập ngay để tránh khóa tài khoản
     setTimeout(() => setClonedId(null), 2000);
   };
 
-  const handleAddQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPrompt.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from('question_bank_items').insert({
-        code: `QB-${Date.now().toString(36).toUpperCase()}`,
-        prompt: newPrompt.trim(),
-        type: newType,
-        competency_id: selectedCompetencyId || null,
-        difficulty_level: 'INTERMEDIATE',
-        default_points: Number(newWeight),
-      });
-
-      if (!error) {
-        setShowAddModal(false);
-        setNewPrompt('');
-        await fetchItemBank();
-      } else {
-        console.error('Error inserting question to bank:', error);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleImportParsedQuestions = async () => {
-    const blocks = uploadText.split(/Câu \d+:/).filter(Boolean);
-    if (blocks.length === 0) return;
-
-    setIsSubmitting(true);
-    try {
-      const inserts = blocks.map((block, idx) => {
-        const lines = block.trim().split('\n');
-        const prompt = lines[0] || 'Câu hỏi trắc nghiệm nhập từ tệp';
-        return {
-          code: `QB-${Date.now().toString(36).toUpperCase()}-${idx + 1}`,
-          prompt: prompt.trim(),
-          type: 'MCQ',
-          competency_id: selectedCompetencyId || null,
-          difficulty_level: 'FOUNDATION',
-          default_points: 10,
-        };
-      });
-
-      await supabase.from('question_bank_items').insert(inserts);
-      setShowUploadModal(false);
-      await fetchItemBank();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -311,21 +234,21 @@ D. Đăng nhập ngay để tránh khóa tài khoản
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-xs"
+            onClick={() => setShowImporter(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-xs cursor-pointer"
             title="Tải tệp đề thi Word hoặc Excel để tự động bóc tách thành câu hỏi"
           >
-            <Upload className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
+            <Upload className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.75} />
             <span>Tải tệp đề thi (Word / Excel)</span>
           </button>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
+          <Link
+            href="/personal/item-bank/new"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Thêm câu hỏi mới</span>
-          </button>
+            <span>Tạo câu hỏi mới</span>
+          </Link>
         </div>
       </div>
 
@@ -402,13 +325,13 @@ D. Đăng nhập ngay để tránh khóa tài khoản
                 ? 'Hãy thử thay đổi từ khóa tìm kiếm hoặc lọc theo hình thức khác.'
                 : 'Ngân hàng câu hỏi hiện đang trống. Hãy thêm câu hỏi đầu tiên hoặc tải tệp đề thi lên.'}
             </p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+            <Link
+              href="/personal/item-bank/new"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
               <span>Thêm câu hỏi mới</span>
-            </button>
+            </Link>
           </div>
         ) : (
           filteredQuestions.map((q) => (
@@ -443,6 +366,13 @@ D. Đăng nhập ngay để tránh khóa tài khoản
                     Điểm số:{' '}
                     <span className="font-bold text-slate-800 font-mono">{q.rubricWeight} điểm</span>
                   </span>
+                  <Link
+                    href={`/personal/item-bank/${q.id}`}
+                    className="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs inline-flex items-center gap-1 transition-colors"
+                  >
+                    <Edit3 className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
+                    <span>Chỉnh sửa</span>
+                  </Link>
                   <button
                     onClick={() => handleClone(q.id)}
                     className="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs inline-flex items-center gap-1 transition-colors"
@@ -535,167 +465,12 @@ D. Đăng nhập ngay để tránh khóa tài khoản
         )}
       </div>
 
-      {/* Add Question Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-lg w-full space-y-4 text-slate-900 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                Thêm Câu Hỏi Vào Ngân Hàng
-              </h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddQuestion} className="space-y-4 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Hình thức câu hỏi khảo thí:
-                </label>
-                <select
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
-                >
-                  <option value="MCQ">Trắc nghiệm khách quan (Chấm tự động 0.01s)</option>
-                  <option value="SCENARIO">Xử lý tình huống (Phán đoán / Phân tích)</option>
-                  <option value="PRACTICAL_FILE">Thực hành nộp tệp tin (Excel, PDF, Zip)</option>
-                  <option value="DIGITAL_LINK">Nộp liên kết số (GitHub, Figma, Notion, Drive)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Nội dung đề bài / Câu hỏi:
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Nhập nội dung câu hỏi hoặc yêu cầu đề bài chi tiết..."
-                  value={newPrompt}
-                  onChange={(e) => setNewPrompt(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Kỹ năng thành phần DigComp 3.0:
-                </label>
-                <select
-                  value={selectedCompetencyId}
-                  onChange={(e) => setSelectedCompetencyId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md text-xs"
-                >
-                  {competencies.map((comp) => (
-                    <option key={comp.id} value={comp.id}>
-                      {comp.skill_code} - {comp.title} ({comp.domain_title})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Điểm số tối đa:
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={newWeight}
-                  onChange={(e) => setNewWeight(Number(e.target.value))}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
-                  <span>Lưu vào ngân hàng</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* File Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-xl w-full shadow-xs space-y-4 text-slate-900 text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Upload className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                <span>Tải Tệp Đề Thi &amp; Tự Động Bóc Tách Câu Hỏi (Word / Excel)</span>
-              </h2>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            <div className="p-4 rounded-md border-2 border-dashed border-slate-200 bg-slate-50 text-center space-y-2">
-              <FileText className="w-8 h-8 text-slate-400 mx-auto" strokeWidth={1.75} />
-              <div className="font-semibold text-slate-800">
-                Kéo thả tệp đề thi (.docx, .xlsx, .txt) vào đây hoặc dán nội dung
-              </div>
-              <p className="text-[11px] text-slate-400 max-w-md mx-auto">
-                Hệ thống hỗ trợ cấu trúc chuẩn: <code>Câu X: [Nội dung]</code> &bull; <code>A. [Lựa chọn]</code> &bull; <code>Đáp án: [A/B/C/D]</code>
-              </p>
-            </div>
-
-            <div>
-              <label className="font-semibold text-slate-700 block mb-1">
-                Xem trước nội dung trích xuất câu hỏi từ tệp:
-              </label>
-              <textarea
-                rows={8}
-                value={uploadText}
-                onChange={(e) => setUploadText(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md font-mono text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-              />
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowUploadModal(false)}
-                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleImportParsedQuestions}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50"
-              >
-                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
-                <span>Lưu vào ngân hàng câu hỏi</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Import Verification Wizard Modal */}
+      <ItemBankImporter
+        isOpen={showImporter}
+        onClose={() => setShowImporter(false)}
+        onImportSuccess={fetchItemBank}
+      />
     </div>
   );
 }

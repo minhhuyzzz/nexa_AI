@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -522,66 +522,44 @@ export default function LearnerAssessmentsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredTests.map((test) => (
             <Link
               key={test.id}
               href={`/personal/assessments/${test.id}`}
-              className="p-5 rounded-md bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between group"
+              className="aspect-square p-5 rounded-md bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-2xs transition-all flex flex-col justify-between group text-xs"
             >
               <div>
-                {/* Card Header: Domain Tag & Questions Count */}
+                {/* 1:1 Aspect ratio square badge / icon header */}
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200/60">
-                      {test.domainName}
-                    </span>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
-                      {test.questionCount} câu hỏi
-                    </span>
-                  </div>
-
-                  {/* Free vs VIP Badge */}
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 truncate max-w-[140px]">
+                    {test.domainName}
+                  </span>
                   {test.isVip || test.accessTier === 'VIP' ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
-                      <Sparkles className="w-3 h-3 text-amber-600" strokeWidth={1.75} />
-                      <span>VIP</span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                      VIP
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium font-mono bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800">
                       FREE
                     </span>
                   )}
                 </div>
 
                 {/* Title */}
-                <h2 className="text-sm font-bold text-slate-900 mb-3 leading-snug group-hover:text-sky-600 transition-colors">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 mb-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-3">
                   {test.title}
                 </h2>
 
-                {/* Metadata */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-800 pt-3 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                    <Clock className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
-                    <span>{test.duration_minutes} phút</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                    <Award className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
-                    <span>Chuẩn đạt: ≥ 7.0/10 ({test.passing_score}%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                    <FileText className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
-                    <span>{test.type}</span>
-                  </div>
-                </div>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                  {test.description}
+                </p>
               </div>
 
-              {/* Clean Action Footer */}
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end text-xs">
-                <span className="font-semibold text-sky-600 group-hover:text-sky-700 inline-flex items-center gap-1">
-                  <span>Xem chi tiết</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.75} />
-                </span>
+              {/* Bottom Specs */}
+              <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-400">
+                <span className="font-mono">{test.questionCount} câu &bull; {test.duration_minutes}p</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400">Chi tiết &rarr;</span>
               </div>
             </Link>
           ))}

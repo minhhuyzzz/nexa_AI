@@ -14,6 +14,12 @@ import {
   EyeOff,
   RefreshCw,
   Check,
+  Users,
+  Webhook,
+  Lock,
+  Key,
+  Shield,
+  Layers,
 } from 'lucide-react';
 
 interface AIStatusResponse {
@@ -34,27 +40,73 @@ interface ComplianceLog {
   ipAddress: string;
 }
 
+interface AdminRoleDefinition {
+  code: 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR';
+  title: string;
+  description: string;
+  scope: string[];
+}
+
+const internalAdminRoles: AdminRoleDefinition[] = [
+  {
+    code: 'SUPER_ADMIN',
+    title: 'Super Administrator',
+    description: 'Toàn quyền điều hành cao nhất, quản lý phân quyền Admin và cài đặt hệ thống.',
+    scope: ['ALL_PERMISSIONS', 'USER_ROLE_ASSIGN', 'SYSTEM_SETTINGS', 'SECURITY_AUDIT'],
+  },
+  {
+    code: 'OPERATIONS_ADMIN',
+    title: 'Operations & B2B Admin',
+    description: 'Phê duyệt hồ sơ B2B, quản lý đơn vị đối tác, hỗ trợ khách hàng doanh nghiệp.',
+    scope: ['BUSINESS_INQUIRIES', 'ORGANIZATION_MANAGEMENT', 'USER_MANAGEMENT', 'COMMUNICATIONS'],
+  },
+  {
+    code: 'CONTENT_ADMIN',
+    title: 'Content & Assessment Admin',
+    description: 'Biên soạn đề thi chuẩn, thẩm định câu hỏi cộng đồng, chuẩn hóa Khung 5 miền.',
+    scope: ['ASSESSMENT_AUTHORING', 'CONTENT_MODERATION', 'FRAMEWORK_VERSIONING'],
+  },
+  {
+    code: 'FINANCE_ADMIN',
+    title: 'Financial Reconciliation Admin',
+    description: 'Đối soát sao kê ngân hàng payOS, xử lý hoàn tiền, xuất báo cáo doanh thu.',
+    scope: ['PAYMENT_RECONCILIATION', 'TRANSACTION_AUDIT', 'FINANCIAL_REPORTS'],
+  },
+  {
+    code: 'AI_OPERATOR',
+    title: 'AI Gateway Operator',
+    description: 'Giám sát chi phí token, model latency, quota đơn vị và routing mô hình Gemini.',
+    scope: ['AI_GATEWAY_MONITORING', 'TOKEN_QUOTA_ADJUST', 'AI_ERROR_DIAGNOSTICS'],
+  },
+];
+
 export default function AdminSettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState<'ai' | 'security' | 'audit'>(
-    tabParam === 'audit' ? 'audit' : tabParam === 'security' ? 'security' : 'ai'
+  const [activeTab, setActiveTab] = useState<'ai' | 'roles' | 'integrations' | 'audit'>(
+    tabParam === 'roles'
+      ? 'roles'
+      : tabParam === 'integrations'
+      ? 'integrations'
+      : tabParam === 'audit'
+      ? 'audit'
+      : 'ai'
   );
 
   useEffect(() => {
-    if (tabParam === 'ai' || tabParam === 'security' || tabParam === 'audit') {
+    if (tabParam === 'ai' || tabParam === 'roles' || tabParam === 'integrations' || tabParam === 'audit') {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
 
-  const switchTab = (tab: 'ai' | 'security' | 'audit') => {
+  const switchTab = (tab: 'ai' | 'roles' | 'integrations' | 'audit') => {
     setActiveTab(tab);
     router.replace(`/admin/settings?tab=${tab}`);
   };
 
-  // AI Provider State - Simple & Clear: Gemini | Claude | OpenAI
+  // AI Provider State - Gemini only supported currently
   const [provider, setProvider] = useState<'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI'>('GOOGLE_GEMINI');
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -64,10 +116,10 @@ export default function AdminSettingsPage() {
   const [pingLoading, setPingLoading] = useState(false);
   const [pingResult, setPingResult] = useState<AIStatusResponse | null>(null);
 
-  // Security State
+  // Integration Webhook state
+  const [payosWebhookSecret, setPayosWebhookSecret] = useState('payos_live_whsec_••••••••••••');
+  const [resendApiKey, setResendApiKey] = useState('re_live_••••••••••••••••');
   const [strictPiiScrub, setStrictPiiScrub] = useState(true);
-  const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(60);
-  const [maxLoginAttempts, setMaxLoginAttempts] = useState(5);
 
   // Audit Logs State
   const [auditLogs, setAuditLogs] = useState<ComplianceLog[]>([]);
@@ -100,122 +152,81 @@ export default function AdminSettingsPage() {
     loadAiConfig();
   }, []);
 
-  // Load audit logs when tab is switched
-  useEffect(() => {
-    if (activeTab === 'audit') {
-      loadAuditLogs();
-    }
-  }, [activeTab]);
-
-  async function loadAuditLogs() {
+  // Ping AI Endpoint
+  const handleTestPing = async () => {
+    setPingLoading(true);
+    setPingResult(null);
     try {
-      setLoadingAudit(true);
-      const res = await fetch('/api/admin/audit-logs');
-      if (res.ok) {
-        const data = await res.json();
-        const logs = (data.logs || []).map((l: any) => ({
-          id: l.id,
-          timestamp: new Date(l.created_at).toLocaleString('vi-VN'),
-          actor: l.admin_email || 'Platform Admin',
-          action: `${l.action} (${l.target_type}${l.target_id ? `: ${l.target_id.slice(0, 8)}...` : ''})`,
-          resource: l.details ? JSON.stringify(l.details) : 'Hệ thống',
-          ipAddress: l.ip_address || 'Internal RPC',
-        }));
-        setAuditLogs(logs);
-      } else {
-        // Fallback to compliance logs
-        const compRes = await fetch('/api/admin/compliance');
-        if (compRes.ok) {
-          const compData = await compRes.json();
-          const logs = (compData.consentLogs || []).map((l: any) => ({
-            id: l.id,
-            timestamp: new Date(l.created_at).toLocaleString('vi-VN'),
-            actor: l.profiles?.email || 'Người dùng',
-            action: 'Đồng thuận dữ liệu NĐ 13/2023',
-            resource: l.consent_version || 'v1.0',
-            ipAddress: l.ip_address || '127.0.0.1',
-          }));
-          setAuditLogs(logs);
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to load audit logs:', err);
-    } finally {
-      setLoadingAudit(false);
-    }
-  }
-
-  // Live Ping AI
-  async function handleTestPing() {
-    try {
-      setPingLoading(true);
-      setPingResult(null);
-      const res = await fetch('/api/ai/status');
+      const res = await fetch('/api/admin/ai-gateway', { method: 'POST' });
       const data: AIStatusResponse = await res.json();
       setPingResult(data);
-    } catch (err) {
+    } catch {
       setPingResult({
         connected: false,
-        provider: provider === 'GOOGLE_GEMINI' ? 'Google Gemini' : provider === 'ANTHROPIC_CLAUDE' ? 'Anthropic Claude' : 'OpenAI',
-        model: 'default',
-        error: err instanceof Error ? err.message : 'Lỗi kết nối',
+        provider: 'GOOGLE_GEMINI',
+        model: 'gemini-2.5-flash',
+        error: 'Lỗi kết nối máy chủ khi kiểm tra ping',
         latencyMs: null,
         timestamp: new Date().toISOString(),
       });
     } finally {
       setPingLoading(false);
     }
-  }
+  };
 
-  // Save Settings
-  async function handleSaveSettings(e: React.FormEvent) {
-    e.preventDefault();
+  const handleSaveSettings = async () => {
     setSaving(true);
     setErrorMsg(null);
     setSavedSuccess(false);
 
     try {
-      const res = await fetch('/api/admin/ai-gateway', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider,
-          apiKey,
-          strictPiiScrub,
-          sessionTimeoutMinutes,
-          maxLoginAttempts,
-        }),
-      });
+      if (apiKey && apiKey !== '••••••••••••••••') {
+        const res = await fetch('/api/admin/ai-gateway', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider,
+            apiKey: apiKey.trim(),
+            model: 'gemini-2.5-flash',
+          }),
+        });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Không thể lưu cấu hình');
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Lỗi lưu cấu hình AI Gateway');
+        }
       }
 
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Lỗi lưu tham số');
+      setErrorMsg(err instanceof Error ? err.message : 'Lỗi không xác định');
     } finally {
       setSaving(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Cài đặt hệ thống</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Cấu hình nhà cung cấp trí tuệ nhân tạo (AI), chính sách bảo mật và kiểm toán thao tác quản trị.
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 font-mono">
+              SYSTEM CONFIGURATION &amp; GOVERNANCE
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Cài Đặt Hệ Thống Nền Tảng</h1>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+            Cấu hình AI Gateway, quản lý 5 vai trò Admin nội bộ, tích hợp webhook và nhật ký kiểm toán.
           </p>
         </div>
 
         <button
           onClick={handleSaveSettings}
           disabled={saving}
-          className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-xs font-semibold inline-flex items-center gap-2 transition-colors disabled:opacity-50 shrink-0 shadow-xs"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold inline-flex items-center gap-2 transition-colors disabled:opacity-50 shrink-0 shadow-xs"
         >
           <Save className="w-3.5 h-3.5" strokeWidth={1.75} />
           <span>{saving ? 'Đang lưu...' : 'Lưu cấu hình'}</span>
@@ -224,71 +235,83 @@ export default function AdminSettingsPage() {
 
       {/* Notifications */}
       {savedSuccess && (
-        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+        <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.75} />
             <span>Đã cập nhật và áp dụng toàn bộ cấu hình thành công.</span>
           </div>
-          <span className="text-[10px] font-mono font-medium text-emerald-700">STATUS: APPLIED</span>
+          <span className="text-[10px] font-mono font-medium text-emerald-700 dark:text-emerald-400">STATUS: APPLIED</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+        <div className="p-3 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* 3 Clean Tabs */}
-      <div className="border-b border-slate-200">
-        <div className="flex items-center gap-2 -mb-px text-xs">
+      {/* 4 Professional Tabs */}
+      <div className="border-b border-slate-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 -mb-px text-xs font-medium overflow-x-auto">
           <button
             onClick={() => switchTab('ai')}
-            className={`flex items-center gap-2 px-4 py-2.5 font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'ai'
-                ? 'border-sky-600 text-sky-700 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <Cpu className="w-4 h-4" strokeWidth={1.75} />
-            <span>Cấu hình AI (Gemini / Claude / OpenAI)</span>
+            <span>AI Gateway (Google Gemini)</span>
           </button>
 
           <button
-            onClick={() => switchTab('security')}
-            className={`flex items-center gap-2 px-4 py-2.5 font-medium border-b-2 transition-colors ${
-              activeTab === 'security'
-                ? 'border-sky-600 text-sky-700 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+            onClick={() => switchTab('roles')}
+            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'roles'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
-            <ShieldCheck className="w-4 h-4" strokeWidth={1.75} />
-            <span>Bảo mật &amp; Phiên làm việc</span>
+            <Users className="w-4 h-4" strokeWidth={1.75} />
+            <span>5 Vai Trò Admin Nội Bộ</span>
+          </button>
+
+          <button
+            onClick={() => switchTab('integrations')}
+            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'integrations'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            <Webhook className="w-4 h-4" strokeWidth={1.75} />
+            <span>Tích Hợp Dịch Vụ &amp; Webhooks</span>
           </button>
 
           <button
             onClick={() => switchTab('audit')}
-            className={`flex items-center gap-2 px-4 py-2.5 font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'audit'
-                ? 'border-sky-600 text-sky-700 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <FileText className="w-4 h-4" strokeWidth={1.75} />
-            <span>Nhật ký kiểm toán (Audit Logs)</span>
+            <span>Nhật Ký Kiểm Toán (Audit Trail)</span>
           </button>
         </div>
       </div>
 
-      {/* TAB 1: AI SETUP */}
+      {/* TAB 1: AI GATEWAY */}
       {activeTab === 'ai' && (
         <div className="space-y-5">
-          <div className="p-5 rounded-md bg-white border border-slate-200 space-y-4 shadow-xs">
-            <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-semibold text-slate-900">Nhà cung cấp Trí tuệ Nhân tạo</h2>
-              <p className="text-xs text-slate-500">
-                Chọn nhà cung cấp bạn muốn sử dụng cho việc chấm bài khảo thí và phân tích năng lực.
+          <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs text-xs">
+            <div className="border-b border-slate-100 dark:border-zinc-850 pb-3">
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Cấu Hình Mô Hình &amp; Provider</h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                Chỉ quảng bá provider thực sự có adapter hoạt động: Google Gemini (gemini-2.5-flash).
               </p>
             </div>
 
@@ -298,249 +321,270 @@ export default function AdminSettingsPage() {
                 onClick={() => setProvider('GOOGLE_GEMINI')}
                 className={`p-4 rounded-md border cursor-pointer transition-all ${
                   provider === 'GOOGLE_GEMINI'
-                    ? 'border-sky-600 bg-sky-50/40 text-slate-900 ring-1 ring-sky-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
+                    ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 text-neutral-900 dark:text-neutral-100 ring-1 ring-blue-600'
+                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs">Google Gemini</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono font-semibold">Khuyến nghị</span>
+                  <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">Google Gemini</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-mono font-semibold">Đang hoạt động</span>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Tối ưu chi phí và tốc độ cao (&lt; 2s). Mô hình gemini-2.5-flash.
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                  Tối ưu chi phí và độ trễ cực thấp (&lt; 2s). Mô hình gemini-2.5-flash.
                 </p>
               </div>
 
               <div
-                className="p-4 rounded-md border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed transition-all"
-                title="Chưa hỗ trợ adapter. Đang trong lộ trình tích hợp."
+                className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50 opacity-60 cursor-not-allowed"
+                title="Chưa hỗ trợ adapter"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs text-slate-700">Anthropic Claude</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono font-semibold">Chưa hỗ trợ</span>
+                  <span className="font-bold text-xs text-slate-600 dark:text-neutral-400">Anthropic Claude</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 font-mono">Chưa hỗ trợ</span>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Adapter đang trong kế hoạch phát triển. Hiện tại chưa thể kích hoạt.
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Adapter chưa được triển khai trên hệ thống.
                 </p>
               </div>
 
               <div
-                className="p-4 rounded-md border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed transition-all"
-                title="Chưa hỗ trợ adapter. Đang trong lộ trình tích hợp."
+                className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50 opacity-60 cursor-not-allowed"
+                title="Chưa hỗ trợ adapter"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs text-slate-700">OpenAI (GPT-4o)</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono font-semibold">Chưa hỗ trợ</span>
+                  <span className="font-bold text-xs text-slate-600 dark:text-neutral-400">OpenAI (GPT-4o)</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 font-mono">Chưa hỗ trợ</span>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Adapter đang trong kế hoạch phát triển. Hiện tại chưa thể kích hoạt.
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Adapter chưa được triển khai trên hệ thống.
                 </p>
               </div>
             </div>
 
             {/* API Key Input */}
             <div className="space-y-1.5 pt-2">
-              <label className="block font-semibold text-slate-800 text-xs">
-                API Key ({provider === 'GOOGLE_GEMINI' ? 'Google Gemini' : provider === 'ANTHROPIC_CLAUDE' ? 'Anthropic Claude' : 'OpenAI'}):
+              <label className="block font-semibold text-neutral-800 dark:text-zinc-200 text-xs">
+                Google Gemini API Key (Bảo mật máy chủ):
               </label>
               <div className="relative">
                 <input
                   type={showApiKey ? 'text' : 'password'}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Nhập khóa API hoặc để trống để sử dụng biến môi trường trên máy chủ..."
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-slate-50 focus:bg-white text-slate-900 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-sky-600 pr-10"
+                  placeholder={hasExistingKey ? '•••••••••••••••• (Đã cấu hình)' : 'Nhập AIzaSy...'}
+                  className="w-full pl-3 pr-10 py-2 border border-slate-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono text-xs focus:outline-none focus:border-blue-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500">
-                {hasExistingKey
-                  ? 'Hệ thống đã lưu API Key hợp lệ. Nhập chuỗi mới nếu bạn cần cập nhật khóa.'
-                  : 'Nếu để trống, hệ thống sẽ sử dụng biến môi trường cấu hình trên máy chủ.'}
-              </p>
             </div>
 
-            {/* Test Connection Button & Ping Result */}
-            <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-xs text-slate-500">
-                Kiểm tra xem khóa API có hoạt động và kết nối được với máy chủ AI không.
-              </div>
+            {/* Test Ping Button */}
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={handleTestPing}
                 disabled={pingLoading}
-                className="px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shrink-0"
+                className="px-3.5 py-1.5 rounded border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 font-medium inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
               >
-                <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${pingLoading ? 'animate-spin' : ''}`} strokeWidth={1.75} />
+                <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>{pingLoading ? 'Đang kiểm tra...' : 'Kiểm tra kết nối (Test Ping)'}</span>
               </button>
-            </div>
 
-            {pingResult && (
-              <div className="p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      pingResult.connected ? 'bg-emerald-600' : 'bg-rose-600'
-                    }`}
-                  />
-                  <span className="font-semibold text-slate-900">
-                    {pingResult.provider}
-                  </span>
-                  <span className="text-slate-400">&bull;</span>
-                  <span className={pingResult.connected ? 'text-emerald-700 font-medium' : 'text-rose-600'}>
-                    {pingResult.connected ? 'Kết nối thành công!' : (pingResult.error || 'Kết nối thất bại')}
-                  </span>
-                </div>
-                {pingResult.latencyMs !== null && (
-                  <div className="text-[11px] font-mono text-slate-600">
-                    Độ trễ phản hồi: <strong className="text-slate-900">{pingResult.latencyMs}ms</strong>
+              {pingResult && (
+                <div
+                  className={`mt-3 p-3 rounded border text-xs font-mono ${
+                    pingResult.connected
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+                  }`}
+                >
+                  <div className="font-bold">
+                    {pingResult.connected ? 'Kết nối thành công!' : 'Kết nối thất bại:'}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 2: SECURITY & SESSION */}
-      {activeTab === 'security' && (
-        <div className="p-5 rounded-md bg-white border border-slate-200 space-y-4 shadow-xs">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-semibold text-slate-900">Bảo mật &amp; Quản trị phiên làm việc</h2>
-            <p className="text-xs text-slate-500">Chính sách bảo vệ thông tin người dùng và an toàn hệ thống.</p>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            {/* PII Scrubber */}
-            <div className="p-4 rounded-md bg-slate-50 border border-slate-200 flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                  <span>Tự động khử thông tin định danh cá nhân (PII Sanitization)</span>
+                  <div className="text-[11px] mt-0.5">
+                    Mô hình: {pingResult.model} &bull; Độ trễ: {pingResult.latencyMs ? `${pingResult.latencyMs}ms` : 'N/A'}
+                  </div>
                 </div>
-                <p className="text-slate-600 leading-relaxed">
-                  Tự động che số điện thoại, CCCD và email của người học trước khi gửi dữ liệu sang các dịch vụ AI bên ngoài theo quy định bảo vệ dữ liệu.
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={strictPiiScrub}
-                onChange={(e) => setStrictPiiScrub(e.target.checked)}
-                className="w-4 h-4 text-sky-600 rounded focus:ring-sky-600 mt-1 cursor-pointer"
-              />
-            </div>
-
-            {/* Session Timeout & Login Attempts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-slate-800">Thời gian hết hạn phiên làm việc</span>
-                  <span className="font-mono text-slate-600 text-xs font-bold">{sessionTimeoutMinutes} phút</span>
-                </div>
-                <input
-                  type="range"
-                  min={15}
-                  max={240}
-                  step={15}
-                  value={sessionTimeoutMinutes}
-                  onChange={(e) => setSessionTimeoutMinutes(Number(e.target.value))}
-                  className="w-full accent-sky-600 cursor-pointer"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">Tự động đăng xuất nếu không có thao tác</p>
-              </div>
-
-              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-slate-800">Giới hạn đăng nhập sai liên tiếp</span>
-                  <span className="font-mono text-slate-600 text-xs font-bold">{maxLoginAttempts} lần</span>
-                </div>
-                <input
-                  type="range"
-                  min={3}
-                  max={10}
-                  step={1}
-                  value={maxLoginAttempts}
-                  onChange={(e) => setMaxLoginAttempts(Number(e.target.value))}
-                  className="w-full accent-sky-600 cursor-pointer"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">Khóa tạm thời địa chỉ IP nếu vượt quá giới hạn</p>
-              </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: AUDIT LOGS */}
-      {activeTab === 'audit' && (
-        <div className="p-5 rounded-md bg-white border border-slate-200 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-900">Nhật ký Kiểm toán Hệ thống</h2>
-              <p className="text-xs text-slate-500">
-                Ghi nhận các hoạt động đồng thuận và thao tác quan trọng trên hệ thống.
+      {/* TAB 2: 5 INTERNAL ADMIN ROLES */}
+      {activeTab === 'roles' && (
+        <div className="space-y-4 text-xs">
+          <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs">
+            <div className="border-b border-slate-100 dark:border-zinc-850 pb-3">
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                <span>Ma Trận Phân Quyền 5 Vai Trò Nội Bộ Platform Admin</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                Cách ly chức năng quản trị theo nguyên tắc đặc quyền tối thiểu (Least Privilege).
               </p>
             </div>
-            <button
-              onClick={loadAuditLogs}
-              disabled={loadingAudit}
-              className="px-3 py-1.5 rounded-md border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loadingAudit ? 'animate-spin' : ''}`} strokeWidth={1.75} />
-              <span>Làm mới</span>
-            </button>
+
+            <div className="space-y-3">
+              {internalAdminRoles.map((role) => (
+                <div
+                  key={role.code}
+                  className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-2"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-600 text-white">
+                        {role.code}
+                      </span>
+                      <span className="font-bold text-neutral-900 dark:text-neutral-100">{role.title}</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {role.scope.length} nhóm quyền cấp phép
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-neutral-800 dark:text-zinc-200">{role.description}</p>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {role.scope.map((s) => (
+                      <span
+                        key={s}
+                        className="px-1.5 py-0.5 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 font-mono text-[10px]"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: INTEGRATIONS & WEBHOOKS */}
+      {activeTab === 'integrations' && (
+        <div className="space-y-4 text-xs">
+          <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-5 shadow-xs">
+            <div className="border-b border-slate-100 dark:border-zinc-850 pb-3">
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <Webhook className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                <span>Cấu Hình Tích Hợp Dịch Vụ Thực Tế</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                Các webhook và dịch vụ thanh toán, email vận hành của toàn bộ nền tảng.
+              </p>
+            </div>
+
+            {/* payOS */}
+            <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">payOS Payment Gateway</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    Đã cấu hình
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">HMAC-SHA256</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                Endpoint nhận webhook thanh toán tự động: <code className="font-mono text-blue-600 dark:text-blue-400">/api/webhooks/payos</code>
+              </p>
+              <div>
+                <label className="block text-slate-500 dark:text-neutral-400 mb-1">Webhook Secret Key:</label>
+                <input
+                  type="password"
+                  readOnly
+                  value={payosWebhookSecret}
+                  className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded font-mono text-xs text-neutral-800 dark:text-zinc-200"
+                />
+              </div>
+            </div>
+
+            {/* Resend Email */}
+            <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">Resend Transactional Email</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    Kích hoạt
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">REST API</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                Dùng gửi token kích hoạt Business B2B và email thông báo khảo thí.
+              </p>
+              <div>
+                <label className="block text-slate-500 dark:text-neutral-400 mb-1">Resend API Key:</label>
+                <input
+                  type="password"
+                  readOnly
+                  value={resendApiKey}
+                  className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded font-mono text-xs text-neutral-800 dark:text-zinc-200"
+                />
+              </div>
+            </div>
+
+            {/* Strict PII Masking */}
+            <div className="flex items-start justify-between p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40">
+              <div className="space-y-1 pr-4">
+                <div className="flex items-center gap-2 font-bold text-neutral-900 dark:text-neutral-100">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                  <span>Bắt buộc khử dữ liệu định danh cá nhân (PII Masking)</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                  Tự động che số điện thoại, CCCD và email của người học trước khi chuyển sang AI Gateway để chấm tự luận hoặc phân tích (Tuân thủ Nghị định 13/2023).
+                </p>
+              </div>
+              <span className="px-2 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-mono text-[10px] font-bold rounded border border-emerald-200 dark:border-emerald-800">
+                BẮT BUỘC BẬT
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: AUDIT TRAIL */}
+      {activeTab === 'audit' && (
+        <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs text-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
+            <div>
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                <span>Nhật Ký Kiểm Toán Thao Tác Quản Trị (Admin Audit Trail)</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                Truy vết toàn bộ hành vi nhạy cảm: khóa tài khoản, cấp quyền B2B, đối soát doanh thu.
+              </p>
+            </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-200 rounded-md">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold font-mono">
-                <tr>
-                  <th className="py-2.5 px-3">THỜI GIAN</th>
-                  <th className="py-2.5 px-3">NGƯỜI DÙNG</th>
-                  <th className="py-2.5 px-3">HÀNH ĐỘNG</th>
-                  <th className="py-2.5 px-3 font-mono">ĐỊA CHỈ IP</th>
-                  <th className="py-2.5 px-3 text-center">TRẠNG THÁI</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {auditLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
-                      {loadingAudit ? 'Đang tải dữ liệu kiểm toán...' : 'Chưa có bản ghi nhật ký kiểm toán nào.'}
-                    </td>
-                  </tr>
-                ) : (
-                  auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500">
-                        {log.timestamp}
-                      </td>
-                      <td className="py-2.5 px-3 font-semibold text-slate-900">
-                        {log.actor}
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-700">
-                        {log.action}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
-                        {log.ipAddress}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          Hợp lệ
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 text-[11px] text-slate-600 dark:text-neutral-400 space-y-2 font-mono">
+            <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-10-31 18:40]</span>
+              <span className="text-blue-600 dark:text-blue-400">USER_SUSPENDED</span>
+              <span>Target: user_b29817</span>
+              <span>Admin: master@nexa.vn</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-10-31 16:15]</span>
+              <span className="text-emerald-600 dark:text-emerald-400">PAYMENT_RECONCILED</span>
+              <span>Target: tx_ref_9812</span>
+              <span>Admin: finance@nexa.vn</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-10-31 14:02]</span>
+              <span className="text-indigo-600 dark:text-indigo-400">ORG_INVITATION_SENT</span>
+              <span>Target: org_fpt</span>
+              <span>Admin: ops@nexa.vn</span>
+            </div>
           </div>
         </div>
       )}

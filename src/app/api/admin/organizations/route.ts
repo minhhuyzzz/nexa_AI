@@ -117,7 +117,7 @@ export async function POST(request: Request | NextRequest) {
         expected_learners: expectedLearners,
         max_members: expectedLearners,
         quota_assessments: expectedLearners * 10,
-        status: 'ACTIVE',
+        status: contactEmail && contactEmail.trim() ? 'PENDING_OWNER' : 'ACTIVE',
         is_active: true,
         notes: (notes || '').trim(),
       })
@@ -144,7 +144,7 @@ export async function POST(request: Request | NextRequest) {
       await supabase.from('organization_invitations').insert({
         organization_id: data.id,
         email: contactEmail.trim().toLowerCase(),
-        org_role: 'ORG_ADMIN',
+        org_role: 'ORG_OWNER',
         token,
         status: 'PENDING',
         expires_at: expiresAt.toISOString(),

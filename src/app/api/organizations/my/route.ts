@@ -38,6 +38,15 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, plan_tier')
+      .eq('id', user.id)
+      .single();
+
+    const isPlatformAdmin = profile?.role === 'ADMIN';
+    const planTier = profile?.plan_tier || 'FREE';
+
     interface UserOrgRow {
       id: string;
       org_role: string;
@@ -61,6 +70,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       workspaces,
+      isPlatformAdmin: !!isPlatformAdmin,
+      planTier,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';

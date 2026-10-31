@@ -98,6 +98,8 @@ export function OrgMembersClientView({
   const [activeTab, setActiveTab] = useState<'members' | 'requests' | 'join-codes'>('members');
   const [members, setMembers] = useState<MemberItem[]>(initialMembers);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   // Modals
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -231,12 +233,15 @@ export function OrgMembersClientView({
     }
   };
 
-  const filteredMembers = members.filter(
-    (m) =>
+  const filteredMembers = members.filter((m) => {
+    const matchSearch =
       m.nickname.toLowerCase().includes(search.toLowerCase()) ||
       m.email.toLowerCase().includes(search.toLowerCase()) ||
-      m.role.toLowerCase().includes(search.toLowerCase())
-  );
+      m.role.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === 'ALL' || m.role === roleFilter;
+    const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
+    return matchSearch && matchRole && matchStatus;
+  });
 
   const pendingRequests = requests.filter((r) => r.status === 'PENDING');
 
@@ -334,18 +339,44 @@ export function OrgMembersClientView({
       {activeTab === 'members' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search
-                className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
-                strokeWidth={1.75}
-              />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên, email hoặc vai trò..."
-                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600"
-              />
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search
+                  className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  strokeWidth={1.75}
+                />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm theo tên hoặc email..."
+                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600"
+                />
+              </div>
+
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="px-2.5 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none"
+              >
+                <option value="ALL">Tất cả vai trò</option>
+                <option value="ORG_OWNER">Chủ sở hữu (ORG_OWNER)</option>
+                <option value="ORG_ADMIN">Quản trị viên (ORG_ADMIN)</option>
+                <option value="ASSESSOR">Người đánh giá (ASSESSOR)</option>
+                <option value="REPORT_VIEWER">Xem báo cáo (REPORT_VIEWER)</option>
+                <option value="MEMBER">Thành viên (MEMBER)</option>
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-2.5 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="ACTIVE">Hoạt động (ACTIVE)</option>
+                <option value="INVITED">Đã gửi lời mời (INVITED)</option>
+                <option value="SUSPENDED">Tạm khóa (SUSPENDED)</option>
+              </select>
             </div>
 
             {isManager && (

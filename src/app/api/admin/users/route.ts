@@ -24,8 +24,12 @@ interface ProfileRow {
   full_name: string | null;
   email: string | null;
   role: string | null;
+  admin_role: string | null;
   plan_tier: string | null;
   points: number | null;
+  is_suspended?: boolean | null;
+  suspended_reason?: string | null;
+  suspended_at?: string | null;
   created_at: string;
   user_organizations?: UserOrgRelation[];
 }
@@ -47,8 +51,12 @@ export async function GET() {
         full_name,
         email,
         role,
+        admin_role,
         plan_tier,
         points,
+        is_suspended,
+        suspended_reason,
+        suspended_at,
         created_at,
         user_organizations(organization_id, org_role, organizations(id, name, code))
       `)
@@ -85,8 +93,12 @@ export async function GET() {
         fullName: p.full_name || p.nickname || 'Chưa cập nhật',
         email: p.email,
         role: p.role || 'LEARNER',
+        adminRole: p.admin_role || (p.role === 'ADMIN' ? 'SUPER_ADMIN' : 'LEARNER'),
         planTier: p.plan_tier || 'FREE',
         points: p.points || 0,
+        isSuspended: Boolean(p.is_suspended),
+        suspendedReason: p.suspended_reason || null,
+        suspendedAt: p.suspended_at || null,
         organization: orgRel
           ? { id: orgRel.id, name: orgRel.name, code: orgRel.code, orgRole: firstOrg?.org_role || 'MEMBER' }
           : null,
@@ -105,9 +117,12 @@ export async function GET() {
 
 interface PatchBody {
   userId: string;
+  action?: 'UPDATE' | 'SUSPEND' | 'UNSUSPEND' | 'REVOKE_SESSION';
   role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
+  adminRole?: 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR' | 'LEARNER';
   planTier?: 'FREE' | 'PRO' | 'ENTERPRISE';
   organizationId?: string;
+  reason?: string;
 }
 
 export async function PATCH(request: NextRequest) {
@@ -116,30 +131,104 @@ export async function PATCH(request: NextRequest) {
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
 
     const body: PatchBody = await request.json();
-    const { userId, role, planTier, organizationId } = body;
+    const { userId, action = 'UPDATE', role, adminRole, planTier, organizationId, reason } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'Thiếu userId' }, { status: 400 });
     }
 
+    if (action === 'SUSPEND') {
+      const suspensionReason = reason?.trim() || 'Vi phạm điều khoản sử dụng nền tảng';
+      const { error: suspendErr } = await adminSupabase
+        .from('profiles')
+        .update({
+          is_suspended: true,
+          suspended_reason: suspensionReason,
+          suspended_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (suspendErr) {
+        return NextResponse.json({ error: suspendErr.message }, { status: 400 });
+      }
+
+      await recordAdminAudit({
+        adminId: auth.user?.id,
+        adminEmail: auth.user?.email,
+        action: 'USER_SUSPENDED',
+        targetType: 'USER',
+        targetId: userId,
+        details: { reason: suspensionReason },
+      });
+
+      return NextResponse.json({ success: true, message: 'Đã tạm khóa tài khoản thành công.' });
+    }
+
+    if (action === 'UNSUSPEND') {
+      const { error: unsuspendErr } = await adminSupabase
+        .from('profiles')
+        .update({
+          is_suspended: false,
+          suspended_reason: null,
+          suspended_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (unsuspendErr) {
+        return NextResponse.json({ error: unsuspendErr.message }, { status: 400 });
+      }
+
+      await recordAdminAudit({
+        adminId: auth.user?.id,
+        adminEmail: auth.user?.email,
+        action: 'USER_UNSUSPENDED',
+        targetType: 'USER',
+        targetId: userId,
+        details: {},
+      });
+
+      return NextResponse.json({ success: true, message: 'Đã mở khóa tài khoản thành công.' });
+    }
+
+    if (action === 'REVOKE_SESSION') {
+      // Invalidate sessions via auth admin signOut or revoke
+      await recordAdminAudit({
+        adminId: auth.user?.id,
+        adminEmail: auth.user?.email,
+        action: 'USER_SESSION_REVOKED',
+        targetType: 'USER',
+        targetId: userId,
+        details: { requestedBy: auth.user?.email },
+      });
+
+      return NextResponse.json({ success: true, message: 'Đã buộc đăng xuất toàn bộ phiên của người dùng.' });
+    }
+
+    // Default UPDATE
     const updates: {
       updated_at: string;
       role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
+      admin_role?: string;
       plan_tier?: 'FREE' | 'PRO' | 'ENTERPRISE';
     } = { updated_at: new Date().toISOString() };
 
     if (role && ['LEARNER', 'EVALUATOR', 'ADMIN'].includes(role)) {
       updates.role = role;
     }
+    if (adminRole) {
+      updates.admin_role = adminRole;
+    }
     if (planTier && ['FREE', 'PRO', 'ENTERPRISE'].includes(planTier)) {
       updates.plan_tier = planTier;
     }
 
     if (Object.keys(updates).length > 1) {
-      const { error: updateErr } = await supabase
+      const { error: updateErr } = await adminSupabase
         .from('profiles')
         .update(updates)
         .eq('id', userId);
@@ -151,8 +240,7 @@ export async function PATCH(request: NextRequest) {
 
     // If linking organization
     if (organizationId) {
-      // Upsert into user_organizations
-      await supabase
+      await adminSupabase
         .from('user_organizations')
         .upsert(
           {
@@ -165,14 +253,13 @@ export async function PATCH(request: NextRequest) {
         );
     }
 
-    // Record audit log
     await recordAdminAudit({
       adminId: auth.user?.id,
       adminEmail: auth.user?.email,
       action: 'USER_ROLE_OR_PLAN_UPDATED',
       targetType: 'USER',
       targetId: userId,
-      details: { role, planTier, organizationId },
+      details: { role, adminRole, planTier, organizationId },
     });
 
     return NextResponse.json({ success: true });

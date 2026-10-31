@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { FeedbackModal } from '../FeedbackModal';
+import { AvatarWorkspaceSection } from '../AvatarWorkspaceSection';
 
 interface OrgAvatarMenuProps {
   orgSlug?: string;
@@ -145,20 +146,8 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                 </div>
               </div>
 
-              {/* Workspace Jump: Back to Personal */}
-              <div className="p-2 mx-2 my-1.5 rounded bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
-                <Link
-                  href="/personal/dashboard"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-medium text-[11px] border border-slate-200 dark:border-zinc-700 transition-colors"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-sky-600 dark:text-blue-400" />
-                    <span>Workspace Cá nhân</span>
-                  </span>
-                  <ChevronRight className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
-                </Link>
-              </div>
+              {/* Workspace Switcher in Avatar */}
+              <AvatarWorkspaceSection onClose={() => setIsOpen(false)} />
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">

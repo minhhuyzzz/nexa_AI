@@ -50,28 +50,6 @@ const landingPlans: PlanSummary[] = [
     ctaHref: '/register',
   },
   {
-    id: 'plus',
-    name: 'Gói PLUS',
-    badge: 'CƠ BẢN',
-    desc: 'Bồi dưỡng chuyên đề nâng cao và quản lý giảng dạy lớp nhỏ.',
-    monthlyPrice: 69000,
-    yearlyPrice: 690000,
-    learnerHighlights: [
-      'Mở thêm bài thi tình huống thực tế',
-      '100 AI credits phân tích và gợi ý lộ trình',
-      'Đánh giá lại kỹ năng sau khi học',
-      'Chứng chỉ',
-    ],
-    evaluatorHighlights: [
-      '3 nhóm lớp tối đa 50 học viên mỗi lớp',
-      '3 phòng thi trực tiếp đồng thời',
-      '100 AI credits hỗ trợ chấm bài thực hành',
-      'Xuất bảng điểm Excel và CSV',
-    ],
-    ctaText: 'Chọn gói Plus',
-    ctaHref: '/register?plan=plus',
-  },
-  {
     id: 'pro',
     name: 'Gói PRO',
     badge: 'KHUYÊN DÙNG',
@@ -96,25 +74,25 @@ const landingPlans: PlanSummary[] = [
     ctaHref: '/register?plan=pro',
   },
   {
-    id: 'enterprise',
-    name: 'Gói ENTERPRISE',
+    id: 'business',
+    name: 'Gói BUSINESS',
     badge: 'DOANH NGHIỆP',
     desc: 'Giải pháp chuẩn hóa diện rộng cho trường đại học và tổ chức.',
     monthlyPrice: 0,
     yearlyPrice: 0,
-    customPriceText: 'Liên hệ',
+    customPriceText: 'Liên hệ tư vấn',
     learnerHighlights: [
-      'Toàn bộ sinh viên được nâng cấp gói Pro',
-      'Ngân hàng đề thi và học liệu riêng',
+      'Toàn bộ sinh viên được mở khóa theo đợt thi (Campaign)',
+      'Ngân hàng đề thi và học liệu riêng của trường',
     ],
     evaluatorHighlights: [
-      'Giảng viên dùng trọn bộ công cụ khảo thí',
+      'Giảng viên dùng trọn bộ công cụ khảo thí & bàn chấm',
       'Tùy biến khung năng lực số riêng',
       'Tích hợp đăng nhập một lần và LMS',
       'Chứng chỉ đồng thương hiệu riêng',
     ],
     ctaText: 'Đăng ký cho Tổ chức / Nhận tư vấn',
-    ctaHref: '#enterprise-inquiry',
+    ctaHref: '#business-inquiry',
   },
 ];
 
@@ -261,7 +239,7 @@ export function PricingSection() {
 
               {/* Action Button */}
               <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
-                {plan.id === 'enterprise' ? (
+                {plan.id === 'business' || plan.id === 'enterprise' ? (
                   <button
                     type="button"
                     onClick={() => setShowEnterpriseModal(true)}
