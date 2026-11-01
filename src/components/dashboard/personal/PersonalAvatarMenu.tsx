@@ -37,7 +37,7 @@ export function PersonalAvatarMenu() {
           const data = await res.json();
           const userObj = data?.user || data?.profile;
           if (userObj) {
-            const name = userObj.fullName || userObj.displayName || 'Học Viên Nexa';
+            const name = userObj.fullName || userObj.displayName || userObj.nickname || 'Học Viên Nexa';
             setDisplayName(name);
             if (userObj.email) setDisplayEmail(userObj.email);
             const inits =
@@ -50,8 +50,8 @@ export function PersonalAvatarMenu() {
             setDisplayInitials(inits);
             if (userObj.avatarUrl) {
               setAvatarUrl(userObj.avatarUrl);
-              return;
             }
+            return;
           }
         }
 
@@ -69,7 +69,7 @@ export function PersonalAvatarMenu() {
             .single();
 
           if (profile) {
-            const name = profile.full_name || user.user_metadata?.full_name || 'Học Viên Nexa';
+            const name = profile.full_name || user.user_metadata?.full_name || profile.nickname || 'Học Viên Nexa';
             setDisplayName(name);
             const inits =
               name

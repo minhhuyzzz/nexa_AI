@@ -37,7 +37,7 @@ export async function GET() {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, nickname, email, avatar_url, role, points, login_streak, total_login_days, plan_tier, credits')
+      .select('id, full_name, nickname, email, avatar_url, role, points, login_streak, total_login_days, plan_tier, credits')
       .eq('id', effectiveUserId)
       .single();
 
@@ -78,9 +78,10 @@ export async function GET() {
     return NextResponse.json({
       profile: {
         id: profile.id,
+        fullName: profile.full_name || user?.user_metadata?.full_name || profile.nickname,
         nickname: profile.nickname,
         email: profile.email || 'learner@nexa.edu.vn',
-        avatarUrl: profile.avatar_url || null,
+        avatarUrl: profile.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null,
         role: profile.role,
         isGoogleAuth,
         points,

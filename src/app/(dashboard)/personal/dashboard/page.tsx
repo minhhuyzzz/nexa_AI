@@ -283,7 +283,7 @@ export default function LearnerDashboardPage() {
               {loadingStats ? (
                 <span className="inline-block w-48 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse align-middle" />
               ) : (
-                `Xin chào, ${stats.nickname}! 👋`
+                `Xin chào, ${stats.fullName && stats.fullName !== 'Học viên' ? stats.fullName : stats.nickname}! 👋`
               )}
             </h1>
             {!loadingStats && stats.newLoginToday && (

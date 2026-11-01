@@ -43,6 +43,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 interface ProfileData {
   id: string;
+  fullName?: string;
   nickname: string;
   email: string;
   avatarUrl: string | null;
@@ -480,10 +481,10 @@ function LearnerProfileContent() {
             </div>
 
             <div className="space-y-1.5 min-w-0">
-              {/* Nickname with quick edit */}
+              {/* Full name / Nickname with quick edit */}
               <div className="flex items-center gap-2">
                 <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
-                  {profile?.nickname || 'learner_nexa'}
+                  {profile?.fullName || profile?.nickname || 'learner_nexa'}
                 </span>
                 <button
                   type="button"
@@ -494,6 +495,12 @@ function LearnerProfileContent() {
                   <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
                 </button>
               </div>
+
+              {profile?.fullName && profile?.nickname && profile.fullName !== profile.nickname && (
+                <div className="text-xs text-slate-400 dark:text-neutral-500 font-mono">
+                  @{profile.nickname}
+                </div>
+              )}
 
               {/* Role */}
               <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300 font-medium">

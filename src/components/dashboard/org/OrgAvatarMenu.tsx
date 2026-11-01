@@ -43,7 +43,7 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
           const data = await res.json();
           const userObj = data?.user || data?.profile;
           if (userObj) {
-            const name = userObj.fullName || userObj.displayName || 'Thành viên Tổ chức';
+            const name = userObj.fullName || userObj.displayName || userObj.nickname || 'Thành viên Tổ chức';
             setDisplayName(name);
             if (userObj.email) setDisplayEmail(userObj.email);
             const inits =
@@ -56,8 +56,8 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
             setDisplayInitials(inits);
             if (userObj.avatarUrl) {
               setAvatarUrl(userObj.avatarUrl);
-              return;
             }
+            return;
           }
         }
 

@@ -21,12 +21,29 @@ export async function GET() {
     // 2. Fetch current profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, nickname, email, role, plan_tier, points, total_login_days, login_streak, last_login_date, avatar_url')
+      .select('id, full_name, nickname, email, role, plan_tier, points, total_login_days, login_streak, last_login_date, avatar_url')
       .eq('id', effectiveUserId)
       .single();
 
     if (profileError || !profile) {
       return NextResponse.json({ error: 'Không tìm thấy hồ sơ người dùng' }, { status: 404 });
+    }
+
+    // Sync Google OAuth name if profile.full_name is missing or placeholder
+    const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name;
+    const googleAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+    let effectiveFullName = profile.full_name;
+
+    if (googleName && (!profile.full_name || profile.full_name === 'Người dùng Nexa')) {
+      effectiveFullName = googleName;
+      await supabase
+        .from('profiles')
+        .update({
+          full_name: googleName,
+          ...(googleAvatar && !profile.avatar_url ? { avatar_url: googleAvatar } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', effectiveUserId);
     }
 
     // 3. User Points and Streak - Record daily attendance check-in
@@ -104,8 +121,9 @@ export async function GET() {
         user: {
           id: effectiveUserId,
           email: profile.email || user?.email || '',
+          fullName: effectiveFullName || profile.nickname || 'Học viên',
           nickname: profile.nickname,
-          avatarUrl: profile.avatar_url || null,
+          avatarUrl: profile.avatar_url || googleAvatar || null,
           role: profile.role,
           planTier: profile.plan_tier || 'FREE',
         },
