@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -20,12 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function PersonalAuthoringDeployPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+function PersonalAuthoringDeployContent({ id }: { id: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -385,5 +380,24 @@ export default function PersonalAuthoringDeployPage({
         </div>
       </form>
     </div>
+  );
+}
+
+export default function PersonalAuthoringDeployPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-slate-400">
+          Đang tải cấu hình giao đề...
+        </div>
+      }
+    >
+      <PersonalAuthoringDeployContent id={id} />
+    </Suspense>
   );
 }

@@ -324,9 +324,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/analytics/page.tsx": {
-    "mtime": 1793448917.9478545,
-    "seen": 1793516451.251521,
-    "ast_hash": "c9566953338aaf1000462da48cc49bef",
+    "mtime": 1793550329.1357887,
+    "seen": 1793551152.7993042,
+    "ast_hash": "e79c31171610484f62276cf0e2b9af38",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/compliance/page.tsx": {
@@ -414,9 +414,9 @@
     "semantic_hash": "fee32a391eb11534b6072ae58cb39b66"
   },
   "src/app/(dashboard)/admin/settings/page.tsx": {
-    "mtime": 1793449214.491139,
-    "seen": 1793516451.2558792,
-    "ast_hash": "3c1a504d5e853bc634a1605d69bec2bd",
+    "mtime": 1793550403.9537983,
+    "seen": 1793551152.8045611,
+    "ast_hash": "c72d82a42e9fa675972124634ef2b9bc",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/transactions/page.tsx": {
@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/submissions/page.tsx": {
-    "mtime": 1793522257.2175705,
-    "seen": 1793522541.0004458,
-    "ast_hash": "e6067d9fd6f092d054d1b88ff4f77533",
+    "mtime": 1793550257.7463896,
+    "seen": 1793551152.8262162,
+    "ast_hash": "c63ae16abf0172d1db6806d1c5af77f2",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/take/[id]/page.tsx": {
@@ -3516,9 +3516,9 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1793439275.3264213,
-    "seen": 1793440327.779755,
-    "ast_hash": "44fb4fd057c4db59ff22c8a4f41ba605",
+    "mtime": 1793549258.974007,
+    "seen": 1793551153.0045788,
+    "ast_hash": "9b1f8d1786c34020020b5f15b479b262",
     "semantic_hash": ""
   },
   "docs/architecture-decisions-and-memory.md": {
@@ -4254,9 +4254,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/authoring/[id]/deploy/page.tsx": {
-    "mtime": 1793523656.766572,
-    "seen": 1793524015.5411432,
-    "ast_hash": "0e3242a1d9dbf307578555d793983ebb",
+    "mtime": 1793550473.3847833,
+    "seen": 1793551152.8130221,
+    "ast_hash": "a24e778ec6cc6b833fa35a168c5dc258",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/authoring/[id]/edit/page.tsx": {
@@ -4266,9 +4266,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/authoring/[id]/live/page.tsx": {
-    "mtime": 1793523683.606283,
-    "seen": 1793524015.5411546,
-    "ast_hash": "1b185fa67f92ffd19cb8fd68ef7b4052",
+    "mtime": 1793550547.1472812,
+    "seen": 1793551152.8134177,
+    "ast_hash": "aef8eba9c01d2d17e411c0c5ad1ddd23",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/authoring/[id]/preview/page.tsx": {
@@ -4383,96 +4383,6 @@
     "mtime": 1793530397.8663657,
     "seen": 1793533060.916202,
     "ast_hash": "e6fb02fecc7adbc0b375391eb18a2b26",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/README_WORKFLOW_UI_UX.md": {
-    "mtime": 1793528461.55269,
-    "seen": 1793533060.968849,
-    "ast_hash": "b1fd69d37ff93e34e2554b847bc70b13",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/00_TONG_QUAN_ANH.png": {
-    "mtime": 1793528461.5409234,
-    "seen": 1793533060.9792514,
-    "ast_hash": "c3671a8e08aaed6fd14fa79eb69880df",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/01_Quan_ly_va_tao_phong/01_Danh_sach_phong_thi.png": {
-    "mtime": 1793528461.5756967,
-    "seen": 1793533060.9792569,
-    "ast_hash": "6bba06f1004b537a273add8165c337f7",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/01_Quan_ly_va_tao_phong/02_Chon_de_thi.png": {
-    "mtime": 1793528461.5987558,
-    "seen": 1793533060.9792604,
-    "ast_hash": "b56dc4a5aa965ded8449b0f4c9c4b34e",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/01_Quan_ly_va_tao_phong/03_Cau_hinh_phien_ban_dau.png": {
-    "mtime": 1793528461.6208847,
-    "seen": 1793533060.9792638,
-    "ast_hash": "65e5b3b3648bd2e6846997634aa556d2",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/01_Quan_ly_va_tao_phong/04_Cau_hinh_chu_de_trang_mac_dinh.png": {
-    "mtime": 1793528461.6447866,
-    "seen": 1793533060.9792676,
-    "ast_hash": "3422a09d7c4585a70c805c7c27a846c5",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/02_Phong_cho_va_dieu_khien/06_Phong_cho_host.png": {
-    "mtime": 1793528461.672012,
-    "seen": 1793533060.979271,
-    "ast_hash": "f83c7ee50b3af0c56e2419eb445cf370",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/02_Phong_cho_va_dieu_khien/07_Bang_dieu_khien_dang_thi.png": {
-    "mtime": 1793528461.6969528,
-    "seen": 1793533060.979274,
-    "ast_hash": "fdcddfa1cf81d8da69aec1a4e11212ec",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/02_Phong_cho_va_dieu_khien/08_Dieu_khien_fullscreen_moi.png": {
-    "mtime": 1793528461.720997,
-    "seen": 1793533060.9792778,
-    "ast_hash": "d00f77a9cca947a2cbd6977076696442",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/02_Phong_cho_va_dieu_khien/09_Ket_thuc_va_cong_bo.png": {
-    "mtime": 1793528461.7460475,
-    "seen": 1793533060.9792814,
-    "ast_hash": "36399cd99493f495b9d29065ddadedce",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/03_Nguoi_tham_gia/10_Nhap_PIN.png": {
-    "mtime": 1793528461.7748497,
-    "seen": 1793533060.9792845,
-    "ast_hash": "9baa1af6e3410021a55ac7307f8f8220",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/03_Nguoi_tham_gia/11_Phong_cho_space_avatar_realtime.png": {
-    "mtime": 1793528461.799656,
-    "seen": 1793533060.9792876,
-    "ast_hash": "a994c0bae71ae489b4c86e9f123e1d92",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/03_Nguoi_tham_gia/12_Lam_bai_space.png": {
-    "mtime": 1793528461.8246508,
-    "seen": 1793533060.9792905,
-    "ast_hash": "f9d06647f662997a35f6d27793aba6a8",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/03_Nguoi_tham_gia/13_Lam_bai_trang_mac_dinh.png": {
-    "mtime": 1793528461.8495748,
-    "seen": 1793533060.9792933,
-    "ast_hash": "8ec7321958a2e9e02c16aff539011afe",
-    "semantic_hash": ""
-  },
-  "NEXA_LIVE_ROOM_FULL_UI_UX_13_MAN_HINH_CHU_DE_TRANG_MAC_DINH_2026-11-01/NEXA_LIVE_ROOM_UI_UX/03_Nguoi_tham_gia/14_Nop_bai_cho_cong_bo.png": {
-    "mtime": 1793528461.8755968,
-    "seen": 1793533060.9792964,
-    "ast_hash": "965f34a67c1f3a04aa1a2709f9e744bb",
     "semantic_hash": ""
   },
   "package-lock.json": {

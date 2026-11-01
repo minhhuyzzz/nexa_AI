@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Cpu,
@@ -80,7 +80,7 @@ const internalAdminRoles: AdminRoleDefinition[] = [
   },
 ];
 
-export default function AdminSettingsPage() {
+function AdminSettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -589,5 +589,19 @@ export default function AdminSettingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-slate-400">
+          Đang tải cài đặt hệ thống...
+        </div>
+      }
+    >
+      <AdminSettingsContent />
+    </Suspense>
   );
 }

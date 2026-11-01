@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -29,12 +29,7 @@ interface CandidateRow {
   score?: number;
 }
 
-export default function PersonalLiveSessionPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+function PersonalLiveSessionContent({ id }: { id: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -243,5 +238,24 @@ export default function PersonalLiveSessionPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PersonalLiveSessionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-slate-400">
+          Đang tải phiên thi trực tiếp...
+        </div>
+      }
+    >
+      <PersonalLiveSessionContent id={id} />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   BarChart3,
@@ -65,7 +65,7 @@ interface AnalyticsData {
   organizations: OrganizationOption[];
 }
 
-export default function AdminAnalyticsPage() {
+function AdminAnalyticsContent() {
   const searchParams = useSearchParams();
   const initialOrgId = searchParams.get('orgId') || '';
 
@@ -374,5 +374,19 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminAnalyticsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-slate-400">
+          Đang tải dữ liệu đối soát & phân tích...
+        </div>
+      }
+    >
+      <AdminAnalyticsContent />
+    </Suspense>
   );
 }

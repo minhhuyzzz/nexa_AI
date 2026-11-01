@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -19,7 +19,7 @@ import { SubmissionResultView } from '@/components/dashboard/submissions/Submiss
 import { SubmissionEmptyState } from '@/components/dashboard/submissions/SubmissionEmptyState';
 import { Loader2, Info } from 'lucide-react';
 
-export default function LearnerSubmissionsPage() {
+function LearnerSubmissionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -475,5 +475,20 @@ export default function LearnerSubmissionsPage() {
         </span>
       </div>
     </div>
+  );
+}
+
+export default function LearnerSubmissionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-12 text-xs text-slate-400">
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          <span>Đang tải danh sách bài được giao...</span>
+        </div>
+      }
+    >
+      <LearnerSubmissionsContent />
+    </Suspense>
   );
 }
