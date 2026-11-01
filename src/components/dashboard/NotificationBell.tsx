@@ -16,16 +16,45 @@ interface NotificationItem {
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('nexa_notifications');
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return [];
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const fetchServerNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.notifications)) {
+          const mapped: NotificationItem[] = data.notifications.map((n: any) => {
+            let nType: NotificationItem['type'] = 'reward';
+            if (n.category === 'GRADE') nType = 'grade';
+            else if (n.category === 'ASSIGNMENT' || n.category === 'CAMPAIGN') nType = 'exam';
+            else if (n.category === 'SECURITY') nType = 'feedback';
+
+            return {
+              id: n.id,
+              type: nType,
+              title: n.title,
+              description: n.message,
+              timeAgo: new Date(n.created_at).toLocaleDateString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+              }),
+              isRead: Boolean(n.is_read),
+              href: n.link_url || undefined,
+            };
+          });
+          setNotifications(mapped);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch server notifications:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchServerNotifications();
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -39,14 +68,28 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAll: true }),
+      });
+    } catch {}
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+    } catch {}
   };
 
   const getIcon = (type: NotificationItem['type']) => {

@@ -74,12 +74,12 @@ export default async function OrgCampaignDetailPage({
     }
   }
 
-  const totalAssigned = classesData.reduce((acc, c) => acc + c.memberCount, 0) || 50;
+  const totalAssigned = classesData.reduce((acc, c) => acc + c.memberCount, 0);
 
-  // 3. Fetch Submissions for this assessment
+  // 3. Fetch Submissions specifically scoped to this Campaign (Strict Isolation)
   const asm = (campaign.assessments as any);
   let submissions: any[] = [];
-  if (asm?.id) {
+  if (campaign.id) {
     const { data: subs } = await adminSupabase
       .from('assessment_submissions')
       .select(`
@@ -90,6 +90,7 @@ export default async function OrgCampaignDetailPage({
         submitted_at,
         created_at,
         user_id,
+        campaign_id,
         profiles:user_id (
           id,
           full_name,
@@ -97,10 +98,47 @@ export default async function OrgCampaignDetailPage({
           email
         )
       `)
-      .eq('assessment_id', asm.id)
+      .eq('campaign_id', campaign.id)
       .order('created_at', { ascending: false })
-      .limit(100);
-    submissions = subs || [];
+      .limit(200);
+
+    // Fallback: If legacy submissions don't have campaign_id populated yet, filter by class_assignments of this campaign's classes
+    if (!subs || subs.length === 0) {
+      if (classIds.length > 0 && asm?.id) {
+        const { data: classAsgs } = await adminSupabase
+          .from('class_assignments')
+          .select('id')
+          .in('class_id', classIds)
+          .eq('assessment_id', asm.id);
+        const asgIds = (classAsgs || []).map((a) => a.id);
+        if (asgIds.length > 0) {
+          const { data: legacySubs } = await adminSupabase
+            .from('assessment_submissions')
+            .select(`
+              id,
+              status,
+              total_score,
+              max_score,
+              submitted_at,
+              created_at,
+              user_id,
+              campaign_id,
+              profiles:user_id (
+                id,
+                full_name,
+                nickname,
+                email
+              )
+            `)
+            .in('class_assignment_id', asgIds)
+            .order('created_at', { ascending: false })
+            .limit(200);
+          submissions = legacySubs || [];
+        }
+      }
+    } else {
+      submissions = subs;
+    }
   }
 
   // 4. Calculate Real KPIs

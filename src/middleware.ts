@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
   // 1. Identify route categories
   const isAuthPage = pathname === '/login' || pathname === '/register';
   const isOnboardingPage = pathname === '/onboarding';
+  const isSuspendedPage = pathname === '/account-suspended';
   const isAdminRoute = pathname.startsWith('/admin');
   const isProtectedDashboard =
     pathname.startsWith('/dashboard') ||
@@ -124,12 +125,55 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Query profile to get role and onboarding status
+  // Query profile to get role, onboarding status, and suspension status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_onboarded')
+    .select('role, is_onboarded, is_suspended, tokens_revoked_at')
     .eq('id', user.id)
     .single();
+
+  // Suspension Guard: If user is suspended, block protected access immediately
+  if (profile?.is_suspended === true) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Tài khoản của bạn đang bị tạm khóa. Vui lòng liên hệ ban quản trị.' },
+        { status: 403 }
+      );
+    }
+    if (!isSuspendedPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/account-suspended';
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // If user is NOT suspended but visits /account-suspended -> redirect away
+  if (isSuspendedPage && profile?.is_suspended !== true) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // Session Revocation Guard
+  if (profile?.tokens_revoked_at) {
+    const tokenExp = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : 0;
+    const revokedTime = new Date(profile.tokens_revoked_at).getTime();
+    if (tokenExp < revokedTime) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Phiên làm việc đã bị thu hồi. Vui lòng đăng nhập lại.' },
+          { status: 401 }
+        );
+      }
+      if (isProtectedDashboard) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/login';
+        url.searchParams.set('error', 'session_revoked');
+        return NextResponse.redirect(url);
+      }
+    }
+  }
 
   // Superadmin Master Authority: email whitelist only
   const isSuperadmin = isSuperadminEmail(user.email);

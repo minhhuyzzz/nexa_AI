@@ -10,7 +10,7 @@ import { CtaBannerSection } from '@/components/landing/CtaBannerSection';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 font-sans transition-colors">
       {/* 1. Header công khai */}
       <PublicHeader activePath="/" />
 

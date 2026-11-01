@@ -12,6 +12,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { batchImportQuestionBankItems } from '@/features/assessments/services/question-bank-write.service';
 
 export interface ParsedItem {
   id: string;
@@ -154,18 +155,30 @@ Miền: D2
 
     try {
       const supabase = createClient();
-      const recordsToInsert = validItems.map((item) => ({
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const inputs = validItems.map((item) => ({
         code: item.itemCode,
         prompt: item.prompt,
         type: item.type,
         difficulty_level: item.difficulty,
         default_points: item.defaultPoints,
-        options: item.options.length > 0 ? item.options : null,
+        domain_id: item.domain,
+        options: item.options.map((opt, oIdx) => ({
+          content: opt.content,
+          is_correct: opt.isCorrect,
+          order_index: oIdx,
+        })),
+        owner_user_id: user?.id,
+        scope: 'PERSONAL' as const,
       }));
 
-      const { error } = await supabase.from('question_bank_items').insert(recordsToInsert);
-      if (error) {
-        throw new Error(error.message);
+      const result = await batchImportQuestionBankItems(supabase, inputs);
+
+      if (result.failedCount > 0 && result.successCount === 0) {
+        throw new Error(result.errors[0]?.error || 'Không thể nhập các câu hỏi');
       }
 
       onImportSuccess();

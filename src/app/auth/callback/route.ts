@@ -5,6 +5,7 @@ import {
   type CookieOptions,
 } from '@supabase/ssr';
 import type { EmailOtpType } from '@supabase/supabase-js';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,22 +48,34 @@ export async function GET(request: Request) {
   // Profile được tạo tự động bởi trigger public.handle_new_user()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, avatar_url, is_onboarded')
+    .select('role, avatar_url, is_onboarded, full_name')
     .eq('id', data.user.id)
     .single();
 
   const googleAvatar =
     data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || null;
+  const googleName =
+    data.user.user_metadata?.full_name || data.user.user_metadata?.name || null;
 
+  const updates: Record<string, any> = {};
   if (profile && googleAvatar && profile.avatar_url !== googleAvatar) {
-    await supabase
-      .from('profiles')
-      .update({ avatar_url: googleAvatar, updated_at: new Date().toISOString() })
-      .eq('id', data.user.id);
+    updates.avatar_url = googleAvatar;
+  }
+  if (profile && googleName && (!profile.full_name || profile.full_name === 'Người dùng Nexa')) {
+    updates.full_name = googleName;
   }
 
+  if (Object.keys(updates).length > 0) {
+    updates.updated_at = new Date().toISOString();
+    await supabase.from('profiles').update(updates).eq('id', data.user.id);
+  }
+
+  const isSuperadmin = isSuperadminEmail(data.user.email);
+
   let targetPath = '/personal/dashboard';
-  if (profile && profile.is_onboarded === false) {
+  if (isSuperadmin) {
+    targetPath = '/admin/dashboard';
+  } else if (profile && profile.is_onboarded === false) {
     targetPath = '/onboarding';
   } else if (profile?.role === 'ADMIN') {
     targetPath = '/admin/dashboard';

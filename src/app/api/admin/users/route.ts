@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,7 @@ interface ProfileRow {
 
 export async function GET() {
   try {
-    const auth = await requirePlatformAdmin();
+    const auth = await requirePlatformAdmin('MANAGE_USERS');
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
@@ -127,7 +128,7 @@ interface PatchBody {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await requirePlatformAdmin();
+    const auth = await requirePlatformAdmin('MANAGE_USERS');
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
@@ -141,14 +142,45 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === 'SUSPEND') {
+      if (userId === auth.user?.id) {
+        return NextResponse.json(
+          { error: 'Không thể tự khóa tài khoản của chính mình.' },
+          { status: 400 }
+        );
+      }
+
+      // Check target user email to prevent locking superadmin
+      const { data: targetProfile } = await adminSupabase
+        .from('profiles')
+        .select('email, role, admin_role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (isSuperadminEmail(targetProfile?.email) || targetProfile?.admin_role === 'SUPER_ADMIN') {
+        return NextResponse.json(
+          { error: 'Không thể tạm khóa tài khoản Super Admin cấp cao nhất.' },
+          { status: 403 }
+        );
+      }
+
       const suspensionReason = reason?.trim() || 'Vi phạm điều khoản sử dụng nền tảng';
+      const nowIso = new Date().toISOString();
+
+      // Revoke auth session immediately
+      try {
+        await adminSupabase.auth.admin.signOut(userId, 'global');
+      } catch (e) {
+        console.error('Error signing out suspended user from Supabase Auth:', e);
+      }
+
       const { error: suspendErr } = await adminSupabase
         .from('profiles')
         .update({
           is_suspended: true,
           suspended_reason: suspensionReason,
-          suspended_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          suspended_at: nowIso,
+          tokens_revoked_at: nowIso,
+          updated_at: nowIso,
         })
         .eq('id', userId);
 
@@ -165,7 +197,7 @@ export async function PATCH(request: NextRequest) {
         details: { reason: suspensionReason },
       });
 
-      return NextResponse.json({ success: true, message: 'Đã tạm khóa tài khoản thành công.' });
+      return NextResponse.json({ success: true, message: 'Đã tạm khóa tài khoản và thu hồi phiên thành công.' });
     }
 
     if (action === 'UNSUSPEND') {
@@ -196,7 +228,26 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === 'REVOKE_SESSION') {
-      // Invalidate sessions via auth admin signOut or revoke
+      const nowIso = new Date().toISOString();
+
+      // Invalidate sessions via auth admin signOut
+      const { error: signOutErr } = await adminSupabase.auth.admin.signOut(userId, 'global');
+      if (signOutErr) {
+        console.error('Supabase Auth signOut global error:', signOutErr);
+      }
+
+      const { error: updateErr } = await adminSupabase
+        .from('profiles')
+        .update({
+          tokens_revoked_at: nowIso,
+          updated_at: nowIso,
+        })
+        .eq('id', userId);
+
+      if (updateErr) {
+        return NextResponse.json({ error: updateErr.message }, { status: 400 });
+      }
+
       await recordAdminAudit({
         adminId: auth.user?.id,
         adminEmail: auth.user?.email,
@@ -206,10 +257,19 @@ export async function PATCH(request: NextRequest) {
         details: { requestedBy: auth.user?.email },
       });
 
-      return NextResponse.json({ success: true, message: 'Đã buộc đăng xuất toàn bộ phiên của người dùng.' });
+      return NextResponse.json({ success: true, message: 'Đã thu hồi phiên và buộc đăng xuất người dùng thành công.' });
     }
 
     // Default UPDATE
+    if (adminRole) {
+      if (auth.user?.adminRole !== 'SUPER_ADMIN' && !isSuperadminEmail(auth.user?.email)) {
+        return NextResponse.json(
+          { error: 'Chỉ Super Admin mới có quyền phân bổ vai trò quản trị (admin_role).' },
+          { status: 403 }
+        );
+      }
+    }
+
     const updates: {
       updated_at: string;
       role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';

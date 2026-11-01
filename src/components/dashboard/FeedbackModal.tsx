@@ -12,19 +12,38 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [rating, setRating] = useState(5);
   const [category, setCategory] = useState('ui');
   const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setContent('');
-      onClose();
-    }, 1800);
+
+    setIsSubmitting(true);
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: category === 'bug' ? 'BUG' : (category === 'feature' ? 'FEATURE_REQUEST' : 'GENERAL'),
+          subject: `Góp ý [${category.toUpperCase()}]`,
+          content: content.trim(),
+        }),
+      });
+
+      setIsSubmitted(true);
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setContent('');
+        onClose();
+      }, 1500);
+    } catch (err) {
+      console.error('Error submitting feedback:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

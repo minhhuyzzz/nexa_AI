@@ -21,6 +21,13 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { RubricBuilder } from '@/components/dashboard/assessments/RubricBuilder';
 import { RubricDefinition } from '@/features/assessments/types/rubric.types';
+import {
+  saveQuestionBankItem,
+  normalizeQuestionType,
+  normalizeDifficulty,
+  type CanonicalQuestionType,
+  type CanonicalDifficultyLevel,
+} from '@/features/assessments/services/question-bank-write.service';
 
 interface OptionItem {
   id?: string;
@@ -41,9 +48,9 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
 
   const [itemCode, setItemCode] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [type, setType] = useState<'MCQ' | 'SCENARIO' | 'PRACTICAL_FILE' | 'DIGITAL_LINK'>('MCQ');
+  const [type, setType] = useState<CanonicalQuestionType>('MCQ');
   const [domainId, setDomainId] = useState('D1');
-  const [difficulty, setDifficulty] = useState<'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'>('INTERMEDIATE');
+  const [difficulty, setDifficulty] = useState<CanonicalDifficultyLevel>('INTERMEDIATE');
   const [defaultPoints, setDefaultPoints] = useState(10);
   const [subCompetenceCode, setSubCompetenceCode] = useState('1.1');
   const [status, setStatus] = useState<'DRAFT' | 'APPROVED' | 'ARCHIVED'>('APPROVED');
@@ -80,12 +87,21 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
 
         setItemCode(data.code || `QB-${id.slice(0, 8).toUpperCase()}`);
         setPrompt(data.prompt || '');
-        setType(data.type || 'MCQ');
-        setDifficulty(data.difficulty_level || 'INTERMEDIATE');
+        setType(normalizeQuestionType(data.type));
+        setDifficulty(normalizeDifficulty(data.difficulty_level));
         setDefaultPoints(data.default_points || 10);
         setStatus(data.status || 'APPROVED');
 
-        if (Array.isArray(data.options) && data.options.length > 0) {
+        // Fetch options from canonical child table question_bank_options
+        const { data: qOptions } = await supabase
+          .from('question_bank_options')
+          .select('id, content, is_correct, explanation, order_index')
+          .eq('item_id', id)
+          .order('order_index', { ascending: true });
+
+        if (qOptions && qOptions.length > 0) {
+          setOptions(qOptions);
+        } else if (Array.isArray(data.options) && data.options.length > 0) {
           setOptions(data.options);
         }
 
@@ -112,44 +128,32 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
     setErrorMessage(null);
 
     try {
-      const payload: Record<string, any> = {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const result = await saveQuestionBankItem(supabase, {
+        id: id === 'new' ? undefined : id,
         code: itemCode,
         prompt: prompt.trim(),
         type,
         difficulty_level: difficulty,
         default_points: Number(defaultPoints) || 10,
         status,
-      };
+        domain_id: domainId,
+        sub_competence_code: subCompetenceCode,
+        options: type === 'MCQ' ? options : undefined,
+        rubric_definition: type !== 'MCQ' ? rubric : undefined,
+        owner_user_id: user?.id,
+        scope: 'PERSONAL',
+      });
 
-      if (type === 'MCQ') {
-        payload.options = options.filter((o) => o.content.trim().length > 0);
-      } else {
-        payload.options = null;
-        if (rubric) {
-          payload.rubric_definition = rubric;
-        }
-      }
-
+      setSaveSuccess(true);
       if (id === 'new') {
-        const { data, error } = await supabase
-          .from('question_bank_items')
-          .insert(payload)
-          .select()
-          .single();
-
-        if (error) throw error;
-        setSaveSuccess(true);
         setTimeout(() => {
-          router.push(`/personal/item-bank/${data.id}`);
-        }, 1000);
+          router.push(`/personal/item-bank/${result.itemId}`);
+        }, 800);
       } else {
-        const { error } = await supabase
-          .from('question_bank_items')
-          .update(payload)
-          .eq('id', id);
-
-        if (error) throw error;
-        setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
       }
     } catch (err: any) {
@@ -363,13 +367,14 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
               <label className="font-semibold text-slate-700 dark:text-zinc-300">Hình thức câu hỏi</label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value as any)}
+                onChange={(e) => setType(normalizeQuestionType(e.target.value))}
                 className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:border-blue-600 focus:outline-none"
               >
                 <option value="MCQ">Trắc nghiệm khách quan (MCQ)</option>
                 <option value="SCENARIO">Xử lý tình huống (Scenario)</option>
-                <option value="PRACTICAL_FILE">Thực hành nộp tệp tin (File)</option>
-                <option value="DIGITAL_LINK">Nộp liên kết số (URL / Product)</option>
+                <option value="PRACTICE_FILE">Thực hành nộp tệp tin (File)</option>
+                <option value="PRACTICE_URL">Nộp liên kết số (URL / Product)</option>
+                <option value="DIGITAL_EVIDENCE">Minh chứng số (Digital Evidence)</option>
               </select>
             </div>
 
@@ -394,13 +399,13 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
               <label className="font-semibold text-slate-700 dark:text-zinc-300">Độ khó khảo thí</label>
               <select
                 value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value as any)}
+                onChange={(e) => setDifficulty(normalizeDifficulty(e.target.value))}
                 className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:border-blue-600 focus:outline-none"
               >
-                <option value="BEGINNER">Cơ bản (Beginner / Foundation)</option>
+                <option value="FOUNDATION">Cơ bản (Foundation)</option>
                 <option value="INTERMEDIATE">Trung cấp (Intermediate)</option>
                 <option value="ADVANCED">Nâng cao (Advanced)</option>
-                <option value="EXPERT">Chuyên gia (Expert)</option>
+                <option value="HIGHLY_SPECIALIZED">Chuyên gia (Highly Specialized)</option>
               </select>
             </div>
 

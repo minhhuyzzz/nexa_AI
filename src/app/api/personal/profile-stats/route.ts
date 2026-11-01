@@ -21,7 +21,7 @@ export async function GET() {
     // 2. Fetch current profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, nickname, email, role, points, total_login_days, login_streak, last_login_date, avatar_url')
+      .select('id, nickname, email, role, plan_tier, points, total_login_days, login_streak, last_login_date, avatar_url')
       .eq('id', effectiveUserId)
       .single();
 
@@ -107,6 +107,7 @@ export async function GET() {
           nickname: profile.nickname,
           avatarUrl: profile.avatar_url || null,
           role: profile.role,
+          planTier: profile.plan_tier || 'FREE',
         },
         stats: {
           points, // Activity/gamification XP

@@ -141,26 +141,8 @@ export default function AdminTransactionsPage() {
   };
 
   const handleExportReconciliationCsv = () => {
-    const rows = [
-      ['Mã Giao Dịch', 'Email Khách Hàng', 'Gói Dịch Vụ', 'Số Tiền', 'Đơn Vị', 'Trạng Thái', 'Thời Gian'],
-      ...filteredList.map((t) => [
-        t.transaction_reference,
-        t.profiles?.email || 'N/A',
-        t.plan_code,
-        t.amount.toString(),
-        t.currency,
-        t.status,
-        new Date(t.created_at).toISOString(),
-      ]),
-    ];
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `nexa_financial_reconciliation_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const statusParam = activeTab === 'all' ? '' : `?status=${activeTab}`;
+    window.location.href = `/api/admin/transactions/export${statusParam}`;
   };
 
   return (

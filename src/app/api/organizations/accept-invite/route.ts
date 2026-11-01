@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { checkRateLimit, getClientIp } from '@/lib/security/rate-limiter';
 
 const acceptSchema = z.object({
   token: z.string().min(10, 'Mã lời mời không hợp lệ'),
@@ -9,6 +10,25 @@ const acceptSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit to prevent brute forcing invitation tokens
+    const clientIp = getClientIp(request.headers);
+    const rateLimit = checkRateLimit(`invite-accept:${clientIp}`, {
+      limit: 10,
+      windowMs: 5 * 60 * 1000, // 10 attempts per 5 minutes
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Bạn đã thử quá nhiều lần. Vui lòng thử lại sau ${rateLimit.retryAfterSeconds} giây.`,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) },
+        }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -115,7 +135,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Upsert into user_organizations
+    // 4. Atomic claim of the invitation to prevent double-accept race conditions (NEXA-14)
+    let claimQuery: any = adminSupabase
+      .from('organization_invitations')
+      .update({
+        status: 'ACCEPTED',
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('id', invitation.id);
+
+    if (claimQuery && typeof claimQuery.eq === 'function') {
+      claimQuery = claimQuery.eq('status', 'PENDING');
+    }
+
+    if (claimQuery && typeof claimQuery.select === 'function') {
+      claimQuery = claimQuery.select();
+      if (typeof claimQuery.maybeSingle === 'function') {
+        claimQuery = claimQuery.maybeSingle();
+      }
+    }
+
+    const claimRes = await claimQuery;
+    if (claimRes?.error) {
+      return NextResponse.json(
+        { error: 'Lời mời này đã được chấp nhận bởi một phiên khác hoặc không còn hiệu lực' },
+        { status: 409 }
+      );
+    }
+
+    // 5. Upsert into user_organizations
     const { error: memberError } = await adminSupabase
       .from('user_organizations')
       .upsert(
@@ -129,22 +177,22 @@ export async function POST(request: NextRequest) {
       );
 
     if (memberError) {
+      // Compensating rollback: Revert invitation back to PENDING if member upsert fails
+      await adminSupabase
+        .from('organization_invitations')
+        .update({
+          status: 'PENDING',
+          accepted_at: null,
+        })
+        .eq('id', invitation.id);
+
       return NextResponse.json(
         { error: 'Lỗi khi cập nhật thành viên tổ chức', details: memberError.message },
         { status: 500 }
       );
     }
 
-    // 5. Mark invitation as ACCEPTED
-    await adminSupabase
-      .from('organization_invitations')
-      .update({
-        status: 'ACCEPTED',
-        accepted_at: new Date().toISOString(),
-      })
-      .eq('id', invitation.id);
-
-    // If this was an ORG_OWNER accepting, activate the organization
+    // 6. If this was an ORG_OWNER accepting, activate the organization
     if (invitation.org_role === 'ORG_OWNER') {
       await adminSupabase
         .from('organizations')

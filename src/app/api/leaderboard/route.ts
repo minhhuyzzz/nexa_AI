@@ -16,7 +16,7 @@ export interface LeaderboardEntry {
   specialization: string | null;
 }
 
-const REDIS_CACHE_KEY = 'nexa:leaderboard:top100';
+const REDIS_CACHE_KEY = 'nexa:leaderboard:pts:top100';
 const CACHE_TTL_SECONDS = 60; // 60 seconds TTL
 
 export async function GET() {
@@ -45,10 +45,10 @@ export async function GET() {
     if (leaderboard.length === 0) {
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization')
+        .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization, created_at')
         .eq('role', 'LEARNER')
         .order('points', { ascending: false })
-        .order('avg_competency_score', { ascending: false })
+        .order('created_at', { ascending: true })
         .limit(100);
 
       if (error) {
@@ -101,22 +101,31 @@ export async function GET() {
             points: leaderboard[foundIndex].points,
           };
         } else {
-          // If not in top 100, calculate exact rank for current user
+          // If not in top 100, calculate exact rank for current user based strictly on PTS
           const { data: myProfile } = await supabase
             .from('profiles')
-            .select('id, nickname, avatar_url, points')
+            .select('id, nickname, avatar_url, points, created_at')
             .eq('id', user.id)
             .single();
 
           if (myProfile) {
-            const { count } = await supabase
+            const { count: higherPointsCount } = await supabase
               .from('profiles')
               .select('*', { count: 'exact', head: true })
               .eq('role', 'LEARNER')
               .gt('points', myProfile.points || 0);
 
+            const { count: samePointsEarlierCount } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact', head: true })
+              .eq('role', 'LEARNER')
+              .eq('points', myProfile.points || 0)
+              .lt('created_at', myProfile.created_at || new Date().toISOString());
+
+            const exactRank = (higherPointsCount ?? 0) + (samePointsEarlierCount ?? 0) + 1;
+
             currentUserRank = {
-              rank: (count ?? 0) + 1,
+              rank: exactRank,
               userId: myProfile.id,
               displayName: myProfile.nickname || 'Học viên ẩn danh',
               avatarUrl: myProfile.avatar_url,

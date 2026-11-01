@@ -1,0 +1,121 @@
+'use client';
+
+import React from 'react';
+
+export function DashboardHeroIllustration() {
+  return (
+    <div className="relative w-64 sm:w-72 h-48 sm:h-52 select-none flex items-center justify-center shrink-0">
+      <svg
+        viewBox="0 0 320 240"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full drop-shadow-sm pointer-events-none"
+      >
+        <defs>
+          <radialGradient id="dash-glow-main" cx="60%" cy="50%" r="55%">
+            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+          </radialGradient>
+
+          <linearGradient id="board-base" x1="80" y1="20" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1D4ED8" />
+          </linearGradient>
+
+          <linearGradient id="clip-header" x1="110" y1="15" x2="170" y2="35" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#1E40AF" />
+            <stop offset="100%" stopColor="#1E3A8A" />
+          </linearGradient>
+
+          <linearGradient id="target-main" x1="180" y1="70" x2="280" y2="180" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1D4ED8" />
+          </linearGradient>
+
+          <linearGradient id="arrow-grad" x1="260" y1="60" x2="220" y2="120" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#1E3A8A" />
+            <stop offset="100%" stopColor="#2563EB" />
+          </linearGradient>
+
+          <filter id="soft-sh" x="-15%" y="-15%" width="130%" height="140%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="10" stdDeviation="10" floodColor="#1E3A8A" floodOpacity="0.2" />
+          </filter>
+        </defs>
+
+        {/* Ambient Radial Background Glow */}
+        <circle cx="170" cy="120" r="110" fill="url(#dash-glow-main)" />
+
+        {/* Left Floating Blue Card */}
+        <g filter="url(#soft-sh)" transform="rotate(-8 60 140)">
+          <rect x="25" y="105" width="95" height="60" rx="12" fill="#2563EB" />
+          <circle cx="50" cy="135" r="11" fill="#93C5FD" />
+          <rect x="70" y="127" width="36" height="5.5" rx="2.75" fill="#FFFFFF" />
+          <rect x="70" y="138" width="25" height="4.5" rx="2.25" fill="#BFDBFE" />
+        </g>
+
+        {/* Center 3D Clipboard */}
+        <g filter="url(#soft-sh)">
+          {/* Blue Board Backing */}
+          <rect x="85" y="32" width="115" height="160" rx="16" fill="url(#board-base)" />
+          {/* White Paper Sheet */}
+          <rect x="91" y="42" width="103" height="144" rx="12" fill="#FFFFFF" />
+
+          {/* Top Metallic Clip */}
+          <rect x="120" y="24" width="45" height="22" rx="7" fill="url(#clip-header)" />
+          <rect x="133" y="32" width="19" height="6" rx="3" fill="#93C5FD" />
+
+          {/* 3 Checklist Items with Blue Circles & White Checks */}
+          <circle cx="112" cy="72" r="7" fill="#3B82F6" />
+          <path d="M109 72 L111.5 74.5 L115.5 70" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="126" y="69.5" width="56" height="5.5" rx="2.75" fill="#E2E8F0" />
+
+          <circle cx="112" cy="94" r="7" fill="#3B82F6" />
+          <path d="M109 94 L111.5 96.5 L115.5 92" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="126" y="91.5" width="50" height="5.5" rx="2.75" fill="#E2E8F0" />
+
+          <circle cx="112" cy="116" r="7" fill="#3B82F6" />
+          <path d="M109 116 L111.5 118.5 L115.5 114" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="126" y="113.5" width="54" height="5.5" rx="2.75" fill="#E2E8F0" />
+
+          {/* 4 Bottom Blue Bar Charts */}
+          <rect x="106" y="146" width="11" height="24" rx="3.5" fill="#60A5FA" />
+          <rect x="123" y="136" width="11" height="34" rx="3.5" fill="#3B82F6" />
+          <rect x="140" y="126" width="11" height="44" rx="3.5" fill="#2563EB" />
+          <rect x="157" y="140" width="11" height="30" rx="3.5" fill="#93C5FD" />
+        </g>
+
+        {/* Right 3D Bullseye Target & Piercing Arrow */}
+        <g filter="url(#soft-sh)" transform="translate(18, 5)">
+          {/* Target Layer 1 (Outer Blue) */}
+          <circle cx="215" cy="135" r="44" fill="url(#target-main)" />
+          {/* Target Layer 2 (White Ring) */}
+          <circle cx="215" cy="135" r="34" fill="#FFFFFF" />
+          {/* Target Layer 3 (Blue Ring) */}
+          <circle cx="215" cy="135" r="24" fill="#3B82F6" />
+          {/* Target Layer 4 (White Ring) */}
+          <circle cx="215" cy="135" r="14" fill="#FFFFFF" />
+          {/* Target Bullseye (Deep Blue) */}
+          <circle cx="215" cy="135" r="7" fill="#1D4ED8" />
+
+          {/* Arrow Shaft (Diagonal 45 deg) */}
+          <path
+            d="M265 75 L221 127"
+            stroke="url(#arrow-grad)"
+            strokeWidth="6"
+            strokeLinecap="round"
+          />
+
+          {/* Arrow Flight Feathers */}
+          <path d="M258 70 L274 72 L268 86 Z" fill="#60A5FA" />
+          <path d="M266 68 L280 80 L266 84 Z" fill="#2563EB" />
+        </g>
+
+        {/* Floating Soft Blue Bokeh Spheres */}
+        <circle cx="50" cy="55" r="9" fill="#93C5FD" opacity="0.75" />
+        <circle cx="225" cy="40" r="11" fill="#60A5FA" opacity="0.65" />
+        <circle cx="265" cy="180" r="7" fill="#3B82F6" opacity="0.5" />
+        <circle cx="75" cy="205" r="6" fill="#93C5FD" opacity="0.6" />
+      </svg>
+    </div>
+  );
+}

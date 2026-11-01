@@ -30,11 +30,14 @@ export interface EffectiveUser {
   id: string;
   email?: string;
   role: 'LEARNER' | 'EVALUATOR' | 'ADMIN' | 'USER';
+  admin_role?: string;
   nickname?: string;
   plan_tier?: 'FREE' | 'PRO' | 'ENTERPRISE';
   credits?: number;
   points?: number;
   is_superadmin?: boolean;
+  is_suspended?: boolean;
+  suspended_reason?: string;
   active_workspace: ActiveWorkspace;
   organizations: UserOrganizationMembership[];
 }
@@ -54,9 +57,16 @@ export async function getEffectiveUser(supabase: SupabaseClient): Promise<Effect
     // 1. Lấy thông tin profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, email, role, nickname, plan_tier, credits, points')
+      .select('id, email, role, nickname, plan_tier, credits, points, is_suspended, suspended_reason, tokens_revoked_at, admin_role')
       .eq('id', user.id)
       .single();
+
+    // Check token revocation
+    if (profile?.tokens_revoked_at && user.last_sign_in_at) {
+      if (new Date(user.last_sign_in_at).getTime() < new Date(profile.tokens_revoked_at).getTime()) {
+        return null;
+      }
+    }
 
     const userEmail = user.email || profile?.email || '';
     const isSuperadmin = isSuperadminEmail(userEmail);
@@ -137,11 +147,14 @@ export async function getEffectiveUser(supabase: SupabaseClient): Promise<Effect
       id: user.id,
       email: userEmail,
       role: (profile?.role as 'LEARNER' | 'EVALUATOR' | 'ADMIN' | 'USER') || 'LEARNER',
+      admin_role: profile?.admin_role || (isSuperadmin ? 'SUPER_ADMIN' : 'LEARNER'),
       nickname: profile?.nickname || user.user_metadata?.nickname || 'Người dùng',
       plan_tier: (profile?.plan_tier as 'FREE' | 'PRO' | 'ENTERPRISE') || 'FREE',
       credits: profile?.credits ?? 0,
       points: profile?.points ?? 0,
       is_superadmin: isSuperadmin,
+      is_suspended: profile?.is_suspended === true,
+      suspended_reason: profile?.suspended_reason || undefined,
       active_workspace,
       organizations,
     };

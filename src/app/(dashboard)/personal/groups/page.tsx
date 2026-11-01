@@ -145,7 +145,8 @@ export default function LearnerGroupsPage() {
 
         (memberRows || []).forEach((m: any) => {
           const c = m?.evaluator_classes;
-          if (c?.id && !combinedMap.has(c.id)) {
+          // Strict context isolation: Personal groups only include classes with NO organization_id
+          if (c?.id && !c.organization_id && !combinedMap.has(c.id)) {
             combinedMap.set(c.id, { ...c, isOwner: false });
           }
         });

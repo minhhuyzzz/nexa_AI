@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Building2,
   Shield,
@@ -49,10 +49,7 @@ export function OrgSettingsView({
   const [activeTab, setActiveTab] = useState<'profile' | 'allowlist' | 'policy' | 'contract'>('profile');
 
   // Allowlist state
-  const [domains, setDomains] = useState<string[]>([
-    'fpt.edu.vn',
-    'fe.edu.vn',
-  ]);
+  const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [enforceAllowlist, setEnforceAllowlist] = useState(true);
 
@@ -67,6 +64,25 @@ export function OrgSettingsView({
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
 
+  useEffect(() => {
+    async function loadPolicies() {
+      try {
+        const res = await fetch(`/api/org/${org.slug}/settings`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.policy) {
+            setDomains(data.policy.allowed_domains || []);
+            setTabSwitchAlert(Boolean(data.policy.anti_cheat_enabled));
+            setAutoSubmitTimeout(Boolean(data.policy.fullscreen_enforced));
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load org policies:', err);
+      }
+    }
+    loadPolicies();
+  }, [org.slug]);
+
   const handleAddDomain = () => {
     const trimmed = newDomain.trim().toLowerCase().replace(/^@/, '');
     if (trimmed && !domains.includes(trimmed)) {
@@ -79,19 +95,50 @@ export function OrgSettingsView({
     setDomains(domains.filter((d) => d !== domainToRemove));
   };
 
-  const handleSavePolicy = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+  const handleSavePolicy = async () => {
+    try {
+      const res = await fetch(`/api/org/${org.slug}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          allowed_domains: domains,
+          anti_cheat_enabled: tabSwitchAlert,
+          fullscreen_enforced: autoSubmitTimeout,
+        }),
+      });
+      if (res.ok) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error('Error saving org policy:', err);
+    }
   };
 
-  const handleSendFeedback = (e: React.FormEvent) => {
+  const handleSendFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!feedbackText.trim()) return;
-    setFeedbackSent(true);
-    setTimeout(() => {
-      setFeedbackSent(false);
-      setFeedbackText('');
-    }, 2500);
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: org.id,
+          category: 'FEATURE_REQUEST',
+          subject: `Góp ý từ tổ chức ${org.name}`,
+          content: feedbackText.trim(),
+        }),
+      });
+      if (res.ok) {
+        setFeedbackSent(true);
+        setTimeout(() => {
+          setFeedbackSent(false);
+          setFeedbackText('');
+        }, 2500);
+      }
+    } catch (err) {
+      console.error('Error sending feedback:', err);
+    }
   };
 
   const hasMaxSeats = typeof org.max_members === 'number' && org.max_members > 0;
@@ -549,7 +596,7 @@ export function OrgSettingsView({
                   </div>
                 ) : (
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                    Hợp đồng Enterprise không giới hạn số lượng thành viên tham gia.
+                    Hợp đồng gói Business tổ chức theo thỏa thuận hạn mức đã phê duyệt.
                   </p>
                 )}
                 <p className="text-[11px] text-slate-500 dark:text-neutral-400">
@@ -569,9 +616,6 @@ export function OrgSettingsView({
                   <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100">
                     {org.quota_assessments ? `${org.quota_assessments} bài` : 'Theo thỏa thuận hợp đồng'}
                   </span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-600 h-full rounded-full w-1/4" />
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                   Áp dụng cho các đợt thi đánh giá năng lực số 5 miền và kỳ thi trực tiếp có giám sát.

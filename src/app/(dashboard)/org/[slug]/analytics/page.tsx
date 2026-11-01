@@ -24,24 +24,42 @@ export default async function OrgAnalyticsPage({
   const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_ANALYTICS');
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch total submissions for this organization's assessments
+  // 1. Fetch assessments and campaigns belonging to this organization
   const { data: orgAssessments } = await adminSupabase
     .from('assessments')
     .select('id')
     .eq('organization_id', org.id);
 
+  const { data: orgCampaigns } = await adminSupabase
+    .from('assessment_campaigns')
+    .select('id')
+    .eq('organization_id', org.id);
+
   const assessmentIds = (orgAssessments || []).map((a) => a.id);
+  const campaignIds = (orgCampaigns || []).map((c) => c.id);
 
   let rawSubmissions: AnalyticsSubmission[] = [];
-  if (assessmentIds.length > 0) {
-    const { data: subs } = await adminSupabase
-      .from('assessment_submissions')
-      .select('id, status, percentage, is_passed, total_score')
-      .in('assessment_id', assessmentIds);
+  const subsMap = new Map<string, any>();
 
-    rawSubmissions = (subs as AnalyticsSubmission[]) || [];
+  // Query submissions by campaign_id
+  if (campaignIds.length > 0) {
+    const { data: cSubs } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id, status, percentage, is_passed, total_score, domain_scores')
+      .in('campaign_id', campaignIds);
+    (cSubs || []).forEach((s) => subsMap.set(s.id, s));
   }
 
+  // Query submissions by assessment_id
+  if (assessmentIds.length > 0) {
+    const { data: aSubs } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id, status, percentage, is_passed, total_score, domain_scores')
+      .in('assessment_id', assessmentIds);
+    (aSubs || []).forEach((s) => subsMap.set(s.id, s));
+  }
+
+  rawSubmissions = Array.from(subsMap.values()) as AnalyticsSubmission[];
   const summary = OrgCompetencyAnalyticsService.aggregateOrgCompetency(rawSubmissions);
 
   return (

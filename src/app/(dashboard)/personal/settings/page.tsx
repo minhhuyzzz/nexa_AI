@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Save,
   Loader2,
+  Target,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -26,6 +27,11 @@ export default function LearnerSettingsPage() {
   const [notifyDeadline24h, setNotifyDeadline24h] = useState(true);
   const [notifyAiAnalysisReady, setNotifyAiAnalysisReady] = useState(true);
 
+  // Learning Goal options
+  const [goalTitle, setGoalTitle] = useState('Nâng cao kỹ năng sử dụng công nghệ trong học tập và công việc');
+  const [goalTrack, setGoalTrack] = useState('Lộ trình cơ bản');
+  const [goalPace, setGoalPace] = useState('Học theo tốc độ riêng');
+
   useEffect(() => {
     async function loadSettings() {
       try {
@@ -38,6 +44,12 @@ export default function LearnerSettingsPage() {
           if (s.notifyNewAssessment !== undefined) setNotifyNewAssessment(s.notifyNewAssessment);
           if (s.notifyDeadline24h !== undefined) setNotifyDeadline24h(s.notifyDeadline24h);
           if (s.notifyAiAnalysisReady !== undefined) setNotifyAiAnalysisReady(s.notifyAiAnalysisReady);
+        }
+        if (user?.user_metadata?.learning_goal) {
+          const g = user.user_metadata.learning_goal;
+          if (g.title) setGoalTitle(g.title);
+          if (g.track) setGoalTrack(g.track);
+          if (g.pace) setGoalPace(g.pace);
         }
       } catch (err) {
         console.error('Error loading settings:', err);
@@ -64,8 +76,15 @@ export default function LearnerSettingsPage() {
         updatedAt: new Date().toISOString(),
       };
 
+      const learning_goal = {
+        title: goalTitle,
+        track: goalTrack,
+        pace: goalPace,
+        updatedAt: new Date().toISOString(),
+      };
+
       await supabase.auth.updateUser({
-        data: { settings },
+        data: { settings, learning_goal },
       });
 
       setIsSaved(true);
@@ -242,6 +261,63 @@ export default function LearnerSettingsPage() {
                 className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
               />
             </label>
+          </div>
+        </div>
+
+        {/* Section 3: Learning Goal & Plan */}
+        <div className="p-5 rounded-md border border-slate-200 bg-white space-y-4 shadow-xs">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Target className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+            <h2 className="text-sm font-bold text-slate-900">
+              3. Mục Tiêu &amp; Kế Hoạch Học Tập
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block font-semibold text-slate-900 mb-1">
+                Mục tiêu định hướng
+              </label>
+              <input
+                type="text"
+                value={goalTitle}
+                onChange={(e) => setGoalTitle(e.target.value)}
+                placeholder="Nhập mục tiêu học tập chính..."
+                className="w-full p-2.5 rounded-md border border-slate-200 bg-slate-50 text-slate-900 text-xs focus:bg-white focus:border-sky-600 focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-slate-900 mb-1">
+                  Hình thức lộ trình
+                </label>
+                <select
+                  value={goalTrack}
+                  onChange={(e) => setGoalTrack(e.target.value)}
+                  className="w-full p-2 rounded-md border border-slate-200 bg-slate-50 text-slate-900 text-xs focus:bg-white focus:border-sky-600 focus:outline-none"
+                >
+                  <option value="Lộ trình cơ bản">Lộ trình cơ bản (5 miền)</option>
+                  <option value="Lộ trình chuyên sâu">Lộ trình chuyên sâu</option>
+                  <option value="Lộ trình ôn thi">Lộ trình ôn thi chứng chỉ</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-900 mb-1">
+                  Nhịp độ học tập
+                </label>
+                <select
+                  value={goalPace}
+                  onChange={(e) => setGoalPace(e.target.value)}
+                  className="w-full p-2 rounded-md border border-slate-200 bg-slate-50 text-slate-900 text-xs focus:bg-white focus:border-sky-600 focus:outline-none"
+                >
+                  <option value="Học theo tốc độ riêng">Học linh hoạt (Tự do)</option>
+                  <option value="15 phút mỗi ngày">15 phút mỗi ngày (Chuỗi chuyên cần)</option>
+                  <option value="30 phút mỗi ngày">30 phút mỗi ngày (Tăng tốc)</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 

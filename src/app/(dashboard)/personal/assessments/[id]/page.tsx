@@ -27,23 +27,48 @@ export default function AssessmentDetailPage() {
   const fetchAssessmentDetail = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch assessment record
+      // 1. Fetch assessment record with strict UUID validation
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId);
-      let query = supabase.from('assessments').select('*');
-      if (isUUID) {
-        query = query.eq('id', testId);
-      } else {
-        query = query.limit(1);
-      }
-
-      const { data: asm, error: asmError } = await query.maybeSingle();
-
-      if (asmError || !asm) {
+      if (!isUUID) {
         setAssessment(null);
+        setLoading(false);
         return;
       }
 
-      // 2. Fetch assessment items with competencies & options
+      const { data: asm, error: asmError } = await supabase
+        .from('assessments')
+        .select('*')
+        .eq('id', testId)
+        .maybeSingle();
+
+      if (asmError || !asm) {
+        setAssessment(null);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Identify caller permission: Only Creator/Assessor/Admin can view answer keys
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      let canViewAnswers = false;
+      if (user) {
+        if (asm.created_by === user.id) {
+          canViewAnswers = true;
+        } else {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('role, admin_role')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (prof?.role === 'ADMIN' || prof?.role === 'EVALUATOR' || prof?.admin_role === 'SUPER_ADMIN') {
+            canViewAnswers = true;
+          }
+        }
+      }
+
+      // 3. Fetch assessment items with competencies & options
       const { data: itemsData, error: itemsError } = await supabase
         .from('assessment_items')
         .select(`
@@ -80,9 +105,15 @@ export default function AssessmentDetailPage() {
       const mappedItems: AssessmentItemDetail[] = (itemsData || []).map((it: any) => {
         const comp = it.competencies;
         const dom = comp?.competency_domains;
-        const sortedOptions = (it.item_options || []).sort(
-          (a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)
-        );
+        const sortedOptions = (it.item_options || [])
+          .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
+          .map((opt: any) => ({
+            id: opt.id,
+            content: opt.content,
+            order_index: opt.order_index,
+            is_correct: canViewAnswers ? Boolean(opt.is_correct) : false,
+            explanation: canViewAnswers ? opt.explanation : undefined,
+          }));
 
         return {
           id: it.id,
@@ -125,7 +156,7 @@ export default function AssessmentDetailPage() {
             title: c.title,
             status: c.status,
             class_name: 'Lớp đánh giá doanh nghiệp',
-            assigned_count: 50,
+            assigned_count: 0,
             submitted_count: 0,
             start_at: c.starts_at,
             end_at: c.ends_at,

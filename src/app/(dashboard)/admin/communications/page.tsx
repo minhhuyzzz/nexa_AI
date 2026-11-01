@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MessageSquare,
   Megaphone,
@@ -8,111 +8,128 @@ import {
   Send,
   CheckCircle2,
   AlertCircle,
-  Star,
-  Users,
-  Building2,
+  RefreshCw,
   Clock,
-  Filter,
-  Check,
   Shield,
-  Eye,
+  Check,
+  Building2,
+  User,
 } from 'lucide-react';
 
-interface FeedbackItem {
+interface FeedbackTicket {
   id: string;
-  source: 'PERSONAL' | 'ORGANIZATION';
-  author: string;
-  rating: number;
+  user_id: string | null;
+  organization_id: string | null;
+  user_email: string;
+  user_name: string;
   category: string;
+  subject: string;
   content: string;
-  date: string;
-  isRead: boolean;
+  status: 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED';
+  admin_notes?: string | null;
+  created_at: string;
 }
-
-const mockFeedbacks: FeedbackItem[] = [
-  {
-    id: 'fb-01',
-    source: 'ORGANIZATION',
-    author: 'admin@fpt.edu.vn (FPT Education)',
-    rating: 5,
-    category: 'Đề thi & Khảo thí',
-    content: 'Đề xuất bổ sung thêm tính năng xuất báo cáo phân bổ 5 miền theo định dạng PDF có dấu mộc điện tử cho hội đồng trường.',
-    date: '2026-10-31 14:20',
-    isRead: false,
-  },
-  {
-    id: 'fb-02',
-    source: 'PERSONAL',
-    author: 'nguyen.van.a@gmail.com',
-    rating: 5,
-    category: 'Giao diện & Trải nghiệm',
-    content: 'Giao diện Light Mode trắng sạch và Dark Mode đen tuyền nhìn rất sang trọng và không bị mỏi mắt. Cảm ơn đội ngũ NEXA.',
-    date: '2026-10-31 11:05',
-    isRead: true,
-  },
-  {
-    id: 'fb-03',
-    source: 'ORGANIZATION',
-    author: 'contact@fecon.com.vn (Tập đoàn Fecon)',
-    rating: 4,
-    category: 'Hợp đồng & B2B',
-    content: 'Mong muốn nâng hạn ngạch gói B2B lên 500 thành viên và tích hợp SSO nội bộ công ty.',
-    date: '2026-10-30 16:45',
-    isRead: false,
-  },
-];
 
 export default function AdminCommunicationsPage() {
   const [activeTab, setActiveTab] = useState<'feedback' | 'broadcast' | 'email'>('feedback');
-  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>(mockFeedbacks);
+  const [feedbacks, setFeedbacks] = useState<FeedbackTicket[]>([]);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState('');
+  const [actionError, setActionError] = useState('');
 
   // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [broadcastType, setBroadcastType] = useState<'INFO' | 'MAINTENANCE' | 'FEATURE'>('INFO');
+  const [broadcastType, setBroadcastType] = useState<'SYSTEM' | 'SECURITY' | 'CAMPAIGN'>('SYSTEM');
   const [broadcastTarget, setBroadcastTarget] = useState<'ALL' | 'PERSONAL' | 'ORG'>('ALL');
   const [broadcasting, setBroadcasting] = useState(false);
 
-  // Email state
+  // Email campaign state
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [emailTarget, setEmailTarget] = useState<'ALL' | 'STUDENTS' | 'TEACHERS'>('ALL');
-  const [emailSending, setEmailSending] = useState(false);
 
-  const handleMarkAsRead = (id: string) => {
-    setFeedbacks((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, isRead: true } : f))
-    );
+  const fetchFeedbacks = async () => {
+    try {
+      setLoadingFeedbacks(true);
+      setFeedbackError(null);
+      const res = await fetch('/api/feedback');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể tải danh sách ý kiến đóng góp');
+      }
+      setFeedbacks(data.tickets || []);
+    } catch (err: unknown) {
+      setFeedbackError(err instanceof Error ? err.message : 'Lỗi tải dữ liệu');
+    } finally {
+      setLoadingFeedbacks(false);
+    }
   };
 
-  const handleSendBroadcast = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchFeedbacks();
+  }, []);
+
+  const handleResolveFeedback = async (id: string) => {
+    try {
+      setActionError('');
+      const res = await fetch('/api/feedback', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId: id, status: 'RESOLVED' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể cập nhật trạng thái');
+      }
+      setFeedbacks((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, status: 'RESOLVED' } : f))
+      );
+      setActionSuccess('Đã đánh dấu đã xử lý ý kiến đóng góp.');
+      setTimeout(() => setActionSuccess(''), 4000);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Lỗi khi cập nhật trạng thái');
+    }
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastTitle.trim() || !broadcastMessage.trim()) return;
 
     setBroadcasting(true);
-    setTimeout(() => {
-      setBroadcasting(false);
-      setActionSuccess(`Đã phát thông báo "${broadcastTitle}" tới toàn bộ người dùng đang đăng nhập.`);
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const res = await fetch('/api/admin/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: broadcastTitle.trim(),
+          message: broadcastMessage.trim(),
+          category: broadcastType,
+          target: broadcastTarget,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Lỗi khi phát thông báo');
+      }
+
+      setActionSuccess(data.message || 'Đã phát thông báo thành công tới người dùng.');
       setBroadcastTitle('');
       setBroadcastMessage('');
-      setTimeout(() => setActionSuccess(''), 4000);
-    }, 800);
+      setTimeout(() => setActionSuccess(''), 5000);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Lỗi máy chủ khi phát thông báo');
+    } finally {
+      setBroadcasting(false);
+    }
   };
 
-  const handleSendEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailSubject.trim() || !emailBody.trim()) return;
-
-    setEmailSending(true);
-    setTimeout(() => {
-      setEmailSending(false);
-      setActionSuccess(`Đã lập lịch gửi email "${emailSubject}" kèm liên kết từ chối nhận tin (Unsubscribe).`);
-      setEmailSubject('');
-      setEmailBody('');
-      setTimeout(() => setActionSuccess(''), 4000);
-    }, 800);
-  };
+  const unreadCount = feedbacks.filter((f) => f.status === 'OPEN').length;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -129,9 +146,19 @@ export default function AdminCommunicationsPage() {
             Trung Tâm Truyền Thông &amp; Hộp Thư Góp Ý
           </h1>
           <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Tiếp nhận đóng góp ý kiến từ người dùng, phát thông báo đẩy tức thời và vận hành truyền thông nền tảng.
+            Tiếp nhận đóng góp ý kiến từ người dùng, phát thông báo lưu cơ sở dữ liệu và vận hành truyền thông nền tảng.
           </p>
         </div>
+
+        {activeTab === 'feedback' && (
+          <button
+            onClick={fetchFeedbacks}
+            className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-1.5 self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 ${loadingFeedbacks ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </button>
+        )}
       </div>
 
       {actionSuccess && (
@@ -141,6 +168,18 @@ export default function AdminCommunicationsPage() {
             <span>{actionSuccess}</span>
           </div>
           <button onClick={() => setActionSuccess('')} className="text-emerald-700 dark:text-emerald-400 hover:underline">
+            Đóng
+          </button>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-md text-rose-900 dark:text-rose-300 text-xs font-semibold flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+          <button onClick={() => setActionError('')} className="text-rose-700 dark:text-rose-400 hover:underline">
             Đóng
           </button>
         </div>
@@ -157,7 +196,7 @@ export default function AdminCommunicationsPage() {
           }`}
         >
           <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
-          <span>Hộp thư góp ý ({feedbacks.filter((f) => !f.isRead).length} chưa đọc)</span>
+          <span>Hộp thư góp ý ({unreadCount} mở)</span>
         </button>
 
         <button
@@ -169,7 +208,7 @@ export default function AdminCommunicationsPage() {
           }`}
         >
           <Megaphone className="w-4 h-4" strokeWidth={1.75} />
-          <span>Thông báo đẩy In-app (Broadcast)</span>
+          <span>Thông báo lưu DB (Broadcast)</span>
         </button>
 
         <button
@@ -181,71 +220,92 @@ export default function AdminCommunicationsPage() {
           }`}
         >
           <Mail className="w-4 h-4" strokeWidth={1.75} />
-          <span>Chiến dịch Email &amp; Bản tin</span>
+          <span>Chiến dịch Email</span>
         </button>
       </div>
 
       {/* TAB 1: FEEDBACK INBOX */}
       {activeTab === 'feedback' && (
         <div className="space-y-4">
+          {feedbackError && (
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-md text-rose-800 dark:text-rose-300 text-xs">
+              {feedbackError}
+            </div>
+          )}
+
           <div className="divide-y divide-slate-100 dark:divide-zinc-850 border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111114] overflow-hidden">
-            {feedbacks.length === 0 ? (
+            {loadingFeedbacks ? (
               <div className="p-8 text-center text-slate-400 dark:text-neutral-500 text-xs">
-                Chưa có ý kiến đóng góp nào từ người dùng.
+                Đang tải dữ liệu ý kiến đóng góp...
+              </div>
+            ) : feedbacks.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 dark:text-neutral-500 text-xs">
+                Chưa có ý kiến đóng góp nào từ người dùng trong cơ sở dữ liệu.
               </div>
             ) : (
               feedbacks.map((item) => (
                 <div
                   key={item.id}
                   className={`p-5 transition-colors ${
-                    !item.isRead ? 'bg-blue-50/20 dark:bg-blue-950/10' : ''
+                    item.status === 'OPEN' ? 'bg-blue-50/20 dark:bg-blue-950/10' : ''
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                          item.source === 'ORGANIZATION'
+                          item.organization_id
                             ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
                             : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'
                         }`}
                       >
-                        {item.source === 'ORGANIZATION' ? 'DOANH NGHIỆP / TRƯỜNG HỌC' : 'CÁ NHÂN'}
+                        {item.organization_id ? 'TỔ CHỨC BUSINESS' : 'CÁ NHÂN'}
                       </span>
                       <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
-                        {item.author}
+                        {item.user_name} ({item.user_email})
                       </span>
-                      <span className="text-[11px] text-slate-400 dark:text-neutral-500">&bull; {item.category}</span>
+                      <span className="text-[11px] text-slate-400 dark:text-neutral-500">
+                        &bull; {item.category}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-0.5 text-amber-500">
-                        {Array.from({ length: item.rating }).map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                        ))}
-                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          item.status === 'OPEN'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                        }`}
+                      >
+                        {item.status === 'OPEN' ? 'MỚI TIẾP NHẬN' : 'ĐÃ XỬ LÝ'}
+                      </span>
                       <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
-                        {item.date}
+                        {new Date(item.created_at).toLocaleString('vi-VN')}
                       </span>
                     </div>
                   </div>
 
-                  <p className="text-xs text-neutral-800 dark:text-zinc-200 leading-relaxed pl-1 mb-3">
+                  <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+                    {item.subject}
+                  </p>
+                  <p className="text-xs text-neutral-800 dark:text-zinc-200 leading-relaxed pl-1 mb-3 whitespace-pre-wrap">
                     {item.content}
                   </p>
 
                   <div className="flex justify-end gap-2 text-xs">
-                    {!item.isRead && (
+                    {item.status === 'OPEN' && (
                       <button
-                        onClick={() => handleMarkAsRead(item.id)}
+                        onClick={() => handleResolveFeedback(item.id)}
                         className="px-2.5 py-1 rounded border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850 text-[11px] inline-flex items-center gap-1"
                       >
                         <Check className="w-3 h-3 text-emerald-600" />
-                        <span>Đánh dấu đã đọc</span>
+                        <span>Đánh dấu đã giải quyết</span>
                       </button>
                     )}
                     <a
-                      href={`mailto:${item.author.split(' ')[0]}?subject=Phan%20hoi%20dong%20gop%20y%20kien%20NEXA`}
+                      href={`mailto:${item.user_email}?subject=Phan%20hoi%20gop%20y%20NEXA%20AI:%20${encodeURIComponent(
+                        item.subject
+                      )}`}
                       className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold inline-flex items-center gap-1"
                     >
                       <Mail className="w-3 h-3" />
@@ -265,10 +325,10 @@ export default function AdminCommunicationsPage() {
           <div className="pb-3 border-b border-slate-100 dark:border-zinc-850">
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Megaphone className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-              <span>Phát Thông Báo Đẩy Toàn Nền Tảng (In-app Broadcast)</span>
+              <span>Phát Thông Báo Toàn Nền Tảng Lưu Database</span>
             </h2>
             <p className="text-slate-500 dark:text-neutral-400 text-[11px] mt-0.5">
-              Thông báo sẽ lập tức hiển thị ở thanh thông báo và chuông thông báo của toàn bộ người dùng đang trực tuyến.
+              Thông báo được ghi trực tiếp vào bảng <code>user_notifications</code> của từng người dùng, đồng bộ ngay lập tức trên Chuông Thông Báo.
             </p>
           </div>
 
@@ -283,9 +343,9 @@ export default function AdminCommunicationsPage() {
                   onChange={(e) => setBroadcastType(e.target.value as any)}
                   className="w-full p-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded text-xs text-neutral-900 dark:text-neutral-100"
                 >
-                  <option value="INFO">Tin tức &amp; Cập nhật (INFO)</option>
-                  <option value="FEATURE">Tính năng mới (NEW FEATURE)</option>
-                  <option value="MAINTENANCE">Bảo trì hệ thống (MAINTENANCE)</option>
+                  <option value="SYSTEM">Hệ thống &amp; Tính năng mới (SYSTEM)</option>
+                  <option value="SECURITY">Cảnh báo bảo mật (SECURITY)</option>
+                  <option value="CAMPAIGN">Đợt đánh giá &amp; Khảo thí (CAMPAIGN)</option>
                 </select>
               </div>
 
@@ -298,9 +358,9 @@ export default function AdminCommunicationsPage() {
                   onChange={(e) => setBroadcastTarget(e.target.value as any)}
                   className="w-full p-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded text-xs text-neutral-900 dark:text-neutral-100"
                 >
-                  <option value="ALL">Toàn bộ nền tảng (Personal + Business)</option>
-                  <option value="PERSONAL">Chỉ người dùng Cá nhân (Personal)</option>
-                  <option value="ORG">Chỉ Tổ chức Business &amp; Trường học</option>
+                  <option value="ALL">Toàn bộ tài khoản người dùng (ALL)</option>
+                  <option value="PERSONAL">Người dùng cá nhân (PERSONAL)</option>
+                  <option value="ORG">Thành viên tổ chức Business (ORG)</option>
                 </select>
               </div>
             </div>
@@ -356,19 +416,30 @@ export default function AdminCommunicationsPage() {
               <span>Gửi Bản Tin &amp; Thông Báo Email</span>
             </h2>
             <p className="text-slate-500 dark:text-neutral-400 text-[11px] mt-0.5">
-              Email gửi qua cổng Resend API với tùy chọn tự động chèn liên kết từ chối nhận tin (Unsubscribe) theo chuẩn Nghị định 13/2023.
+              Hệ thống gửi thư hàng loạt yêu cầu cấu hình máy chủ SMTP / Email Marketing Service để bảo vệ uy tín tên miền.
             </p>
           </div>
 
-          <form onSubmit={handleSendEmail} className="space-y-4">
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md space-y-2">
+            <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>Chức năng gửi Email hàng loạt đang tích hợp Server Queue</span>
+            </div>
+            <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+              Các email giao dịch tự động (xác nhận đăng ký, mời tổ chức, đặt lại mật khẩu) hiện đã hoạt động thông qua cấu hình SMTP Supabase. Tính năng gửi bản tin hàng loạt (Marketing Broadcast) được tạm khóa gửi thử để tránh phát sinh chi phí hoặc rủi ro bộ lọc thư rác (spam).
+            </p>
+          </div>
+
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-4 opacity-75">
             <div>
               <label className="font-semibold text-neutral-800 dark:text-zinc-200 block mb-1">
                 Nhóm đối tượng nhận email:
               </label>
               <select
                 value={emailTarget}
+                disabled
                 onChange={(e) => setEmailTarget(e.target.value as any)}
-                className="w-full p-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded text-xs text-neutral-900 dark:text-neutral-100"
+                className="w-full p-2 bg-slate-50 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-800 rounded text-xs text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
               >
                 <option value="ALL">Toàn bộ người dùng đã xác thực email</option>
                 <option value="STUDENTS">Chỉ học viên (Learners)</option>
@@ -382,11 +453,11 @@ export default function AdminCommunicationsPage() {
               </label>
               <input
                 type="text"
-                required
+                disabled
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
                 placeholder="ví dụ: [NEXA AI] Cập nhật kết quả đánh giá năng lực số đợt tháng 10"
-                className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-850 text-neutral-600 dark:text-neutral-400 cursor-not-allowed placeholder-slate-400"
               />
             </div>
 
@@ -395,33 +466,23 @@ export default function AdminCommunicationsPage() {
                 Nội dung thư:
               </label>
               <textarea
-                rows={5}
-                required
+                rows={4}
+                disabled
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
-                placeholder="Nhập nội dung email..."
-                className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder-slate-400 focus:outline-none focus:border-blue-600 font-sans"
+                placeholder="Soạn thảo nội dung bản tin..."
+                className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-850 text-neutral-600 dark:text-neutral-400 cursor-not-allowed placeholder-slate-400 font-sans"
               />
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded text-[11px] text-slate-500 dark:text-neutral-400 space-y-1">
-              <div className="flex items-center gap-1.5 text-neutral-800 dark:text-zinc-200 font-semibold">
-                <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>Quy chuẩn gửi thư an toàn:</span>
-              </div>
-              <p>
-                Mọi email đều tự động đính kèm liên kết hủy đăng ký tại chân trang. Email không chứa nội dung spam hoặc quảng cáo ngoài nền tảng.
-              </p>
             </div>
 
             <div className="flex justify-end pt-2">
               <button
-                type="submit"
-                disabled={emailSending}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                type="button"
+                disabled
+                className="px-4 py-2 bg-slate-300 dark:bg-zinc-700 text-slate-500 dark:text-neutral-400 rounded font-semibold text-xs inline-flex items-center gap-1.5 cursor-not-allowed"
               >
                 <Send className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>{emailSending ? 'Đang lên lịch...' : 'Gửi email thông báo'}</span>
+                <span>Đang phát triển hàng đợi gửi</span>
               </button>
             </div>
           </form>

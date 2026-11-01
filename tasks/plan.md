@@ -1,90 +1,140 @@
-# Kế Hoạch Triển Khai Kỹ Thuật (Implementation Plan): NEXA vNext
+# KẾ HOẠCH TRIỂN KHAI KHẮC PHỤC 3 DASHBOARD (BẢN REVIEW `ce74dea`)
+## IMPLEMENTATION PLAN: TRUE RUNTIME FIDELITY & SECURITY REMEDIATION
 
-> **Căn cứ đặc tả:** [`docs/NEXA_SPEC_3_DASHBOARD_VNEXT.md`](file:///c:/nexa/docs/NEXA_SPEC_3_DASHBOARD_VNEXT.md)  
-> **Căn cứ tài liệu phân tích:** [`NEXA_AI_DEEP_REVIEW_3_DASHBOARD_GIAI_THICH_SO_DO_2026-10-31_VI.md`](file:///c:/Users/CPS/Downloads/NEXA_AI_DEEP_REVIEW_3_DASHBOARD_GIAI_THICH_SO_DO_2026-10-31_VI.md)  
-> **Quy chuẩn lập trình & giao diện:** [`AGENTS.md`](file:///c:/nexa/AGENTS.md)  
-> **Phương pháp:** Vertical Slicing, Spec-Driven Development, Test-Driven Development, Phân công nhiệm vụ theo Skills & Agents chuyên trách.
-
----
-
-## 1. Tổng Quan Kiến Trúc & Quyết Định Then Chốt (ADRs)
-
-### ADR-01: One Identity — Multi-Workspace Switcher Trong Menu Avatar
-- **Quyết định:** Chuyển toàn bộ danh sách chọn không gian làm việc (Personal, Org A, Org B, Platform Admin) vào dropdown Avatar của người dùng. Loại bỏ dropdown chọn workspace trên topbar để tinh gọn diện tích.
-- **Lý do:** Người dùng chỉ có 1 tài khoản đăng nhập duy nhất. Đổi workspace là đổi ngữ cảnh (Context), không đổi tài khoản.
-
-### ADR-02: Chốt 3 Gói Thương Mại & Cấp Org Business Fail-closed
-- **Quyết định:** Nền tảng chỉ có 3 gói: `Free` (Cá nhân tự do), `Pro` (Cá nhân nâng cao), `Business` (Tổ chức theo hợp đồng). Cấp Org Business bắt buộc qua quy trình tư vấn và phê duyệt hợp đồng bởi Platform Admin. Hỗ trợ kích hoạt qua email token cho cả người chưa có tài khoản.
-- **Lý do:** Chống việc người dùng tự mua gói cá nhân để kích hoạt Org giả, chống thất thoát doanh thu B2B.
-
-### ADR-03: Tách Biệt 4 Lớp Khảo Thí & Trang Detail Bộ Đề 5 Tab
-- **Quyết định:**
-  - *Question Bank Item:* Câu hỏi độc lập có taxonomy tag 21 kỹ năng, ảnh minh họa, rubric 3 tầng.
-  - *Assessment Content:* Bộ đề chỉ chứa câu hỏi, rubric, điểm tối đa, và thời lượng làm bài ước tính. Bãi bỏ ngày giờ mở/đóng đợt thi trong editor. Tạo trang Detail 5 tab (`Tổng quan`, `Nội dung`, `5 miền & Rubric`, `Lịch sử phiên bản`, `Lần triển khai`).
-  - *Campaign / Live Room:* Nơi thiết lập lịch mở/đóng, đối tượng lớp thi, mã PIN/QR, thời lượng mỗi lượt thi và giám sát gian lận.
-- **Lý do:** Tái sử dụng câu hỏi tối đa; khóa bất biến phiên bản đề đã có bài thi; phân định rạch ròi giữa nội dung và khâu tổ chức thi.
-
-### ADR-04: Phân Định Hồ Sơ Năng Lực (Profile) vs Lộ Trình Học (Learning Path)
-- **Quyết định:** Hồ sơ năng lực gộp vào phần Hồ sơ cá nhân (Avatar -> Profile) thể hiện điểm 5 miền có bằng chứng (`score: null` nếu chưa có dữ liệu, không vẽ 0% giả). Lộ trình phát triển (`/personal/learning-path`) là kế hoạch hành động với mục tiêu, checklist học liệu đã duyệt, cột mốc đánh giá lại và AI cố vấn on-demand.
-- **Lý do:** Tránh lặp lại 2 trang cùng vẽ 1 cái biểu đồ Radar vô nghĩa; tập trung vào hành động cải thiện năng lực thực chất.
-
-### ADR-05: Nâng Cấp Org BI Dashboard & Module Hợp Đồng Hạn Mức
-- **Quyết định:** Báo cáo năng lực Org chuyển thành BI Dashboard (heatmap lớp x miền, phân phối điểm, so sánh cohort). Thay thế module AI-Quota thành "Hợp đồng & Hạn mức (Contract & Usage)" minh bạch số ghế, số đợt thi, AI credits và nhật ký sử dụng.
-
-### ADR-06: Platform Admin Control Plane — Hàng Đợi Công Việc & Đối Soát Tài Chính
-- **Quyết định:** Tổng quan Admin ưu tiên hàng đầu các Action Queues (Business Inquiries, thanh toán ngoại lệ, đề chờ duyệt, sự cố AI). Tách riêng module BI. Bổ sung chức năng tạm khóa tài khoản (Suspend User) và buộc đăng xuất. Bàn thẩm định nội dung 2 cột. Trung tâm truyền thông in-app broadcast.
-
-### ADR-07: Anti-AI-Slop UX — Hạn Chế Modal & Ảnh Bìa Vuông 1:1
-- **Quyết định:** Cấm dùng modal cho các tác vụ lớn (>3 trường). Soạn đề, tạo chiến dịch, chấm bài, đối soát dùng Full-page, Drawer hoặc Split-view. Thẻ bài thi chuẩn hóa ảnh bìa vuông 1:1 (`aspect-square`).
+> **Căn cứ đặc tả:** [`docs/NEXA_SPEC_REMEDIATION_VNEXT_ce74dea.md`](file:///c:/nexa/docs/NEXA_SPEC_REMEDIATION_VNEXT_ce74dea.md)  
+> **Căn cứ bản review:** [`NEXA_REVIEW_2026-10-31_ce74dea.md`](file:///c:/Users/CPS/Downloads/NEXA_REVIEW_2026-10-31_ce74dea.md)  
+> **Quy chuẩn bắt buộc:** [`AGENTS.md`](file:///c:/nexa/AGENTS.md) và [`planning-and-task-breakdown`](file:///c:/nexa/.agents/skills/planning-and-task-breakdown/SKILL.md)  
+> **Nguyên tắc cốt lõi:** Vertical Slicing, Test-Driven Development, loại bỏ triệt để mọi hành vi mock, timeout giả lập thành công, hardcode số liệu và lệch schema.
 
 ---
 
-## 2. Bảng Phân Công Nhiệm Vụ, Kỹ Năng & Agent Chuyên Trách
-
-| Giai đoạn | Trọng tâm phân hệ | Kỹ năng chỉ định (Skills) | Subagent / Vai trò chuyên trách |
-|:---|:---|:---|:---|
-| **Phase 1** | Identity, Avatar Workspace & Business Provisioning | `api-and-interface-design`<br>`security-and-hardening` | `security-auditor`<br>(Kiểm tra Tenant Isolation & Token Auth) |
-| **Phase 2** | Question Bank Reusable & Studio 5-Tab Detail | `impeccable`<br>`frontend-ui-engineering` | `code-reviewer`<br>(Kiểm tra Rubric & Version Immutability) |
-| **Phase 3** | Delivery: Campaign Wizard & Live Room 5 Phân Hệ | `frontend-ui-engineering`<br>`api-and-interface-design` | `test-engineer`<br>(Kiểm tra Attempt Time Limits & Realtime Room) |
-| **Phase 4** | Profile 5 Miền, Lộ Trình Hành Động & Nhóm Cá Nhân | `impeccable`<br>`frontend-ui-engineering` | `web-performance-auditor`<br>(Tối ưu render & Chart Performance) |
-| **Phase 5** | Org Business: RBAC 5 Roles, BI & Contract Usage | `security-and-hardening`<br>`frontend-ui-engineering` | `security-auditor`<br>(Kiểm tra RLS & Member Data Protection) |
-| **Phase 6** | Platform Control Plane: Queues, BI, Khóa User & Moderation | `api-and-interface-design`<br>`security-and-hardening` | `code-reviewer`<br>(Kiểm tra Privilege Escalation & Audit Log) |
-| **Phase 7** | Master Verification & Knowledge Graph Sync | `test-driven-development`<br>`graphify` | `test-engineer`<br>(Chạy toàn bộ 30+ test suites & build 86+ routes) |
-
----
-
-## 3. Lộ Trình 7 Giai Đoạn Triển Khai (Phased Roadmap)
+## 1. Bản Đồ Phụ Thuộc (Dependency Graph)
 
 ```
-GIAI ĐOẠN 1: Identity, Avatar Workspace Switcher & 3-Plan Business Onboarding
-     │
-     ▼
-GIAI ĐOẠN 2: Ngân Hàng Câu Hỏi Tái Sử Dụng & Assessment Studio 5-Tab Detail
-     │
-     ▼
-GIAI ĐOẠN 3: Triển Khai Thi — Campaign Wizard & Phòng Thi Trực Tiếp 5 Phân Hệ
-     │
-     ▼
-GIAI ĐOẠN 4: Hồ Sơ Năng Lực Trong Profile, Lộ Trình Hành Động & Lớp Nhóm Cá Nhân
-     │
-     ▼
-GIAI ĐOẠN 5: Tổ Chức Business — RBAC 5 Vai Trò, Báo Cáo BI & Quản Trị Hợp Đồng
-     │
-     ▼
-GIAI ĐOẠN 6: Platform Admin Control Plane & Trung Tâm Vận Hành
-     │
-     ▼
-GIAI ĐOẠN 7: Master Verification Suite & Knowledge Graph Sync
+[Migration 34: DB Foundation]
+       │
+       ├─── Module 1: auth-security-rbac (NEXA-01, 02, 03)
+       │         │
+       │         ├─── Module 2: item-bank-schema (NEXA-07, 08, 13, 17)
+       │         │         │
+       │         ├─── Module 3: assessment-integrity (NEXA-12, 18)
+       │         │         │
+       │         └─── Module 4: campaign-and-analytics (NEXA-09, 10, 11, 20)
+       │
+       └─── Module 5: persisted-comms-settings (NEXA-04, 05, 06, 14, 15, 16, 19)
 ```
 
 ---
 
-## 4. Quản Trị Rủi Ro & Biện Pháp Kiểm Soát (Risks & Mitigations)
+## 2. Kế Hoạch Triển Khai Theo Từng Giai Đoạn (Vertical Slices)
 
-| Rủi ro kỹ thuật | Mức độ | Biện pháp kiểm soát & Giải pháp kỹ thuật |
-|:---|:---:|:---|
-| Rò rỉ dữ liệu chéo giữa các Org khi chuyển workspace trong Avatar | **Cao (P0)** | Mọi truy vấn DB phải ép buộc điều kiện `organization_id`. Xóa bỏ local cache/state cũ khi đổi workspace scope. |
-| Người dùng sửa nội dung đề thi đã có học viên nộp bài | **Cao (P0)** | Khóa bất biến phiên bản (Immutable Versioning): Đề đã có submission thì `is_locked = true`, bắt buộc nhân bản thành version mới khi sửa. |
-| Quá tải số lượng modal làm gián đoạn trải nghiệm người dùng | **Trung bình (P1)** | Quy định cứng: Chỉ dùng modal cho xác nhận ngắn (<3 trường). Toàn bộ tác vụ nghiệp vụ chuyển sang Full-page hoặc Side Drawer. |
-| Bị lỗi phân quyền khi khách hàng chưa có tài khoản nhận lời mời Org | **Cao (P0)** | Sinh token kích hoạt có ký danh tính (HMAC/UUID) gắn cứng với email hợp đồng, kiểm tra hiệu lực trước khi tạo `ORG_OWNER`. |
-| Biểu đồ BI vẽ 0% gây hiểu nhầm người dùng yếu năng lực | **Trung bình (P1)** | Chuẩn hóa `score: null` hiển thị nhãn "Chưa có dữ liệu đánh giá", không vẽ 0% giả. |
+### Phase 1: Nền tảng Bảo mật, Kiểm soát Phiên & RBAC Admin (`auth-security-rbac`)
+*Mục tiêu: Đảm bảo "Buộc đăng xuất" và "Khóa tài khoản" có hiệu lực thực tế ngay lập tức trên server; phân quyền Admin theo hành động cụ thể.*
+
+* **Task 1.1: Migration 34 — Cột kiểm soát phiên & Quyền Admin nội bộ**
+  * Thêm `tokens_revoked_at TIMESTAMPTZ` vào bảng `profiles`.
+  * Chuẩn hóa bảng/enum `admin_roles` và mapping năng lực (`SUPER_ADMIN`, `OPERATIONS_ADMIN`, `CONTENT_ADMIN`, `FINANCE_ADMIN`, `AI_OPERATOR`).
+* **Task 1.2: Thu hồi phiên thực sự (Revoke Session Real Implementation) — `NEXA-01`**
+  * Sửa API `POST /api/admin/users`: Khi Admin chọn `REVOKE_SESSION`, gọi `supabase.auth.admin.signOut(userId, 'global')` và cập nhật `tokens_revoked_at = NOW()`.
+  * Cập nhật `getEffectiveUser.ts` và API guards: Nếu phiên phát hành trước `tokens_revoked_at`, từ chối 401.
+* **Task 1.3: Cưỡng chế chặn tài khoản bị khóa (`is_suspended`) — `NEXA-02`**
+  * Trong `src/middleware.ts`: Đọc `profile.is_suspended`. Nếu `true`, chuyển hướng về `/account-suspended`.
+  * Trong `src/lib/auth/getEffectiveUser.ts`: Ném lỗi `403 Account Suspended`, chặn mọi API request.
+  * Thêm màn hình thông báo thân thiện `/account-suspended` (hướng dẫn mở khóa, liên hệ hỗ trợ).
+* **Task 1.4: Phân quyền Admin nội bộ theo Action (Granular Admin RBAC) — `NEXA-03`**
+  * Xây dựng helper `requirePlatformPermission(permission)` kiểm tra vai trò cụ thể.
+  * Bảo vệ API nhạy cảm: `FINANCE_ADMIN` mới được đối soát, `CONTENT_ADMIN` mới được duyệt đề, `AI_OPERATOR` chỉ xem giám sát AI.
+
+---
+
+### Phase 2: Toàn Vẹn Ngân Hàng Câu Hỏi & Phân Quyền Creator (`item-bank-schema`)
+*Mục tiêu: Thống nhất Canonical Schema, sửa lỗi lệch bảng options, cấp quyền cho người dùng cá nhân (Personal Creator).*
+
+* **Task 2.1: Migration 34 — Chuẩn hóa bảng `question_bank_items`**
+  * Thêm cột `rubric_definition JSONB`, `owner_user_id UUID REFERENCES auth.users(id)`, `scope VARCHAR(20) DEFAULT 'PERSONAL'`.
+  * Chuẩn hóa enum độ khó 4 bậc DigComp (`FOUNDATION`, `INTERMEDIATE`, `ADVANCED`, `HIGHLY_SPECIALIZED`).
+* **Task 2.2: Chính sách RLS cho Creator Cá Nhân — `NEXA-08`**
+  * Cho phép người dùng với vai trò `LEARNER` (gói Free/Pro) tạo, sửa và quản lý câu hỏi do chính mình sở hữu (`owner_user_id = auth.uid()`).
+* **Task 2.3: `QuestionBankWriteService` dùng chung — `NEXA-07`, `NEXA-13`, `NEXA-17`**
+  * Tạo service xử lý Transaction nguyên tử: ghi câu hỏi vào `question_bank_items` và ghi danh sách đáp án con vào bảng `question_bank_options`.
+  * Ràng buộc bắt buộc gắn 1 trong 5 miền năng lực (`domain_id IN ('D1','D2','D3','D4','D5')`).
+* **Task 2.4: Nâng cấp Editor & Importer câu hỏi**
+  * Refactor `src/app/(dashboard)/personal/item-bank/[id]/page.tsx` sử dụng `QuestionBankWriteService`.
+  * Refactor `ItemBankImporter.tsx` sử dụng `QuestionBankWriteService`, báo cáo số dòng thành công/lỗi chi tiết, loại bỏ schema lệch.
+
+---
+
+### Phase 3: Bảo Mật & Toàn Vẹn Bộ Đề Khảo Thí (`assessment-integrity`)
+*Mục tiêu: Chặn lộ đáp án trắc nghiệm ở client, chuẩn hóa 404 cho UUID sai, quản lý phiên bản đề thi snapshot bất biến.*
+
+* **Task 3.1: Route Detail Bộ Đề — UUID Validation & 404 — `NEXA-12`**
+  * Kiểm tra tính hợp lệ của `params.id` bằng Zod/Regex UUID.
+  * Nếu không phải UUID hợp lệ $\rightarrow$ trả về `notFound()` (HTTP 404), bãi bỏ triệt để lệnh `.limit(1)` lấy đề ngẫu nhiên.
+* **Task 3.2: Sanitized DTO — Không truyền `is_correct` cho thí sinh — `NEXA-12`**
+  * Tạo API Server trả về DTO đã được lọc: Đối với người làm bài/preview, loại bỏ hoàn toàn trường `is_correct` và `explanation`.
+  * Chỉ trả về đáp án đúng khi người yêu cầu là Tác giả (`created_by = auth.uid()`) hoặc Giảng viên/Admin có thẩm quyền.
+* **Task 3.3: Quản lý Phiên bản Đề thi Bất biến (Immutable Snapshot) — `NEXA-18`**
+  * Khi xuất bản đề thi (`PUBLISHED`), lưu snapshot toàn bộ câu hỏi và đáp án vào trường `snapshot_data JSONB`.
+  * Đợt thi/Campaign chỉ đọc từ snapshot này, ngăn việc câu hỏi gốc bị sửa làm sai lệch bài thi đang diễn ra.
+
+---
+
+### Phase 4: Cách Ly Tenant & Báo Cáo 5 Miền Chuẩn Xác (`campaign-and-analytics`)
+*Mục tiêu: Tách biệt Lớp Personal và Org, truy vấn kết quả Campaign chuẩn theo đợt, tổng hợp 5 miền từ rubric evidence.*
+
+* **Task 4.1: Cách ly Lớp học Cá nhân vs Tổ chức — `NEXA-09`**
+  * Tại `/personal/groups`: Lọc truy vấn nghiêm ngặt `organization_id IS NULL`.
+  * Lớp của tổ chức chỉ xuất hiện tại `/org/[slug]/classes`, nếu có link chuyển phải ghi rõ nhãn Org.
+* **Task 4.2: Truy vấn Campaign Detail theo đúng Đợt thi — `NEXA-10`, `NEXA-20`**
+  * Trong `/org/[slug]/campaigns/[id]`: Truy vấn submissions bắt buộc lọc theo `.eq('campaign_id', campaign.id).eq('organization_id', org.id)`.
+  * Tính `totalAssigned` từ sĩ số thực của các lớp tham gia; nếu lớp trống $\rightarrow$ hiển thị `0`, xóa bỏ số `50` giả.
+* **Task 4.3: Tích hợp `domain_scores` vào Org Analytics — `NEXA-11`**
+  * Cập nhật API/Page `/org/[slug]/analytics`: Lấy `domain_scores` từ các bài thi đã được chấm/duyệt.
+  * Biểu đồ chỉ vẽ trên miền có dữ liệu thật; miền chưa có bằng chứng hiển thị `Chưa có dữ liệu` (không vẽ 0% giả).
+
+---
+
+### Phase 5: Lưu Trữ Bền Vững & Chống Mock Toàn Hệ Thống (`persisted-comms-settings`)
+*Mục tiêu: Loại bỏ hoàn toàn `setTimeout` giả lập, lưu chuông thông báo, chính sách tổ chức, góp ý và xuất CSV phía server.*
+
+* **Task 5.1: Chuông Thông báo Lưu Database (Persistent Notifications) — `NEXA-06`**
+  * Tạo bảng `user_notifications` trong Migration 34.
+  * Viết API `/api/notifications` (lấy danh sách, đánh dấu đã đọc).
+  * Refactor `NotificationBell.tsx` đọc/ghi qua API, loại bỏ hoàn toàn `localStorage`.
+* **Task 5.2: Cài đặt Tổ chức Lưu Database (Org Policies) — `NEXA-05`**
+  * Tạo bảng `organization_policies` (lưu allowlist domain, thời lượng, chính sách thi).
+  * Viết API `GET` & `PATCH` `/api/org/[slug]/settings`.
+  * Refactor `OrgSettingsView.tsx`: Xóa hardcode FPT domains, lưu thật vào DB, xóa cờ `isSaved` giả.
+* **Task 5.3: Hòm thư Góp ý Thật (Feedback Tickets) — `NEXA-19`**
+  * Tạo bảng `feedback_tickets` lưu góp ý từ Personal & Organization.
+  * Viết API `POST /api/feedback` và kết nối trực tiếp vào Admin Inbox thật (xóa mock feedbacks).
+* **Task 5.4: Xử lý Trung tâm Truyền thông Admin (Communications) — `NEXA-04`**
+  * Với Broadcast: Lưu thông báo hệ thống vào DB để gửi tới chuông thông báo người dùng.
+  * Với Email hàng loạt: Gắn nhãn *"Tính năng đang phát triển"* và vô hiệu hóa nút gửi nếu chưa có queue gửi thật (bỏ `setTimeout` báo thành công giả).
+* **Task 5.5: Nhận Lời Mời Tổ Chức Nguyên Tử (Atomic Org Invite) — `NEXA-14`**
+  * Tạo hàm RPC `accept_org_invitation_atomic` đảm bảo kiểm tra token, trừ ghế, kích hoạt membership và cập nhật trạng thái trong 1 transaction duy nhất.
+* **Task 5.6: Xuất CSV Tài Chính An Toàn Phía Server — `NEXA-16`**
+  * Viết API `/api/admin/transactions/export`: Xuất dữ liệu phía server theo khoảng thời gian, trung hòa ký tự CSV Injection (`=, +, -, @`), thêm UTF-8 BOM cho Excel tiếng Việt.
+
+---
+
+### Phase 6: Kiểm Thử Toàn Diện & Đóng Gói Hoàn Thiện
+* **Task 6.1: Bộ Test Chấp Nhận 19 Kịch Bản**
+  * Viết các bài test tự động cho toàn bộ 19 tiêu chí chấp nhận trong Spec (`AUTH-SUSP-01`, `AUTH-REV-01`, `RBAC-ADMIN-01`, `QB-01`, `CAMP-01`, `COMP-01`, v.v.).
+* **Task 6.2: Kiểm tra Quy chuẩn & Build**
+  * Chạy `npm run typecheck` (0 lỗi) — **ĐÃ HOÀN THÀNH**.
+  * Chạy `npm run test` (34 files, 163/163 tests pass) — **ĐÃ HOÀN THÀNH**.
+  * Chạy `npm run build` (Biên dịch thành công 90/90 routes) — **ĐÃ HOÀN THÀNH**.
+
+---
+
+## 3. Kết Quả Nghiệm Thu (Verification Summary)
+
+* **Trạng thái:** Toàn bộ 6 Phase và 20 vấn đề (`NEXA-01` $\rightarrow$ `NEXA-20`) đã được khắc phục hoàn chỉnh.
+* **TypeScript Typecheck:** 0 lỗi (`npm run typecheck`).
+* **Unit & Integration Tests:** 34 test files, 163/163 tests passed (100%).
+* **Production Build:** 90/90 static and dynamic routes compiled successfully (`npm run build`).
+* **Tuân thủ quy chuẩn `AGENTS.md`:**
+  - Không có dữ liệu giả lập, số liệu ảo (50, w-1/4), hay `setTimeout` báo thành công giả.
+  - Áp dụng chuẩn bảo mật RLS, server authorization guards và khử CSV formula injection.
+  - Chuẩn màu Cobalt `#2563EB`, Light trắng `#FFFFFF`, Dark đen `#000000`.

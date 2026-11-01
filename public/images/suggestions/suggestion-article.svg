@@ -1,0 +1,47 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-art" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="book-grad" x1="30" y1="45" x2="70" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FFFFFF" />
+      <stop offset="100%" stopColor="#E2E8F0" />
+    </linearGradient>
+    <linearGradient id="skin-art" x1="40" y1="20" x2="60" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FED7AA" />
+      <stop offset="100%" stopColor="#FDBA74" />
+    </linearGradient>
+    <filter id="sh-art" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#1E3A8A" floodOpacity="0.25" />
+    </filter>
+  </defs>
+
+  <rect width="100" height="100" rx="22" fill="url(#bg-art)" />
+  <circle cx="50" cy="50" r="38" fill="#60A5FA" opacity="0.35" />
+
+  <g filter="url(#sh-art)">
+    <path d="M28 85 C28 66 38 60 50 60 C62 60 72 66 72 85 Z" fill="#2563EB" />
+    <path d="M42 60 L50 68 L58 60 Z" fill="#FFFFFF" />
+    <rect x="46" y="44" width="8" height="12" rx="3" fill="url(#skin-art)" />
+    <circle cx="50" cy="34" r="14" fill="url(#skin-art)" />
+    <path d="M36 34 C36 22 42 18 50 18 C58 18 64 22 64 34 C64 28 60 25 50 25 C40 25 36 29 36 34 Z" fill="#1E293B" />
+    <path d="M38 25 C42 19 58 19 62 25 L65 29 L35 29 Z" fill="#3B82F6" />
+    <circle cx="50" cy="20" r="3" fill="#93C5FD" />
+    <circle cx="45" cy="35" r="1.5" fill="#1E293B" />
+    <circle cx="55" cy="35" r="1.5" fill="#1E293B" />
+    <path d="M48 39 Q50 41 52 39" stroke="#EA580C" strokeWidth="1.2" strokeLinecap="round" />
+  </g>
+
+  <g filter="url(#sh-art)" transform="translate(0, 10)">
+    <path d="M22 64 C35 60 48 63 50 66 C52 63 65 60 78 64 L76 80 C64 77 52 79 50 82 C48 79 36 77 24 80 Z" fill="#1D4ED8" />
+    <path d="M23 63 C35 59 47 62 49 65 L49 79 C47 76 35 74 25 78 Z" fill="url(#book-grad)" />
+    <path d="M51 65 C53 62 65 59 77 63 L75 78 C65 74 53 76 51 79 Z" fill="url(#book-grad)" />
+    <line x1="28" y1="67" x2="44" y2="67" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="28" y1="71" x2="42" y2="71" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="56" y1="67" x2="72" y2="67" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="56" y1="71" x2="70" y2="71" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+  </g>
+
+  <path d="M80 25 L82 20 L87 22 L83 26 L85 31 L80 28 L75 31 L77 26 L73 22 L78 20 Z" fill="#FBBF24" />
+</svg>

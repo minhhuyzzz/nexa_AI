@@ -91,10 +91,10 @@ export default function LeaderboardPage() {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Bảng Xếp Hạng Điểm Rèn Luyện (XP)
+            Bảng Xếp Hạng Hoạt Động (PTS)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Thi đua tích lũy điểm hoạt động (XP) qua các bài khảo thí và học phần. Điểm XP dùng để theo dõi sự chuyên cần và độc lập với hồ sơ 5 miền năng lực.
+            Thi đua tích lũy điểm hoạt động (PTS) qua các bài khảo thí và học phần. Điểm PTS dùng để theo dõi sự chuyên cần và độc lập với hồ sơ 5 miền năng lực số DigComp.
           </p>
         </div>
 
@@ -126,7 +126,7 @@ export default function LeaderboardPage() {
                   Bảng Vàng Danh Dự
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Top 3 cá nhân có điểm tích lũy năng lực số cao nhất hệ thống
+                  Top 3 cá nhân có điểm tích lũy PTS cao nhất hệ thống
                 </p>
               </div>
             </div>
@@ -177,11 +177,11 @@ export default function LeaderboardPage() {
               {/* Points Inset Box */}
               <div className="w-full mt-4 pt-3 pb-2 px-3 rounded-lg bg-slate-50 border border-slate-100 flex flex-col items-center">
                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-mono">
-                  TỔNG ĐIỂM TÍCH LŨY
+                  TỔNG PTS TÍCH LŨY
                 </span>
                 <div className="text-xl sm:text-2xl font-bold font-mono text-slate-800 tabular-nums mt-0.5">
                   {top2?.points?.toLocaleString('vi-VN') || 0}{' '}
-                  <span className="text-xs font-normal text-slate-500">điểm</span>
+                  <span className="text-xs font-normal text-slate-500">PTS</span>
                 </div>
               </div>
             </div>
@@ -229,11 +229,11 @@ export default function LeaderboardPage() {
               {/* Points Inset Box */}
               <div className="w-full mt-4 pt-3.5 pb-2.5 px-4 rounded-lg bg-[#FEF3C7]/70 border border-[#FDE68A] flex flex-col items-center">
                 <span className="text-[10px] font-bold text-[#92400E] uppercase tracking-wider font-mono">
-                  TỔNG ĐIỂM TÍCH LŨY
+                  TỔNG PTS TÍCH LŨY
                 </span>
                 <div className="text-2xl sm:text-3xl font-black font-mono text-[#92400E] tabular-nums mt-0.5">
                   {top1?.points?.toLocaleString('vi-VN') || 0}{' '}
-                  <span className="text-xs font-semibold text-amber-800">điểm</span>
+                  <span className="text-xs font-semibold text-amber-800">PTS</span>
                 </div>
               </div>
             </div>
@@ -276,11 +276,11 @@ export default function LeaderboardPage() {
               {/* Points Inset Box */}
               <div className="w-full mt-4 pt-3 pb-2 px-3 rounded-lg bg-amber-50/40 border border-amber-100 flex flex-col items-center">
                 <span className="text-[10px] font-semibold text-amber-800/80 uppercase tracking-wider font-mono">
-                  TỔNG ĐIỂM TÍCH LŨY
+                  TỔNG PTS TÍCH LŨY
                 </span>
                 <div className="text-xl sm:text-2xl font-bold font-mono text-amber-900 tabular-nums mt-0.5">
                   {top3?.points?.toLocaleString('vi-VN') || 0}{' '}
-                  <span className="text-xs font-normal text-slate-500">điểm</span>
+                  <span className="text-xs font-semibold text-amber-800">PTS</span>
                 </div>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function LeaderboardPage() {
               </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Thứ tự được sắp xếp theo tổng điểm tích lũy năng lực số
+              Thứ tự được sắp xếp theo tổng PTS tích lũy hợp lệ
             </p>
           </div>
 
@@ -354,7 +354,7 @@ export default function LeaderboardPage() {
                   <th className="py-3 px-4 w-24 text-center">THỨ HẠNG</th>
                   <th className="py-3 px-4">HỌC VIÊN</th>
                   <th className="py-3 px-4 hidden sm:table-cell">CHUYÊN MÔN / ĐỊNH HƯỚNG</th>
-                  <th className="py-3 px-4 text-right">TỔNG ĐIỂM</th>
+                  <th className="py-3 px-4 text-right">TỔNG PTS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -461,7 +461,7 @@ export default function LeaderboardPage() {
                           {entry.points.toLocaleString('vi-VN')}
                         </span>
                         <span className="text-xs text-slate-400 font-normal ml-1">
-                          điểm
+                          PTS
                         </span>
                       </td>
                     </tr>
@@ -498,10 +498,10 @@ export default function LeaderboardPage() {
             <p className="text-xs text-slate-700 mt-0.5 font-medium">
               {myRank && myRank.points > 0 ? (
                 <>
-                  Bạn đang có <strong className="font-bold font-mono text-slate-900">{myRank.points} điểm</strong> tích lũy trên toàn hệ thống.
+                  Bạn đang có <strong className="font-bold font-mono text-slate-900">{myRank.points} PTS</strong> tích lũy trên toàn hệ thống.
                 </>
               ) : (
-                'Kỳ này bạn chưa có điểm tích lũy. Hãy làm bài khảo thí để ghi tên lên bảng vàng!'
+                'Kỳ này bạn chưa có điểm PTS tích lũy. Hãy làm bài khảo thí để ghi tên lên bảng vàng!'
               )}
             </p>
           </div>
@@ -511,7 +511,7 @@ export default function LeaderboardPage() {
           href="/personal/assessments"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors shadow-xs shrink-0"
         >
-          <span>Làm bài tích điểm</span>
+          <span>Làm bài tích lũy PTS</span>
           <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
         </Link>
       </div>

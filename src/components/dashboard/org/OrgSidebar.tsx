@@ -61,7 +61,6 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
   const isAssessor = role === 'ASSESSOR' || role === 'EVALUATOR';
   const isReportViewer = role === 'REPORT_VIEWER';
 
-  // Construct items strictly grouped by functional domain (Section 10 of Product Spec)
   let navGroups: NavGroup[] = [];
 
   if (isOwnerOrAdmin) {
@@ -101,9 +100,9 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
             icon: Calendar,
           },
           {
-            name: 'Kết quả & Chấm bài',
+            name: 'Bàn chấm bài',
             href: `/org/${orgSlug}/grading`,
-            icon: Award,
+            icon: CheckSquare,
           },
           {
             name: 'Báo cáo năng lực',
@@ -113,15 +112,15 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
         ],
       },
       {
-        label: 'QUẢN TRỊ',
+        label: 'TÀI NGUYÊN & CÀI ĐẶT',
         items: [
           {
-            name: 'Hợp đồng & Hạn mức',
+            name: 'Hạn mức AI',
             href: `/org/${orgSlug}/ai-quota`,
             icon: Cpu,
           },
           {
-            name: 'Cài đặt tổ chức',
+            name: 'Chính sách & Cài đặt',
             href: `/org/${orgSlug}/settings`,
             icon: Settings,
           },
@@ -131,22 +130,12 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
   } else if (isAssessor) {
     navGroups = [
       {
-        label: 'ĐIỀU HÀNH',
+        label: 'KHẢO THÍ & CHẤM ĐIỂM',
         items: [
           {
-            name: 'Lớp & Nhóm',
+            name: 'Lớp được phân công',
             href: `/org/${orgSlug}/classes`,
             icon: FolderKanban,
-          },
-        ],
-      },
-      {
-        label: 'ĐÁNH GIÁ & PHÁT TRIỂN',
-        items: [
-          {
-            name: 'Đề đánh giá',
-            href: `/org/${orgSlug}/assessments`,
-            icon: FilePlus,
           },
           {
             name: 'Đợt đánh giá',
@@ -154,14 +143,9 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
             icon: Calendar,
           },
           {
-            name: 'Kết quả & Chấm bài',
+            name: 'Bàn chấm bài',
             href: `/org/${orgSlug}/grading`,
-            icon: Award,
-          },
-          {
-            name: 'Báo cáo năng lực',
-            href: `/org/${orgSlug}/analytics`,
-            icon: BarChart2,
+            icon: CheckSquare,
           },
         ],
       },
@@ -172,10 +156,9 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
         label: 'BÁO CÁO & THỐNG KÊ',
         items: [
           {
-            name: 'Tổng quan',
-            href: `/org/${orgSlug}`,
-            icon: Building2,
-            exact: true,
+            name: 'Tổng quan đợt thi',
+            href: `/org/${orgSlug}/campaigns`,
+            icon: Calendar,
           },
           {
             name: 'Báo cáo năng lực',
@@ -220,13 +203,13 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
 
   return (
     <aside
-      className={`border-r border-slate-200 bg-white flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 ${
+      className={`border-r border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0B] flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 select-none ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
       <div className="flex flex-col h-full min-h-0">
         {/* Brand & Toggle Button */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 shrink-0">
+        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 shrink-0">
           <Link
             href={`/org/${orgSlug}`}
             className="flex items-center gap-2 overflow-hidden"
@@ -237,7 +220,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+            className="p-1.5 rounded-md text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors"
             title={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
             aria-label={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
           >
@@ -251,17 +234,17 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
 
         {/* Current Organization Info Card */}
         {!isCollapsed && (
-          <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+          <div className="p-3 border-b border-slate-100 dark:border-zinc-850 bg-slate-50/60 dark:bg-zinc-900/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded bg-sky-50 border border-sky-200/80 flex items-center justify-center text-sky-600 shrink-0">
+              <div className="w-7 h-7 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                 <Building2 className="w-4 h-4" strokeWidth={1.75} />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-900 truncate" title={orgName}>
+                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate" title={orgName}>
                   {orgName}
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                  Business · <span className="text-slate-700 font-medium">{roleLabel}</span>
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-0.5">
+                  Business &bull; <span className="text-neutral-700 dark:text-zinc-300 font-medium">{roleLabel}</span>
                 </div>
               </div>
             </div>
@@ -273,7 +256,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
           {navGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {!isCollapsed && group.label && (
-                <div className="px-3 pt-1 pb-1 text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">
+                <div className="px-3 pt-1 pb-1 text-[10px] font-bold font-mono tracking-wider text-slate-400 dark:text-neutral-500 uppercase">
                   {group.label}
                 </div>
               )}
@@ -286,8 +269,8 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                       active
-                        ? 'bg-sky-50 text-sky-700 font-semibold border-l-2 border-sky-600'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
+                        : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-900'
                     } ${isCollapsed ? 'justify-center px-0' : ''}`}
                     title={isCollapsed ? item.name : undefined}
                   >
@@ -301,13 +284,13 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
         </div>
 
         {/* Feedback Trigger Button */}
-        <div className="p-3 border-t border-slate-200">
+        <div className="p-3 border-t border-slate-200 dark:border-zinc-800">
           <button
             type="button"
             onClick={() => setShowFeedback(true)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
           >
-            <MessageSquare className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+            <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
             {!isCollapsed && <span>Đóng góp ý kiến</span>}
           </button>
         </div>

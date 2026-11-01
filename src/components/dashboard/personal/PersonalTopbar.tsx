@@ -11,13 +11,13 @@ export function PersonalTopbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 15);
+      setScrolled(window.scrollY > 10);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    async function fetchPoints() {
+    async function fetchUserData() {
       try {
         const res = await fetch('/api/personal/profile-stats', { cache: 'no-store' });
         if (res.ok) {
@@ -27,16 +27,16 @@ export function PersonalTopbar() {
           }
         }
       } catch {
-        // fallback to 0
+        // fallback
       }
     }
 
-    fetchPoints();
-    window.addEventListener('profile-updated', fetchPoints);
+    fetchUserData();
+    window.addEventListener('profile-updated', fetchUserData);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('profile-updated', fetchPoints);
+      window.removeEventListener('profile-updated', fetchUserData);
     };
   }, []);
 
@@ -44,42 +44,36 @@ export function PersonalTopbar() {
     <header
       className={`h-16 px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs'
-          : 'bg-white border-b border-slate-100'
+          ? 'bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800 shadow-xs'
+          : 'bg-transparent border-b border-transparent'
       }`}
     >
-      {/* Left: Current Workspace Label & Search Input */}
-      <div className="flex items-center gap-4 flex-1 max-w-2xl">
-        <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-zinc-200 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-blue-600" />
-          <span>Cá nhân</span>
-        </div>
-        <div className="relative flex-1 hidden sm:block max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+      {/* Left: Search Input */}
+      <div className="flex items-center gap-4 flex-1 max-w-xl">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 dark:text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
           <input
             type="text"
             placeholder="Tìm kiếm bài đánh giá, lớp học, tài liệu..."
-            className="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-xs text-slate-900 pl-10 pr-4 py-2 rounded-full border border-slate-200 focus:border-sky-600 focus:outline-none transition-all placeholder:text-slate-400"
+            className="w-full bg-slate-50/90 dark:bg-zinc-900/90 hover:bg-slate-100 dark:hover:bg-zinc-850 focus:bg-white dark:focus:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 pl-10 pr-4 py-2 rounded-md border border-slate-200/80 dark:border-zinc-800 focus:border-blue-600 dark:focus:border-blue-400 focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-neutral-500 shadow-2xs"
           />
         </div>
       </div>
 
-      {/* Right: Points, Notifications & Avatar */}
-      <div className="flex items-center gap-2.5 sm:gap-3.5">
+      {/* Right: Points, Notification Bell & Avatar */}
+      <div className="flex items-center gap-3">
         {/* Points Display */}
-        <div className="flex items-center gap-1.5 px-2 py-1 text-xs">
-          <Trophy className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-          <span className="font-semibold text-slate-900 font-mono tabular-nums">{points} điểm</span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-slate-50/60 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60">
+          <Trophy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{points} PTS</span>
         </div>
 
         {/* Notification Bell */}
         <NotificationBell />
 
-        {/* Avatar Menu */}
+        {/* Avatar Menu (Chứa Dropdown Không gian làm việc, Gói tài khoản & CTA Nâng cấp, và Chuyển Dark/Light Mode) */}
         <PersonalAvatarMenu />
       </div>
     </header>
   );
 }
-
-export { PersonalTopbar as LearnerTopbar };

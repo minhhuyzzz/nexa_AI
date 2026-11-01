@@ -182,11 +182,11 @@ export function PersonalAvatarMenu() {
                 <div className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
                   <div className="flex items-center gap-2.5">
                     {isDarkMode ? (
-                      <Moon className="w-4 h-4 text-sky-400" strokeWidth={1.75} />
+                      <Moon className="w-4 h-4 text-blue-400" strokeWidth={1.75} />
                     ) : (
                       <Sun className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                     )}
-                    <span className="font-medium text-xs text-slate-700 dark:text-zinc-300">
+                    <span className="font-medium text-xs text-neutral-800 dark:text-zinc-200">
                       Giao diện {isDarkMode ? 'Tối' : 'Sáng'}
                     </span>
                   </div>
@@ -196,7 +196,7 @@ export function PersonalAvatarMenu() {
                     aria-checked={isDarkMode}
                     onClick={toggleTheme}
                     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      isDarkMode ? 'bg-sky-600' : 'bg-slate-300'
+                      isDarkMode ? 'bg-blue-600' : 'bg-slate-300'
                     }`}
                   >
                     <span className="sr-only">Bật tắt chế độ tối</span>

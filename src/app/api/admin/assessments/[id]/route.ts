@@ -157,6 +157,25 @@ export async function PUT(
       updatePayload.access_tier = parsed.data.is_vip ? 'VIP' : 'FREE';
     }
 
+    if (parsed.data.is_published === true) {
+      // Build immutable snapshot of items and options (NEXA-18)
+      const { data: fullItems } = await supabase
+        .from('assessment_items')
+        .select(`
+          id, type, prompt, points, order_index, competency_id, rubric_guide,
+          item_options ( id, content, is_correct, explanation, order_index )
+        `)
+        .eq('assessment_id', id)
+        .order('order_index', { ascending: true });
+
+      updatePayload.snapshot_data = {
+        published_at: new Date().toISOString(),
+        published_by: auth.user!.id,
+        item_count: fullItems?.length || 0,
+        items: fullItems || [],
+      };
+    }
+
     const { data: updated, error } = await supabase
       .from('assessments')
       .update(updatePayload)
