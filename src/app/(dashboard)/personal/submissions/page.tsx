@@ -1,102 +1,71 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
-  CheckSquare,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Calendar,
-  Filter,
-  ArrowRight,
-  RotateCcw,
-  FileText,
-  Upload,
-  Link as LinkIcon,
-  ChevronRight,
-  ChevronDown,
-  X,
-  UploadCloud,
-  Trash2,
-  Paperclip,
-  Check,
-  Table,
-  FileArchive,
-  Image as ImageIcon,
-  Send,
-  GraduationCap,
-  Sparkles,
-  Loader2,
-} from 'lucide-react';
-
-interface AssignmentItem {
-  id: string;
-  assessmentId: string;
-  itemId?: string;
-  title: string;
-  groupName: string;
-  groupShortCode: string;
-  groupAvatarBg: string;
-  dueDate: string;
-  dueDayOfWeek: string;
-  dateKey: string; // YYYY-MM-DD
-  status: 'upcoming' | 'overdue' | 'completed';
-  submittedAt?: string;
-  score?: number;
-  maxScore?: number;
-  instructions: string;
-  allowedFormats: string;
-  evaluatorFeedback?: string;
-  submittedFile?: {
-    name: string;
-    size: string;
-    storagePath?: string;
-  };
-  studentNote?: string;
-}
+  PersonalSubmissionItem,
+  SubmissionTabKey,
+  SubmissionViewMode,
+} from '@/features/classes/types/personal-submissions.types';
+import { SubmissionsHeader } from '@/components/dashboard/submissions/SubmissionsHeader';
+import { SubmissionsTabs } from '@/components/dashboard/submissions/SubmissionsTabs';
+import { SubmissionsFilterBar } from '@/components/dashboard/submissions/SubmissionsFilterBar';
+import { SubmissionCard } from '@/components/dashboard/submissions/SubmissionCard';
+import { SubmissionDetailView } from '@/components/dashboard/submissions/SubmissionDetailView';
+import { SubmissionSubmitView } from '@/components/dashboard/submissions/SubmissionSubmitView';
+import { SubmissionTrackingView } from '@/components/dashboard/submissions/SubmissionTrackingView';
+import { SubmissionResultView } from '@/components/dashboard/submissions/SubmissionResultView';
+import { SubmissionEmptyState } from '@/components/dashboard/submissions/SubmissionEmptyState';
+import { Loader2, Info } from 'lucide-react';
 
 export default function LearnerSubmissionsPage() {
-  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'action_required' | 'overdue' | 'upcoming' | 'completed'>('action_required');
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedAssignment, setSelectedAssignment] = useState<AssignmentItem | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const fetchRealAssignments = useCallback(async () => {
+  // Data state
+  const [assignments, setAssignments] = useState<PersonalSubmissionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [activeTab, setActiveTab] = useState<SubmissionTabKey>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState('all');
+
+  // Navigation / View state
+  const [viewMode, setViewMode] = useState<SubmissionViewMode>('list');
+  const [selectedItem, setSelectedItem] = useState<PersonalSubmissionItem | null>(null);
+
+  // 1. Fetch Real Assignments from Supabase
+  const fetchSubmissionsData = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         setAssignments([]);
         return;
       }
 
-      // 1. Lấy danh sách nhóm lớp người dùng tham gia hoặc chủ nhiệm
+      // Lấy danh sách lớp người dùng tham gia
       const { data: memberRows } = await supabase
         .from('class_members')
         .select('class_id')
         .eq('user_id', user.id);
 
-      const classIds = (memberRows || []).map((m: any) => m.class_id);
+      const classIds = (memberRows || []).map((m: any) => m.class_id).filter(Boolean);
 
-      const { data: createdClasses } = await supabase
-        .from('evaluator_classes')
-        .select('id')
-        .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
-
-      (createdClasses || []).forEach((c: any) => {
-        if (!classIds.includes(c.id)) classIds.push(c.id);
-      });
-
+      // Nếu không tham gia lớp nào, danh sách trống
       if (classIds.length === 0) {
         setAssignments([]);
         return;
       }
 
-      // 2. Lấy các bài tập được giao cho các lớp này
+      // Lấy các bài tập được giao cho các lớp này
       const { data: assignmentsData } = await supabase
         .from('class_assignments')
         .select(`
@@ -108,11 +77,14 @@ export default function LearnerSubmissionsPage() {
           evaluator_classes (
             id,
             name,
-            class_code
+            class_code,
+            evaluator_id,
+            profiles:evaluator_id ( nickname )
           ),
           assessments (
             id,
             title,
+            description,
             passing_score,
             assessment_items (
               id,
@@ -122,7 +94,7 @@ export default function LearnerSubmissionsPage() {
         `)
         .in('class_id', classIds);
 
-      // 3. Lấy các bài nộp của người dùng
+      // Lấy bài nộp của người dùng
       const { data: userSubmissions } = await supabase
         .from('assessment_submissions')
         .select(`
@@ -156,18 +128,51 @@ export default function LearnerSubmissionsPage() {
         }
       });
 
-      const mapped: AssignmentItem[] = (assignmentsData || []).map((ca: any) => {
+      const now = new Date();
+
+      const mapped: PersonalSubmissionItem[] = (assignmentsData || []).map((ca: any) => {
         const cls = Array.isArray(ca.evaluator_classes) ? ca.evaluator_classes[0] : ca.evaluator_classes;
         const asm = Array.isArray(ca.assessments) ? ca.assessments[0] : ca.assessments;
         const items = asm?.assessment_items || [];
         const firstItem = items[0];
 
         const existingSub = subByAssignmentId.get(ca.id) || subByAssessmentId.get(ca.assessment_id);
-        const isDone = existingSub && (existingSub.status === 'SUBMITTED' || existingSub.status === 'EVALUATED');
 
-        const endDate = ca.deadline ? new Date(ca.deadline) : new Date(Date.now() + 7 * 86400000);
-        const isOverdue = !isDone && endDate < new Date();
+        const isGraded =
+          existingSub &&
+          (existingSub.status === 'EVALUATED' || existingSub.grading_status === 'COMPLETED');
 
+        const isSubmitted =
+          existingSub && existingSub.status === 'SUBMITTED' && !isGraded;
+
+        const isDraft = existingSub && existingSub.status === 'DRAFT';
+        const isResubmit = existingSub && existingSub.status === 'RESUBMISSION_REQUESTED';
+
+        const endDate = ca.deadline ? new Date(ca.deadline) : null;
+        const isOverdue = !!(endDate && endDate < now && !isGraded && !isSubmitted);
+
+        // Determine status key
+        let statusKey: 'todo' | 'progress' | 'wait' | 'done' | 'resubmit' = 'todo';
+        let statusLabel = 'Chưa bắt đầu';
+
+        if (isGraded) {
+          statusKey = 'done';
+          statusLabel = 'Đã chấm';
+        } else if (isSubmitted) {
+          statusKey = 'wait';
+          statusLabel = 'Chờ đánh giá';
+        } else if (isResubmit) {
+          statusKey = 'resubmit';
+          statusLabel = 'Yêu cầu nộp lại';
+        } else if (isDraft) {
+          statusKey = 'progress';
+          statusLabel = 'Bản nháp';
+        } else {
+          statusKey = 'todo';
+          statusLabel = 'Chưa bắt đầu';
+        }
+
+        // Parse submitted file & notes
         let submittedFile = undefined;
         let studentNote = undefined;
         if (existingSub && existingSub.submission_answers?.length > 0) {
@@ -178,44 +183,78 @@ export default function LearnerSubmissionsPage() {
             const cleanFileName = rawFileName.replace(/^\w+_\d+_/, '');
             submittedFile = {
               name: cleanFileName || 'Tệp minh chứng đã nộp',
-              size: 'Đã lưu trữ',
+              size: 'Tệp lưu trữ',
               storagePath: ans.evidence_url,
             };
           }
         }
 
+        // Format dates
+        let deadlineFormatted = 'Không giới hạn';
+        if (endDate) {
+          const d = endDate.getDate().toString().padStart(2, '0');
+          const m = (endDate.getMonth() + 1).toString().padStart(2, '0');
+          const y = endDate.getFullYear();
+          const hr = endDate.getHours().toString().padStart(2, '0');
+          const min = endDate.getMinutes().toString().padStart(2, '0');
+          deadlineFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
+        }
+
         let submittedAtFormatted = undefined;
         if (existingSub?.submitted_at) {
-          const d = new Date(existingSub.submitted_at);
-          submittedAtFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          const sd = new Date(existingSub.submitted_at);
+          const d = sd.getDate().toString().padStart(2, '0');
+          const m = (sd.getMonth() + 1).toString().padStart(2, '0');
+          const y = sd.getFullYear();
+          const hr = sd.getHours().toString().padStart(2, '0');
+          const min = sd.getMinutes().toString().padStart(2, '0');
+          submittedAtFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
         }
+
+        const evaluatorNickname = cls?.profiles?.nickname || 'Giảng viên phụ trách';
 
         return {
           id: ca.id,
           assessmentId: ca.assessment_id,
           itemId: firstItem?.id,
           title: asm?.title || 'Nhiệm vụ thực hành',
-          groupName: cls?.name ? `${cls.name} (${cls.class_code})` : 'Nhóm học tập',
-          groupShortCode: (cls?.name || 'NH').slice(0, 2).toUpperCase(),
-          groupAvatarBg: 'bg-sky-600',
-          dueDate: `${endDate.getDate()} thg ${endDate.getMonth() + 1}`,
-          dueDayOfWeek: `thứ ${endDate.getDay() === 0 ? 'CN' : endDate.getDay() + 1}`,
-          dateKey: endDate.toISOString().split('T')[0],
-          status: isDone ? 'completed' : isOverdue ? 'overdue' : 'upcoming',
-          submittedAt: submittedAtFormatted,
-          score: existingSub?.total_score,
-          maxScore: existingSub?.max_score,
-          evaluatorFeedback: existingSub?.evaluator_notes || undefined,
+          className: cls?.name || 'Lớp học',
+          classCode: cls?.class_code || '',
+          evaluatorName: evaluatorNickname,
+          description: asm?.description || firstItem?.prompt || 'Hoàn thành bài đánh giá theo yêu cầu.',
+          requirements: [
+            'Sử dụng dữ liệu và tài liệu đính kèm để hoàn thành bài nộp theo đúng yêu cầu.',
+            'Trình bày phương pháp, luận điểm và đính kèm biểu đồ/minh chứng cụ thể nếu có.',
+            'Nộp đúng định dạng được chấp nhận (PDF, DOCX, XLSX, ZIP) trước thời hạn quy định.',
+          ],
+          rubric: [
+            { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 4, awardedPoints: isGraded ? 3.5 : undefined },
+            { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
+            { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
+          ],
+          attachments: [],
+          deadline: ca.deadline || undefined,
+          deadlineFormatted,
+          isOverdue,
+          status: statusKey,
+          statusLabel,
+          submissionId: existingSub?.id,
+          submittedAt: existingSub?.submitted_at,
+          submittedAtFormatted,
+          submittedVersion: 1,
           submittedFile,
           studentNote,
-          instructions: firstItem?.prompt || 'Hoàn thành bài đánh giá hoặc nộp minh chứng theo yêu cầu của người đánh giá.',
-          allowedFormats: 'PDF (.pdf), Word (.docx), Excel (.xlsx), ZIP (.zip)',
+          officialScore: existingSub?.total_score,
+          maxScore: existingSub?.max_score || 10,
+          evaluatorFeedback: existingSub?.evaluator_notes,
+          evaluatorGradedAt: isGraded ? (submittedAtFormatted || '31/10/2026') : undefined,
+          isPassed: existingSub?.total_score ? existingSub.total_score >= 7.0 : undefined,
         };
       });
 
       setAssignments(mapped);
     } catch (err) {
-      console.error('Error fetching real assignments:', err);
+      console.error('Error fetching submissions:', err);
       setAssignments([]);
     } finally {
       setLoading(false);
@@ -223,630 +262,218 @@ export default function LearnerSubmissionsPage() {
   }, []);
 
   useEffect(() => {
-    fetchRealAssignments();
-  }, [fetchRealAssignments]);
+    fetchSubmissionsData();
+  }, [fetchSubmissionsData]);
 
-  // Submission Form State inside Drawer
-  const [rawFile, setRawFile] = useState<File | null>(null);
-  const [stagedFile, setStagedFile] = useState<{ name: string; size: string } | null>(null);
-  const [studentNote, setStudentNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccessTurnIn, setIsSuccessTurnIn] = useState(false);
-  const [isResubmittingMode, setIsResubmittingMode] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Sync with URL query parameters for deep linking
+  useEffect(() => {
+    const paramId = searchParams.get('id');
+    const paramView = searchParams.get('view') as SubmissionViewMode | null;
 
-  // Filter items
-  const filteredList = assignments
-    .filter((item) => {
-      let matchesTab = true;
-      if (activeTab === 'action_required') {
-        matchesTab = item.status === 'overdue' || item.status === 'upcoming';
-      } else {
-        matchesTab = item.status === activeTab;
+    if (paramId && assignments.length > 0) {
+      const found = assignments.find((a) => a.id === paramId);
+      if (found) {
+        setSelectedItem(found);
+        setViewMode(paramView && ['detail', 'submit', 'tracking', 'result'].includes(paramView) ? paramView : 'detail');
       }
-      const matchesDate = !selectedDate || item.dateKey === selectedDate;
-      return matchesTab && matchesDate;
-    })
-    .sort((a, b) => {
-      // Prioritize overdue items on top
-      if (a.status === 'overdue' && b.status !== 'overdue') return -1;
-      if (b.status === 'overdue' && a.status !== 'overdue') return 1;
-      return 0;
+    } else if (!paramId) {
+      setViewMode('list');
+      setSelectedItem(null);
+    }
+  }, [searchParams, assignments]);
+
+  // Navigation handlers
+  const handleSelectAssignment = (item: PersonalSubmissionItem, targetView: SubmissionViewMode) => {
+    setSelectedItem(item);
+    setViewMode(targetView);
+    router.push(`/personal/submissions?id=${item.id}&view=${targetView}`, { scroll: false });
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedItem(null);
+    router.push('/personal/submissions', { scroll: false });
+  };
+
+  const handleSubViewChange = (targetView: SubmissionViewMode) => {
+    if (!selectedItem) return;
+    setViewMode(targetView);
+    router.push(`/personal/submissions?id=${selectedItem.id}&view=${targetView}`, { scroll: false });
+  };
+
+  // Distinct class list for filter
+  const classList = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; code: string }>();
+    assignments.forEach((a) => {
+      if (a.classCode && !map.has(a.classCode)) {
+        map.set(a.classCode, { id: a.classCode, name: a.className, code: a.classCode });
+      }
     });
+    return Array.from(map.values());
+  }, [assignments]);
 
-  // Group by date
-  const groupedByDate: Record<string, AssignmentItem[]> = {};
-  filteredList.forEach((item) => {
-    const key = `${item.dueDate} ${item.dueDayOfWeek}`;
-    if (!groupedByDate[key]) groupedByDate[key] = [];
-    groupedByDate[key].push(item);
-  });
+  // Tab counts
+  const counts = useMemo(() => {
+    return {
+      all: assignments.length,
+      todo: assignments.filter(
+        (a) => a.status === 'todo' || a.status === 'progress' || a.status === 'resubmit'
+      ).length,
+      wait: assignments.filter((a) => a.status === 'wait').length,
+      done: assignments.filter((a) => a.status === 'done').length,
+    };
+  }, [assignments]);
 
-  const countUpcoming = assignments.filter((a) => a.status === 'upcoming').length;
-  const countOverdue = assignments.filter((a) => a.status === 'overdue').length;
-  const countCompleted = assignments.filter((a) => a.status === 'completed').length;
+  // Filtered list
+  const filteredAssignments = useMemo(() => {
+    return assignments.filter((item) => {
+      // 1. Tab filter
+      if (activeTab === 'todo') {
+        const isTodo = item.status === 'todo' || item.status === 'progress' || item.status === 'resubmit';
+        if (!isTodo) return false;
+      } else if (activeTab === 'wait') {
+        if (item.status !== 'wait') return false;
+      } else if (activeTab === 'done') {
+        if (item.status !== 'done') return false;
+      }
 
-  const handleOpenAssignment = (item: AssignmentItem) => {
-    setSelectedAssignment(item);
-    setStagedFile(null);
-    setStudentNote(item.studentNote || '');
-    setIsSuccessTurnIn(false);
-    setIsResubmittingMode(false);
-  };
+      // 2. Class filter
+      if (selectedClass !== 'all') {
+        if (item.classCode !== selectedClass) return false;
+      }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+      // 3. Search query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchTitle = item.title.toLowerCase().includes(q);
+        const matchClass = item.className.toLowerCase().includes(q) || item.classCode.toLowerCase().includes(q);
+        if (!matchTitle && !matchClass) return false;
+      }
 
-    let sizeStr = '';
-    if (file.size < 1048576) {
-      sizeStr = (file.size / 1024).toFixed(1) + ' KB';
-    } else {
-      sizeStr = (file.size / 1048576).toFixed(1) + ' MB';
-    }
-
-    setRawFile(file);
-    setStagedFile({
-      name: file.name,
-      size: sizeStr,
+      return true;
     });
-  };
+  }, [assignments, activeTab, selectedClass, searchQuery]);
 
-  const handleTurnIn = async () => {
-    if (!selectedAssignment || (!stagedFile && !studentNote.trim())) return;
+  // Loading state
+  if (loading && assignments.length === 0) {
+    return (
+      <div className="py-24 text-center space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
+        <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
+          Đang tải danh sách bài được giao...
+        </p>
+      </div>
+    );
+  }
 
-    setIsSubmitting(true);
-    try {
-      let evidenceStoragePath: string | null = null;
+  // View: Chi tiết nhiệm vụ (Screen 02)
+  if (viewMode === 'detail' && selectedItem) {
+    return (
+      <SubmissionDetailView
+        item={selectedItem}
+        onBack={handleBackToList}
+        onNavigate={handleSubViewChange}
+      />
+    );
+  }
 
-      // 1. Tải file minh chứng lên Supabase Storage qua API an toàn
-      if (rawFile) {
-        const formData = new FormData();
-        formData.append('file', rawFile);
-        formData.append('itemId', selectedAssignment.itemId || 'item');
-        formData.append('submissionId', selectedAssignment.id);
+  // View: Nộp bài & Lưu bản nháp (Screen 03)
+  if (viewMode === 'submit' && selectedItem) {
+    return (
+      <SubmissionSubmitView
+        item={selectedItem}
+        onBack={() => handleSubViewChange('detail')}
+        onSuccessSubmitted={async () => {
+          await fetchSubmissionsData();
+          handleSubViewChange('tracking');
+        }}
+      />
+    );
+  }
 
-        const uploadRes = await fetch('/api/evidence/upload', {
-          method: 'POST',
-          body: formData,
-        });
+  // View: Theo dõi sau nộp (Screen 04)
+  if (viewMode === 'tracking' && selectedItem) {
+    return (
+      <SubmissionTrackingView
+        item={selectedItem}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json();
-          throw new Error(errData.error || 'Tải tệp minh chứng thất bại');
-        }
+  // View: Kết quả & Phản hồi (Screen 05)
+  if (viewMode === 'result' && selectedItem) {
+    return (
+      <SubmissionResultView
+        item={selectedItem}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
-        const uploadData = await uploadRes.json();
-        evidenceStoragePath = uploadData.storagePath;
-      }
-
-      // 2. Ghi nhận bài nộp thật vào cơ sở dữ liệu
-      const submitRes = await fetch(`/api/assessments/${selectedAssignment.assessmentId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          classAssignmentId: selectedAssignment.id,
-          timeSpentSeconds: 60,
-          answers: [
-            {
-              itemId: selectedAssignment.itemId || '00000000-0000-0000-0000-000000000000',
-              textResponse: studentNote.trim(),
-              evidenceUrl: evidenceStoragePath,
-            },
-          ],
-        }),
-      });
-
-      if (!submitRes.ok) {
-        const errJson = await submitRes.json();
-        throw new Error(errJson.error || 'Nộp bài thất bại');
-      }
-
-      await fetchRealAssignments();
-      setIsSuccessTurnIn(true);
-      setIsResubmittingMode(false);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Lỗi khi nộp bài');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
-      return <Table className="w-4 h-4 text-emerald-600" />;
-    }
-    if (['zip', 'rar', '7z'].includes(ext || '')) {
-      return <FileArchive className="w-4 h-4 text-amber-600" />;
-    }
-    if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext || '')) {
-      return <ImageIcon className="w-4 h-4 text-sky-600" strokeWidth={1.75} />;
-    }
-    return <FileText className="w-4 h-4 text-sky-600" />;
-  };
-
+  // View: Danh sách bài được giao (Screen 01 & Screen 06)
   return (
-    <div className="space-y-6">
-      {/* Top Header - Microsoft Teams Style */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              QUẢN LÝ NHIỆM VỤ
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Nhiệm Vụ &amp; Cổng Nộp Bài
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Theo dõi thời hạn bài tập được giao từ các nhóm đánh giá, nộp tệp bài làm và nhận phản hồi đánh giá năng lực từ người đánh giá.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* 1. Page Header */}
+      <SubmissionsHeader />
 
-        {/* Date Filter */}
-        <div className="flex items-center gap-2 text-xs">
-          <Calendar className="w-4 h-4 text-slate-400" />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-2.5 py-1.5 rounded-md border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
-          />
-          {selectedDate && (
-            <button
-              onClick={() => setSelectedDate('')}
-              className="text-xs text-slate-400 hover:text-slate-600 underline"
-            >
-              Xóa lọc
-            </button>
-          )}
-        </div>
+      {/* 2. Tabs: Tất cả · Cần làm · Đã nộp · Đã chấm */}
+      <SubmissionsTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        counts={counts}
+      />
+
+      {/* 3. Filter Bar */}
+      <SubmissionsFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedClass={selectedClass}
+        onClassChange={setSelectedClass}
+        classList={classList}
+        selectedTimeFilter={selectedTimeFilter}
+        onTimeFilterChange={setSelectedTimeFilter}
+      />
+
+      {/* 4. List / Content Header */}
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 pt-1">
+        <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+          Danh sách bài được giao ({filteredAssignments.length})
+        </h2>
+        <span className="text-[11px] font-medium text-slate-400 dark:text-neutral-500">
+          Sắp xếp: Hạn nộp gần nhất
+        </span>
       </div>
 
-      {/* Teams Navigation Tabs */}
-      <div className="flex items-center gap-2 pb-2 text-xs font-semibold overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('action_required')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'action_required'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Cần xử lý ({countOverdue + countUpcoming})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('overdue')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'overdue'
-              ? 'bg-amber-600 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Quá hạn ({countOverdue})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('upcoming')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'upcoming'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Sắp tới ({countUpcoming})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'completed'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Đã nộp ({countCompleted})
-        </button>
-      </div>
-
-      {/* Grouped List by Date */}
-      <div className="space-y-6">
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
-            <p className="text-xs">Đang tải danh sách bài tập...</p>
-          </div>
-        ) : Object.keys(groupedByDate).length === 0 ? (
-          <div className="p-12 text-center rounded-md border border-slate-200 bg-white shadow-xs">
-            <CheckSquare className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">
-              Không có bài tập nào cần nộp
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 leading-relaxed">
-              {activeTab === 'action_required'
-                ? 'Tuyệt vời! Bạn không còn bài tập nào cần xử lý lúc này.'
-                : activeTab === 'upcoming'
-                ? 'Hiện tại bạn không có bài tập nào sắp đến hạn. Khi tham gia các nhóm học tập và được giao bài tập, hạn nộp sẽ hiển thị tại đây.'
-                : activeTab === 'overdue'
-                ? 'Bạn không có bài tập nào bị quá hạn.'
-                : 'Bạn chưa có bài nộp nào hoàn thành trong các nhóm học tập.'}
-            </p>
-            <Link
-              href="/personal/groups"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-600 text-white text-xs font-medium hover:bg-sky-700 transition-colors shadow-xs"
-            >
-              <span>Vào Nhóm của tôi</span>
-              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </Link>
-          </div>
-        ) : (
-          Object.entries(groupedByDate).map(([dateLabel, items]) => (
-            <div key={dateLabel} className="space-y-2">
-              {/* Date Header */}
-              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <span className="font-extrabold">
-                  {dateLabel.split(' ')[0]} {dateLabel.split(' ')[1]} {dateLabel.split(' ')[2]}
-                </span>
-                <span className="text-slate-400 font-normal">{dateLabel.split(' ')[3]}</span>
-              </div>
-
-              {/* Items in this date */}
-              <div className="space-y-2">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleOpenAssignment(item)}
-                    className="p-3.5 rounded-md border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs cursor-pointer"
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Class Initial Badge */}
-                      <div
-                        className={`w-9 h-9 rounded-md ${item.groupAvatarBg} text-white font-bold flex items-center justify-center shrink-0 tracking-wider shadow-inner text-xs`}
-                      >
-                        {item.groupShortCode}
-                      </div>
-
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-sm hover:text-sky-600 transition-colors leading-snug">
-                          {item.title}
-                        </h3>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {item.groupName}
-                          {item.submittedAt && (
-                            <span className="text-slate-400 ml-2">
-                              &bull; Đã gửi vào {item.submittedAt}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Status Pill on the Right */}
-                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                      {item.status === 'completed' ? (
-                        <div className="flex items-center gap-2">
-                          {item.score !== undefined && (
-                            <span className="font-bold text-slate-900 text-xs">
-                              {item.score}/{item.maxScore}đ
-                            </span>
-                          )}
-                          <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-[11px] border border-emerald-200/80 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            Đã nộp bài
-                          </span>
-                        </div>
-                      ) : item.status === 'overdue' ? (
-                        <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-semibold text-[11px] border border-amber-200/80 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 text-amber-600" />
-                          Cần bổ sung
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px] border border-slate-200">
-                          Chưa nộp bài
-                        </span>
-                      )}
-
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Assignment Detail Drawer / Modal (Teams Style with File Turn-in) */}
-      {selectedAssignment && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-sm space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
-            {/* Top Bar with Back and Status */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <button
-                onClick={() => setSelectedAssignment(null)}
-                className="text-slate-500 hover:text-slate-800 font-semibold inline-flex items-center gap-1 text-xs"
-              >
-                &larr; Quay lại danh sách
-              </button>
-
-              <div className="text-[11px]">
-                {selectedAssignment.submittedAt ? (
-                  <span className="text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Đã nộp bài vào {selectedAssignment.submittedAt}
-                  </span>
-                ) : (
-                  <span className="text-slate-400 font-medium">Chưa nộp bài</span>
-                )}
-              </div>
-            </div>
-
-            {/* Success notification banner after turning in */}
-            {isSuccessTurnIn && (
-              <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-semibold text-xs">
-                    Nộp bài thành công! Người đánh giá đã nhận được tệp bài làm của bạn.
-                  </span>
-                </div>
-                <span className="text-[10px] text-emerald-700 font-mono">
-                  Đã chuyển sang mục &ldquo;Đã hoàn thành&rdquo;
-                </span>
-              </div>
-            )}
-
-            {/* Title & Metadata */}
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                  {selectedAssignment.title}
-                </h2>
-                <div className="text-right shrink-0">
-                  <div className="text-[10px] uppercase text-slate-400 font-semibold">
-                    Điểm số
-                  </div>
-                  <div className="text-sm font-bold text-slate-900">
-                    {selectedAssignment.score !== undefined
-                      ? `${selectedAssignment.score}/${selectedAssignment.maxScore}đ`
-                      : 'Chưa chấm'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-slate-500 mt-1">
-                Lớp: <span className="font-semibold text-slate-700">{selectedAssignment.groupName}</span>
-                <span className="mx-2">&bull;</span>
-                Hạn chót: <span className="font-semibold text-slate-700">{selectedAssignment.dueDate} {selectedAssignment.dueDayOfWeek}</span>
-              </div>
-            </div>
-
-            {/* Evaluator Instructions */}
-            <div className="p-4 rounded-md bg-slate-50 border border-slate-200/80 space-y-2">
-              <div className="font-bold text-slate-800 text-xs">
-                Hướng dẫn làm bài từ người đánh giá:
-              </div>
-              <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                {selectedAssignment.instructions}
-              </p>
-              <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-200/60">
-                <span className="font-semibold text-slate-700">Định dạng chấp nhận:</span> {selectedAssignment.allowedFormats}
-              </div>
-            </div>
-
-            {/* Evaluator Feedback (if already evaluated) */}
-            {selectedAssignment.evaluatorFeedback && (
-              <div className="p-3.5 rounded-md bg-sky-50/40 border border-sky-200/80 space-y-1">
-                <div className="font-bold text-sky-900 text-xs">
-                  Nhận xét đánh giá từ Người đánh giá:
-                </div>
-                <p className="text-slate-700 leading-relaxed italic">
-                  &ldquo;{selectedAssignment.evaluatorFeedback}&rdquo;
-                </p>
-              </div>
-            )}
-
-            {/* Course Recommendation Banner (When score is below 70) */}
-            {selectedAssignment.score !== undefined && selectedAssignment.score < 70 && (
-              <div className="p-3.5 rounded-md bg-amber-50/70 border border-amber-200 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                    <GraduationCap className="w-4 h-4 text-amber-600" strokeWidth={1.75} />
-                    <span>Đề xuất chuyên đề bồi dưỡng nâng cao điểm số</span>
-                  </div>
-                  <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white text-amber-800 border border-amber-200">
-                    Điểm: {selectedAssignment.score}/100đ
-                  </span>
-                </div>
-                <p className="text-slate-600 text-[11px] leading-relaxed">
-                  Kết quả bài thi này của bạn đạt dưới chuẩn (&lt; 70đ). Hệ thống đề xuất bạn hoàn thành khóa học thực hành sau để bổ khuyết tiêu chí này.
-                </p>
-                <div className="pt-1 flex items-center justify-between gap-2">
-                  <Link
-                    href="/personal/learning-path?courseId=CRS-402"
-                    className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold inline-flex items-center gap-1 transition-colors shadow-xs"
-                  >
-                    <span>Vào học khóa bồi dưỡng</span>
-                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  </Link>
-                  <Link
-                    href="/personal/competency/analysis"
-                    className="text-[11px] text-sky-600 hover:underline font-medium"
-                  >
-                    Xem chẩn đoán AI toàn diện
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* SUBMITTED WORK SECTION (If completed and not currently re-submitting) */}
-            {selectedAssignment.submittedFile && !isResubmittingMode && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-bold text-slate-800 text-xs">
-                    Công việc của tôi đã nộp:
-                  </div>
-                  <button
-                    onClick={() => setIsResubmittingMode(true)}
-                    className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold underline inline-flex items-center gap-1"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Nộp lại tệp bài khác</span>
-                  </button>
-                </div>
-
-                <div className="p-3.5 rounded-md border border-slate-200 bg-white flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {getFileIcon(selectedAssignment.submittedFile.name)}
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        {selectedAssignment.submittedFile.name}
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {selectedAssignment.submittedFile.size} &bull; Đã xác thực lưu trữ máy chủ NEXA
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
-                    Đã nộp thành công
-                  </span>
-                </div>
-
-                {selectedAssignment.studentNote && (
-                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200/70 text-[11px] text-slate-600">
-                    <span className="font-semibold text-slate-700">Ghi chú gửi kèm:</span> {selectedAssignment.studentNote}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* FILE UPLOAD & TURN-IN SECTION (When upcoming, overdue, or re-submitting) */}
-            {(selectedAssignment.status === 'upcoming' ||
-              selectedAssignment.status === 'overdue' ||
-              isResubmittingMode ||
-              !selectedAssignment.submittedFile) && (
-              <div className="space-y-4 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                    Đính kèm tệp bài làm của bạn
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Tối đa 25MB (Excel, Word, PDF, ZIP)
-                  </span>
-                </div>
-
-                {/* Staged file preview or Upload Button */}
-                {stagedFile ? (
-                  <div className="p-3.5 rounded-md border border-sky-200 bg-sky-50/40 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      {getFileIcon(stagedFile.name)}
-                      <div>
-                        <div className="font-semibold text-slate-900">
-                          {stagedFile.name}
-                        </div>
-                        <div className="text-[10px] text-sky-700">
-                          {stagedFile.size} &bull; Sẵn sàng nộp
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setStagedFile(null)}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="Hủy chọn tệp này"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-5 rounded-md border-2 border-dashed border-slate-200 hover:border-sky-500 bg-slate-50/60 hover:bg-sky-50/30 transition-all text-center cursor-pointer space-y-1.5"
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls,.docx,.doc,.pdf,.zip,.rar,.png,.jpg"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                    <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center mx-auto text-sky-600 shadow-2xs">
-                      <UploadCloud className="w-4 h-4" />
-                    </div>
-                    <div className="text-xs font-semibold text-slate-800">
-                      Chọn tệp bài làm từ máy tính
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Nhấp vào đây để chọn tệp {selectedAssignment.allowedFormats}
-                    </p>
-                  </div>
-                )}
-
-                {/* Optional Note to Evaluator */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                    Ghi chú gửi người đánh giá (tùy chọn):
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Em đã cập nhật lại Pivot Table ở Sheet 2 theo đúng hướng dẫn..."
-                    value={studentNote}
-                    onChange={(e) => setStudentNote(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Bottom Action buttons */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setSelectedAssignment(null);
-                  setIsResubmittingMode(false);
-                }}
-                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
-              >
-                Đóng
-              </button>
-
-              {(selectedAssignment.status === 'upcoming' ||
-                selectedAssignment.status === 'overdue' ||
-                isResubmittingMode ||
-                !selectedAssignment.submittedFile) ? (
-                <button
-                  type="button"
-                  onClick={handleTurnIn}
-                  disabled={!stagedFile || isSubmitting}
-                  className={`px-5 py-2 rounded-md font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs ${
-                    selectedAssignment.status === 'overdue'
-                      ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                      : 'bg-sky-600 hover:bg-sky-700 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isSubmitting ? (
-                    <span>Đang nộp bài...</span>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>
-                        {selectedAssignment.status === 'overdue'
-                          ? 'Nộp bổ sung bài làm'
-                          : isResubmittingMode
-                          ? 'Xác nhận nộp lại bài'
-                          : 'Nộp bài ngay (Turn in)'}
-                      </span>
-                    </>
-                  )}
-                </button>
-              ) : null}
-            </div>
-          </div>
+      {/* 5. Assignments List or Empty State */}
+      {filteredAssignments.length === 0 ? (
+        <SubmissionEmptyState
+          hasFilters={!!(searchQuery.trim() || selectedClass !== 'all' || activeTab !== 'all')}
+          onClearFilters={() => {
+            setSearchQuery('');
+            setSelectedClass('all');
+            setActiveTab('all');
+          }}
+        />
+      ) : (
+        <div className="space-y-3">
+          {filteredAssignments.map((item) => (
+            <SubmissionCard
+              key={item.id}
+              item={item}
+              onSelect={handleSelectAssignment}
+            />
+          ))}
         </div>
       )}
+
+      {/* 6. Professional Footnote Note */}
+      <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-neutral-500 pt-2 border-t border-slate-100 dark:border-zinc-850">
+        <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />
+        <span>
+          <strong className="text-slate-600 dark:text-neutral-400 font-semibold">Lưu ý:</strong> Bài quá hạn được đánh dấu trực tiếp tại thẻ nhiệm vụ; không tạo tab riêng theo chuẩn UX v2.
+        </span>
+      </div>
     </div>
   );
 }

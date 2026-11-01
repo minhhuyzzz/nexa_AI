@@ -1,4 +1,5 @@
 'use client';
+
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,8 +12,10 @@ import { ClassAssignmentsTab } from '@/components/dashboard/classes/ClassAssignm
 import { ClassMaterialsTab } from '@/components/dashboard/classes/ClassMaterialsTab';
 import { ClassMembersTab, ClassMemberItem } from '@/components/dashboard/classes/ClassMembersTab';
 import { ClassChatDrawer } from '@/components/dashboard/classes/ClassChatDrawer';
+import { ClassSettingsTab } from '@/components/dashboard/classes/ClassSettingsTab';
+import { ClassMemberDashboardView } from '@/components/dashboard/classes/ClassMemberDashboardView';
 
-type TabType = 'stream' | 'assignments' | 'materials' | 'members';
+type TabType = 'stream' | 'assignments' | 'materials' | 'members' | 'settings';
 
 interface GroupData {
   id: string;
@@ -24,6 +27,8 @@ interface GroupData {
   memberCount: number;
   assignmentCount: number;
   members: ClassMemberItem[];
+  assignments?: any[];
+  submissions?: any[];
 }
 
 export default function LearnerGroupDetailPage() {
@@ -31,7 +36,7 @@ export default function LearnerGroupDetailPage() {
   const groupId = params.groupId as string;
 
   const [group, setGroup] = useState<GroupData | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string>('11111111-1111-1111-1111-111111111111');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('stream');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -66,7 +71,7 @@ export default function LearnerGroupDetailPage() {
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
-        <Loader2 className="w-5 h-5 animate-spin text-sky-600" strokeWidth={1.75} />
+        <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
         <span>Đang nạp không gian nhóm học tập...</span>
       </div>
     );
@@ -74,10 +79,12 @@ export default function LearnerGroupDetailPage() {
 
   if (!group) {
     return (
-      <div className="p-12 text-center border border-dashed border-slate-200 rounded-md bg-white space-y-2">
-        <FolderX className="w-8 h-8 text-slate-300 mx-auto" strokeWidth={1.75} />
-        <h3 className="text-sm font-bold text-slate-800">Không tìm thấy nhóm</h3>
-        <p className="text-xs text-slate-500">Nhóm học tập không tồn tại hoặc bạn chưa tham gia nhóm này.</p>
+      <div className="p-12 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-[#111114] space-y-2">
+        <FolderX className="w-8 h-8 text-slate-300 dark:text-zinc-600 mx-auto" strokeWidth={1.75} />
+        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Không tìm thấy nhóm</h3>
+        <p className="text-xs text-slate-500 dark:text-neutral-400">
+          Nhóm học tập không tồn tại hoặc bạn chưa tham gia nhóm này.
+        </p>
       </div>
     );
   }
@@ -86,7 +93,7 @@ export default function LearnerGroupDetailPage() {
   const userClassRole: 'EVALUATOR' | 'LEARNER' = isOwner ? 'EVALUATOR' : 'LEARNER';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Header */}
       <ClassHeader
         id={group.id}
@@ -97,29 +104,30 @@ export default function LearnerGroupDetailPage() {
         role={userClassRole}
         isChatOpen={isChatOpen}
         onToggleChat={() => setIsChatOpen((prev) => !prev)}
+        onOpenSettings={() => setActiveTab('settings')}
       />
 
-      {/* Horizontal Tabs */}
-      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold">
+      {/* Horizontal Tabs (Cobalt blue active indicator #2563EB) */}
+      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('stream')}
-          className={`px-4 py-2.5 border-b-2 transition-colors cursor-pointer ${
+          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'stream'
-              ? 'border-sky-600 text-sky-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           }`}
         >
-          Bảng tin
+          {isOwner ? 'Bảng tin & Thông báo' : 'Tổng quan & Thông báo'}
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('assignments')}
-          className={`px-4 py-2.5 border-b-2 transition-colors cursor-pointer ${
+          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'assignments'
-              ? 'border-sky-600 text-sky-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           }`}
         >
           Bài khảo thí ({group.assignmentCount})
@@ -128,37 +136,77 @@ export default function LearnerGroupDetailPage() {
         <button
           type="button"
           onClick={() => setActiveTab('materials')}
-          className={`px-4 py-2.5 border-b-2 transition-colors cursor-pointer ${
+          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'materials'
-              ? 'border-sky-600 text-sky-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           }`}
         >
-          Tài liệu
+          Tài liệu & Học liệu
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('members')}
-          className={`px-4 py-2.5 border-b-2 transition-colors cursor-pointer ${
+          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'members'
-              ? 'border-sky-600 text-sky-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           }`}
         >
           {isOwner ? `Thành viên (${group.memberCount})` : `Bạn cùng lớp (${group.memberCount})`}
         </button>
+
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'settings'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+            }`}
+          >
+            Cài đặt lớp
+          </button>
+        )}
       </div>
 
       {/* Tab Panels */}
       <div>
         {activeTab === 'stream' && (
-          <ClassStreamTab
-            classId={group.id}
-            role={userClassRole}
-            currentUserId={currentUserId}
-            onNavigateTab={(tab) => setActiveTab(tab)}
-          />
+          isOwner ? (
+            <ClassStreamTab
+              classId={group.id}
+              role={userClassRole}
+              currentUserId={currentUserId}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          ) : (
+            <div className="space-y-6">
+              {/* Screen 9 Member View with Assigned Tasks Priority */}
+              <ClassMemberDashboardView
+                classId={group.id}
+                className={group.name}
+                assignments={group.assignments || []}
+                submissions={group.submissions || []}
+                postsCount={0}
+                filesCount={0}
+                memberCount={group.memberCount}
+                evaluatorName="Người quản lý"
+              />
+
+              {/* Feed posts and discussions below */}
+              <div className="pt-4 border-t border-slate-100 dark:border-zinc-850">
+                <ClassStreamTab
+                  classId={group.id}
+                  role={userClassRole}
+                  currentUserId={currentUserId}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                />
+              </div>
+            </div>
+          )
         )}
 
         {activeTab === 'assignments' && (
@@ -186,6 +234,27 @@ export default function LearnerGroupDetailPage() {
             role={userClassRole}
             currentUserId={currentUserId}
             onRefresh={fetchGroup}
+          />
+        )}
+
+        {activeTab === 'settings' && isOwner && (
+          <ClassSettingsTab
+            classId={group.id}
+            initialName={group.name}
+            initialDescription={group.description}
+            initialCode={group.code}
+            onUpdated={(updated) => {
+              setGroup((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      name: updated.name,
+                      description: updated.description,
+                      code: updated.code || prev.code,
+                    }
+                  : null
+              );
+            }}
           />
         )}
       </div>

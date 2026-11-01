@@ -30,8 +30,8 @@ export async function GET(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const adminSupabase = createAdminClient();
-    const { data: assessment, error } = await adminSupabase
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+    const { data: assessment, error } = await db
       .from('assessments')
       .select('*')
       .eq('id', id)
@@ -71,8 +71,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const adminSupabase = createAdminClient();
-    const { data: assessment } = await adminSupabase
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+    const { data: assessment } = await db
       .from('assessments')
       .select('id, created_by, owner_user_id')
       .eq('id', id)
@@ -98,7 +98,7 @@ export async function PATCH(
       );
     }
 
-    const { data: updated, error: updateError } = await adminSupabase
+    const { data: updated, error: updateError } = await db
       .from('assessments')
       .update({
         ...validated.data,
@@ -109,7 +109,7 @@ export async function PATCH(
       .single();
 
     if (updateError) {
-      return NextResponse.json({ error: 'Không thể cập nhật bài khảo thí' }, { status: 500 });
+      return NextResponse.json({ error: updateError.message || 'Không thể cập nhật bài khảo thí' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, assessment: updated });
@@ -135,8 +135,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const adminSupabase = createAdminClient();
-    const { data: assessment } = await adminSupabase
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+    const { data: assessment } = await db
       .from('assessments')
       .select('id, title, created_by, owner_user_id')
       .eq('id', id)
@@ -154,14 +154,14 @@ export async function DELETE(
     }
 
     // Check if there are candidate submissions
-    const { count: submissionCount } = await adminSupabase
+    const { count: submissionCount } = await db
       .from('assessment_submissions')
       .select('id', { count: 'exact', head: true })
       .eq('assessment_id', id);
 
     if (submissionCount && submissionCount > 0) {
       // Soft unpublish / archive to protect learner history integrity
-      const { error: archiveError } = await adminSupabase
+      const { error: archiveError } = await db
         .from('assessments')
         .update({
           is_published: false,
@@ -170,7 +170,7 @@ export async function DELETE(
         .eq('id', id);
 
       if (archiveError) {
-        return NextResponse.json({ error: 'Không thể lưu trữ bài khảo thí' }, { status: 500 });
+        return NextResponse.json({ error: archiveError.message || 'Không thể lưu trữ bài khảo thí' }, { status: 500 });
       }
 
       return NextResponse.json({
@@ -181,13 +181,13 @@ export async function DELETE(
     }
 
     // Clean delete if no submissions exist
-    const { error: deleteError } = await adminSupabase
+    const { error: deleteError } = await db
       .from('assessments')
       .delete()
       .eq('id', id);
 
     if (deleteError) {
-      return NextResponse.json({ error: 'Không thể xóa bài khảo thí' }, { status: 500 });
+      return NextResponse.json({ error: deleteError.message || 'Không thể xóa bài khảo thí' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: 'Đã xóa bài khảo thí thành công' });

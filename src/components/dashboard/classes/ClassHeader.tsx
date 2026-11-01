@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Edit2, Copy, Check, MessageSquare, CheckCircle } from 'lucide-react';
+import {
+  ChevronLeft,
+  Copy,
+  Check,
+  MessageSquare,
+  GraduationCap,
+  Users,
+  Settings,
+  Share2,
+} from 'lucide-react';
 
 interface ClassHeaderProps {
   id: string;
@@ -10,28 +19,26 @@ interface ClassHeaderProps {
   code: string;
   createdAt: string;
   memberCount: number;
+  evaluatorName?: string;
   role: 'EVALUATOR' | 'LEARNER';
   isChatOpen: boolean;
   onToggleChat: () => void;
-  onRename?: (newName: string) => Promise<boolean>;
+  onOpenSettings?: () => void;
 }
 
 export function ClassHeader({
   name,
   code,
-  createdAt,
   memberCount,
+  evaluatorName = 'Người quản lý',
   role,
   isChatOpen,
   onToggleChat,
-  onRename,
+  onOpenSettings,
 }: ClassHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingName, setEditingName] = useState(name);
-  const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const backUrl = '/personal/groups';
+  const monogram = (name ? name[0] : 'K').toUpperCase();
+  const isOwner = role === 'EVALUATOR';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -39,130 +46,106 @@ export function ClassHeader({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveName = async () => {
-    if (!editingName.trim() || editingName === name || !onRename) {
-      setIsEditing(false);
-      return;
-    }
-    setIsSaving(true);
-    const success = await onRename(editingName.trim());
-    setIsSaving(false);
-    if (success) {
-      setIsEditing(false);
-    }
-  };
-
-  const formattedDate = (() => {
-    try {
-      return new Date(createdAt).toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-    } catch {
-      return createdAt;
-    }
-  })();
-
   return (
-    <div className="space-y-4 pb-2 border-b border-slate-200">
-      <Link
-        href={backUrl}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
-      >
-        <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
-        <span>Quay lại Quản lý nhóm</span>
-      </Link>
+    <div className="space-y-4">
+      {/* Breadcrumb */}
+      <div>
+        <Link
+          href="/personal/groups"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
+          <span>Quay lại Lớp & Nhóm</span>
+        </Link>
+      </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  className="px-2 py-1 text-lg font-bold border border-sky-400 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"
-                  autoFocus
-                  disabled={isSaving}
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveName}
-                  disabled={isSaving}
-                  className="px-2.5 py-1 text-xs bg-sky-600 text-white font-semibold rounded hover:bg-sky-700 cursor-pointer"
-                >
-                  {isSaving ? 'Lưu...' : 'Lưu'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
-                >
-                  Hủy
-                </button>
-              </div>
-            ) : (
-              <div className="group flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                  {name}
-                </h1>
-                {role === 'EVALUATOR' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingName(name);
-                      setIsEditing(true);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 transition-all cursor-pointer"
-                    title="Đổi tên nhóm"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  </button>
-                )}
-              </div>
-            )}
+      {/* Class Banner (Screen 4-8 header design) */}
+      <div className="p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-start sm:items-center gap-4">
+          {/* Monogram Box */}
+          <div className="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xl shadow-sm shrink-0">
+            {monogram}
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <span>
-              <strong className="font-mono text-slate-700">{memberCount}</strong> thành viên
-            </span>
-            <span>·</span>
-            <span>Tạo ngày: {formattedDate}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider font-mono">
+                LỚP CÁ NHÂN
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Đang hoạt động
+              </span>
+              {isOwner && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 font-mono">
+                  QUẢN LÝ
+                </span>
+              )}
+            </div>
+
+            <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              {name}
+            </h1>
+
+            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-neutral-400 flex-wrap">
+              <span className="font-mono">{memberCount} thành viên</span>
+              <span>&bull;</span>
+              <span>Quản lý: <strong className="text-neutral-800 dark:text-zinc-200">{evaluatorName}</strong></span>
+              <span>&bull;</span>
+              <span>
+                Mã lớp: <strong className="font-mono text-neutral-900 dark:text-neutral-100">{code}</strong>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Invitation Code */}
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Copy Code Button */}
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono font-bold border border-slate-200 transition-colors cursor-pointer"
-            title="Sao chép mã mời"
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-750 bg-slate-50/70 dark:bg-zinc-850 hover:bg-slate-100 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Sao chép mã tham gia"
           >
-            <span>Mã: {code}</span>
             {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-600 font-bold">Đã chép mã</span>
+              </>
             ) : (
-              <Copy className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+              <>
+                <Copy className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sao chép mã</span>
+              </>
             )}
           </button>
 
-          {/* Toggle Chat Panel */}
+          {/* Toggle Chat Drawer Button */}
           <button
             type="button"
             onClick={onToggleChat}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
               isChatOpen
-                ? 'bg-sky-50 border-sky-200 text-sky-700'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300'
+                : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-750 text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850'
             }`}
           >
-            <MessageSquare className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Chat nhóm</span>
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Thảo luận ({isChatOpen ? 'Mở' : 'Đóng'})</span>
           </button>
+
+          {/* Owner Quick Settings */}
+          {isOwner && onOpenSettings && (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="p-2 rounded-xl border border-slate-200 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-600 dark:text-neutral-300 transition-colors cursor-pointer"
+              title="Cài đặt lớp học"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

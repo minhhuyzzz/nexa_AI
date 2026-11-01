@@ -3,6 +3,7 @@
 import { useEffect, useState, use, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   Clock,
   CheckCircle2,
@@ -416,6 +417,34 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       localStorage.removeItem(`nexa_exam_draft_text_${assessmentId}`);
       localStorage.removeItem(`nexa_exam_draft_ev_${assessmentId}`);
       localStorage.removeItem(`nexa_exam_draft_live_${assessmentId}`);
+
+      // Handle Live Room Submission Sync
+      if (roomId) {
+        try {
+          const supabase = createClient();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from('room_participants')
+              .update({
+                status: 'SUBMITTED',
+                score: objectiveEarned,
+                submitted_at: new Date().toISOString(),
+                answers_count: Object.keys(selectedAnswers).length,
+                total_questions: questions.length,
+              })
+              .eq('room_id', roomId)
+              .eq('user_id', user.id);
+          }
+        } catch (e) {
+          console.warn('Failed to update live room participant record:', e);
+        }
+
+        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}`);
+        return;
+      }
     } catch {
       alert('Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.');
     } finally {
@@ -556,6 +585,12 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
               {activeStage === 'STAGE_1_OBJECTIVE' ? 'CHẶNG 1: TRẮC NGHIỆM &amp; TÌNH HUỐNG' : 'CHẶNG 2: BÀI TẬP THỰC HÀNH'}
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+            {roomId && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                PHÒNG THI TRỰC TIẾP &bull; PIN: {pin || 'ONLINE'}
+              </span>
+            )}
             {isStage1Locked && (
               <span className="text-[10px] font-mono font-bold px-1.5 rounded bg-slate-100 text-slate-600 flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5" /> Chặng 1 đã khóa

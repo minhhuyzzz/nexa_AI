@@ -7,9 +7,26 @@ const createRoomSchema = z.object({
   title: z.string().min(3, 'Tên phòng thi tối thiểu 3 ký tự'),
   assessmentId: z.string().uuid('Mã đề thi không hợp lệ'),
   roomMode: z.enum(['OPEN', 'GROUP_ONLY']).default('OPEN'),
+  themeId: z.enum(['minimal_white', 'space_blue', 'aurora', 'dark_professional']).default('minimal_white'),
+  scheduledStart: z.string().nullable().optional(),
+  durationMinutes: z.number().int().positive().optional(),
+  allowLateJoin: z.boolean().default(false),
+  autoSubmitOnTimeout: z.boolean().default(true),
+  showPin: z.boolean().default(true),
+  systemNotificationsEnabled: z.boolean().default(true),
+  roomDescription: z.string().max(500).nullable().optional(),
+  maxParticipants: z.number().int().min(1).max(200).default(40),
+  resultsPublishSettings: z
+    .object({
+      show_score: z.boolean().default(true),
+      show_ranking: z.boolean().default(true),
+      show_answers: z.boolean().default(false),
+      scope: z.enum(['ALL', 'PASSED_ONLY']).default('ALL'),
+    })
+    .optional(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
 
@@ -23,8 +40,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get('status');
+    const themeFilter = searchParams.get('theme');
+
     // 2. Fetch rooms created by this evaluator
-    const { data: rooms, error } = await supabase
+    let query = supabase
       .from('exam_rooms')
       .select(`
         id,
@@ -33,9 +54,24 @@ export async function GET() {
         assessment_id,
         room_mode,
         is_active,
+        is_locked,
+        theme_id,
+        status,
+        allow_late_join,
+        auto_submit_on_timeout,
+        show_pin,
+        system_notifications_enabled,
+        results_published,
+        results_publish_settings,
+        max_participants,
+        room_description,
         scheduled_start,
+        scheduled_end,
+        started_at,
+        ended_at,
         created_at,
         assessments (
+          id,
           title,
           duration_minutes,
           passing_score
@@ -44,33 +80,82 @@ export async function GET() {
           id,
           user_id,
           status,
+          is_ready,
+          connection_status,
+          score,
+          submitted_at,
           joined_at
         )
       `)
       .eq('created_by', user.id)
       .order('created_at', { ascending: false });
 
+    if (statusFilter && statusFilter !== 'ALL') {
+      query = query.eq('status', statusFilter);
+    }
+    if (themeFilter && themeFilter !== 'ALL') {
+      query = query.eq('theme_id', themeFilter);
+    }
+
+    const { data: rooms, error } = await query;
+
     if (error) {
       console.error('Error fetching exam rooms:', error);
       return NextResponse.json({ error: 'Không thể tải danh sách phòng thi' }, { status: 500 });
     }
 
-    const formattedRooms = (rooms || []).map((r) => ({
-      id: r.id,
-      roomCode: r.room_code,
-      title: r.title,
-      assessmentId: r.assessment_id,
-      // @ts-expect-error join
-      assessmentTitle: r.assessments?.title || 'Đề khảo thí',
-      // @ts-expect-error join
-      durationMinutes: r.assessments?.duration_minutes || 45,
-      roomMode: r.room_mode,
-      isActive: r.is_active,
-      hasStarted: !!r.scheduled_start,
-      startedAt: r.scheduled_start,
-      createdAt: r.created_at,
-      participantCount: r.room_participants?.length || 0,
-    }));
+    const formattedRooms = (rooms || []).map((r) => {
+      const participants = r.room_participants || [];
+      const readyCount = participants.filter((p: any) => p.is_ready).length;
+      const submittedCount = participants.filter((p: any) => p.status === 'SUBMITTED').length;
+
+      // Normalize status if not set
+      let effectiveStatus = r.status || 'WAITING';
+      if (!r.status) {
+        if (!r.is_active) effectiveStatus = 'ENDED';
+        else if (r.scheduled_start) effectiveStatus = 'IN_PROGRESS';
+        else effectiveStatus = 'WAITING';
+      }
+
+      return {
+        id: r.id,
+        roomCode: r.room_code,
+        title: r.title,
+        assessmentId: r.assessment_id,
+        // @ts-expect-error join
+        assessmentTitle: r.assessments?.title || 'Đề khảo thí',
+        // @ts-expect-error join
+        durationMinutes: r.assessments?.duration_minutes || 45,
+        // @ts-expect-error join
+        passingScore: r.assessments?.passing_score || 70,
+        roomMode: r.room_mode,
+        isActive: r.is_active,
+        isLocked: r.is_locked || false,
+        themeId: r.theme_id || 'minimal_white',
+        status: effectiveStatus,
+        allowLateJoin: r.allow_late_join ?? false,
+        autoSubmitOnTimeout: r.auto_submit_on_timeout ?? true,
+        showPin: r.show_pin ?? true,
+        systemNotificationsEnabled: r.system_notifications_enabled ?? true,
+        resultsPublished: r.results_published ?? false,
+        resultsPublishSettings: r.results_publish_settings || {
+          show_score: true,
+          show_ranking: true,
+          show_answers: false,
+          scope: 'ALL',
+        },
+        maxParticipants: r.max_participants || 40,
+        roomDescription: r.room_description || '',
+        scheduledStart: r.scheduled_start,
+        scheduledEnd: r.scheduled_end,
+        startedAt: r.started_at || r.scheduled_start,
+        endedAt: r.ended_at || r.scheduled_end,
+        createdAt: r.created_at,
+        participantCount: participants.length,
+        readyCount,
+        submittedCount,
+      };
+    });
 
     return NextResponse.json({ rooms: formattedRooms });
   } catch (err) {
@@ -91,7 +176,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const { title, assessmentId, roomMode } = validated.data;
+    const {
+      title,
+      assessmentId,
+      roomMode,
+      themeId,
+      scheduledStart,
+      allowLateJoin,
+      autoSubmitOnTimeout,
+      showPin,
+      systemNotificationsEnabled,
+      roomDescription,
+      maxParticipants,
+      resultsPublishSettings,
+    } = validated.data;
+
     const supabase = await createClient();
 
     // 1. Authenticate user
@@ -113,7 +212,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Generate unique 6-digit numeric PIN (e.g. '839210')
+    // 2. Generate unique 6-digit numeric PIN
     let roomCode = '';
     let isUnique = false;
     let attempts = 0;
@@ -138,6 +237,8 @@ export async function POST(request: Request) {
     }
 
     // 3. Insert into exam_rooms
+    const initialStatus = 'WAITING';
+
     const { data: newRoom, error: insertError } = await supabase
       .from('exam_rooms')
       .insert({
@@ -148,7 +249,23 @@ export async function POST(request: Request) {
         visibility: 'PERSONAL',
         title,
         room_mode: roomMode,
+        theme_id: themeId,
+        status: initialStatus,
+        scheduled_start: scheduledStart || null,
+        allow_late_join: allowLateJoin,
+        auto_submit_on_timeout: autoSubmitOnTimeout,
+        show_pin: showPin,
+        system_notifications_enabled: systemNotificationsEnabled,
+        room_description: roomDescription || null,
+        max_participants: maxParticipants,
+        results_publish_settings: resultsPublishSettings || {
+          show_score: true,
+          show_ranking: true,
+          show_answers: false,
+          scope: 'ALL',
+        },
         is_active: true,
+        is_locked: false,
       })
       .select(`
         id,
@@ -156,6 +273,8 @@ export async function POST(request: Request) {
         title,
         assessment_id,
         room_mode,
+        theme_id,
+        status,
         is_active,
         created_at
       `)
@@ -174,6 +293,8 @@ export async function POST(request: Request) {
         title: newRoom.title,
         assessmentId: newRoom.assessment_id,
         roomMode: newRoom.room_mode,
+        themeId: newRoom.theme_id,
+        status: newRoom.status,
         isActive: newRoom.is_active,
         createdAt: newRoom.created_at,
       },
@@ -186,7 +307,17 @@ export async function POST(request: Request) {
 
 const updateRoomSchema = z.object({
   roomId: z.string().uuid('ID phòng thi không hợp lệ'),
-  action: z.enum(['START', 'END']),
+  action: z.enum([
+    'START',
+    'PAUSE',
+    'RESUME',
+    'END',
+    'LOCK',
+    'UNLOCK',
+    'PUBLISH_RESULTS',
+    'UPDATE_SETTINGS',
+  ]),
+  payload: z.record(z.any()).optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -201,7 +332,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const { roomId, action } = validated.data;
+    const { roomId, action, payload } = validated.data;
     const supabase = await createClient();
 
     // 1. Authenticate user
@@ -214,26 +345,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
+    const now = new Date().toISOString();
+
     if (action === 'START') {
-      // Check participant count - Prevent starting with 0 participants
-      const { count: participantCount } = await supabase
-        .from('room_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('room_id', roomId);
-
-      if (!participantCount || participantCount <= 0) {
-        return NextResponse.json(
-          { error: 'Không thể bắt đầu phòng thi khi chưa có thí sinh nào vào phòng' },
-          { status: 400 }
-        );
-      }
-
-      const now = new Date().toISOString();
-      // Set scheduled_start to now
       const { data: updatedRoom, error: updateError } = await supabase
         .from('exam_rooms')
         .update({
+          status: 'IN_PROGRESS',
           scheduled_start: now,
+          started_at: now,
           is_active: true,
         })
         .eq('id', roomId)
@@ -260,14 +380,48 @@ export async function PATCH(request: Request) {
         action: 'START',
         room: updatedRoom,
       });
-    } else {
-      // action === 'END'
-      const now = new Date().toISOString();
+    }
+
+    if (action === 'PAUSE') {
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({ status: 'PAUSED' })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể tạm dừng phòng thi' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'PAUSE', room: updatedRoom });
+    }
+
+    if (action === 'RESUME') {
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({ status: 'IN_PROGRESS' })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể tiếp tục phòng thi' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'RESUME', room: updatedRoom });
+    }
+
+    if (action === 'END') {
       const { data: updatedRoom, error: updateError } = await supabase
         .from('exam_rooms')
         .update({
+          status: 'ENDED',
           is_active: false,
           scheduled_end: now,
+          ended_at: now,
         })
         .eq('id', roomId)
         .eq('created_by', user.id)
@@ -275,18 +429,81 @@ export async function PATCH(request: Request) {
         .single();
 
       if (updateError || !updatedRoom) {
-        return NextResponse.json(
-          { error: 'Không thể kết thúc phòng thi hoặc bạn không có quyền' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Không thể kết thúc phòng thi' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'END', room: updatedRoom });
+    }
+
+    if (action === 'LOCK' || action === 'UNLOCK') {
+      const isLocked = action === 'LOCK';
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({ is_locked: isLocked })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể thay đổi trạng thái khóa phòng' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action, isLocked, room: updatedRoom });
+    }
+
+    if (action === 'PUBLISH_RESULTS') {
+      const publishSettings = payload?.publishSettings || {
+        show_score: true,
+        show_ranking: true,
+        show_answers: false,
+        scope: 'ALL',
+      };
+
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({
+          results_published: true,
+          status: 'RESULTS_PUBLISHED',
+          results_publish_settings: publishSettings,
+        })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể công bố kết quả phòng thi' }, { status: 500 });
       }
 
       return NextResponse.json({
         success: true,
-        action: 'END',
+        action: 'PUBLISH_RESULTS',
         room: updatedRoom,
       });
     }
+
+    if (action === 'UPDATE_SETTINGS') {
+      const updateData: Record<string, any> = {};
+      if (payload?.themeId) updateData.theme_id = payload.themeId;
+      if (payload?.title) updateData.title = payload.title;
+
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update(updateData)
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể cập nhật cấu hình' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'UPDATE_SETTINGS', room: updatedRoom });
+    }
+
+    return NextResponse.json({ error: 'Hành động không hỗ trợ' }, { status: 400 });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -329,4 +546,3 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

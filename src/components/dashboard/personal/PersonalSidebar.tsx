@@ -17,7 +17,6 @@ import {
   PanelLeftOpen,
   FilePlus2,
   Radio,
-  Settings,
   Share2,
   Trophy,
 } from 'lucide-react';
@@ -199,19 +198,8 @@ export function PersonalSidebar() {
             </div>
           </nav>
 
-          {/* Footer Items: Settings & Feedback */}
-          <div className="p-3 border-t border-slate-100 dark:border-zinc-850 shrink-0 space-y-1">
-            <Link
-              href="/personal/settings"
-              title={isCollapsed ? 'Cài đặt' : undefined}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors ${
-                isCollapsed ? 'justify-center px-0' : ''
-              } ${isRouteActive('/personal/settings') ? 'bg-slate-100 dark:bg-zinc-850 text-neutral-900 dark:text-neutral-100 font-semibold' : ''}`}
-            >
-              <Settings className="w-4 h-4 text-slate-400 dark:text-neutral-500 shrink-0" strokeWidth={1.75} />
-              {!isCollapsed && <span>Cài đặt</span>}
-            </Link>
-
+          {/* Footer Items: Feedback only (Cài đặt đã chuyển lên Menu Avatar) */}
+          <div className="p-3 border-t border-slate-100 dark:border-zinc-850 shrink-0">
             <button
               onClick={() => setShowFeedback(true)}
               title="Đóng góp ý kiến cho NEXA"
