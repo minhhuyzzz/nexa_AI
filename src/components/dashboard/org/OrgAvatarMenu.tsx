@@ -18,6 +18,8 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import { FeedbackModal } from '../FeedbackModal';
 import { AvatarWorkspaceSection } from '../AvatarWorkspaceSection';
+import { JoinOrgModal } from '../JoinOrgModal';
+import { OrgInviteModal } from './OrgInviteModal';
 
 interface OrgAvatarMenuProps {
   orgSlug?: string;
@@ -29,6 +31,9 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteOrg, setInviteOrg] = useState<any>(null);
 
   const [displayName, setDisplayName] = useState('Thành viên Tổ chức');
   const [displayEmail, setDisplayEmail] = useState('');
@@ -146,6 +151,11 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
               {/* Workspace Switcher in Avatar (Canva-inspired) */}
               <AvatarWorkspaceSection
                 onClose={() => setIsOpen(false)}
+                onOpenJoinModal={() => setShowJoinModal(true)}
+                onOpenInviteModal={(org) => {
+                  setInviteOrg(org);
+                  setShowInviteModal(true);
+                }}
                 userAvatarUrl={avatarUrl}
                 userDisplayName={displayName}
               />
@@ -236,6 +246,19 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
       />
+
+      <JoinOrgModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+      />
+
+      {inviteOrg && (
+        <OrgInviteModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          organization={inviteOrg}
+        />
+      )}
     </>
   );
 }

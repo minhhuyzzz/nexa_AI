@@ -10,7 +10,11 @@ import {
   ChevronRight,
   Sparkles,
   Copy,
+  Plus,
+  UserPlus,
 } from 'lucide-react';
+import { JoinOrgModal } from './JoinOrgModal';
+import { OrgInviteModal } from './org/OrgInviteModal';
 
 export interface OrganizationInfo {
   id: string;
@@ -65,15 +69,21 @@ if (typeof window !== 'undefined') {
 
 interface AvatarWorkspaceSectionProps {
   onClose: () => void;
+  onOpenJoinModal?: () => void;
+  onOpenInviteModal?: (org: OrganizationInfo) => void;
   userAvatarUrl?: string | null;
   userDisplayName?: string;
 }
 
 export function AvatarWorkspaceSection({
   onClose,
+  onOpenJoinModal,
+  onOpenInviteModal,
 }: AvatarWorkspaceSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Instant state initialization from in-memory cache or sessionStorage
   const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>(() => {
@@ -343,39 +353,67 @@ export function AvatarWorkspaceSection({
               })}
             </div>
 
-            {/* Khi chuyển sang tổ chức: Có mã mời tham gia thay thế */}
-            {currentActiveOrg && inviteCode && (
-              <div className="pt-2 mt-2 border-t border-slate-100 dark:border-zinc-800">
-                <div className="p-2 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
-                  <div className="flex items-center justify-between text-[11px] mb-1">
-                    <span className="text-slate-500 dark:text-neutral-400 font-medium">Mã mời tham gia:</span>
-                    <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-200/80 dark:border-blue-900">
-                      {inviteCode}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyInviteCode}
-                    className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-1 px-2 rounded text-[11px] font-semibold bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-750 text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-600 font-medium">Đã sao chép mã</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Sao chép mã mời</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Hành động dưới cùng của Menu Chuyển đổi */}
+            <div className="pt-1.5 mt-1.5 border-t border-slate-100 dark:border-zinc-800">
+              {currentActiveOrg ? (
+                /* Khi đang ở Tổ chức: Hiển thị "Mời thành viên" */
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFlyoutOpen(false);
+                    if (onOpenInviteModal && currentActiveOrg) {
+                      onClose();
+                      onOpenInviteModal(currentActiveOrg.organization);
+                    } else {
+                      setShowInviteModal(true);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer text-left"
+                >
+                  <UserPlus className="w-4 h-4 shrink-0" strokeWidth={2} />
+                  <span>Mời thành viên</span>
+                </button>
+              ) : (
+                /* Khi đang ở Cá nhân: Hiển thị "Tham gia tổ chức khác" */
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFlyoutOpen(false);
+                    if (onOpenJoinModal) {
+                      onClose();
+                      onOpenJoinModal();
+                    } else {
+                      setShowJoinModal(true);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer text-left"
+                >
+                  <Plus className="w-4 h-4 shrink-0" strokeWidth={2} />
+                  <span>Tham gia tổ chức khác</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Modals fallback if not handled by parent */}
+      <JoinOrgModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
+
+      {currentActiveOrg && (
+        <OrgInviteModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          organization={currentActiveOrg.organization}
+          userRole={currentActiveOrg.role}
+        />
+      )}
     </div>
   );
 }

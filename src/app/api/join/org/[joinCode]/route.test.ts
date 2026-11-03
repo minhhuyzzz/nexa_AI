@@ -220,4 +220,51 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
     // ORG-02: used_count is only incremented when approved, not on initial request creation
     expect(mockUpdateCode).not.toHaveBeenCalled();
   });
+
+  it('GET: tìm thấy tổ chức khi nhập mã tổ chức trực tiếp (fallback)', async () => {
+    const orgCode = 'FPT-POLY';
+    vi.mocked(createAdminClient).mockReturnValue({
+      from: vi.fn((table: string) => {
+        if (table === 'organization_join_codes') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'organizations') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    id: orgId,
+                    name: 'Trường FPT Polytechnic',
+                    code: orgCode,
+                    slug: 'truong-fpt-polytechnic',
+                    type: 'EDUCATIONAL',
+                    status: 'ACTIVE',
+                    is_active: true,
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        return {};
+      }),
+    } as any);
+
+    const req = new NextRequest(`http://localhost:3000/api/join/org/${orgCode}`);
+    const res = await GET(req, { params: Promise.resolve({ joinCode: orgCode }) });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.valid).toBe(true);
+    expect(body.organization.name).toBe('Trường FPT Polytechnic');
+    expect(body.organization.code).toBe(orgCode);
+  });
 });

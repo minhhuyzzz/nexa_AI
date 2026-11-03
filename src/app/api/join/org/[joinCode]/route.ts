@@ -48,36 +48,65 @@ export async function GET(
       .eq('code', cleanCode)
       .maybeSingle();
 
-    if (codeErr || !codeRow) {
+    let targetOrg: any = null;
+    let targetJoinCode: any = null;
+
+    if (codeRow && !codeErr) {
+      if (codeRow.is_revoked) {
+        return NextResponse.json(
+          { valid: false, error: 'Mã tham gia này đã bị thu hồi bởi quản trị viên tổ chức.' },
+          { status: 400 }
+        );
+      }
+
+      if (new Date(codeRow.expires_at) < new Date()) {
+        return NextResponse.json(
+          { valid: false, error: 'Mã tham gia này đã hết thời hạn hiệu lực.' },
+          { status: 400 }
+        );
+      }
+
+      if (codeRow.used_count >= codeRow.max_uses) {
+        return NextResponse.json(
+          { valid: false, error: 'Mã tham gia này đã đạt giới hạn số lượng sử dụng tối đa.' },
+          { status: 400 }
+        );
+      }
+
+      targetOrg = codeRow.organizations as any;
+      targetJoinCode = {
+        id: codeRow.id,
+        code: codeRow.code,
+        title: codeRow.title || 'Đợt khảo thí & phát triển năng lực số',
+        expiresAt: codeRow.expires_at,
+      };
+    } else {
+      // Fallback: check if cleanCode matches an active organization code
+      const { data: orgRow } = await adminSupabase
+        .from('organizations')
+        .select('id, name, code, slug, type, status, is_active')
+        .eq('code', cleanCode)
+        .maybeSingle();
+
+      if (orgRow) {
+        targetOrg = orgRow;
+        targetJoinCode = {
+          id: orgRow.id,
+          code: orgRow.code || orgRow.slug || cleanCode,
+          title: `Gia nhập tổ chức ${orgRow.name}`,
+          expiresAt: null,
+        };
+      }
+    }
+
+    if (!targetOrg) {
       return NextResponse.json(
         { valid: false, error: 'Mã tham gia không tồn tại trong hệ thống.' },
         { status: 404 }
       );
     }
 
-    if (codeRow.is_revoked) {
-      return NextResponse.json(
-        { valid: false, error: 'Mã tham gia này đã bị thu hồi bởi quản trị viên tổ chức.' },
-        { status: 400 }
-      );
-    }
-
-    if (new Date(codeRow.expires_at) < new Date()) {
-      return NextResponse.json(
-        { valid: false, error: 'Mã tham gia này đã hết thời hạn hiệu lực.' },
-        { status: 400 }
-      );
-    }
-
-    if (codeRow.used_count >= codeRow.max_uses) {
-      return NextResponse.json(
-        { valid: false, error: 'Mã tham gia này đã đạt giới hạn số lượng sử dụng tối đa.' },
-        { status: 400 }
-      );
-    }
-
-    const org = codeRow.organizations as any;
-    if (!org || org.status !== 'ACTIVE' || org.is_active === false) {
+    if (targetOrg.is_active === false || (targetOrg.status && targetOrg.status !== 'ACTIVE')) {
       return NextResponse.json(
         { valid: false, error: 'Tổ chức này hiện đang tạm khóa hoặc không hoạt động.' },
         { status: 400 }
@@ -86,17 +115,12 @@ export async function GET(
 
     return NextResponse.json({
       valid: true,
-      joinCode: {
-        id: codeRow.id,
-        code: codeRow.code,
-        title: codeRow.title || 'Đợt khảo thí & phát triển năng lực số',
-        expiresAt: codeRow.expires_at,
-      },
+      joinCode: targetJoinCode,
       organization: {
-        id: org.id,
-        name: org.name,
-        code: org.code,
-        type: org.type,
+        id: targetOrg.id,
+        name: targetOrg.name,
+        code: targetOrg.code || targetOrg.slug || '',
+        type: targetOrg.type || 'ENTERPRISE',
       },
     });
   } catch (err) {
@@ -139,30 +163,46 @@ export async function POST(
     const { fullName, studentId } = validation.data;
     const adminSupabase = createAdminClient();
 
-    // 1. Verify join code
+    // 1. Verify join code or organization code
     const { data: codeRow, error: codeErr } = await adminSupabase
       .from('organization_join_codes')
       .select('id, code, organization_id, max_uses, used_count, expires_at, is_revoked')
       .eq('code', cleanCode)
       .maybeSingle();
 
-    if (codeErr || !codeRow) {
-      return NextResponse.json({ error: 'Mã tham gia không tồn tại' }, { status: 404 });
-    }
+    let orgId: string;
+    let joinCodeId: string | null = null;
 
-    if (codeRow.is_revoked) {
-      return NextResponse.json({ error: 'Mã tham gia này đã bị thu hồi' }, { status: 400 });
-    }
+    if (codeRow && !codeErr) {
+      if (codeRow.is_revoked) {
+        return NextResponse.json({ error: 'Mã tham gia này đã bị thu hồi' }, { status: 400 });
+      }
 
-    if (new Date(codeRow.expires_at) < new Date()) {
-      return NextResponse.json({ error: 'Mã tham gia này đã hết hạn hiệu lực' }, { status: 400 });
-    }
+      if (new Date(codeRow.expires_at) < new Date()) {
+        return NextResponse.json({ error: 'Mã tham gia này đã hết hạn hiệu lực' }, { status: 400 });
+      }
 
-    if (codeRow.used_count >= codeRow.max_uses) {
-      return NextResponse.json({ error: 'Mã tham gia đã đạt tối đa lượt đăng ký' }, { status: 400 });
-    }
+      if (codeRow.used_count >= codeRow.max_uses) {
+        return NextResponse.json({ error: 'Mã tham gia đã đạt tối đa lượt đăng ký' }, { status: 400 });
+      }
 
-    const orgId = codeRow.organization_id;
+      orgId = codeRow.organization_id;
+      joinCodeId = codeRow.id;
+    } else {
+      // Fallback: check if cleanCode matches an active organization's code
+      const { data: orgRow } = await adminSupabase
+        .from('organizations')
+        .select('id, name, code, slug, status, is_active')
+        .eq('code', cleanCode)
+        .maybeSingle();
+
+      if (!orgRow || orgRow.is_active === false || (orgRow.status && orgRow.status !== 'ACTIVE')) {
+        return NextResponse.json({ error: 'Mã tham gia không tồn tại trong hệ thống' }, { status: 404 });
+      }
+
+      orgId = orgRow.id;
+      joinCodeId = null;
+    }
 
     // 2. Check if user is already an active member
     const { data: existingMember } = await adminSupabase
@@ -209,7 +249,7 @@ export async function POST(
         {
           organization_id: orgId,
           user_id: user.id,
-          join_code_id: codeRow.id,
+          join_code_id: joinCodeId,
           full_name: fullName,
           email: user.email || '',
           student_id: studentId || null,

@@ -16,12 +16,14 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import { FeedbackModal } from '../FeedbackModal';
 import { AvatarWorkspaceSection } from '../AvatarWorkspaceSection';
+import { JoinOrgModal } from '../JoinOrgModal';
 
 export function PersonalAvatarMenu() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   const [displayName, setDisplayName] = useState('Học Viên Nexa');
   const [displayEmail, setDisplayEmail] = useState('learner@nexa.edu.vn');
@@ -158,6 +160,7 @@ export function PersonalAvatarMenu() {
               {/* Workspace Switcher in Avatar (Canva-inspired) */}
               <AvatarWorkspaceSection
                 onClose={() => setIsOpen(false)}
+                onOpenJoinModal={() => setShowJoinModal(true)}
                 userAvatarUrl={avatarUrl}
                 userDisplayName={displayName}
               />
@@ -246,6 +249,12 @@ export function PersonalAvatarMenu() {
       <FeedbackModal
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
+      />
+
+      {/* Join Organization Modal */}
+      <JoinOrgModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
       />
     </>
   );
