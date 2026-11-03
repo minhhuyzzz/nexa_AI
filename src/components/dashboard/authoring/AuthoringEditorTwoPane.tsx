@@ -47,10 +47,6 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
-  // Scale & Auto-balancing
-  // 100đ is international standard (DigComp % alignment), 10đ is traditional Vietnamese academic scale
-  const [totalScale, setTotalScale] = useState<100 | 10>(100);
-
   // Autosave & Status
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string>('Vừa xong');
@@ -59,10 +55,9 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
   // Drawer
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  // Dynamic point calculation: Equal distribution across all questions
-  const questionCount = questions.length;
-  const pointsPerQuestion =
-    questionCount > 0 ? Number((totalScale / questionCount).toFixed(2)) : totalScale;
+  // Score computation & Validation
+  const currentTotalPoints = questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
+  const isScaleBalanced = Math.round(currentTotalPoints) === 100;
 
   // 1. Load Assessment & Items
   useEffect(() => {
@@ -94,6 +89,8 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
             prompt,
             type,
             points,
+            context,
+            submission_modes,
             order_index,
             rubric_guide,
             item_options (
@@ -153,9 +150,14 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
               id: item.id,
               type: qType,
               prompt: item.prompt || '',
-              points: item.points || 1,
+              points: item.points ?? 10,
               domainCode,
               domainTitle: dom?.title,
+              context: item.context || undefined,
+              scenarioContext: item.context || undefined,
+              allowedSubmissionModes: Array.isArray(item.submission_modes)
+                ? item.submission_modes
+                : ['TEXT', 'FILE', 'URL'],
               practicalGuide: item.rubric_guide || '',
               options:
                 qType !== 'PRACTICAL'
@@ -169,7 +171,7 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
             };
           });
         } else {
-          // Default initial question if empty
+          // Default initial questions totaling 100 points
           parsedQuestions = [
             {
               id: 'q-init-1',
@@ -183,6 +185,15 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
                 { id: 'opt-3', text: 'Lựa chọn C', isCorrect: false },
                 { id: 'opt-4', text: 'Lựa chọn D', isCorrect: false },
               ],
+            },
+            {
+              id: 'q-init-2',
+              type: 'PRACTICAL',
+              prompt: 'Nhiệm vụ thực hành / Tự luận...',
+              points: 50,
+              domainCode: '02',
+              allowedSubmissionModes: ['TEXT', 'FILE', 'URL'],
+              practicalGuide: 'Tiêu chuẩn đánh giá: Đạt yêu cầu về nội dung và thao tác thực hành.',
             },
           ];
         }
@@ -212,26 +223,17 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
     loadData();
   }, [assessmentId, supabase]);
 
-  // 2. Autosave function with auto-balanced points
+  // 2. Autosave function (preserves question points)
   const saveChanges = useCallback(
-    async (itemsToSave: AuthoringQuestionItem[], scale: number = totalScale) => {
+    async (itemsToSave: AuthoringQuestionItem[]) => {
       setIsSaving(true);
       try {
-        const count = itemsToSave.length;
-        const autoPts = count > 0 ? Number((scale / count).toFixed(2)) : scale;
-
-        // Automatically assign balanced points to each question
-        const balancedItems = itemsToSave.map((q) => ({
-          ...q,
-          points: autoPts,
-        }));
-
         const res = await fetch(`/api/personal/assessments/${assessmentId}/items`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            totalScale: scale,
-            questions: balancedItems,
+            totalScale: 100,
+            questions: itemsToSave,
           }),
         });
 
@@ -249,39 +251,45 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
         setIsSaving(false);
       }
     },
-    [assessmentId, totalScale]
+    [assessmentId]
   );
 
-  // Switch total scale (100đ vs 10đ) and rebalance immediately
-  const handleScaleChange = (newScale: 100 | 10) => {
-    setTotalScale(newScale);
-    saveChanges(questions, newScale);
+  // Manual Auto-balance handler: distributes 100 points evenly across all questions
+  const handleAutoBalance = () => {
+    if (questions.length === 0) return;
+    const count = questions.length;
+    const basePts = Math.floor(100 / count);
+    const remainder = 100 - basePts * count;
+    const balanced = questions.map((q, idx) => ({
+      ...q,
+      points: idx === count - 1 ? basePts + remainder : basePts,
+    }));
+    setQuestions(balanced);
+    saveChanges(balanced);
   };
 
   // Question manipulation helpers
   const handleAddQuestion = (type: QuestionType) => {
+    const isPractical = type === 'PRACTICAL' || type === 'OPEN_RESPONSE';
+    const defaultPts = questions.length > 0 ? Math.max(1, Math.floor(100 / (questions.length + 1))) : 100;
     const newQ: AuthoringQuestionItem = {
       id: `q-${Date.now()}`,
-      type,
-      prompt:
-        type === 'MCQ'
-          ? 'Nhập câu hỏi trắc nghiệm mới...'
-          : type === 'SCENARIO'
-          ? 'Tình huống thực tế...'
-          : 'Đề bài và yêu cầu thực hành...',
-      points: pointsPerQuestion,
+      type: isPractical ? 'PRACTICAL' : 'MCQ',
+      prompt: isPractical
+        ? 'Nhiệm vụ thực hành / Tự luận...'
+        : 'Nhập câu hỏi trắc nghiệm mới...',
+      points: defaultPts,
       domainCode: '01',
-      options:
-        type !== 'PRACTICAL'
-          ? [
-              { id: `opt-${Date.now()}-1`, text: 'Phương án A', isCorrect: true },
-              { id: `opt-${Date.now()}-2`, text: 'Phương án B', isCorrect: false },
-            ]
-          : undefined,
-      practicalGuide:
-        type === 'PRACTICAL'
-          ? 'Hướng dẫn chấm: Kiểm tra đầy đủ minh chứng nộp bài, tính chính xác và thẩm mỹ của sản phẩm.'
-          : undefined,
+      allowedSubmissionModes: isPractical ? ['TEXT', 'FILE', 'URL'] : undefined,
+      practicalGuide: isPractical
+        ? 'Tiêu chuẩn đánh giá: Kiểm tra tính đúng đắn, đầy đủ và minh chứng nộp bài.'
+        : undefined,
+      options: !isPractical
+        ? [
+            { id: `opt-${Date.now()}-1`, text: 'Phương án A', isCorrect: true },
+            { id: `opt-${Date.now()}-2`, text: 'Phương án B', isCorrect: false },
+          ]
+        : undefined,
     };
 
     setQuestions((prev) => {
@@ -437,36 +445,45 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
           </div>
         </div>
 
-        {/* Right actions: Scale Selector + Tools + Next */}
+        {/* Right actions: Balance Status + Auto-balance + Tools + Next */}
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          {/* Scale Setting: 100đ vs 10đ with Auto-balance */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-zinc-850 border border-slate-200/90 dark:border-zinc-800">
-            <span className="text-[10px] font-medium text-slate-500 pl-1.5 pr-0.5">Thang điểm:</span>
-            <button
-              type="button"
-              onClick={() => handleScaleChange(100)}
-              className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                totalScale === 100
-                  ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-2xs'
-                  : 'text-slate-500 hover:text-neutral-800 dark:text-zinc-400'
-              }`}
-              title="Thang 100 điểm chuẩn quốc tế (Khuyên dùng cho DigComp)"
-            >
-              100đ <span className="text-[9px] font-normal opacity-80">(Chuẩn)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleScaleChange(10)}
-              className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                totalScale === 10
-                  ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-2xs'
-                  : 'text-slate-500 hover:text-neutral-800 dark:text-zinc-400'
-              }`}
-              title="Thang 10 điểm truyền thống"
-            >
-              10đ
-            </button>
+          {/* Total score balance indicator */}
+          <div
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold font-mono flex items-center gap-1.5 tabular-nums transition ${
+              isScaleBalanced
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                : currentTotalPoints < 100
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+            }`}
+          >
+            {isScaleBalanced ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>100/100 điểm</span>
+              </>
+            ) : currentTotalPoints < 100 ? (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>{currentTotalPoints}/100đ (Thiếu {100 - currentTotalPoints}đ)</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>{currentTotalPoints}/100đ (Thừa {currentTotalPoints - 100}đ)</span>
+              </>
+            )}
           </div>
+
+          <button
+            type="button"
+            onClick={handleAutoBalance}
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+            title="Tự động chia đều điểm các câu sao cho tổng bằng 100"
+          >
+            <Scale className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Cân bằng về 100</span>
+          </button>
 
           <button
             type="button"
@@ -498,9 +515,9 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
                   Danh sách câu hỏi ({questions.length})
                 </span>
               </div>
-              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 mt-0.5">
-                <Scale className="w-3 h-3" />
-                <span>Thang {totalScale}đ • Cân bằng tự động ({pointsPerQuestion}đ/câu)</span>
+              <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1 mt-0.5">
+                <Scale className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                <span>Thang 100đ chuẩn • Tổng hiện có: {currentTotalPoints}đ</span>
               </div>
             </div>
 
@@ -560,13 +577,18 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
                       </span>
                       <span>•</span>
                       <span className="font-medium text-slate-500">
-                        {q.type === 'MCQ' && 'Trắc nghiệm'}
+                        {(q.type === 'MCQ' || q.type === 'CHOICE') && 'Trắc nghiệm'}
+                        {(q.type === 'PRACTICAL' || q.type === 'OPEN_RESPONSE') && 'Tự luận / Thực hành'}
                         {q.type === 'SCENARIO' && 'Tình huống'}
-                        {q.type === 'PRACTICAL' && 'Thực hành'}
                       </span>
+                      {(q.context || q.scenarioContext) && (
+                        <span className="px-1 py-0.2 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-medium">
+                          Tình huống
+                        </span>
+                      )}
                       <span>•</span>
                       <span className="font-mono font-semibold text-slate-600 dark:text-zinc-400">
-                        {pointsPerQuestion}đ
+                        {q.points ?? 1}đ
                       </span>
                     </div>
 
@@ -627,13 +649,25 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
               <div>
                 <label className="block text-[11px] font-bold text-slate-500 mb-1">Loại câu hỏi</label>
                 <select
-                  value={currentQ.type}
-                  onChange={(e) => updateCurrentQuestion({ type: e.target.value as QuestionType })}
+                  value={currentQ.type === 'SCENARIO' ? 'MCQ' : currentQ.type}
+                  onChange={(e) => {
+                    const newType = e.target.value as QuestionType;
+                    const isPractical = newType === 'PRACTICAL';
+                    updateCurrentQuestion({
+                      type: newType,
+                      allowedSubmissionModes: isPractical ? ['TEXT', 'FILE', 'URL'] : undefined,
+                      options: !isPractical && (!currentQ.options || currentQ.options.length === 0)
+                        ? [
+                            { id: `opt-${Date.now()}-1`, text: 'Phương án A', isCorrect: true },
+                            { id: `opt-${Date.now()}-2`, text: 'Phương án B', isCorrect: false },
+                          ]
+                        : currentQ.options,
+                    });
+                  }}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="MCQ">Trắc nghiệm một lựa chọn đúng</option>
-                  <option value="SCENARIO">Câu hỏi tình huống số</option>
-                  <option value="PRACTICAL">Bài tập thực hành kỹ năng số</option>
+                  <option value="MCQ">Trắc nghiệm (1 đáp án đúng - Tự chấm)</option>
+                  <option value="PRACTICAL">Tự luận / Thực hành (Nộp bài - Chấm Rubric)</option>
                 </select>
               </div>
 
@@ -653,35 +687,52 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
                 </select>
               </div>
 
-              {/* Points (Auto-balanced, no manual input needed) */}
+              {/* Points (Editable, balanced to 100) */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-500 mb-1">Điểm câu hỏi</label>
-                <div className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900 flex items-center justify-between text-xs">
-                  <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
-                    {pointsPerQuestion} điểm
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-medium">
-                    Tự động chia đều ({totalScale}đ/{questionCount} câu)
-                  </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={currentQ.points ?? 1}
+                    onChange={(e) => {
+                      const val = Math.max(1, Math.min(100, Number(e.target.value) || 1));
+                      updateCurrentQuestion({ points: val });
+                    }}
+                    className="w-20 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-500 tabular-nums"
+                  />
+                  <span className="text-xs font-bold font-mono text-slate-400">/ 100đ</span>
                 </div>
               </div>
             </div>
 
-            {/* Scenario context if scenario */}
-            {currentQ.type === 'SCENARIO' && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200">
-                  Bối cảnh tình huống thực tế
+            {/* Optional Scenario / Context for ANY question */}
+            <div className="space-y-1.5 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-900/40">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Bối cảnh / Tình huống dẫn nhập</span>
+                  <span className="text-[10px] font-normal text-slate-400 dark:text-neutral-500">(Tùy chọn)</span>
                 </label>
-                <textarea
-                  value={currentQ.scenarioContext || ''}
-                  onChange={(e) => updateCurrentQuestion({ scenarioContext: e.target.value })}
-                  rows={3}
-                  placeholder="Mô tả hoàn cảnh thực tế, dữ liệu và tình huống phát sinh cần người học xử lý..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50/50 dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+                {(currentQ.context || currentQ.scenarioContext) && (
+                  <button
+                    type="button"
+                    onClick={() => updateCurrentQuestion({ context: '', scenarioContext: '' })}
+                    className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                  >
+                    Xóa bối cảnh
+                  </button>
+                )}
               </div>
-            )}
+              <textarea
+                value={currentQ.context || currentQ.scenarioContext || ''}
+                onChange={(e) => updateCurrentQuestion({ context: e.target.value, scenarioContext: e.target.value })}
+                rows={2}
+                placeholder="Ví dụ: Doanh nghiệp bạn cần tổ chức lưu trữ hồ sơ trực tuyến... (để trống nếu là câu hỏi độc lập)"
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400"
+              />
+            </div>
 
             {/* Prompt textarea */}
             <div className="space-y-1.5">
@@ -780,39 +831,93 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
               <div className="space-y-5 pt-2 border-t border-slate-100 dark:border-zinc-850">
                 {/* 1. Accepted submission formats */}
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-neutral-800 dark:text-zinc-200">
-                    Hình thức nộp bài minh chứng của học viên
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-neutral-800 dark:text-zinc-200">
+                      Hình thức nộp bài minh chứng của học viên
+                    </h3>
+                    <span className="text-[10px] text-slate-400">Chọn ít nhất 1 hình thức</span>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 flex items-center gap-2.5">
+                    <label
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
+                        (currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('FILE')
+                          ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30'
+                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('FILE')}
+                        onChange={(e) => {
+                          const modes = new Set(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']);
+                          if (e.target.checked) modes.add('FILE');
+                          else if (modes.size > 1) modes.delete('FILE');
+                          updateCurrentQuestion({ allowedSubmissionModes: Array.from(modes) as any });
+                        }}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
                       <UploadCloud className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                       <div>
                         <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                          Tệp tin đính kèm
+                          Tệp đính kèm
                         </div>
-                        <div className="text-[10px] text-slate-400">PDF, Excel, Word, Hình ảnh</div>
+                        <div className="text-[10px] text-slate-400">PDF, Word, Ảnh, ZIP</div>
                       </div>
-                    </div>
+                    </label>
 
-                    <div className="p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 flex items-center gap-2.5">
+                    <label
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
+                        (currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('URL')
+                          ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30'
+                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('URL')}
+                        onChange={(e) => {
+                          const modes = new Set(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']);
+                          if (e.target.checked) modes.add('URL');
+                          else if (modes.size > 1) modes.delete('URL');
+                          updateCurrentQuestion({ allowedSubmissionModes: Array.from(modes) as any });
+                        }}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
                       <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <div>
                         <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
                           Liên kết trực tuyến
                         </div>
-                        <div className="text-[10px] text-slate-400">Google Drive, GitHub, URL</div>
+                        <div className="text-[10px] text-slate-400">Drive, Figma, GitHub</div>
                       </div>
-                    </div>
+                    </label>
 
-                    <div className="p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 flex items-center gap-2.5">
+                    <label
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
+                        (currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('TEXT')
+                          ? 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/30'
+                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('TEXT')}
+                        onChange={(e) => {
+                          const modes = new Set(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']);
+                          if (e.target.checked) modes.add('TEXT');
+                          else if (modes.size > 1) modes.delete('TEXT');
+                          updateCurrentQuestion({ allowedSubmissionModes: Array.from(modes) as any });
+                        }}
+                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                      />
                       <FileCode className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                       <div>
                         <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
                           Văn bản trực tiếp
                         </div>
-                        <div className="text-[10px] text-slate-400">Nhập bài làm và giải trình</div>
+                        <div className="text-[10px] text-slate-400">Nhập bài giải trình</div>
                       </div>
-                    </div>
+                    </label>
                   </div>
                 </div>
 

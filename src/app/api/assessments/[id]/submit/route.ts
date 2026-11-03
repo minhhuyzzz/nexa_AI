@@ -181,6 +181,7 @@ export async function POST(
 
     // 6. Evaluate each answer using pure algorithmic code
     let totalScore = 0;
+    let hasOpenResponse = false;
     const answerRecords: {
       submission_id: string;
       item_id: string;
@@ -188,8 +189,8 @@ export async function POST(
       text_response: string | null;
       evidence_url: string | null;
       live_url: string | null;
-      score_awarded: number;
-      is_correct: boolean;
+      score_awarded: number | null;
+      is_correct: boolean | null;
       auto_graded: boolean;
     }[] = [];
 
@@ -202,32 +203,50 @@ export async function POST(
       const evidenceUrl = candidateAns?.evidenceUrl || null;
       const liveUrl = candidateAns?.liveUrl || null;
 
-      const isCorrect = selectedOptionId !== null && selectedOptionId === info.correctOptionId;
-      const scoreAwarded = isCorrect ? info.points : 0;
-      totalScore += scoreAwarded;
+      if (info.correctOptionId !== null) {
+        // Choice/MCQ: auto-graded immediately
+        const isCorrect = selectedOptionId !== null && selectedOptionId === info.correctOptionId;
+        const scoreAwarded = isCorrect ? info.points : 0;
+        totalScore += scoreAwarded;
 
-      answerRecords.push({
-        submission_id: activeSubmissionId,
-        item_id: itemId,
-        selected_option_id: selectedOptionId,
-        text_response: textResponse,
-        evidence_url: evidenceUrl,
-        live_url: liveUrl,
-        score_awarded: scoreAwarded,
-        is_correct: isCorrect,
-        auto_graded: true,
-      });
+        answerRecords.push({
+          submission_id: activeSubmissionId,
+          item_id: itemId,
+          selected_option_id: selectedOptionId,
+          text_response: textResponse,
+          evidence_url: evidenceUrl,
+          live_url: liveUrl,
+          score_awarded: scoreAwarded,
+          is_correct: isCorrect,
+          auto_graded: true,
+        });
+      } else {
+        // Open Response / Practical: pending manual Rubric grading
+        hasOpenResponse = true;
+        answerRecords.push({
+          submission_id: activeSubmissionId,
+          item_id: itemId,
+          selected_option_id: null,
+          text_response: textResponse,
+          evidence_url: evidenceUrl,
+          live_url: liveUrl,
+          score_awarded: null,
+          is_correct: null,
+          auto_graded: false,
+        });
+      }
     }
 
-    const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
-    // Điểm bài thi quy đổi theo Thang điểm 10 chuẩn Việt Nam (0.0 - 10.0)
-    const scoreOn10 = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) / 10 : 0;
-    // Chuẩn đạt ĐỘNG theo cấu hình đề thi (passing_score)
-    const isPassed = percentage >= passingScore;
+    const percentage = hasOpenResponse
+      ? null
+      : maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+    const isPassed = hasOpenResponse
+      ? null
+      : percentage !== null && percentage >= passingScore;
 
     // 7. Anti-farming check: Each passed assessment only awards points once per candidate
     let pointsAwarded = 0;
-    if (isPassed && pointReward > 0) {
+    if (isPassed === true && pointReward > 0) {
       const { data: previousPassed } = await adminSupabase
         .from('assessment_submissions')
         .select('id')
@@ -261,12 +280,12 @@ export async function POST(
     const { error: updateSubErr } = await adminSupabase
       .from('assessment_submissions')
       .update({
-        status: 'SUBMITTED',
-        grading_status: 'PENDING_REVIEW',
+        status: hasOpenResponse ? 'SUBMITTED' : 'EVALUATED',
+        grading_status: hasOpenResponse ? 'PENDING_REVIEW' : 'COMPLETED',
         class_assignment_id: classAssignmentId || null,
-        total_score: totalScore,
+        total_score: hasOpenResponse ? null : totalScore,
         max_score: maxScore,
-        percentage: Number(percentage.toFixed(2)),
+        percentage: percentage !== null ? Number(percentage.toFixed(2)) : null,
         points_awarded: pointsAwarded,
         is_passed: isPassed,
         time_spent_seconds: timeSpentSeconds,
@@ -290,23 +309,25 @@ export async function POST(
         metadata: {
           assessment_id: assessmentId,
           submission_id: activeSubmissionId,
-          score_percentage: Number(percentage.toFixed(2)),
+          score_percentage: percentage !== null ? Number(percentage.toFixed(2)) : 0,
         },
       });
     }
 
     const executionTimeMs = (performance.now() - startTime).toFixed(2);
+    const scoreOn10 = percentage !== null ? Math.round(percentage) / 10 : null;
 
     return NextResponse.json({
       success: true,
       submissionId: activeSubmissionId,
-      totalScore,
+      totalScore: hasOpenResponse ? null : totalScore,
       maxScore,
       scoreOn10,
-      percentage: Number(percentage.toFixed(1)),
+      percentage: percentage !== null ? Number(percentage.toFixed(1)) : null,
       pointsAwarded,
       isPassed,
       passingScore,
+      hasOpenResponse,
       executionTimeMs: `${executionTimeMs}ms`,
     });
   } catch (err) {

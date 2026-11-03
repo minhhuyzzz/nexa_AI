@@ -19,15 +19,26 @@ export default async function OrgClassDetailPage({
   const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch class record (scoped to organization)
-  const { data: classRecord } = await adminSupabase
+  // 1. Fetch class record (scoped to organization, support UUID or class_code)
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
+
+  let classQuery = adminSupabase
     .from('evaluator_classes')
     .select('*')
-    .eq('id', classId)
-    .eq('organization_id', org.id)
-    .single();
+    .eq('organization_id', org.id);
+
+  if (isUuid) {
+    classQuery = classQuery.eq('id', classId);
+  } else {
+    classQuery = classQuery.eq('class_code', classId);
+  }
+
+  const { data: classRecord } = await classQuery.maybeSingle();
 
   if (!classRecord) notFound();
+
+  const realClassId = classRecord.id;
 
   // 2. Fetch class members with profile info
   const { data: membersRaw } = await adminSupabase
@@ -41,7 +52,7 @@ export default async function OrgClassDetailPage({
       student_code,
       profiles ( id, email, nickname, raw_user_meta_data )
     `)
-    .eq('class_id', classId)
+    .eq('class_id', realClassId)
     .order('joined_at', { ascending: false });
 
   const members: ClassMemberItem[] = (membersRaw || []).map((m: any) => {
@@ -86,7 +97,7 @@ export default async function OrgClassDetailPage({
       created_at,
       assessments ( id, title, duration_minutes, passing_score )
     `)
-    .eq('class_id', classId)
+    .eq('class_id', realClassId)
     .order('created_at', { ascending: false });
 
   const assignments: ClassAssignmentItem[] = (assignmentsRaw || []).map((a: any) => ({
@@ -115,7 +126,7 @@ export default async function OrgClassDetailPage({
   const { count: pendingGradingCount } = await adminSupabase
     .from('assessment_submissions')
     .select('id', { count: 'exact', head: true })
-    .eq('class_id', classId)
+    .eq('class_id', realClassId)
     .eq('status', 'SUBMITTED');
 
   // 4. Fetch organization members to serve as candidates for drawer
@@ -147,16 +158,17 @@ export default async function OrgClassDetailPage({
   // 5. Available assessments for the class assignment modal
   const { data: rawAssessments } = await adminSupabase
     .from('assessments')
-    .select('id, title, duration_minutes')
+    .select('id, title, duration_minutes, assessment_items(id)')
+    .or(`organization_id.eq.${org.id},organization_id.is.null`)
     .order('created_at', { ascending: false })
-    .limit(10);
+    .limit(20);
 
   const availableAssessments = (rawAssessments || []).map((ass: any) => ({
     id: ass.id,
     title: ass.title,
     durationMinutes: ass.duration_minutes || 60,
-    questionCount: 40,
-    rubricTitle: 'Rubric giữa kỳ - Kỹ năng số (100 điểm)',
+    questionCount: Array.isArray(ass.assessment_items) ? ass.assessment_items.length : 0,
+    rubricTitle: 'Thang điểm 100 DigComp',
   }));
 
   const formattedClass: OrgClassItem = {

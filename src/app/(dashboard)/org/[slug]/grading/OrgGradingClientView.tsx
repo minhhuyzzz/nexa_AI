@@ -79,7 +79,7 @@ export function OrgGradingClientView({
   );
 
   const [inputScore, setInputScore] = useState<number>(() => {
-    return selectedSub?.total_score ?? 75;
+    return selectedSub?.total_score ?? 0;
   });
   const [feedback, setFeedback] = useState<string>(() => {
     return selectedSub?.evaluator_notes ?? '';
@@ -88,7 +88,7 @@ export function OrgGradingClientView({
   // Sync inputs when selected submission changes
   React.useEffect(() => {
     if (selectedSub) {
-      setInputScore(selectedSub.total_score ?? 75);
+      setInputScore(selectedSub.total_score ?? 0);
       setFeedback(selectedSub.evaluator_notes ?? '');
       setAiSuggestion(null);
       setGradeError(null);
@@ -234,9 +234,9 @@ export function OrgGradingClientView({
   if (submissions.length === 0) {
     return (
       <OrgEmptyState
-        icon={<FileCheck className="w-5 h-5" strokeWidth={1.75} />}
+        iconName="grading"
         title="Chưa có bài thi nào được nộp"
-        description="Khi học viên hoặc nhân sự trong tổ chức nộp bài khảo thí, các bài nộp sẽ tự động tập trung tại Bàn chấm bài để giảng viên thẩm định theo Rubric."
+        description="Khi học viên hoặc nhân sự trong tổ chức nộp bài khảo thí, các bài nộp sẽ tự động tập trung tại Bàn chấm bài để người chấm thẩm định theo Rubric."
       />
     );
   }
@@ -455,7 +455,7 @@ export function OrgGradingClientView({
                     Bài thi trắc nghiệm khách quan
                   </p>
                   <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 max-w-xs mx-auto">
-                    Các câu hỏi đã được hệ thống tự động ghi nhận và tính điểm sơ bộ. Giảng viên có thể xác thực lại hoặc điều chỉnh điểm Rubric.
+                    Các câu hỏi đã được hệ thống tự động ghi nhận và tính điểm sơ bộ. Người chấm có thể xác thực lại hoặc điều chỉnh điểm Rubric.
                   </p>
                 </div>
               )}

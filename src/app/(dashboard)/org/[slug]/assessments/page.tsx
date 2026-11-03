@@ -109,7 +109,7 @@ export default async function OrgAssessmentsPage({
       {/* 2. Assessment Cards Grid */}
       {allAssessments.length === 0 ? (
         <OrgEmptyState
-          icon={<BookOpen className="w-5 h-5" strokeWidth={1.75} />}
+          iconName="book"
           title="Chưa có đề đánh giá nào sẵn sàng"
           description="Khởi tạo hoặc nhập đề đánh giá để bắt đầu tổ chức các đợt khảo thí năng lực số."
           actionText={isManager ? "Soạn đề thi mới" : undefined}

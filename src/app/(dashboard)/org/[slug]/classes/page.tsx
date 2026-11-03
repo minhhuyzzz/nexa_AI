@@ -37,18 +37,22 @@ export default async function OrgClassesPage({
     .order('created_at', { ascending: false });
 
   // 2. Fetch real pending submissions count per class (No fake numbers)
-  const { data: pendingSubs } = await adminSupabase
-    .from('assessment_submissions')
-    .select('id, class_id')
-    .eq('organization_id', org.id)
-    .eq('status', 'SUBMITTED');
-
+  const classIds = (rawClasses || []).map((c: any) => c.id);
   const pendingByClass = new Map<string, number>();
-  (pendingSubs || []).forEach((s: any) => {
-    if (s.class_id) {
-      pendingByClass.set(s.class_id, (pendingByClass.get(s.class_id) || 0) + 1);
-    }
-  });
+
+  if (classIds.length > 0) {
+    const { data: pendingSubs } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id, class_id')
+      .in('class_id', classIds)
+      .eq('status', 'SUBMITTED');
+
+    (pendingSubs || []).forEach((s: any) => {
+      if (s.class_id) {
+        pendingByClass.set(s.class_id, (pendingByClass.get(s.class_id) || 0) + 1);
+      }
+    });
+  }
 
   const initialClasses: OrgClassItem[] = (rawClasses || []).map((cls: any) => {
     const membersCount = Array.isArray(cls.class_members) ? cls.class_members.length : 0;
@@ -64,9 +68,9 @@ export default async function OrgClassesPage({
       groupType: cls.group_type || 'CLASS',
       status: cls.status || 'ACTIVE',
       term: cls.term || null,
-      instructorId: cls.instructor_id,
-      instructorName: cls.instructor_name || 'Chưa chỉ định',
-      maxCapacity: cls.max_capacity || 50,
+      instructorId: null,
+      instructorName: null,
+      maxCapacity: cls.max_capacity || 1000,
       settings: cls.settings || {},
       createdAt: cls.created_at,
       membersCount,

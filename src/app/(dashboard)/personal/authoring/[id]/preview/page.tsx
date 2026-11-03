@@ -27,6 +27,9 @@ interface PreviewItem {
   type: string;
   points: number;
   domainCode: string;
+  context?: string;
+  submissionModes?: string[];
+  practicalGuide?: string;
   options: { id: string; text: string; isCorrect: boolean }[];
 }
 
@@ -65,6 +68,9 @@ export default function PersonalAuthoringPreviewPage({
             prompt,
             type,
             points,
+            context,
+            submission_modes,
+            rubric_guide,
             item_options (
               id,
               content,
@@ -94,6 +100,9 @@ export default function PersonalAuthoringPreviewPage({
             type: q.type || 'MCQ',
             points: q.points || 1,
             domainCode: dom?.code ? `D${dom.code}` : 'D1',
+            context: q.context || undefined,
+            submissionModes: Array.isArray(q.submission_modes) ? q.submission_modes : undefined,
+            practicalGuide: q.rubric_guide || undefined,
             options: (q.item_options || []).map((o: any) => ({
               id: o.id,
               text: o.content || '',
@@ -123,10 +132,10 @@ export default function PersonalAuthoringPreviewPage({
     return true;
   });
 
-  const isValidForPublish = hasQuestions && allPromptsFilled && allMCQHaveCorrectAnswer;
-
   const totalPoints = items.reduce((sum, i) => sum + i.points, 0);
+  const isTotalPoints100 = Math.round(totalPoints) === 100;
   const coveredDomains = [...new Set(items.map((i) => i.domainCode))];
+  const isValidForPublish = hasQuestions && allPromptsFilled && allMCQHaveCorrectAnswer && isTotalPoints100;
 
   const handlePublish = async () => {
     if (!isValidForPublish) return;
@@ -280,6 +289,22 @@ export default function PersonalAuthoringPreviewPage({
                   <CheckCircle2 className="w-4 h-4" /> {assessment?.passing_score || 70}%
                 </span>
               </div>
+
+              {/* Check 5: Total Score 100 */}
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
+                <span className="text-neutral-800 dark:text-zinc-200">
+                  5. Tổng điểm đề thi chuẩn hóa đủ 100 điểm
+                </span>
+                {isTotalPoints100 ? (
+                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" /> Đạt (100/100 điểm)
+                  </span>
+                ) : (
+                  <span className="text-rose-600 font-bold flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" /> {Math.round(totalPoints)}/100đ (Chưa đủ 100đ)
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -301,13 +326,36 @@ export default function PersonalAuthoringPreviewPage({
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                         {item.domainCode}
                       </span>
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        {item.type === 'MCQ' || item.type === 'CHOICE' ? 'Trắc nghiệm' : 'Tự luận / Thực hành'}
+                      </span>
                     </div>
                     <span className="font-mono text-slate-500 font-semibold">{item.points} điểm</span>
                   </div>
 
+                  {item.context && (
+                    <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-800/50 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-600 dark:text-neutral-300 italic">
+                      <strong className="not-italic text-neutral-900 dark:text-neutral-100 font-semibold font-sans">Bối cảnh: </strong>
+                      {item.context}
+                    </div>
+                  )}
+
                   <p className="text-xs text-neutral-900 dark:text-neutral-100 font-medium leading-relaxed">
                     {item.prompt}
                   </p>
+
+                  {(item.type === 'PRACTICAL' || item.type === 'PRACTICAL_TASK') && (
+                    <div className="p-2.5 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs space-y-1">
+                      <div className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+                        Hình thức nộp: {(item.submissionModes || ['TEXT', 'FILE', 'URL']).join(', ')}
+                      </div>
+                      {item.practicalGuide && (
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                          <strong>Tiêu chuẩn chấm:</strong> {item.practicalGuide}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Options */}
                   {item.options.length > 0 && (

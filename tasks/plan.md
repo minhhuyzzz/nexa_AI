@@ -1,178 +1,156 @@
-# Kế Hoạch Triển Khai: Redesign Toàn Diện Organization Dashboard v4 & Tích Hợp Luồng Thành Viên Trong Personal
+# Kế Hoạch Triển Khai: Đồng Bộ Assessment Authoring V2 & Tối Ưu Toàn Diện Organization Dashboard
 
-> **Căn cứ tài liệu & Yêu cầu:**
-> - Bản đặc tả thiết kế: [`NEXA_Organization_Dashboard_V4_UI_UX_SPEC.md`](file:///c:/Users/CPS/Downloads/NEXA_Org_Dashboard_V4_9_Man_Hinh/NEXA_Organization_Dashboard_V4_UI_UX_SPEC.md)
-> - Prototype tham khảo: [`NEXA_Organization_Dashboard_9_Man_Hinh_V4.html`](file:///c:/Users/CPS/Downloads/NEXA_Org_Dashboard_V4_9_Man_Hinh/NEXA_Organization_Dashboard_9_Man_Hinh_V4.html) & thư mục `screens/`
-> - Thư mục hình ảnh tài nguyên: `public/images/dashboard/` (`Banner Tổng quan.jpg`, `Banner Thư viện đề đánh giá.jpg`, `nexa-01-tong-quan.png` đến `nexa-08-cai-dat.png`)
+> **Căn cứ tài liệu & Quyết định sản phẩm:**
+> - Đặc tả tạo đề thống nhất: [`NEXA_ASSESSMENT_AUTHORING_UX_PRODUCT_SPEC.md`](file:///c:/Users/CPS/Downloads/NEXA_ASSESSMENT_AUTHORING_UX_PRODUCT_SPEC.md)
+> - Đặc tả kiểm toán & thiết kế Org Dashboard: [`NEXA_ORG_DASHBOARD_UX_AUDIT_REDESIGN_SPEC_2026-11-03.md`](file:///c:/Users/CPS/Downloads/NEXA_ORG_DASHBOARD_UX_AUDIT_REDESIGN_SPEC_2026-11-03.md)
 > - Quy chuẩn thương hiệu & giao diện: [`AGENTS.md`](file:///c:/nexa/AGENTS.md) (Light `#FFFFFF`, Dark `#000000`, Cobalt `#2563EB`, chống AI slop, thang điểm `/100`, không số liệu giả).
-> - Quy trình lập kế hoạch: [`planning-and-task-breakdown`](file:///c:/nexa/.agents/skills/planning-and-task-breakdown/SKILL.md)
+> - Quyết định phỏng vấn `/grill-me` (03/11/2026):
+>   1. Thống nhất thang điểm 100; Trắc nghiệm tự chấm ngay, Tự luận/Thực hành chấm riêng theo Rubric, điểm chưa chấm là `null`/`PENDING`, chỉ kết luận /100 khi chấm xong toàn bộ.
+>   2. Thống nhất một luồng Giao đánh giá & Tạo đợt duy nhất dựa trên `assessment_campaigns`, loại bỏ wizard 5 bước, form 1 trang + xác nhận cuối.
 
 ---
 
-## 1. Định Hướng Thiết Kế Cốt Lõi (Core UX Principles)
+## 1. Mục Tiêu & Nguyên Tắc Bất Biến
 
-1. **Ba không gian độc lập, một danh tính duy nhất:**
-   - **Personal (`/personal/*`):** Không gian của mọi người dùng (kể cả thành viên và học viên của tổ chức). Mọi bài tập, đợt khảo thí được giao, lớp học tham gia và kết quả 5 miền DigComp của thành viên đều diễn ra tại đây.
-   - **Organization (`/org/[slug]/*`):** Bàn điều hành chuyên biệt chỉ dành cho Quản trị viên (`ORG_OWNER`, `ORG_ADMIN`). Tuyệt đối không tạo dashboard thừa cho vai trò `MEMBER`.
-   - **Platform Admin (`/admin/*`):** Quản trị toàn hệ thống NEXA.
-2. **Khắc phục triệt để chi tiết Workspace Switcher & Menu tài khoản:**
-   - Khi ở **Personal**: Menu chuyển đổi hiển thị tùy chọn `+ Tham gia tổ chức khác` (mở Modal nhập mã mời/mã PIN hoặc xem lời mời).
-   - Khi ở **Organization**: Menu chuyển đổi hiển thị tùy chọn `Mời thành viên` (mở Modal mời với 3 tab: Mã mời, Link tham gia, Gửi thư mời qua Email).
-   - **Loại bỏ hoàn toàn** hộp thông tin thô kệch `Mã mời tham gia: [FPT-POLY]` và nút sao chép inline nằm chắn giữa danh sách chuyển đổi.
-3. **Mỗi màn hình một mô hình tác vụ riêng biệt:**
-   - Không rập khuôn cấu trúc "3 thẻ KPI + bảng" cho mọi trang.
-   - Bàn chấm bài (`/org/[slug]/grading`) chuyển từ dạng mở popup sang **Bố cục 3 cột (3-Column Workbench)**: Cột 1 = Hàng đợi nộp bài; Cột 2 = Trình đọc bài nộp & minh chứng; Cột 3 = Bảng điểm Rubric chấm theo tiêu chí /100, AI gợi ý & phê duyệt.
-4. **Sử dụng hình ảnh có chọn lọc & mục đích rõ ràng:**
-   - Chỉ sử dụng Banner hình ảnh tối ưu từ `public/images/dashboard/` qua `next/image` tại 3 trang: **Tổng quan** (`Banner Tổng quan.jpg`), **Thư viện đề** (`Banner Thư viện đề đánh giá.jpg`), và **Gói sử dụng** (`nexa-07-goi-su-dung.png`).
-   - Các màn hình đòi hỏi tập trung thao tác cao (Chấm bài, Thành viên, Báo cáo năng lực, Cài đặt) dùng giao diện sạch, nền trung tính, không chèn banner trang trí làm phân tâm.
-5. **Thang điểm chuẩn hóa `/100`:**
-   - Mọi điểm số năng lực và khảo thí hiển thị theo thang `/100` giúp ban lãnh đạo dễ dàng so sánh; vẫn lưu trữ điểm rubric gốc để đối chiếu minh chứng.
-   - Điểm `null` / chưa thi hiển thị `—` hoặc trạng thái rỗng có chỉ dẫn; **tuyệt đối không hiển thị 0% giả**.
+1. **Ba không gian độc lập, một danh tính:**
+   - **Personal (`/personal/*`):** Không gian của mọi người dùng (kể cả thành viên tổ chức). Nhận bài được giao, làm bài thi, nộp bài, xem kết quả và lộ trình 5 miền.
+   - **Organization (`/org/[slug]/*`):** Bàn điều hành dành riêng cho Admin (`ORG_OWNER`, `ORG_ADMIN`). Thành viên tổ chức không dùng workspace này.
+   - **Platform Admin (`/admin/*`):** Quản trị toàn hệ thống nền tảng.
+2. **Một hệ thống đề đánh giá duy nhất với 2 loại câu hỏi:**
+   - **Trắc nghiệm (`CHOICE` / `MCQ`):** Chọn 1 đáp án đúng, hệ thống tự động đối chiếu và cho điểm ngay khi nộp bài.
+   - **Tự luận / Thực hành (`OPEN_RESPONSE` / `PRACTICAL`):** Người học nộp bài bằng văn bản, tệp đính kèm, liên kết URL hoặc kết hợp; người chấm đánh giá theo tiêu chí Rubric; AI chỉ đóng vai trò gợi ý nháp.
+   - **Tình huống là bối cảnh tùy chọn (`context`),** không phải loại câu hỏi riêng. Có thể bật bối cảnh ở cả câu trắc nghiệm và câu tự luận.
+3. **Thống nhất luồng Giao bài & Đợt đánh giá:**
+   - Dùng `assessment_campaigns` làm mô hình dữ liệu chính duy nhất.
+   - Giao đề từ Lớp hoặc Sử dụng đề từ Thư viện đề đều mở một form tạo đợt đánh giá tinh gọn (pre-select lớp hoặc đề), loại bỏ wizard 5 bước cồng kềnh.
+4. **Bàn chấm bài chuyên nghiệp (Rubric & Evidence Reader):**
+   - Hàng đợi chỉ gom các bài thi có câu tự luận/thực hành cần thẩm định (đề 100% trắc nghiệm tự hoàn tất, không đưa vào hàng chờ).
+   - Xem toàn bộ minh chứng (file, url, text) và chấm điểm theo Rubric từng tiêu chí.
+   - Điểm 0 là điểm hợp lệ, không tự động biến thành 70.
+5. **Báo cáo năng lực trung thực:**
+   - Lọc theo Đợt (tên Admin tự đặt) và Lớp/Nhóm.
+   - Chuẩn hóa điểm /100, phân biệt người và lượt bài. Không tạo biểu đồ xu hướng giả khi dữ liệu các đợt không cùng điều kiện so sánh.
 
 ---
 
-## 2. Sơ Đồ Kiến Trúc & Luồng Trải Nghiệm (Workflow Diagram)
+## 2. Kiến Trúc Luồng Dữ Liệu (End-to-End Workflow)
 
 ```mermaid
 flowchart TD
-    subgraph PersonalSpace["Không Gian Cá Nhân (Personal Workspace) - Dành cho Mọi Người Dùng"]
-        P_Dash["/personal/dashboard<br/>(Thẻ bài giao từ Tổ chức - OrgAssignmentsWidget)"]
-        P_Groups["/personal/groups<br/>(Lớp học có nhãn tổ chức: [Trường FPT Poly])"]
-        P_Subs["/personal/submissions<br/>(Trung tâm nộp bài: class_assignments & campaigns)"]
-        P_Radar["/personal/learning-path<br/>(5 Miền Năng Lực Số cập nhật từ kết quả khảo thí)"]
+    subgraph Authoring["1. Soạn Thảo Đề (Authoring V2)"]
+        A1["Tạo đề mới (/org/[slug]/assessments/new hoặc /personal/assessments/new)"] --> A2["Thêm câu hỏi: Trắc nghiệm hoặc Tự luận/Thực hành"]
+        A2 --> A3["[Tùy chọn] Bật bối cảnh tình huống (Context)"]
+        A3 --> A4["Cấu hình nộp: Văn bản / Tệp / URL + Thiết lập Rubric"]
+        A4 --> A5["Kiểm định & Preview đúng giao diện học viên"]
+        A5 --> A6["Phát hành đề (Tổng điểm gốc = 100)"]
     end
 
-    subgraph OrgSpace["Không Gian Tổ Chức (Org Workspace) - Chỉ ORG_OWNER / ORG_ADMIN"]
-        S1["Màn 1: Tổng quan (/org/[slug])<br/>(Banner editorial, Dòng tóm tắt, Cần chú ý)"]
-        S2["Màn 2: Thành viên (/org/[slug]/members)<br/>(Dải chờ duyệt, Bảng lọc, Drawer hồ sơ)"]
-        S3["Màn 3: Nhóm & Đơn vị (/org/[slug]/classes)<br/>(Lưới thư mục lớp, Modal gán bài)"]
-        S4["Màn 4: Đề đánh giá (/org/[slug]/assessments)<br/>(Banner thư viện đề, CTA Tạo đợt từ đề)"]
-        S5["Màn 5: Đợt đánh giá (/org/[slug]/campaigns)<br/>(Bảng 3 trạng thái, Tiến độ vận hành)"]
-        S6["Màn 6: Bàn chấm bài (/org/[slug]/grading)<br/>(3 Cột: Hàng chờ - Minh chứng - Rubric /100)"]
-        S7["Màn 7: Báo cáo (/org/[slug]/analytics)<br/>(URL filters, 5 miền DigComp, CSV export)"]
-        S8["Màn 8: Gói sử dụng (/org/[slug]/plan)<br/>(Hạn mức ghế, Credits AI, Gia hạn)"]
-        S9["Màn 9: Cài đặt (/org/[slug]/settings)<br/>(Cấu hình 2 cột, Cơ chế duyệt mã PIN)"]
+    subgraph CampaignFlow["2. Giao Đánh Giá / Tạo Đợt (1 Form Thống Nhất)"]
+        A6 --> C1["Tạo đợt đánh giá (Từ Trang Đợt / Trang Lớp / Trang Đề)"]
+        C1 --> C2["Điền thông tin: Tên đợt, Đề sẵn sàng, Lớp/Nhóm, Lịch mở/đóng"]
+        C2 --> C3["Xác nhận & Phát hành đợt (assessment_campaigns)"]
     end
 
-    AdminSwitch{"Workspace Switcher"} -->|Chuyển sang Cá nhân| PersonalSpace
-    AdminSwitch -->|Chuyển sang Điều hành| OrgSpace
+    subgraph PersonalLearner["3. Học Viên Làm Bài Trong Personal"]
+        C3 --> L1["Nhận bài tại /personal/submissions (Bài được giao)"]
+        L1 --> L2["Làm bài: Trắc nghiệm chọn đáp án + Tự luận nhập text/tải file/gửi URL"]
+        L2 --> L3["Nộp bài (Khóa chỉnh sửa)"]
+    end
 
-    S4 -.->|Tạo đợt khảo thí| S5
-    S5 -.->|Giao bài thi tới lớp| P_Dash
-    P_Dash -.->|Học viên làm bài & nộp bài| P_Subs
-    P_Subs -.->|Bài nộp chuyển vào| S6
-    S6 -.->|Duyệt điểm Rubric /100| S7
-    S6 -.->|Điểm cập nhật ngược lại| P_Radar
+    subgraph GradingAndReporting["4. Chấm Bài & Báo Cáo"]
+        L3 --> G1{"Đề chỉ có trắc nghiệm?"}
+        G1 -- Có --> G2["Tự động chấm 100% → Công bố điểm ngay"]
+        G1 -- Không --> G3["Hàng đợi Bàn chấm bài (/org/[slug]/grading)"]
+        G3 --> G4["Admin đọc minh chứng & chấm Rubric (AI gợi ý nháp)"]
+        G4 --> G5["Phê duyệt điểm chính thức /100"]
+        G2 --> R1["Báo cáo năng lực 5 miền & Phân bố điểm theo Đợt/Lớp"]
+        G5 --> R1
+    end
 ```
 
 ---
 
-## 3. Bản Kế Hoạch 5 Giai Đoạn (Detailed Phase Breakdown)
+## 3. Lộ Trình Triển Khai Theo Giai Đoạn (Phased Execution)
 
-### Phase 1: Chuẩn Hóa Shell, Switcher Menu & Tích Hợp Luồng Member Trong Personal
-- **Mục tiêu:** Hoàn thiện trải nghiệm chuyển đổi không gian mượt mà, loại bỏ triệt để các thành phần UI thừa trong Switcher, và nâng cấp các widget dành cho Thành viên tổ chức trong Personal Dashboard.
-- **Nhiệm vụ:**
-  - **Task 1.1: Chuẩn hóa AvatarWorkspaceSection & Switcher UX (S)**
-    - Đảm bảo khi ở Personal: Nút hành động cuối là `+ Tham gia tổ chức khác` (mở `JoinOrgModal`).
-    - Đảm bảo khi ở Org: Nút hành động cuối là `Mời thành viên` (mở `OrgInviteModal` với 3 tab: Mã mời, Link, Email).
-    - Triệt tiêu hoàn toàn hộp inline `Mã mời tham gia: [FPT-POLY] [Sao chép mã mời]`.
-  - **Task 1.2: Nâng cấp OrgAssignmentsWidget & Tích hợp Submissions trong Personal (M)**
-    - Làm sắc nét giao diện `OrgAssignmentsWidget` trên `/personal/dashboard`: hiển thị huy hiệu tổ chức, thời hạn nộp bài rõ ràng, nút 1-click CTA "Bắt đầu làm bài".
-    - Đồng bộ hóa tab `/personal/submissions` hiển thị cả bài tập thường (`class_assignments`) và bài khảo thí chiến dịch (`assessment_campaigns`).
-  - **Task 1.3: Bộ thành phần dùng chung (Shared Primitives) cho Org Console (S)**
-    - Chuẩn hóa các primitive Drawer và Modal cho bảng điều khiển Org (`OrgDrawer`, `OrgModalFilter`, `OrgEmptyState`) đảm bảo tuân thủ WCAG AA, phím Escape, focus trap, và thời gian animation 150-180ms.
+### Giai đoạn P0: Vá Các Lỗ Hổng & Điểm Nghẽn Nghiệp Vụ Nghiêm Trọng (Stop-the-line)
+1. **Sửa fallback ID giả `a1`, `a2` trong `AssignAssessmentModal.tsx`:**
+   - Xóa bỏ hằng số `DEFAULT_ASSESSMENTS` (`a1`, `a2`). Nếu tổ chức chưa có đề sẵn sàng, hiển thị empty state chỉ rõ *"Chưa có đề đánh giá sẵn sàng"* kèm nút *"Tạo đề mới"*.
+2. **Sửa lỗi điểm 0 bị biến thành 70 trong Bàn chấm bài:**
+   - Tại `OrgGradingClientView.tsx`: Thay `sub.total_score || 70` bằng toán tử nullish coalescing `sub.total_score ?? null`. Điểm 0 phải giữ nguyên là 0.
+3. **Sửa query bài nộp đề công khai trong `grading/page.tsx`:**
+   - Cho phép hiển thị bài nộp của cả đề nội bộ tổ chức lẫn đề chuẩn công khai được giao trong các đợt/lớp của tổ chức.
+4. **Sửa trạng thái đợt đánh giá theo thời gian thực:**
+   - Đợt có thời gian bắt đầu trong tương lai phải mang trạng thái `UPCOMING` (Sắp diễn ra), không tự nhận là `ACTIVE`.
 
-*Checkpoint 1:* Kiểm tra switcher ở cả 2 không gian; kiểm tra tài khoản học viên trong Personal thấy bài tập từ tổ chức mà không cần vào Org.
+### Giai đoạn P1: Nâng Cấp Trình Soạn Thảo Đề (Assessment Authoring V2) & Grading Engine
+1. **Chuẩn hóa mô hình kiểu dữ liệu Authoring V2:**
+   - Định nghĩa kiểu: `kind: 'CHOICE' | 'OPEN_RESPONSE'`, trường `context?: string` cho bối cảnh tình huống, `submission_modes: ('TEXT' | 'FILE' | 'URL')[]`, và `rubric?: AuthoringRubricCriterion[]`.
+   - Bảo toàn tương thích ngược cho các row cũ trong DB (`MCQ`, `SCENARIO`, `PRACTICAL`).
+2. **Cải tiến giao diện Editor 2 cột (`AuthoringEditorTwoPane.tsx`):**
+   - Bộ chọn thêm câu: Chỉ gồm **Trắc nghiệm** và **Tự luận / Thực hành**.
+   - Công tắc *"Thêm bối cảnh tình huống"* trong từng câu hỏi.
+   - Cấu hình phương thức nộp (Văn bản / Tệp đính kèm / Liên kết) và Rubric tiêu chí chấm trực quan.
+   - Cơ chế kiểm soát điểm: Hiển thị tổng điểm hiện tại `/100`, cảnh báo khi thiếu/thừa điểm, nút *"Tự động cân bằng về 100"*, không tự ý chia lại điểm âm thầm.
+3. **Màn hình Preview & Kiểm định (Validation):**
+   - Xem trước liên tục toàn bộ đề hỗn hợp đúng như giao diện người học.
+   - Kiểm định chặt chẽ: trắc nghiệm tối thiểu 2 đáp án và 1 đáp án đúng; câu mở có ít nhất 1 hình thức nộp và rubric; tổng điểm gốc phải đủ 100 điểm mới được phát hành.
+4. **Grading Engine phân tách:**
+   - Trắc nghiệm: Tự động chấm ngay khi nộp bài.
+   - Tự luận / Thực hành: Gán trạng thái `PENDING`, điểm ban đầu là `null` (không mặc định là 0).
+   - Chỉ tính điểm tổng kết bài thi khi tất cả câu hỏi bắt buộc đã được chấm xong.
 
----
+### Giai đoạn P2: Thống Nhất Luồng Giao Đánh Giá / Tạo Đợt Khảo Thí (1 Form Duy Nhất)
+1. **Loại bỏ Wizard 5 bước cồng kềnh:**
+   - Thay thế `CampaignWizardClient.tsx` bằng Form tạo đợt 1 trang tinh gọn:
+     - Khối 1: Tên đợt do Admin tự đặt & Mô tả.
+     - Khối 2: Chọn đề đánh giá đã phát hành.
+     - Khối 3: Chọn lớp/nhóm tham gia (kèm số lượng thành viên dự kiến).
+     - Khối 4: Lịch mở/đóng bài và ngưỡng đạt (mặc định 70/100, có thể tùy chỉnh).
+     - Khối 5: Xem trước tóm tắt & Nút phát hành đợt.
+2. **Tích hợp nút "Giao đánh giá" từ trang Lớp & Thư viện đề:**
+   - Bấm "Giao đánh giá" từ trang Lớp (`/org/[slug]/classes/[id]`): Mở form tạo đợt với lớp đã được chọn sẵn.
+   - Bấm "Tạo đợt từ đề này" từ trang Đề (`/org/[slug]/assessments`): Mở form tạo đợt với đề đã được chọn sẵn.
+   - Đồng bộ lưu trữ vào `assessment_campaigns`, không tạo `class_assignments` rời rạc ngoài đợt.
 
-### Phase 2: Màn Hình Vận Hành Trọng Tâm: Tổng Quan, Thành Viên, Lớp & Nhóm (Screens 1, 2, 3)
-- **Mục tiêu:** Redesign 3 màn hình điều hành cơ bản của Admin theo đúng tiêu chuẩn V4 (không dùng thẻ KPI đóng khối cồng kềnh, phân cấp rõ ràng).
-- **Nhiệm vụ:**
-  - **Task 2.1: Redesign Màn 1 — Tổng quan (`/org/[slug]`) (M)**
-    - Hero Banner: Tích hợp hình ảnh `Banner Tổng quan.jpg` (sử dụng `next/image` với fallback màu navy đậm `#17213a`).
-    - Dòng tóm tắt nhanh (Summary Line): Thay thế 4 ô KPI thô bằng dòng text thông số thanh lịch: `"128 thành viên · 8 nhóm · 3 đợt đánh giá · 4 bài chờ chấm"`.
-    - Danh sách việc cần chú ý (Attention Queue): Liệt kê các bài nộp đang chờ chấm, đợt thi sắp hết hạn.
-    - Bảng hoạt động khảo thí gần nhất: Trạng thái vận hành thực tế kèm liên kết nhanh.
-  - **Task 2.2: Redesign Màn 2 — Quản trị Thành viên (`/org/[slug]/members`) (M)**
-    - Dải xử lý phê duyệt (Pending Approval Strip): Nổi bật danh sách yêu cầu gia nhập qua mã PIN/mã trường kèm nút duyệt/từ chối 1-click.
-    - Thanh công cụ lọc & tìm kiếm: Tìm theo tên/email, lọc theo vai trò (`ORG_ADMIN`, `MEMBER`), lọc theo lớp.
-    - Bảng danh sách thành viên gọn gàng: Hiển thị trạng thái tài khoản, số lớp tham gia, ngày tham gia.
-    - `MemberProfileDrawer`: Drawer trượt mượt mà hiển thị thông tin chi tiết thành viên, danh sách lớp trực thuộc và hành động thay đổi quyền/xóa khỏi tổ chức.
-  - **Task 2.3: Redesign Màn 3 — Nhóm & Đơn vị Trực Thuộc (`/org/[slug]/classes`) (M)**
-    - Lưới thư mục trực quan (`classes-grid`): Trình bày các lớp học/phòng ban dưới dạng card chuyên nghiệp có thông tin giảng viên phụ trách, số lượng học viên và các đợt thi đang gán.
-    - Modal tạo nhóm/lớp mới tinh giản.
-    - Tích hợp tính năng gán nhanh đợt đánh giá cho lớp học.
+### Giai đoạn P3: Hoàn Thiện Bàn Chấm Bài & Báo Cáo Năng Lực 5 Miền
+1. **Bàn chấm bài tổ chức (`/org/[slug]/grading`):**
+   - Hàng đợi bài nộp: Chỉ gom các bài có câu tự luận/thực hành cần chấm. Đề 100% trắc nghiệm tự động chuyển trạng thái hoàn thành.
+   - Khung đọc minh chứng: Xem được đồng thời văn bản, tệp tải lên (PDF, DOCX...) và URL sản phẩm nộp của học viên.
+   - Bảng chấm Rubric: Chấm điểm từng tiêu chí, nhập nhận xét, nút "Phê duyệt điểm".
+   - AI Grader: Đóng vai trò đề xuất nháp, Admin duyệt mới thành điểm chính thức.
+2. **Báo cáo năng lực tổ chức (`/org/[slug]/analytics`):**
+   - Bộ lọc: Lọc theo Đợt đánh giá (theo tên Admin đặt) và Lớp/Nhóm.
+   - Dữ liệu 5 miền chuẩn DigComp: Điểm trung bình thật, tỷ lệ đạt, khoảng phân bố điểm.
+   - Loại bỏ biểu đồ xu hướng theo kỳ giả mạo và các khối marketing framework nội bộ.
+   - Trạng thái chưa có dữ liệu: Hiển thị 1 empty state duy nhất có hướng dẫn tạo đợt, không vẽ 3 card KPI 0% giả.
 
-*Checkpoint 2:* Xác nhận màn 1, 2, 3 hiển thị chuẩn Light/Dark mode, không có lỗi console, tương tác mượt mà.
-
----
-
-### Phase 3: Ngân Hàng Đề, Chiến Dịch & Bàn Chấm Bài 3 Cột (Screens 4, 5, 6)
-- **Mục tiêu:** Tái cấu trúc quy trình khảo thí từ phát hành đề, tạo đợt thi đến bàn chấm bài chuyên nghiệp không dùng popup.
-- **Nhiệm vụ:**
-  - **Task 3.1: Redesign Màn 4 — Thư viện Đề Đánh Giá (`/org/[slug]/assessments`) (S)**
-    - Hero Banner: Tích hợp `Banner Thư viện đề đánh giá.jpg`.
-    - Thư viện đề: Phân nhóm rõ ràng giữa Đề chuẩn DigComp quốc tế và Đề nội bộ của tổ chức.
-    - Hành động trọng tâm: Nút `Tạo đợt từ đề` trực tiếp chuyển tiếp thông tin sang trang tạo chiến dịch.
-  - **Task 3.2: Redesign Màn 5 — Đợt Đánh Giá & Khảo Thí (`/org/[slug]/campaigns`) (M)**
-    - Bảng 3 trạng thái (Board / Tabs): "Đang diễn ra", "Sắp diễn ra", "Đã kết thúc".
-    - Thẻ tiến độ khảo thí: Thanh phần trăm hoàn thành, số bài đã nộp/tổng số, hạn nộp.
-    - Campaign Wizard: Đặt tên chiến dịch tùy chỉnh theo tổ chức (không tự gán Kỳ 1/Kỳ 2).
-  - **Task 3.3: Redesign Màn 6 — Bàn Chấm Bài 3 Cột (`/org/[slug]/grading`) (M)**
-    - Xóa bỏ việc mở modal chấm bài gây đứt gãy trải nghiệm.
-    - Cột 1: Hàng đợi nộp bài (Queue) kèm bộ lọc theo Đợt thi, Lớp học, trạng thái Chờ chấm / Đã duyệt.
-    - Cột 2: Trình xem minh chứng bài làm (Nội dung bài viết, tệp đính kèm, câu trả lời thực hành).
-    - Cột 3: Bảng điểm Rubric (Chấm điểm tiêu chí theo thang /100, nút AI gợi ý điểm kèm trích dẫn minh chứng, ô nhận xét và nút Lưu & Phê duyệt kết quả).
-
-*Checkpoint 3:* Kiểm thử luồng chấm bài: Chọn bài từ cột 1 -> xem minh chứng cột 2 -> chấm rubric cột 3 -> duyệt điểm và kiểm tra điểm cập nhật tức thì.
-
----
-
-### Phase 4: Báo Cáo Năng Lực, Gói Dịch Vụ & Cài Đặt (Screens 7, 8, 9)
-- **Mục tiêu:** Cung cấp thông tin phân tích chuẩn xác, quản lý hạn mức minh bạch và cài đặt tổ chức tinh gọn.
-- **Nhiệm vụ:**
-  - **Task 4.1: Redesign Màn 7 — Báo Cáo Năng Lực Tổ Chức (`/org/[slug]/analytics`) (M)**
-    - Đồng bộ bộ lọc qua URL (`campaignId`, `classId`): Cho phép chia sẻ đường dẫn báo cáo đã lọc.
-    - Các chỉ số cấp điều hành: Điểm trung bình /100, Tỷ lệ đạt chuẩn theo ngưỡng, Tổng số người tham gia duy nhất (loại trừ đếm trùng).
-    - Biểu đồ phân bố điểm số theo khoảng (`<50`, `50-69`, `70-84`, `85-100`).
-    - Bảng 5 miền năng lực số DigComp có thể bấm mở Drawer xem chi tiết từng miền.
-    - Nút xuất báo cáo CSV chuẩn mã hóa UTF-8 BOM.
-  - **Task 4.2: Redesign Màn 8 — Gói Sử Dụng & Hạn Mức (`/org/[slug]/plan`) (S)**
-    - Banner hình ảnh `nexa-07-goi-su-dung.png`.
-    - Dải đồng hồ đo hạn mức (Meters): Ghế thành viên (`active / maxSeats`), Credits AI chấm bài (`used / quota`), Đề đánh giá nội bộ.
-    - Modal yêu cầu gia hạn gói với công thức cộng dồn ngày an toàn $\max(\text{now}, \text{current}) + \text{period}$.
-  - **Task 4.3: Redesign Màn 9 — Cài Đặt Tổ Chức (`/org/[slug]/settings`) (S)**
-    - Bố cục 2 cột dọc hiện đại: Menu phân mục bên trái, Form chi tiết bên phải.
-    - Thiết lập cơ chế tham gia: Bật/tắt tham gia bằng mã PIN, yêu cầu phê duyệt thành viên trước khi kích hoạt.
-    - Cảnh báo dirty state khi người dùng rời trang mà chưa lưu thay đổi.
-
-*Checkpoint 4:* Kiểm tra báo cáo tải dữ liệu thật; kiểm tra gia hạn và cài đặt lưu dữ liệu chính xác.
+### Giai đoạn P4: Tối Ưu Hóa Các Trang Còn Lại (Tổng quan, Thành viên, Gói, Cài đặt) & Kiểm Thử
+1. **Màn 01 Tổng quan (`/org/[slug]`):**
+   - Bố cục định hướng hành động kế tiếp: Trạng thái onboarding thực tế (Đã có thành viên → Đã có đề → Tạo đợt đầu tiên).
+   - Danh sách đợt đang diễn ra và các việc chờ xử lý (bài chờ chấm).
+2. **Màn 02 Thành viên (`/org/[slug]/members`):**
+   - Mặc định là Bảng thành viên toàn chiều rộng.
+   - Drawer Thêm thành viên tích hợp: Mời qua Email, Mã gia nhập/Link tham gia, Nhập file CSV.
+   - Không hiển thị vai trò `ASSESSOR`/`REPORT_VIEWER` trên giao diện mới.
+3. **Màn 08 Gói sử dụng (`/org/[slug]/plan`):**
+   - Hiển thị đúng 5 trạng thái lifecycle: Đang cấp quyền, Đang sử dụng, Sắp hết hạn, Chờ gia hạn, Hết hạn.
+   - Giải thích rõ ý nghĩa hạn mức và AI Credits, không để trạng thái `0/0` mập mờ.
+4. **Màn 09 Cài đặt (`/org/[slug]/settings`):**
+   - Nhóm form khoa học: Thông tin tổ chức, Mã gia nhập, Chính sách khảo thí.
+   - Trường chỉ đọc (`slug`, `code`) có nút sao chép; feedback lưu rõ ràng.
+5. **Kiểm thử toàn diện:**
+   - Kiểm tra `typecheck` (0 lỗi).
+   - Kiểm tra toàn bộ 47+ test files đạt 100%.
+   - Kiểm thử luồng end-to-end: Soạn đề hỗn hợp → Tạo đợt → Personal làm bài → Bàn chấm bài thẩm định → Báo cáo 5 miền.
 
 ---
 
-### Phase 5: Kiểm Thử Toàn Diện, Tương Phản WCAG & Nghiệm Thu
-- **Mục tiêu:** Đảm bảo toàn bộ hệ thống không có lỗi hồi quy, đáp ứng đầy đủ tiêu chuẩn code quality và quy tắc `AGENTS.md`.
-- **Nhiệm vụ:**
-  - **Task 5.1: Kiểm tra tương thích giao diện Light Mode & Dark Mode (S)**
-    - Kiểm tra màu nền Light `#FFFFFF`, Dark `#000000`, thẻ `#111114`, viền `#27272A`, màu nhấn Cobalt `#2563EB`.
-    - Đảm bảo độ tương phản chữ WCAG AA (tối thiểu 4.5:1).
-  - **Task 5.2: Verification Suite: Typecheck & Automated Tests (S)**
-    - Chạy `npm run typecheck` (0 errors).
-    - Chạy toàn bộ test suites `npm test` (100% passing).
+## 4. Tiêu Chí Nghiệm Thu (Acceptance Criteria)
 
----
-
-## 4. Bảng Ma Trận Màn Hình & Trạng Thái Xử Lý
-
-| # | Tên Màn Hình | Route | Trạng thái hiện tại | Thiết kế mới V4 | Hình ảnh tài nguyên |
-|:---:|---|---|---|---|---|
-| 1 | **Tổng quan** | `/org/[slug]` | Pseudo-element banner, 3 thẻ KPI to | Banner editorial, summary line, việc cần xử lý | `Banner Tổng quan.jpg` |
-| 2 | **Thành viên** | `/org/[slug]/members` | Bảng cơ bản, chưa có dải duyệt nổi bật | Dải duyệt chờ PIN, bộ lọc đa năng, Member Drawer | — |
-| 3 | **Nhóm & Đơn vị** | `/org/[slug]/classes` | Danh sách đơn giản | Lưới thư mục lớp `classes-grid`, gán đợt thi | — |
-| 4 | **Thư viện đề** | `/org/[slug]/assessments` | Chưa có banner, nút tạo đợt rời rạc | Hero banner gọn, thư viện DigComp, CTA tạo đợt | `Banner Thư viện đề đánh giá.jpg` |
-| 5 | **Đợt đánh giá** | `/org/[slug]/campaigns` | Danh sách thông thường | Bảng 3 trạng thái, tiến độ phần trăm, wizard tên riêng | — |
-| 6 | **Bàn chấm bài** | `/org/[slug]/grading` | Chấm bài qua popup modal | Bố cục 3 cột (Queue - Minh chứng - Rubric /100) | — |
-| 7 | **Báo cáo năng lực** | `/org/[slug]/analytics` | Tabs phân tán, chưa có phân bố điểm | URL state, phân bố điểm, 5 miền DigComp, CSV UTF-8 | — |
-| 8 | **Gói sử dụng** | `/org/[slug]/plan` | Thiếu banner, meters chưa đồng bộ | Banner gói, 3 thanh meters hạn mức, modal gia hạn | `nexa-07-goi-su-dung.png` |
-| 9 | **Cài đặt** | `/org/[slug]/settings` | Form đơn điệu | Cấu hình 2 cột dọc, bật tắt mã PIN, dirty state | — |
+- [x] Không còn bất kỳ mock ID (`a1`, `a2`) hay dữ liệu mẫu nào trên luồng Organization.
+- [x] Điểm 0 trong chấm bài không bị ghi đè thành 70.
+- [x] Trình tạo đề Authoring V2 hỗ trợ mượt mà 2 loại câu: Trắc nghiệm và Tự luận/Thực hành; tình huống là bối cảnh tùy chọn.
+- [x] Điểm trắc nghiệm tự chấm ngay; tự luận/thực hành chờ chấm theo Rubric; điểm chưa chấm hiển thị `null`/`PENDING`.
+- [x] Luồng tạo đợt đánh giá gói gọn trong 1 form + xác nhận, liên kết đồng bộ giữa trang Lớp và trang Đợt.
+- [x] Học viên làm bài và nhận kết quả 100% trong Personal, không cần Organization Dashboard.
+- [x] Toàn bộ kiểm thử unit/integration và build TypeScript đạt 100%.

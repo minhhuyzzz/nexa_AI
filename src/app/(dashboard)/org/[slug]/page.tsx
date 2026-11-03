@@ -52,10 +52,9 @@ export default async function OrgOverviewPage({
   const [
     entitlements,
     membersCountResult,
-    classesCountResult,
+    classesResult,
     campaignsResult,
-    pendingGradingResult,
-    allSubmissionsResult,
+    orgAssessmentsResult,
   ] = await Promise.all([
     QuotaEnforcementService.getOrgEntitlements(adminSupabase, org.id),
     adminSupabase
@@ -65,7 +64,7 @@ export default async function OrgOverviewPage({
       .eq('status', 'ACTIVE'),
     adminSupabase
       .from('evaluator_classes')
-      .select('id, name', { count: 'exact' })
+      .select('id, name')
       .eq('organization_id', org.id),
     adminSupabase
       .from('assessment_campaigns')
@@ -85,21 +84,53 @@ export default async function OrgOverviewPage({
       .order('created_at', { ascending: false })
       .limit(6),
     adminSupabase
-      .from('assessment_submissions')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', org.id)
-      .eq('status', 'SUBMITTED'),
-    adminSupabase
-      .from('assessment_submissions')
-      .select('id, status, percentage, is_passed, domain_scores')
+      .from('assessments')
+      .select('id')
       .eq('organization_id', org.id),
   ]);
 
+  const classIds = (classesResult.data || []).map((c) => c.id);
+  const campaignIds = (campaignsResult.data || []).map((c) => c.id);
+  const assessmentIds = (orgAssessmentsResult.data || []).map((a) => a.id);
+
+  // Fetch assignments belonging to org classes
+  let assignmentIds: string[] = [];
+  if (classIds.length > 0) {
+    const { data: assignments } = await adminSupabase
+      .from('class_assignments')
+      .select('id')
+      .in('class_id', classIds);
+    assignmentIds = (assignments || []).map((a) => a.id);
+  }
+
+  // Build OR condition for submissions belonging to org
+  const conditions: string[] = [];
+  if (assignmentIds.length > 0) {
+    conditions.push(`class_assignment_id.in.(${assignmentIds.join(',')})`);
+  }
+  if (campaignIds.length > 0) {
+    conditions.push(`campaign_id.in.(${campaignIds.join(',')})`);
+  }
+  if (assessmentIds.length > 0) {
+    conditions.push(`assessment_id.in.(${assessmentIds.join(',')})`);
+  }
+
+  let allSubmissions: any[] = [];
+  let pendingGradingCount = 0;
+
+  if (conditions.length > 0) {
+    const { data: subs } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id, status, percentage, is_passed, domain_scores')
+      .or(conditions.join(','));
+
+    allSubmissions = subs || [];
+    pendingGradingCount = allSubmissions.filter((s) => s.status === 'SUBMITTED').length;
+  }
+
   const membersCount = membersCountResult.count || 1;
-  const classesCount = classesCountResult.count || 0;
+  const classesCount = (classesResult.data || []).length;
   const rawCampaigns = campaignsResult.data || [];
-  const pendingGradingCount = pendingGradingResult.count || 0;
-  const allSubmissions = allSubmissionsResult.data || [];
 
   const evaluatedCount = allSubmissions.filter((s) => s.status === 'EVALUATED').length;
   const competencySummary = OrgCompetencyAnalyticsService.aggregateOrgCompetency(allSubmissions);

@@ -11,10 +11,15 @@ export const dynamic = 'force-dynamic';
 
 export default async function OrgNewCampaignPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ assessmentId?: string; classId?: string }>;
 }) {
   const { slug } = await params;
+  const sParams = searchParams ? await searchParams : {};
+  const initialAssessmentId = sParams.assessmentId || '';
+  const initialClassId = sParams.classId || '';
   const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CAMPAIGNS');
   const adminSupabase = createAdminClient();
 
@@ -84,6 +89,8 @@ export default async function OrgNewCampaignPage({
       assessments={assessments}
       classes={classes}
       assessors={assessors}
+      initialAssessmentId={initialAssessmentId}
+      initialClassId={initialClassId}
     />
   );
 }

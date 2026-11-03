@@ -1,6 +1,9 @@
 export type AuthoringAssessmentStatus = 'DRAFT' | 'READY' | 'ARCHIVED';
 
-export type QuestionType = 'MCQ' | 'SCENARIO' | 'PRACTICAL';
+export type QuestionKind = 'CHOICE' | 'OPEN_RESPONSE';
+export type QuestionType = 'MCQ' | 'SCENARIO' | 'PRACTICAL' | 'CHOICE' | 'OPEN_RESPONSE';
+
+export type SubmissionMode = 'TEXT' | 'FILE' | 'URL';
 
 export interface MCQOption {
   id: string;
@@ -23,11 +26,13 @@ export interface AuthoringQuestionItem {
   points: number;
   domainCode: string; // '01'..'05'
   domainTitle?: string;
-  // MCQ fields
+  // Optional scenario/context for any question type
+  context?: string;
+  scenarioContext?: string; // alias for backwards compatibility
+  // Choice fields
   options?: MCQOption[];
-  // Scenario fields
-  scenarioContext?: string;
-  // Practical fields
+  // Open response fields
+  allowedSubmissionModes?: SubmissionMode[];
   practicalGuide?: string;
   rubric?: AuthoringRubricCriterion[];
 }

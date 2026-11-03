@@ -151,6 +151,14 @@ export async function POST(
       ? new Date(endsAt)
       : new Date(startTime.getTime() + 14 * 24 * 60 * 60 * 1000);
 
+    const now = new Date();
+    let initialStatus = 'ACTIVE';
+    if (startTime > now) {
+      initialStatus = 'SCHEDULED';
+    } else if (endTime < now) {
+      initialStatus = 'COMPLETED';
+    }
+
     // 5. Insert Campaign record
     const { data: campaign, error: campErr } = await adminSupabase
       .from('assessment_campaigns')
@@ -163,7 +171,7 @@ export async function POST(
         assessor_ids: assessorIds,
         starts_at: startTime.toISOString(),
         ends_at: endTime.toISOString(),
-        status: 'ACTIVE',
+        status: initialStatus,
         passing_score: passingScore,
         created_by: user.id,
       })

@@ -10,10 +10,13 @@ const saveItemsSchema = z.object({
   questions: z.array(
     z.object({
       id: z.string().optional(),
-      type: z.enum(['MCQ', 'SCENARIO', 'PRACTICAL']),
+      type: z.enum(['MCQ', 'SCENARIO', 'PRACTICAL', 'CHOICE', 'OPEN_RESPONSE']),
       prompt: z.string().default(''),
       points: z.number().min(0).default(1),
       domainCode: z.string().default('01'),
+      context: z.string().optional(),
+      scenarioContext: z.string().optional(),
+      allowedSubmissionModes: z.array(z.string()).optional(),
       practicalGuide: z.string().optional(),
       options: z
         .array(
@@ -82,7 +85,11 @@ export async function POST(
       const q = questions[i];
       let dbType = 'MCQ';
       if (q.type === 'SCENARIO') dbType = 'SCENARIO';
-      if (q.type === 'PRACTICAL') dbType = 'PRACTICAL_TASK';
+      if (q.type === 'PRACTICAL' || q.type === 'OPEN_RESPONSE') dbType = 'PRACTICAL_TASK';
+      if (q.type === 'CHOICE') dbType = 'MCQ';
+
+      const questionContext = q.context || q.scenarioContext || null;
+      const submissionModes = q.allowedSubmissionModes || ['TEXT', 'FILE', 'URL'];
 
       const { data: insertedItem, error: itemErr } = await db
         .from('assessment_items')
@@ -91,6 +98,8 @@ export async function POST(
           prompt: q.prompt,
           type: dbType,
           points: q.points,
+          context: questionContext,
+          submission_modes: submissionModes,
           rubric_guide: q.practicalGuide || null,
           order_index: i,
         })
@@ -99,7 +108,7 @@ export async function POST(
 
       if (itemErr || !insertedItem) continue;
 
-      // Insert options only for MCQ or SCENARIO
+      // Insert options only for choice / MCQ
       if (dbType !== 'PRACTICAL_TASK' && q.options && q.options.length > 0) {
         const optionRows = q.options.map((opt, oIdx) => ({
           item_id: insertedItem.id,

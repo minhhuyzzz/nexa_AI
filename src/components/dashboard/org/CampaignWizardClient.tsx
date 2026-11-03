@@ -15,6 +15,11 @@ import {
   Award,
   Loader2,
   Clock,
+  Sparkles,
+  Layers,
+  ChevronRight,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 
 export interface AssessmentOption {
@@ -46,15 +51,18 @@ interface Props {
   orgName: string;
   assessments: AssessmentOption[];
   classes: ClassOption[];
-  assessors: AssessorOption[];
+  assessors?: AssessorOption[];
+  initialAssessmentId?: string;
+  initialClassId?: string;
 }
 
-const STEPS = [
-  { id: 1, label: 'Thông tin đợt' },
-  { id: 2, label: 'Chọn đề thi' },
-  { id: 3, label: 'Chọn lớp học' },
-  { id: 4, label: 'Phân công chấm' },
-  { id: 5, label: 'Xác nhận & Phát hành' },
+const QUICK_TITLE_SUGGESTIONS = [
+  'Đánh giá đầu vào',
+  'Khảo sát giữa kỳ',
+  'Đánh giá định kỳ Q1',
+  'Đánh giá định kỳ Q2',
+  'Khảo thí chuẩn DigComp',
+  'Thi thực hành cuối khóa',
 ];
 
 export function CampaignWizardClient({
@@ -63,12 +71,13 @@ export function CampaignWizardClient({
   orgName,
   assessments,
   classes,
-  assessors,
+  assessors = [],
+  initialAssessmentId,
+  initialClassId,
 }: Props) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
 
-  // Form State
+  // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 10));
@@ -78,10 +87,11 @@ export function CampaignWizardClient({
   const [passingScore, setPassingScore] = useState(70);
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
-    assessments[0]?.id || ''
+    initialAssessmentId || assessments[0]?.id || ''
   );
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
-  const [selectedAssessorIds, setSelectedAssessorIds] = useState<string[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>(
+    initialClassId ? [initialClassId] : classes.length > 0 ? [classes[0].id] : []
+  );
 
   // Submission State
   const [submitting, setSubmitting] = useState(false);
@@ -98,53 +108,39 @@ export function CampaignWizardClient({
     );
   };
 
-  const toggleAssessor = (id: string) => {
-    setSelectedAssessorIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const validateStep = (step: number): boolean => {
-    setErrorMsg(null);
-    if (step === 1) {
-      if (!title.trim() || title.trim().length < 3) {
-        setErrorMsg('Vui lòng nhập tên đợt đánh giá (tối thiểu 3 ký tự).');
-        return false;
-      }
-      if (new Date(endsAt) <= new Date(startsAt)) {
-        setErrorMsg('Ngày kết thúc phải sau ngày bắt đầu.');
-        return false;
-      }
+  const handleSelectAllClasses = () => {
+    if (selectedClassIds.length === classes.length) {
+      setSelectedClassIds([]);
+    } else {
+      setSelectedClassIds(classes.map((c) => c.id));
     }
-    if (step === 2) {
-      if (!selectedAssessmentId) {
-        setErrorMsg('Vui lòng chọn 1 đề thi đánh giá năng lực.');
-        return false;
-      }
-    }
-    if (step === 3) {
-      if (selectedClassIds.length === 0) {
-        setErrorMsg('Vui lòng chọn ít nhất 1 lớp học tham gia đợt khảo thí.');
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(STEPS.length, prev + 1));
-    }
-  };
-
-  const handleBack = () => {
-    setErrorMsg(null);
-    setCurrentStep((prev) => Math.max(1, prev - 1));
   };
 
   const handleCreateCampaign = async () => {
-    setSubmitting(true);
     setErrorMsg(null);
+
+    if (!title.trim() || title.trim().length < 3) {
+      setErrorMsg('Vui lòng nhập tên đợt đánh giá (tối thiểu 3 ký tự).');
+      return;
+    }
+
+    if (!selectedAssessmentId) {
+      setErrorMsg('Vui lòng chọn 1 đề thi đánh giá năng lực.');
+      return;
+    }
+
+    if (selectedClassIds.length === 0) {
+      setErrorMsg('Vui lòng chọn ít nhất 1 lớp/nhóm học viên tham gia.');
+      return;
+    }
+
+    if (new Date(endsAt) <= new Date(startsAt)) {
+      setErrorMsg('Ngày kết thúc phải diễn ra sau ngày bắt đầu.');
+      return;
+    }
+
+    setSubmitting(true);
+
     try {
       const res = await fetch(`/api/organizations/${orgId}/campaigns`, {
         method: 'POST',
@@ -154,7 +150,7 @@ export function CampaignWizardClient({
           description: description.trim() || undefined,
           assessmentId: selectedAssessmentId,
           classIds: selectedClassIds,
-          assessorIds: selectedAssessorIds,
+          assessorIds: [],
           startsAt: new Date(startsAt).toISOString(),
           endsAt: new Date(endsAt).toISOString(),
           passingScore,
@@ -175,417 +171,399 @@ export function CampaignWizardClient({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Breadcrumb / Top Bar */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+      {/* 1. Header Navigation */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Link href={`/org/${orgSlug}/campaigns`} className="hover:text-slate-800 transition-colors">
-              Đợt đánh giá
+          <div className="flex items-center gap-2 mb-1">
+            <Link
+              href={`/org/${orgSlug}/campaigns`}
+              className="text-slate-500 hover:text-neutral-900 dark:hover:text-neutral-100 text-xs inline-flex items-center gap-1 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Đợt đánh giá</span>
             </Link>
-            <span>/</span>
-            <span className="text-slate-900 font-medium">Khởi tạo đợt mới (Campaign Wizard)</span>
+            <span className="text-slate-300 dark:text-zinc-700">/</span>
+            <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              Khởi tạo đợt khảo thí
+            </span>
           </div>
-          <h1 className="text-base font-bold text-slate-900 mt-1">
-            Điều Phối Đợt Đánh Giá Năng Lực Chuẩn Hóa
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            Tạo đợt đánh giá năng lực số
           </h1>
-        </div>
-        <Link
-          href={`/org/${orgSlug}/campaigns`}
-          className="text-xs text-slate-600 hover:text-slate-900 font-medium px-3 py-1.5 rounded border border-slate-200 bg-white"
-        >
-          Hủy bỏ
-        </Link>
-      </div>
-
-      {/* Visual Stepper */}
-      <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-        <div className="grid grid-cols-5 gap-2">
-          {STEPS.map((s) => {
-            const isPassed = currentStep > s.id;
-            const isCurrent = currentStep === s.id;
-
-            return (
-              <div key={s.id} className="text-center">
-                <div
-                  className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-mono font-bold transition-colors ${
-                    isPassed
-                      ? 'bg-emerald-600 text-white'
-                      : isCurrent
-                      ? 'bg-sky-600 text-white ring-2 ring-sky-200'
-                      : 'bg-slate-100 text-slate-400'
-                  }`}
-                >
-                  {isPassed ? <Check className="w-3.5 h-3.5" strokeWidth={2} /> : `0${s.id}`}
-                </div>
-                <div
-                  className={`text-[11px] font-medium mt-1.5 truncate ${
-                    isCurrent ? 'text-sky-700 font-semibold' : isPassed ? 'text-slate-700' : 'text-slate-400'
-                  }`}
-                >
-                  {s.label}
-                </div>
-              </div>
-            );
-          })}
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+            Giao đề thi tập trung cho các lớp hoặc phòng ban trực thuộc tổ chức {orgName}.
+          </p>
         </div>
       </div>
 
-      {/* Error Alert */}
       {errorMsg && (
-        <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.75} />
+        <div className="p-3.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Wizard Steps Form */}
-      <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs min-h-[380px] flex flex-col justify-between">
-        {/* Step 1: Info */}
-        {currentStep === 1 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Bước 1: Thông tin cơ bản đợt đánh giá</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Thiết lập định danh và khoảng thời gian mở thi cho đơn vị {orgName}.
-              </p>
+      {/* 2. Main 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Form Blocks (8 cols) */}
+        <div className="lg:col-span-8 space-y-5">
+          {/* Block 1: Thông tin đợt */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+              <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
+                1
+              </span>
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Thông tin đợt đánh giá
+              </h2>
             </div>
 
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Tên đợt đánh giá <span className="text-rose-500">*</span>
+                <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                  Tên đợt đánh giá <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ví dụ: Khảo sát Năng lực số Đầu vào Sinh viên K24"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-600"
+                  placeholder="Ví dụ: Đợt đánh giá kỹ năng số đầu vào K66, Khảo sát Q1/2026..."
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
+                />
+
+                {/* Quick suggestions */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-2">
+                  <span className="text-[11px] text-slate-400 dark:text-neutral-500">Gợi ý nhanh:</span>
+                  {QUICK_TITLE_SUGGESTIONS.map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => setTitle(sug)}
+                      className="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-300 transition"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                  Mô tả / Mục tiêu khảo thí (tùy chọn)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                  placeholder="Ghi chú mục đích của đợt đánh giá, đối tượng áp dụng hoặc yêu cầu bổ sung..."
+                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600 resize-none placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Block 2: Chọn đề đánh giá */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
+                  2
+                </span>
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Chọn đề đánh giá đã phát hành
+                </h2>
+              </div>
+              <Link
+                href={`/org/${orgSlug}/assessments`}
+                className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
+              >
+                <span>Xem thư viện đề</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {assessments.length === 0 ? (
+              <div className="p-6 rounded-lg border border-dashed border-slate-200 dark:border-zinc-800 text-center space-y-2">
+                <p className="text-xs text-slate-500">Chưa có đề đánh giá nào khả dụng.</p>
+                <Link
+                  href={`/org/${orgSlug}/assessments/new`}
+                  className="inline-block px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition"
+                >
+                  Tạo đề đánh giá mới
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {assessments.map((ass) => {
+                  const isSelected = ass.id === selectedAssessmentId;
+                  return (
+                    <div
+                      key={ass.id}
+                      onClick={() => setSelectedAssessmentId(ass.id)}
+                      className={`p-3.5 rounded-lg border text-xs cursor-pointer transition flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500/20'
+                          : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                            isSelected
+                              ? 'border-blue-600 bg-blue-600 text-white'
+                              : 'border-slate-300 dark:border-zinc-700'
+                          }`}
+                        >
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                            {ass.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 font-mono">
+                            <span>{ass.duration_minutes} phút</span>
+                            <span>&bull;</span>
+                            <span>Chuẩn đạt: {ass.passing_score}%</span>
+                            {ass.visibility === 'PUBLIC' && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="text-blue-600 font-sans font-medium">Chuẩn quốc tế</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 shrink-0 font-mono">
+                          ĐÃ CHỌN
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Block 3: Chọn lớp / nhóm tham gia */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
+                  3
+                </span>
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Chọn lớp / nhóm tham gia
+                </h2>
+              </div>
+
+              {classes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleSelectAllClasses}
+                  className="text-xs text-blue-600 hover:underline font-medium"
+                >
+                  {selectedClassIds.length === classes.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả lớp'}
+                </button>
+              )}
+            </div>
+
+            {classes.length === 0 ? (
+              <div className="p-6 rounded-lg border border-dashed border-slate-200 dark:border-zinc-800 text-center space-y-2">
+                <p className="text-xs text-slate-500">Tổ chức chưa tạo lớp học hoặc nhóm đơn vị nào.</p>
+                <Link
+                  href={`/org/${orgSlug}/classes`}
+                  className="inline-block px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition"
+                >
+                  Đến trang tạo lớp
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {classes.map((cls) => {
+                  const isChecked = selectedClassIds.includes(cls.id);
+                  return (
+                    <div
+                      key={cls.id}
+                      onClick={() => toggleClass(cls.id)}
+                      className={`p-3 rounded-lg border text-xs cursor-pointer transition flex items-center justify-between gap-2.5 ${
+                        isChecked
+                          ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500/20'
+                          : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {isChecked ? (
+                          <CheckSquare className="w-4 h-4 text-blue-600 shrink-0" />
+                        ) : (
+                          <Square className="w-4 h-4 text-slate-300 dark:text-zinc-700 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                            {cls.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-mono">Mã: {cls.class_code}</p>
+                        </div>
+                      </div>
+
+                      <span className="text-[11px] font-mono tabular-nums text-slate-500 shrink-0">
+                        {cls.memberCount} học viên
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Block 4: Thời gian & Chuẩn đạt */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+              <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
+                4
+              </span>
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Thời gian mở bài &amp; Chuẩn đạt
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                  Ngày bắt đầu mở bài
+                </label>
+                <input
+                  type="date"
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Mô tả mục tiêu</label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Mô tả mục đích đợt thi, đối tượng khảo sát và yêu cầu cần chuẩn bị..."
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-600"
+                <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                  Hạn chót kết thúc
+                </label>
+                <input
+                  type="date"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ngày bắt đầu</label>
-                  <input
-                    type="date"
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ngày kết thúc</label>
-                  <input
-                    type="date"
-                    value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Chuẩn đạt (%)
-                  </label>
+              <div>
+                <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                  Điểm chuẩn đạt (/100)
+                </label>
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     min={0}
                     max={100}
                     value={passingScore}
-                    onChange={(e) => setPassingScore(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md font-mono"
+                    onChange={(e) => setPassingScore(Number(e.target.value) || 70)}
+                    className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono font-bold text-xs"
                   />
+                  <span className="text-xs font-mono text-slate-400 shrink-0">điểm</span>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Step 2: Assessment Selection */}
-        {currentStep === 2 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Bước 2: Chọn đề thi khảo thí</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Nội dung bài thi sẽ được khóa phiên bản (Version Lock) nhằm đảm bảo tính công bằng và toàn vẹn học thuật.
-              </p>
-            </div>
+        {/* Right Column: Sticky Summary & Publish Action (4 cols) */}
+        <div className="lg:col-span-4 sticky top-6 space-y-4">
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 pb-2 border-b border-slate-100 dark:border-zinc-800">
+              Tóm tắt đợt khảo thí
+            </h3>
 
-            {assessments.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-md">
-                Chưa có đề thi nào khả dụng trong hệ thống. Vui lòng tạo đề thi trước.
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                {assessments.map((a) => {
-                  const isSelected = selectedAssessmentId === a.id;
-                  return (
-                    <div
-                      key={a.id}
-                      onClick={() => setSelectedAssessmentId(a.id)}
-                      className={`p-3.5 rounded-md border cursor-pointer transition-all flex items-center justify-between ${
-                        isSelected
-                          ? 'border-sky-600 bg-sky-50/40 shadow-xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                            isSelected ? 'border-sky-600 bg-sky-600' : 'border-slate-300'
-                          }`}
-                        >
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-900">{a.title}</span>
-                            {a.version && (
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
-                                v{a.version}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 font-mono">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-                              {a.duration_minutes} phút
-                            </span>
-                            <span>Chuẩn đạt: {a.passing_score}%</span>
-                            {a.visibility === 'PUBLIC' && (
-                              <span className="text-sky-600">Mẫu chuẩn hệ thống</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: Class Selection */}
-        {currentStep === 3 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">Bước 3: Chọn các lớp học tham gia</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Bài thi sẽ tự động được giao vào danh sách bài tập của toàn bộ sinh viên/học viên thuộc các lớp được chọn.
-                </p>
-              </div>
-              <div className="text-xs font-mono text-slate-500">
-                Đã chọn: <span className="text-sky-700 font-bold">{selectedClassIds.length}</span> lớp ({totalStudentsTargeted} học viên)
-              </div>
-            </div>
-
-            {classes.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-md">
-                Tổ chức chưa có lớp học nào. Vui lòng tạo lớp học trước khi giao bài.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[280px] overflow-y-auto pr-1">
-                {classes.map((cls) => {
-                  const checked = selectedClassIds.includes(cls.id);
-                  return (
-                    <div
-                      key={cls.id}
-                      onClick={() => toggleClass(cls.id)}
-                      className={`p-3 rounded-md border cursor-pointer transition-all flex items-center justify-between ${
-                        checked
-                          ? 'border-sky-600 bg-sky-50/40 shadow-xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {}}
-                          className="w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-0 cursor-pointer"
-                        />
-                        <div>
-                          <div className="text-xs font-bold text-slate-900">{cls.name}</div>
-                          <div className="text-[11px] font-mono text-slate-400">
-                            Mã: {cls.class_code}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-[11px] font-mono text-slate-500 tabular-nums">
-                        {cls.memberCount} thành viên
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 4: Assessor Assignment */}
-        {currentStep === 4 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">Bước 4: Phân công người chấm bài</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Chỉ định giảng viên hoặc chuyên viên khảo thí được quyền xem và chấm bài thi tự luận/thực hành của đợt này.
-                </p>
-              </div>
-              <div className="text-xs font-mono text-slate-500">
-                Đã chọn: <span className="text-sky-700 font-bold">{selectedAssessorIds.length}</span> người chấm
-              </div>
-            </div>
-
-            {assessors.length === 0 ? (
-              <div className="p-4 rounded bg-slate-50 border border-slate-200 text-xs text-slate-500">
-                Chưa có thêm giảng viên/chuyên viên nào trong tổ chức. Quản trị viên đợt thi sẽ tự động đảm nhiệm vai trò chấm bài.
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                {assessors.map((a) => {
-                  const checked = selectedAssessorIds.includes(a.userId);
-                  return (
-                    <div
-                      key={a.userId}
-                      onClick={() => toggleAssessor(a.userId)}
-                      className={`p-3 rounded-md border cursor-pointer transition-all flex items-center justify-between ${
-                        checked
-                          ? 'border-sky-600 bg-sky-50/40 shadow-xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {}}
-                          className="w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-0 cursor-pointer"
-                        />
-                        <div>
-                          <div className="text-xs font-bold text-slate-900">{a.name}</div>
-                          <div className="text-[11px] text-slate-500">{a.email}</div>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                        {a.role}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 5: Review & Publish */}
-        {currentStep === 5 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Bước 5: Xác nhận &amp; Phát hành</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Vui lòng kiểm tra lại toàn bộ thông số trước khi hệ thống giao bài nguyên tử cho các lớp học.
-              </p>
-            </div>
-
-            <div className="space-y-3 pt-2 text-xs">
-              <div className="p-3.5 rounded bg-slate-50 border border-slate-200 space-y-2">
-                <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-500">Tên đợt thi:</span>
-                  <span className="font-bold text-slate-900">{title}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-500">Thời gian triển khai:</span>
-                  <span className="font-mono text-slate-800">
-                    {new Date(startsAt).toLocaleDateString('vi-VN')} → {new Date(endsAt).toLocaleDateString('vi-VN')}
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-500">Đề thi khảo sát:</span>
-                  <span className="font-semibold text-slate-900">
-                    {selectedAssessment?.title} (v{selectedAssessment?.version || '1.0'})
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-500">Quy mô giao bài:</span>
-                  <span className="font-mono text-slate-800">
-                    {selectedClassIds.length} lớp học (~{totalStudentsTargeted} học viên)
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Người chấm được phân công:</span>
-                  <span className="font-mono text-slate-800">
-                    {selectedAssessorIds.length} chuyên viên
-                  </span>
-                </div>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-slate-500">Tên đợt:</span>
+                <span className="font-bold text-neutral-900 dark:text-neutral-100 text-right">
+                  {title.trim() || 'Chưa đặt tên'}
+                </span>
               </div>
 
-              <div className="p-3 rounded bg-sky-50/60 border border-sky-200 text-sky-800 flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-sky-600" strokeWidth={1.75} />
-                <span className="text-[11px]">
-                  Sau khi xác nhận, toàn bộ bài tập sẽ được phát hành tới sinh viên và đợt thi chuyển sang trạng thái <strong>ACTIVE</strong>.
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-slate-500">Đề đánh giá:</span>
+                <span className="font-medium text-neutral-800 dark:text-neutral-200 text-right truncate max-w-[160px]">
+                  {selectedAssessment?.title || 'Chưa chọn đề'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Thời lượng làm bài:</span>
+                <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                  {selectedAssessment?.duration_minutes || 45} phút
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Lớp tham gia:</span>
+                <span className="font-mono font-bold text-blue-600">
+                  {selectedClassIds.length} lớp học
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Quy mô dự kiến:</span>
+                <span className="font-mono font-bold text-emerald-600">
+                  {totalStudentsTargeted} học viên
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Thời gian mở:</span>
+                <span className="font-mono text-neutral-800 dark:text-neutral-200">
+                  {startsAt} &rarr; {endsAt}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Ngưỡng đạt:</span>
+                <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                  {passingScore}/100đ
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800">
+                <span className="text-slate-500">Trạng thái khởi tạo:</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                  {new Date(startsAt) > new Date() ? 'SCHEDULED (Sắp diễn ra)' : 'ACTIVE (Đang diễn ra)'}
                 </span>
               </div>
             </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                disabled={submitting || !title.trim() || !selectedAssessmentId || selectedClassIds.length === 0}
+                onClick={handleCreateCampaign}
+                className="w-full h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang phát hành đợt...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Phát hành đợt đánh giá</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400 dark:text-neutral-500 text-center leading-relaxed">
+              Sau khi phát hành, đề thi sẽ tự động xuất hiện trong không gian Cá nhân của toàn bộ học viên thuộc các lớp được chọn.
+            </p>
           </div>
-        )}
-
-        {/* Wizard Controls Footer */}
-        <div className="flex items-center justify-between pt-5 border-t border-slate-100 mt-6">
-          <button
-            type="button"
-            disabled={currentStep === 1 || submitting}
-            onClick={handleBack}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-200 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Quay lại</span>
-          </button>
-
-          {currentStep < 5 ? (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
-            >
-              <span>Tiếp tục</span>
-              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleCreateCampaign}
-              className="flex items-center gap-1.5 px-5 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />
-                  <span>Đang khởi tạo đợt thi...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  <span>Khởi tạo &amp; Phát hành đợt thi</span>
-                </>
-              )}
-            </button>
-          )}
         </div>
       </div>
     </div>

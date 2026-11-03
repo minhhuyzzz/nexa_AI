@@ -13,58 +13,81 @@ export default async function OrgGradingPage({
   const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_GRADING');
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch organization assessments
-  const { data: orgAssessments } = await adminSupabase
-    .from('assessments')
-    .select('id, title, passing_score')
-    .eq('organization_id', org.id);
+  // 1. Fetch related IDs for this organization
+  const [{ data: orgClasses }, { data: orgCampaigns }, { data: orgAssessments }] = await Promise.all([
+    adminSupabase.from('evaluator_classes').select('id').eq('organization_id', org.id),
+    adminSupabase.from('assessment_campaigns').select('id').eq('organization_id', org.id),
+    adminSupabase.from('assessments').select('id').eq('organization_id', org.id),
+  ]);
 
+  const classIds = (orgClasses || []).map((c) => c.id);
+  const campaignIds = (orgCampaigns || []).map((c) => c.id);
   const assessmentIds = (orgAssessments || []).map((a) => a.id);
 
-  // 2. Fetch submissions for this organization (by organization_id or assessmentIds)
-  let query = adminSupabase
-    .from('assessment_submissions')
-    .select(`
-      id,
-      assessment_id,
-      user_id,
-      status,
-      total_score,
-      percentage,
-      is_passed,
-      submitted_at,
-      time_spent_seconds,
-      evaluator_notes,
-      assessments (
-        id,
-        title,
-        passing_score
-      ),
-      profiles:user_id (
-        id,
-        email,
-        nickname,
-        full_name,
-        avatar_url
-      ),
-      submission_answers (
-        id,
-        item_id,
-        text_response,
-        evidence_url
-      )
-    `)
-    .in('status', ['SUBMITTED', 'EVALUATED'])
-    .order('submitted_at', { ascending: false });
-
-  if (assessmentIds.length > 0) {
-    query = query.or(`organization_id.eq.${org.id},assessment_id.in.(${assessmentIds.join(',')})`);
-  } else {
-    query = query.eq('organization_id', org.id);
+  let assignmentIds: string[] = [];
+  if (classIds.length > 0) {
+    const { data: assignments } = await adminSupabase
+      .from('class_assignments')
+      .select('id')
+      .in('class_id', classIds);
+    assignmentIds = (assignments || []).map((a) => a.id);
   }
 
-  const { data: subs } = await query;
-  const submissions: SubmissionItem[] = (subs as unknown as SubmissionItem[]) || [];
+  // Build OR condition
+  const conditions: string[] = [];
+  if (assignmentIds.length > 0) {
+    conditions.push(`class_assignment_id.in.(${assignmentIds.join(',')})`);
+  }
+  if (campaignIds.length > 0) {
+    conditions.push(`campaign_id.in.(${campaignIds.join(',')})`);
+  }
+  if (assessmentIds.length > 0) {
+    conditions.push(`assessment_id.in.(${assessmentIds.join(',')})`);
+  }
+
+  let submissions: SubmissionItem[] = [];
+
+  if (conditions.length > 0) {
+    const { data: subs, error } = await adminSupabase
+      .from('assessment_submissions')
+      .select(`
+        id,
+        assessment_id,
+        user_id,
+        status,
+        total_score,
+        percentage,
+        is_passed,
+        submitted_at,
+        time_spent_seconds,
+        evaluator_notes,
+        assessments (
+          id,
+          title,
+          passing_score
+        ),
+        profiles:user_id (
+          id,
+          email,
+          nickname,
+          full_name,
+          avatar_url
+        ),
+        submission_answers (
+          id,
+          item_id,
+          text_response,
+          evidence_url
+        )
+      `)
+      .in('status', ['SUBMITTED', 'EVALUATED'])
+      .or(conditions.join(','))
+      .order('submitted_at', { ascending: false });
+
+    if (!error && subs) {
+      submissions = subs as unknown as SubmissionItem[];
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -79,7 +102,7 @@ export default async function OrgGradingPage({
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Không gian chấm thi thực hành &amp; phê duyệt điểm số Rubric thang /100 cho giảng viên tổ chức {org.name}.
+            Không gian chấm thi thực hành &amp; phê duyệt điểm số Rubric thang /100 cho tổ chức {org.name}.
           </p>
         </div>
       </div>

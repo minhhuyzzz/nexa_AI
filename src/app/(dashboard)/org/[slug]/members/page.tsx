@@ -49,7 +49,7 @@ export default async function OrgMembersPage({
     // 2. Classes of organization
     adminSupabase
       .from('evaluator_classes')
-      .select('id, name, code, class_members ( id )')
+      .select('id, name, class_code, class_members ( id )')
       .eq('organization_id', org.id)
       .order('name', { ascending: true }),
 
@@ -111,7 +111,7 @@ export default async function OrgMembersPage({
   const classes: OrgClassItem[] = ((classesResult.data as any[]) || []).map((c) => ({
     id: c.id,
     name: c.name,
-    code: c.code,
+    code: c.class_code || c.code,
     memberCount: Array.isArray(c.class_members) ? c.class_members.length : 0,
   }));
 
