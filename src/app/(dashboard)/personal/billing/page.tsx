@@ -230,18 +230,36 @@ export default function LearnerBillingPage() {
                 </div>
 
                 <div>
-                  {isCurrent ? (
+                  {isCurrent && p.code !== 'FREE' ? (
+                    <button
+                      onClick={() => handleOpenUpgrade(p.code)}
+                      disabled={Boolean(loadingPlanCode)}
+                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isLoadingThis ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Đang xử lý...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Gia hạn gói</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+                  ) : isCurrent ? (
                     <button
                       disabled
-                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 cursor-default"
+                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 cursor-default"
                     >
-                      Đang sử dụng
+                      Gói mặc định
                     </button>
                   ) : (
                     <button
                       onClick={() => handleOpenUpgrade(p.code)}
                       disabled={Boolean(loadingPlanCode)}
-                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     >
                       {isLoadingThis ? (
                         <>

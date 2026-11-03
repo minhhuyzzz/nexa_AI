@@ -1,134 +1,109 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireOrgPagePermission } from '@/lib/auth/org-guard';
-import { CheckCircle2, Award, Users, BarChart2, TrendingUp } from 'lucide-react';
 import { OrgCompetencyAnalyticsService } from '@/features/analytics/services/org-competency-analytics.service';
-import { CampaignComparisonChart } from '@/components/dashboard/org/CampaignComparisonChart';
-import { CohortLearningRecommendations } from '@/components/dashboard/org/CohortLearningRecommendations';
+import { OrgAnalyticsDashboard } from '@/features/analytics/components/OrgAnalyticsDashboard';
+import {
+  RawClassInfo,
+  RawCampaignInfo,
+  RawAnalyticsSubmission,
+} from '@/features/analytics/types/org-analytics.types';
 
 export const dynamic = 'force-dynamic';
 
-interface AnalyticsSubmission {
-  id: string;
-  status: string;
-  percentage?: number | null;
-  is_passed?: boolean | null;
-  total_score?: number | null;
-}
-
 export default async function OrgAnalyticsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string; campaignId?: string; classId?: string }>;
 }) {
   const { slug } = await params;
+  const { tab, campaignId, classId } = (await searchParams) || {};
   const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_ANALYTICS');
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch assessments and campaigns belonging to this organization
+  // 1. Fetch organization classes and member IDs
+  const { data: rawClasses } = await adminSupabase
+    .from('evaluator_classes')
+    .select('id, name, class_members ( user_id )')
+    .eq('organization_id', org.id);
+
+  const classesInfo: RawClassInfo[] = (rawClasses || []).map((c: any) => {
+    const memberUserIds = (c.class_members || []).map((m: any) => m.user_id).filter(Boolean);
+    return {
+      id: c.id,
+      name: c.name,
+      member_count: memberUserIds.length,
+      member_user_ids: memberUserIds,
+    };
+  });
+
+  // 2. Fetch assessment campaigns belonging to this organization
+  const { data: rawCampaigns } = await adminSupabase
+    .from('assessment_campaigns')
+    .select('id, title, status, starts_at, ends_at, passing_score, class_ids')
+    .eq('organization_id', org.id)
+    .order('starts_at', { ascending: false });
+
+  const campaignsInfo: RawCampaignInfo[] = (rawCampaigns || []).map((c: any) => ({
+    id: c.id,
+    title: c.title,
+    status: c.status,
+    starts_at: c.starts_at,
+    ends_at: c.ends_at,
+    passing_score: c.passing_score ?? 70,
+    class_ids: Array.isArray(c.class_ids) ? c.class_ids : [],
+  }));
+
+  // 3. Fetch assessments belonging to this organization
   const { data: orgAssessments } = await adminSupabase
     .from('assessments')
     .select('id')
     .eq('organization_id', org.id);
 
-  const { data: orgCampaigns } = await adminSupabase
-    .from('assessment_campaigns')
-    .select('id')
-    .eq('organization_id', org.id);
-
   const assessmentIds = (orgAssessments || []).map((a) => a.id);
-  const campaignIds = (orgCampaigns || []).map((c) => c.id);
+  const campaignIds = campaignsInfo.map((c) => c.id);
 
-  let rawSubmissions: AnalyticsSubmission[] = [];
-  const subsMap = new Map<string, any>();
+  const subsMap = new Map<string, RawAnalyticsSubmission>();
 
   // Query submissions by campaign_id
   if (campaignIds.length > 0) {
     const { data: cSubs } = await adminSupabase
       .from('assessment_submissions')
-      .select('id, status, percentage, is_passed, total_score, domain_scores')
+      .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at')
       .in('campaign_id', campaignIds);
-    (cSubs || []).forEach((s) => subsMap.set(s.id, s));
+    (cSubs || []).forEach((s) => subsMap.set(s.id, s as RawAnalyticsSubmission));
   }
 
   // Query submissions by assessment_id
   if (assessmentIds.length > 0) {
     const { data: aSubs } = await adminSupabase
       .from('assessment_submissions')
-      .select('id, status, percentage, is_passed, total_score, domain_scores')
+      .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at')
       .in('assessment_id', assessmentIds);
-    (aSubs || []).forEach((s) => subsMap.set(s.id, s));
+    (aSubs || []).forEach((s) => subsMap.set(s.id, s as RawAnalyticsSubmission));
   }
 
-  rawSubmissions = Array.from(subsMap.values()) as AnalyticsSubmission[];
-  const summary = OrgCompetencyAnalyticsService.aggregateOrgCompetency(rawSubmissions);
+  const rawSubmissions = Array.from(subsMap.values());
+
+  // Aggregate multi-dimensional analytics with filters
+  const summary = OrgCompetencyAnalyticsService.aggregateOrgCompetency(
+    rawSubmissions,
+    classesInfo,
+    campaignsInfo,
+    { campaignId, classId }
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-md border border-slate-200 bg-white shadow-xs">
-        <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">Báo Cáo & Phân Tích Năng Lực Số</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Chẩn đoán mức độ phát triển năng lực số 5 miền cốt lõi của đơn vị {org.name}.
-          </p>
-        </div>
-      </div>
-
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Tổng lượt khảo thí</div>
-          <div className="text-2xl font-bold font-mono text-slate-900 mt-1 tabular-nums">
-            {summary.totalSubmissions}
-          </div>
-          <div className="text-[11px] text-slate-500 mt-2">
-            {summary.evaluatedSubmissions} bài đã được phê duyệt điểm
-          </div>
-        </div>
-
-        <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Tỷ lệ đạt chuẩn (&ge; 70%)</div>
-          <div className="text-2xl font-bold font-mono text-sky-600 mt-1 tabular-nums">
-            {summary.overallPassRate}%
-          </div>
-          <div className="text-[11px] text-slate-500 mt-2">
-            Điểm TB toàn đơn vị:{' '}
-            <span className="font-mono font-semibold">
-              {summary.overallAverageScore !== null ? `${summary.overallAverageScore}đ` : 'Chưa có dữ liệu'}
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">
-          <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Khung chuẩn áp dụng</div>
-          <div className="text-sm font-bold text-slate-900 mt-2 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
-            <span>DigComp Khung Chuẩn (5 Miền Cốt Lõi)</span>
-          </div>
-          <div className="text-[11px] text-slate-500 mt-2">Đánh giá toàn diện 5 miền năng lực số</div>
-        </div>
-      </div>
-
-      {/* Competency Distribution Card (5 Canonical Domains) */}
-      <div className="p-5 rounded-md border border-slate-200 bg-white shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">Phân Bố Điểm Số 5 Miền Cốt Lõi</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Kết quả khảo thí tập thể được tính toán trung thực từ các bài thi đã được phê duyệt.
-            </p>
-          </div>
-        </div>
-
-        <CampaignComparisonChart
-          domains={summary.domains}
-          passRate={summary.overallPassRate}
-          totalEvaluated={summary.evaluatedSubmissions}
-        />
-      </div>
-
-      {/* Collective Learning Interventions */}
-      <CohortLearningRecommendations gapDomainCodes={summary.gapDomainCodes} />
-    </div>
+    <OrgAnalyticsDashboard
+      orgName={org.name}
+      orgSlug={slug}
+      summary={summary}
+      classes={classesInfo}
+      campaigns={campaignsInfo}
+      initialTab={tab}
+      initialCampaignId={campaignId}
+      initialClassId={classId}
+    />
   );
 }

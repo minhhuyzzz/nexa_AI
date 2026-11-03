@@ -75,8 +75,11 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
             setAvatarUrl(user.user_metadata.avatar_url);
           }
         }
-      } catch (err) {
-        console.error('Error fetching org profile:', err);
+      } catch (err: unknown) {
+        const isAbort = (err as { name?: string })?.name === 'AbortError';
+        if (!isAbort) {
+          console.warn('Could not fetch org profile:', (err as Error)?.message || err);
+        }
       }
     }
     fetchUser();
@@ -120,9 +123,9 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
-            <div className="absolute right-0 mt-2 w-72 rounded-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-sm py-2 z-50 text-xs text-slate-700 dark:text-zinc-200 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-xl py-2 z-50 text-xs text-slate-700 dark:text-zinc-200 animate-in fade-in zoom-in-95 duration-100">
               {/* Profile Header */}
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-start gap-3">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -130,24 +133,22 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
                     className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-zinc-700 shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-sky-600 text-white font-bold text-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0">
                     {displayInitials}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 dark:text-zinc-100 truncate">{displayName}</p>
                   <p className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 truncate">{displayEmail}</p>
-                  {orgName && (
-                    <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-sky-50 dark:bg-blue-950/60 text-sky-700 dark:text-blue-400 font-medium border border-sky-100 dark:border-blue-900">
-                      <Building2 className="w-3 h-3" />
-                      <span className="truncate max-w-[140px]">{orgName}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Workspace Switcher in Avatar */}
-              <AvatarWorkspaceSection onClose={() => setIsOpen(false)} />
+              {/* Workspace Switcher in Avatar (Canva-inspired) */}
+              <AvatarWorkspaceSection
+                onClose={() => setIsOpen(false)}
+                userAvatarUrl={avatarUrl}
+                userDisplayName={displayName}
+              />
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">

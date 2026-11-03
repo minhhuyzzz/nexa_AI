@@ -68,7 +68,14 @@ function AcceptInviteContent() {
       setSuccess(true);
       setTimeout(() => {
         const orgSlug = data.organization?.slug || inviteData?.organization?.slug || inviteData?.organization?.code?.toLowerCase() || 'default';
-        router.push(`/org/${orgSlug}`);
+        const role = data.membership?.role || inviteData?.orgRole || 'MEMBER';
+        const isManager = ['ORG_OWNER', 'ORG_ADMIN'].includes(role);
+
+        if (isManager) {
+          router.push(`/org/${orgSlug}`);
+        } else {
+          router.push(`/personal/dashboard?joinedOrg=${encodeURIComponent(orgSlug)}`);
+        }
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi xác nhận lời mời');

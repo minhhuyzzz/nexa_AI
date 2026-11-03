@@ -1,167 +1,142 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users,
-  Plus,
+  UserPlus,
   Mail,
-  Copy,
-  Check,
-  Search,
-  Shield,
-  Loader2,
-  AlertCircle,
+  UserCheck,
+  CreditCard,
+  KeyRound,
   FileSpreadsheet,
-  QrCode,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Ban,
 } from 'lucide-react';
+import { MemberDirectoryTable } from '@/components/dashboard/org/members/MemberDirectoryTable';
+import { InviteMemberDrawer } from '@/components/dashboard/org/members/InviteMemberDrawer';
+import { MemberProfileDrawer } from '@/components/dashboard/org/members/MemberProfileDrawer';
+import { ApprovalQueueView } from '@/components/dashboard/org/members/ApprovalQueueView';
+import { PendingInvitationsView } from '@/components/dashboard/org/members/PendingInvitationsView';
+import { JoinCodesView } from '@/components/dashboard/org/members/JoinCodesView';
 import { BulkMemberImportModal } from '@/components/dashboard/org/BulkMemberImportModal';
 
-export interface MemberItem {
-  membershipId: string;
-  userId: string;
-  email: string;
-  nickname: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  isCurrentUser: boolean;
-}
-
-export interface MembershipRequestItem {
-  id: string;
-  user_id: string;
-  student_id?: string | null;
-  full_name: string;
-  email: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  created_at: string;
-  organization_join_codes?: { code: string; title?: string } | null;
-}
-
-export interface JoinCodeItem {
-  id: string;
-  code: string;
-  title?: string | null;
-  max_uses: number;
-  used_count: number;
-  expires_at: string;
-  is_revoked: boolean;
-  created_at: string;
-}
+import type {
+  OrgMemberItem,
+  MembershipRequestItem,
+  JoinCodeItem,
+  OrgInvitationItem,
+  OrgClassItem,
+} from '@/components/dashboard/org/members/types';
+import type { OrgEntitlementSummary } from '@/features/billing/services/quota-enforcement.service';
 
 interface Props {
   organizationId: string;
   organizationName: string;
-  members: MemberItem[];
+  organizationSlug?: string;
+  members: OrgMemberItem[];
+  classes?: OrgClassItem[];
+  entitlements?: OrgEntitlementSummary;
+  pendingRequestsCount?: number;
+  pendingInvitationsCount?: number;
   maxMembers?: number;
   isManager: boolean;
 }
 
-const ROLE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
-  ORG_OWNER: {
-    label: 'Chủ sở hữu',
-    badgeClass: 'bg-slate-900 text-white border-slate-900',
-  },
-  ORG_ADMIN: {
-    label: 'Quản trị viên',
-    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
-  },
-  ASSESSOR: {
-    label: 'Người đánh giá',
-    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  },
-  EVALUATOR: {
-    label: 'Người đánh giá',
-    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  },
-  REPORT_VIEWER: {
-    label: 'Người xem báo cáo',
-    badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
-  },
-  MEMBER: {
-    label: 'Thành viên',
-    badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
-  },
-};
-
 export function OrgMembersClientView({
   organizationId,
   organizationName,
+  organizationSlug,
   members: initialMembers,
+  classes = [],
+  entitlements,
+  pendingRequestsCount: initialRequestsCount = 0,
+  pendingInvitationsCount: initialInvitationsCount = 0,
   maxMembers = 50,
   isManager,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<'members' | 'requests' | 'join-codes'>('members');
-  const [members, setMembers] = useState<MemberItem[]>(initialMembers);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  // Navigation & tabs
+  const [activeTab, setActiveTab] = useState<'members' | 'requests' | 'invitations' | 'join-codes'>(
+    'members'
+  );
 
-  // Modals
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
-  const [showCreateCodeModal, setShowCreateCodeModal] = useState(false);
-
-  // Invite states
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('MEMBER');
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteResult, setInviteResult] = useState<{ inviteUrl: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  // Requests states (Approval Queue)
+  // Core data states
+  const [members, setMembers] = useState<OrgMemberItem[]>(initialMembers);
   const [requests, setRequests] = useState<MembershipRequestItem[]>([]);
-  const [loadingRequests, setLoadingRequests] = useState(false);
-  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
-
-  // Join Codes states
+  const [invitations, setInvitations] = useState<OrgInvitationItem[]>([]);
   const [joinCodes, setJoinCodes] = useState<JoinCodeItem[]>([]);
+
+  // Counts
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(initialRequestsCount);
+  const [pendingInvitationsCount, setPendingInvitationsCount] = useState(initialInvitationsCount);
+
+  // Loading flags
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
   const [loadingCodes, setLoadingCodes] = useState(false);
-  const [codeTitle, setCodeTitle] = useState('Khảo thí khóa mới');
-  const [codeMaxUses, setCodeMaxUses] = useState(100);
-  const [codeExpiryDays, setCodeExpiryDays] = useState(30);
-  const [isCreatingCode, setIsCreatingCode] = useState(false);
-  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
 
-  const handleCopyJoinLink = (codeStr: string, codeId: string) => {
-    const url = `${window.location.origin}/join/org/${codeStr}`;
-    navigator.clipboard.writeText(url);
-    setCopiedCodeId(codeId);
-    setTimeout(() => setCopiedCodeId(null), 2500);
-  };
+  // Drawers and Modals
+  const [isInviteDrawerOpen, setIsInviteDrawerOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<OrgMemberItem | null>(null);
 
-  const remainingSeats = Math.max(0, maxMembers - members.length);
+  // Calculation of seat quota
+  const isProvisioning = Boolean(entitlements?.isProvisioning || entitlements?.status === 'PROVISIONING' || (!entitlements?.isActive && entitlements?.status !== 'EXPIRED'));
+  const maxSeatsAllowed = entitlements?.maxSeats ?? (maxMembers || 50);
+  const currentMemberCount = members.filter((m) => m.status === 'ACTIVE').length;
+  const remainingSeats = isProvisioning ? maxSeatsAllowed : Math.max(0, maxSeatsAllowed - currentMemberCount);
 
-  // Fetch Requests when tab opens
-  useEffect(() => {
-    if (activeTab === 'requests' && isManager) {
-      fetchRequests();
-    } else if (activeTab === 'join-codes' && isManager) {
-      fetchJoinCodes();
+  // Fetch functions
+  const fetchMembers = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/organizations/${organizationId}/members`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.members) {
+          setMembers(data.members);
+        }
+      }
+    } catch {
+      // keep existing state
     }
-  }, [activeTab, isManager]);
+  }, [organizationId]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoadingRequests(true);
     try {
       const res = await fetch(`/api/organizations/${organizationId}/membership-requests`);
       if (res.ok) {
         const data = await res.json();
-        setRequests(data.requests || []);
+        const reqs = data.requests || [];
+        setRequests(reqs);
+        setPendingRequestsCount(reqs.filter((r: MembershipRequestItem) => r.status === 'PENDING').length);
       }
     } catch {
-      // silent fallback
+      // Keep existing state
     } finally {
       setLoadingRequests(false);
     }
-  };
+  }, [organizationId]);
 
-  const fetchJoinCodes = async () => {
+  const fetchInvitations = useCallback(async () => {
+    setLoadingInvitations(true);
+    try {
+      const res = await fetch(`/api/organizations/invitations?organizationId=${organizationId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const invs = data.invitations || [];
+        setInvitations(invs);
+        setPendingInvitationsCount(
+          invs.filter(
+            (i: OrgInvitationItem) => i.status === 'PENDING' && new Date(i.expires_at) >= new Date()
+          ).length
+        );
+      }
+    } catch {
+      // Keep existing state
+    } finally {
+      setLoadingInvitations(false);
+    }
+  }, [organizationId]);
+
+  const fetchJoinCodes = useCallback(async () => {
     setLoadingCodes(true);
     try {
       const res = await fetch(`/api/organizations/${organizationId}/join-codes`);
@@ -170,691 +145,246 @@ export function OrgMembersClientView({
         setJoinCodes(data.codes || []);
       }
     } catch {
-      // silent fallback
+      // Keep existing state
     } finally {
       setLoadingCodes(false);
     }
-  };
+  }, [organizationId]);
 
-  const handleReviewRequest = async (requestId: string, action: 'APPROVE' | 'REJECT') => {
-    setProcessingRequestId(requestId);
-    try {
-      const res = await fetch(`/api/organizations/${organizationId}/membership-requests`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId, action }),
-      });
-      if (res.ok) {
-        await fetchRequests();
-      }
-    } catch {
-      // silent
-    } finally {
-      setProcessingRequestId(null);
+  // Load data when tab changes
+  useEffect(() => {
+    if (activeTab === 'requests') {
+      fetchRequests();
+    } else if (activeTab === 'invitations') {
+      fetchInvitations();
+    } else if (activeTab === 'join-codes') {
+      fetchJoinCodes();
     }
-  };
+  }, [activeTab, fetchRequests, fetchInvitations, fetchJoinCodes]);
 
-  const handleCreateJoinCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreatingCode(true);
-    try {
-      const res = await fetch(`/api/organizations/${organizationId}/join-codes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: codeTitle,
-          maxUses: codeMaxUses,
-          expiresInDays: codeExpiryDays,
-        }),
-      });
-      if (res.ok) {
-        setShowCreateCodeModal(false);
-        await fetchJoinCodes();
-      }
-    } catch {
-      // silent
-    } finally {
-      setIsCreatingCode(false);
-    }
-  };
-
-  const handleRevokeCode = async (codeId: string) => {
-    try {
-      const res = await fetch(`/api/organizations/${organizationId}/join-codes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codeId }),
-      });
-      if (res.ok) {
-        await fetchJoinCodes();
-      }
-    } catch {
-      // silent
-    }
-  };
-
-  const filteredMembers = members.filter((m) => {
-    const matchSearch =
-      m.nickname.toLowerCase().includes(search.toLowerCase()) ||
-      m.email.toLowerCase().includes(search.toLowerCase()) ||
-      m.role.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === 'ALL' || m.role === roleFilter;
-    const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  const pendingRequests = requests.filter((r) => r.status === 'PENDING');
-
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsInviting(true);
-    setInviteError(null);
-    setInviteResult(null);
-
-    try {
-      const res = await fetch('/api/organizations/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organizationId,
-          email: inviteEmail.trim(),
-          orgRole: inviteRole,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Không thể tạo lời mời');
-      }
-
-      setInviteResult({ inviteUrl: data.invitation.inviteUrl });
-      setInviteEmail('');
-    } catch (err) {
-      setInviteError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setIsInviting(false);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleMemberDeleted = (membershipId: string) => {
+    setMembers((prev) => prev.filter((m) => m.membershipId !== membershipId));
+    setSelectedMember(null);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Tabs Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-        <button
-          onClick={() => setActiveTab('members')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'members'
-              ? 'bg-sky-50 text-sky-700 border border-sky-200'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          <Users className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>Thành viên chính thức</span>
-          <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-700 ml-1">
-            {members.length}
-          </span>
-        </button>
+    <div className="space-y-6">
+      {/* 1. Page Heading (Image 2 standard) */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-mono font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase mb-1">
+            QUẢN LÝ / NHÂN SỰ
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Thành viên
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Quản lý những người tham gia tổ chức và quyền truy cập của họ.
+          </p>
+        </div>
 
         {isManager && (
-          <>
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setActiveTab('requests')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                activeTab === 'requests'
-                  ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              type="button"
+              onClick={() => setIsInviteDrawerOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-md shadow-xs transition"
             >
-              <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>Hàng đợi duyệt</span>
-              {pendingRequests.length > 0 && (
-                <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-bold ml-1">
-                  {pendingRequests.length}
-                </span>
-              )}
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Mời thành viên</span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('join-codes')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                activeTab === 'join-codes'
-                  ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <QrCode className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>Mã tham gia & Link</span>
-            </button>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Tab 1: Official Members */}
+      {/* 2. Meta Line (Image 2 exact replica) */}
+      <div className="flex items-center gap-4 sm:gap-5 flex-wrap text-xs text-slate-600 dark:text-neutral-400 py-1">
+        <span className="inline-flex items-center gap-2">
+          <Users className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+          <span>
+            <strong className="text-neutral-900 dark:text-neutral-100 font-bold font-mono text-sm">
+              {currentMemberCount}
+            </strong>{' '}
+            thành viên đang hoạt động
+          </span>
+        </span>
+        <span className="text-slate-300 dark:text-zinc-700">|</span>
+        <span className="inline-flex items-center gap-2">
+          <Mail className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+          <span>
+            <strong className="text-neutral-900 dark:text-neutral-100 font-bold font-mono text-sm">
+              {String(pendingInvitationsCount).padStart(2, '0')}
+            </strong>{' '}
+            lời mời đang chờ
+          </span>
+        </span>
+        <span className="text-slate-300 dark:text-zinc-700">|</span>
+        <span className="inline-flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+          <span>
+            <strong className="text-neutral-900 dark:text-neutral-100 font-bold font-mono text-sm">
+              {remainingSeats}
+            </strong>{' '}
+            ghế còn trống
+          </span>
+        </span>
+      </div>
+
+      {/* 3. Underline Navigation Tabs (Image 2 exact replica) */}
+      <div className="border-b border-slate-200 dark:border-zinc-800">
+        <nav className="flex space-x-6 overflow-x-auto" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab('members')}
+            className={`pb-3 text-xs transition whitespace-nowrap relative ${
+              activeTab === 'members'
+                ? 'text-blue-600 dark:text-blue-400 font-bold after:content-[""] after:absolute after:left-0 after:right-0 after:bottom-[-1px] after:h-[2px] after:bg-blue-600 dark:after:bg-blue-400'
+                : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 font-medium'
+            }`}
+          >
+            Danh sách thành viên
+          </button>
+
+          {isManager && (
+            <>
+              <button
+                onClick={() => setActiveTab('invitations')}
+                className={`pb-3 text-xs transition whitespace-nowrap relative ${
+                  activeTab === 'invitations'
+                    ? 'text-blue-600 dark:text-blue-400 font-bold after:content-[""] after:absolute after:left-0 after:right-0 after:bottom-[-1px] after:h-[2px] after:bg-blue-600 dark:after:bg-blue-400'
+                    : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 font-medium'
+                }`}
+              >
+                Lời mời
+              </button>
+
+              <button
+                onClick={() => setActiveTab('requests')}
+                className={`pb-3 text-xs transition whitespace-nowrap relative ${
+                  activeTab === 'requests'
+                    ? 'text-blue-600 dark:text-blue-400 font-bold after:content-[""] after:absolute after:left-0 after:right-0 after:bottom-[-1px] after:h-[2px] after:bg-blue-600 dark:after:bg-blue-400'
+                    : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 font-medium'
+                }`}
+              >
+                Yêu cầu tham gia
+              </button>
+
+              <button
+                onClick={() => setActiveTab('join-codes')}
+                className={`pb-3 text-xs transition whitespace-nowrap relative ${
+                  activeTab === 'join-codes'
+                    ? 'text-blue-600 dark:text-blue-400 font-bold after:content-[""] after:absolute after:left-0 after:right-0 after:bottom-[-1px] after:h-[2px] after:bg-blue-600 dark:after:bg-blue-400'
+                    : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 font-medium'
+                }`}
+              >
+                Mã gia nhập & QR
+              </button>
+            </>
+          )}
+        </nav>
+      </div>
+
+      {/* 4. Tab 1: Member Directory Table Directly (No noisy AI-slop boxes) */}
       {activeTab === 'members' && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 flex-1">
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search
-                  className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
-                  strokeWidth={1.75}
-                />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Tìm theo tên hoặc email..."
-                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600"
-                />
-              </div>
-
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-2.5 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none"
-              >
-                <option value="ALL">Tất cả vai trò</option>
-                <option value="ORG_OWNER">Chủ sở hữu (ORG_OWNER)</option>
-                <option value="ORG_ADMIN">Quản trị viên (ORG_ADMIN)</option>
-                <option value="ASSESSOR">Người đánh giá (ASSESSOR)</option>
-                <option value="REPORT_VIEWER">Xem báo cáo (REPORT_VIEWER)</option>
-                <option value="MEMBER">Thành viên (MEMBER)</option>
-              </select>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-2.5 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none"
-              >
-                <option value="ALL">Tất cả trạng thái</option>
-                <option value="ACTIVE">Hoạt động (ACTIVE)</option>
-                <option value="INVITED">Đã gửi lời mời (INVITED)</option>
-                <option value="SUSPENDED">Tạm khóa (SUSPENDED)</option>
-              </select>
-            </div>
-
-            {isManager && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowBulkModal(true)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-xs font-semibold shadow-xs transition-colors"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
-                  <span>Import CSV</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowInviteModal(true);
-                    setInviteResult(null);
-                    setInviteError(null);
-                  }}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  <span>Mời thành viên</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-md border border-slate-200 bg-white overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Thành viên</th>
-                    <th className="py-2.5 px-4">Email</th>
-                    <th className="py-2.5 px-4">Vai trò</th>
-                    <th className="py-2.5 px-4">Trạng thái</th>
-                    <th className="py-2.5 px-4">Ngày tham gia</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredMembers.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
-                        Không tìm thấy thành viên nào phù hợp.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredMembers.map((m) => {
-                      const roleConfig = ROLE_DISPLAY[m.role] || {
-                        label: m.role,
-                        badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
-                      };
-
-                      return (
-                        <tr key={m.membershipId} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold text-xs shrink-0">
-                                {m.nickname.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                                  <span>{m.nickname}</span>
-                                  {m.isCurrentUser && (
-                                    <span className="text-[10px] text-sky-600 font-normal">(Bạn)</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 font-mono text-slate-600 text-[11px]">{m.email}</td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${roleConfig.badgeClass}`}
-                            >
-                              {roleConfig.label}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-700">
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  m.status === 'ACTIVE' ? 'bg-emerald-600' : 'bg-amber-500'
-                                }`}
-                              />
-                              <span>{m.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngưng'}</span>
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-500 text-[11px] font-mono tabular-nums">
-                            {new Date(m.createdAt).toLocaleDateString('vi-VN')}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <MemberDirectoryTable
+          members={members}
+          onSelectMember={(member) => setSelectedMember(member)}
+          isManager={isManager}
+          onOpenBulkImport={() => setIsBulkImportOpen(true)}
+        />
       )}
 
-      {/* Tab 2: Membership Requests (Approval Queue) */}
+      {/* TAB CONTENT 2: Approval Queue View (Screen 03) */}
       {activeTab === 'requests' && isManager && (
-        <div className="space-y-4">
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-600 flex items-center justify-between">
-            <span>
-              Người dùng gửi yêu cầu thông qua Mã tham gia cần được Quản trị viên duyệt trước khi kích hoạt.
-            </span>
-            <span className="font-mono tabular-nums font-semibold text-slate-900">
-              Còn {remainingSeats} ghế trống
-            </span>
-          </div>
-
-          <div className="rounded-md border border-slate-200 bg-white overflow-hidden shadow-xs">
-            {loadingRequests ? (
-              <div className="py-8 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
-                <span>Đang tải hàng đợi phê duyệt...</span>
-              </div>
-            ) : requests.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs">
-                Chưa có yêu cầu gia nhập nào trong hàng đợi.
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Họ và Tên</th>
-                    <th className="py-2.5 px-4">Email</th>
-                    <th className="py-2.5 px-4">Mã SV/CB</th>
-                    <th className="py-2.5 px-4">Mã tham gia</th>
-                    <th className="py-2.5 px-4">Thời gian gửi</th>
-                    <th className="py-2.5 px-4">Trạng thái</th>
-                    <th className="py-2.5 px-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {requests.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-900">{r.full_name}</td>
-                      <td className="py-3 px-4 font-mono text-slate-600 text-[11px]">{r.email}</td>
-                      <td className="py-3 px-4 font-mono text-[11px] text-slate-500">
-                        {r.student_id || '—'}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-[11px] text-sky-700">
-                        {r.organization_join_codes?.code || 'Trực tiếp'}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-500 text-[11px] tabular-nums">
-                        {new Date(r.created_at).toLocaleDateString('vi-VN')}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                            r.status === 'PENDING'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : r.status === 'APPROVED'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}
-                        >
-                          {r.status === 'PENDING'
-                            ? 'Chờ duyệt'
-                            : r.status === 'APPROVED'
-                            ? 'Đã duyệt'
-                            : 'Đã từ chối'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        {r.status === 'PENDING' && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleReviewRequest(r.id, 'APPROVE')}
-                              disabled={processingRequestId === r.id}
-                              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-[11px] font-semibold transition-colors disabled:opacity-50"
-                            >
-                              Duyệt
-                            </button>
-                            <button
-                              onClick={() => handleReviewRequest(r.id, 'REJECT')}
-                              disabled={processingRequestId === r.id}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold transition-colors disabled:opacity-50"
-                            >
-                              Từ chối
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
+        <ApprovalQueueView
+          organizationId={organizationId}
+          requests={requests}
+          loading={loadingRequests}
+          onRefresh={fetchRequests}
+          onRequestHandled={() => {
+            fetchRequests();
+            fetchMembers();
+          }}
+        />
       )}
 
-      {/* Tab 3: Join Codes */}
+      {/* TAB CONTENT 3: Pending Invitations View */}
+      {activeTab === 'invitations' && isManager && (
+        <PendingInvitationsView
+          organizationId={organizationId}
+          invitations={invitations}
+          loading={loadingInvitations}
+          onRefresh={fetchInvitations}
+          onOpenInviteDrawer={() => setIsInviteDrawerOpen(true)}
+          onInvitationRevoked={fetchInvitations}
+        />
+      )}
+
+      {/* TAB CONTENT 4: Join Codes View (Screen 04) */}
       {activeTab === 'join-codes' && isManager && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Tạo mã đăng ký có hạn sử dụng để phát cho lớp học hoặc nhóm sinh viên tự gửi yêu cầu gia nhập.
-            </p>
-            <button
-              onClick={() => setShowCreateCodeModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>Tạo mã mới</span>
-            </button>
-          </div>
-
-          <div className="rounded-md border border-slate-200 bg-white overflow-hidden shadow-xs">
-            {loadingCodes ? (
-              <div className="py-8 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
-                <span>Đang tải danh sách mã tham gia...</span>
-              </div>
-            ) : joinCodes.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs">
-                Chưa có mã tham gia nào. Bấm &quot;Tạo mã mới&quot; để phát hành mã đầu tiên.
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Mã tham gia</th>
-                    <th className="py-2.5 px-4">Mục đích</th>
-                    <th className="py-2.5 px-4">Lượt sử dụng</th>
-                    <th className="py-2.5 px-4">Hạn sử dụng</th>
-                    <th className="py-2.5 px-4">Trạng thái</th>
-                    <th className="py-2.5 px-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {joinCodes.map((code) => {
-                    const isExpired = new Date(code.expires_at) < new Date();
-                    return (
-                      <tr key={code.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs">
-                          {code.code}
-                        </td>
-                        <td className="py-3 px-4 text-slate-700">{code.title || 'Mã tham gia'}</td>
-                        <td className="py-3 px-4 font-mono tabular-nums text-slate-600">
-                          {code.used_count} / {code.max_uses}
-                        </td>
-                        <td className="py-3 px-4 font-mono tabular-nums text-slate-500 text-[11px]">
-                          {new Date(code.expires_at).toLocaleDateString('vi-VN')}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                              code.is_revoked
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                : isExpired
-                                ? 'bg-slate-100 text-slate-600 border-slate-200'
-                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            }`}
-                          >
-                            {code.is_revoked ? 'Đã thu hồi' : isExpired ? 'Hết hạn' : 'Đang hoạt động'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {!code.is_revoked && !isExpired && (
-                              <button
-                                onClick={() => handleCopyJoinLink(code.code, code.id)}
-                                title="Sao chép liên kết tham gia"
-                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] text-sky-700 hover:text-sky-800 hover:bg-sky-50 rounded font-medium border border-sky-200 transition-colors cursor-pointer"
-                              >
-                                {copiedCodeId === code.id ? (
-                                  <>
-                                    <Check className="w-3 h-3 text-emerald-600" strokeWidth={1.75} />
-                                    <span>Đã chép link</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3 text-sky-600" strokeWidth={1.75} />
-                                    <span>Sao chép link</span>
-                                  </>
-                                )}
-                              </button>
-                            )}
-                            {!code.is_revoked && !isExpired && (
-                              <button
-                                onClick={() => handleRevokeCode(code.id)}
-                                className="px-2 py-1 text-[11px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded font-medium transition-colors cursor-pointer"
-                              >
-                                Thu hồi
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
+        <JoinCodesView
+          organizationId={organizationId}
+          joinCodes={joinCodes}
+          classes={classes}
+          loading={loadingCodes}
+          onRefresh={fetchJoinCodes}
+          onCodeCreated={fetchJoinCodes}
+          onCodeRevoked={fetchJoinCodes}
+        />
       )}
 
-      {/* Bulk Import Modal */}
-      <BulkMemberImportModal
-        isOpen={showBulkModal}
-        onClose={() => setShowBulkModal(false)}
+      {/* Slide-over Drawer: Invite Member (Screen 02) */}
+      <InviteMemberDrawer
+        isOpen={isInviteDrawerOpen}
+        onClose={() => setIsInviteDrawerOpen(false)}
         organizationId={organizationId}
+        organizationName={organizationName}
+        classes={classes}
         remainingSeats={remainingSeats}
-        onSuccess={() => window.location.reload()}
+        maxSeats={maxSeatsAllowed}
+        onSuccess={() => {
+          setIsInviteDrawerOpen(false);
+          fetchInvitations();
+        }}
+        onOpenBulkImport={() => {
+          setIsInviteDrawerOpen(false);
+          setIsBulkImportOpen(true);
+        }}
+        onSelectJoinCodesTab={() => {
+          setIsInviteDrawerOpen(false);
+          setActiveTab('join-codes');
+        }}
       />
 
-      {/* Create Join Code Modal */}
-      {showCreateCodeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-md p-5 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900">Tạo Mã Tham Gia Tổ Chức</h3>
-            <form onSubmit={handleCreateJoinCode} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Mục đích / Tên đợt</label>
-                <input
-                  type="text"
-                  required
-                  value={codeTitle}
-                  onChange={(e) => setCodeTitle(e.target.value)}
-                  placeholder="Khảo thí sinh viên K24"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-600"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Lượt tối đa</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={1000}
-                    value={codeMaxUses}
-                    onChange={(e) => setCodeMaxUses(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Thời hạn (ngày)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={codeExpiryDays}
-                    onChange={(e) => setCodeExpiryDays(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md font-mono"
-                  />
-                </div>
-              </div>
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateCodeModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded border border-slate-200"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreatingCode}
-                  className="px-4 py-1.5 text-xs text-white bg-sky-600 hover:bg-sky-700 rounded font-semibold transition-colors disabled:opacity-50"
-                >
-                  {isCreatingCode ? 'Đang tạo...' : 'Phát hành mã'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Slide-over Drawer: Member Profile & RBAC (Screen 06) */}
+      <MemberProfileDrawer
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        member={selectedMember}
+        organizationId={organizationId}
+        isManager={isManager}
+        onUpdated={() => {
+          fetchMembers();
+        }}
+        onDeleted={() => {
+          if (selectedMember) {
+            handleMemberDeleted(selectedMember.membershipId);
+          }
+        }}
+      />
 
-      {/* Invite Member Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-md rounded-md bg-white border border-slate-200 shadow-sm p-5 space-y-4">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Mời thành viên qua Email</h3>
-                <p className="text-xs text-slate-500 mt-0.5">{organizationName}</p>
-              </div>
-              <button
-                onClick={() => setShowInviteModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-xs font-semibold"
-              >
-                Đóng
-              </button>
-            </div>
-
-            {inviteError && (
-              <div className="p-2.5 rounded bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.75} />
-                <span>{inviteError}</span>
-              </div>
-            )}
-
-            {!inviteResult ? (
-              <form onSubmit={handleInvite} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Email thành viên
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="giangvien@truong.edu.vn"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Vai trò trong tổ chức
-                  </label>
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-600 bg-white"
-                  >
-                    <option value="MEMBER">Thành viên (Làm bài khảo thí theo phân công)</option>
-                    <option value="ASSESSOR">Người đánh giá (Soạn đề, chấm bài, mở phòng Live)</option>
-                    <option value="REPORT_VIEWER">Người xem báo cáo (Xem phân tích & số liệu)</option>
-                    <option value="ORG_ADMIN">Quản trị viên đơn vị (Quản lý thành viên & đề thi)</option>
-                  </select>
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowInviteModal(false)}
-                    className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 rounded border border-slate-200"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isInviting}
-                    className="px-4 py-1.5 text-xs text-white bg-sky-600 hover:bg-sky-700 rounded font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    {isInviting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
-                    <span>Tạo liên kết mời</span>
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-3">
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-xs text-emerald-800">
-                  <div className="font-semibold">Đã tạo lời mời thành công!</div>
-                  <p className="text-[11px] mt-1 text-emerald-700">
-                    Gửi liên kết bên dưới cho thành viên để họ gia nhập tổ chức.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={inviteResult.inviteUrl}
-                    className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-md select-all"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(inviteResult.inviteUrl)}
-                    className="px-3 py-2 bg-slate-900 text-white rounded-md text-xs font-semibold flex items-center gap-1 hover:bg-slate-800"
-                  >
-                    <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    <span>{copied ? 'Đã sao chép' : 'Sao chép'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Modal: Bulk Member Import (Screen 05) */}
+      <BulkMemberImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        organizationId={organizationId}
+        remainingSeats={remainingSeats}
+        classes={classes}
+        onSuccess={() => {
+          setIsBulkImportOpen(false);
+          fetchInvitations();
+          fetchMembers();
+        }}
+      />
     </div>
   );
 }

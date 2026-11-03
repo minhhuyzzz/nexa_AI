@@ -80,7 +80,7 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
       contact_phone: '0912345678',
       estimated_learners: 200,
       notes: 'Hợp đồng 200 thí sinh',
-      status: 'PENDING',
+      status: 'NEW',
     };
 
     const mockOrgInsert = vi.fn().mockReturnValue({

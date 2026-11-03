@@ -19,6 +19,7 @@ import {
   Calendar,
   Award,
   MessageSquare,
+  CreditCard,
 } from 'lucide-react';
 
 interface OrgSidebarProps {
@@ -28,13 +29,13 @@ interface OrgSidebarProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  ORG_OWNER: 'Chủ sở hữu',
+  ORG_OWNER: 'Quản trị viên',
   ORG_ADMIN: 'Quản trị viên',
-  ASSESSOR: 'Giảng viên chấm bài',
-  EVALUATOR: 'Giảng viên chấm bài',
-  REPORT_VIEWER: 'Người xem báo cáo',
+  ASSESSOR: 'Quản trị viên',
+  EVALUATOR: 'Quản trị viên',
+  REPORT_VIEWER: 'Thành viên',
   MEMBER: 'Thành viên',
-  LEARNER: 'Học viên',
+  LEARNER: 'Thành viên',
 };
 
 interface NavItem {
@@ -63,7 +64,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
 
   let navGroups: NavGroup[] = [];
 
-  if (isOwnerOrAdmin) {
+  if (isOwnerOrAdmin || isAssessor || isReportViewer) {
     navGroups = [
       {
         label: 'ĐIỀU HÀNH',
@@ -75,19 +76,19 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
             exact: true,
           },
           {
-            name: 'Thành viên & Phân quyền',
+            name: 'Thành viên',
             href: `/org/${orgSlug}/members`,
             icon: Users,
           },
           {
-            name: 'Lớp & Nhóm',
+            name: 'Nhóm & Đơn vị',
             href: `/org/${orgSlug}/classes`,
             icon: FolderKanban,
           },
         ],
       },
       {
-        label: 'ĐÁNH GIÁ & PHÁT TRIỂN',
+        label: 'ĐÁNH GIÁ NĂNG LỰC',
         items: [
           {
             name: 'Đề đánh giá',
@@ -95,14 +96,9 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
             icon: FilePlus,
           },
           {
-            name: 'Đợt đánh giá',
+            name: 'Khảo thí & Bài nộp',
             href: `/org/${orgSlug}/campaigns`,
             icon: Calendar,
-          },
-          {
-            name: 'Bàn chấm bài',
-            href: `/org/${orgSlug}/grading`,
-            icon: CheckSquare,
           },
           {
             name: 'Báo cáo năng lực',
@@ -112,58 +108,17 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
         ],
       },
       {
-        label: 'TÀI NGUYÊN & CÀI ĐẶT',
+        label: 'TÀI KHOẢN TỔ CHỨC',
         items: [
           {
-            name: 'Hạn mức AI',
-            href: `/org/${orgSlug}/ai-quota`,
-            icon: Cpu,
+            name: 'Gói dịch vụ',
+            href: `/org/${orgSlug}/plan`,
+            icon: CreditCard,
           },
           {
-            name: 'Chính sách & Cài đặt',
+            name: 'Cài đặt',
             href: `/org/${orgSlug}/settings`,
             icon: Settings,
-          },
-        ],
-      },
-    ];
-  } else if (isAssessor) {
-    navGroups = [
-      {
-        label: 'KHẢO THÍ & CHẤM ĐIỂM',
-        items: [
-          {
-            name: 'Lớp được phân công',
-            href: `/org/${orgSlug}/classes`,
-            icon: FolderKanban,
-          },
-          {
-            name: 'Đợt đánh giá',
-            href: `/org/${orgSlug}/campaigns`,
-            icon: Calendar,
-          },
-          {
-            name: 'Bàn chấm bài',
-            href: `/org/${orgSlug}/grading`,
-            icon: CheckSquare,
-          },
-        ],
-      },
-    ];
-  } else if (isReportViewer) {
-    navGroups = [
-      {
-        label: 'BÁO CÁO & THỐNG KÊ',
-        items: [
-          {
-            name: 'Tổng quan đợt thi',
-            href: `/org/${orgSlug}/campaigns`,
-            icon: Calendar,
-          },
-          {
-            name: 'Báo cáo năng lực',
-            href: `/org/${orgSlug}/analytics`,
-            icon: BarChart2,
           },
         ],
       },
@@ -175,7 +130,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebar
         label: 'HỌC TẬP & ĐÁNH GIÁ',
         items: [
           {
-            name: 'Lớp của tôi',
+            name: 'Nhóm của tôi',
             href: `/org/${orgSlug}/classes`,
             icon: FolderKanban,
           },

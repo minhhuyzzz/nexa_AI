@@ -215,5 +215,48 @@ describe('OrgQuotaEnforcementService', () => {
       expect(settleRes.action).toBe('RELEASED');
       expect(settleRes.refundedAmount).toBe(5);
     });
+
+    it('should reject negative or zero credits deduction (P0-02/P0-03 input validation)', async () => {
+      const mockSupabase = {
+        rpc: vi.fn(),
+      };
+
+      const resNegative = await QuotaEnforcementService.deductOrgAICredits(
+        mockSupabase as any,
+        'org-123',
+        -5
+      );
+      expect(resNegative.success).toBe(false);
+      expect(resNegative.error).toContain('lớn hơn 0');
+      expect(mockSupabase.rpc).not.toHaveBeenCalled();
+
+      const resZero = await QuotaEnforcementService.deductPersonalAICredits(
+        mockSupabase as any,
+        'user-123',
+        0
+      );
+      expect(resZero.success).toBe(false);
+      expect(resZero.error).toContain('lớn hơn 0');
+    });
+
+    it('should strictly fail-closed when RPC returns error (no unsafe client-side fallback)', async () => {
+      const mockSupabase = {
+        rpc: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database connection timeout' },
+        }),
+        from: vi.fn(), // Should NOT be called for fallback
+      };
+
+      const res = await QuotaEnforcementService.deductOrgAICredits(
+        mockSupabase as any,
+        'org-123',
+        2
+      );
+
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('Database connection timeout');
+      expect(mockSupabase.from).not.toHaveBeenCalled();
+    });
   });
 });

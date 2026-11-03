@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, User, ShieldCheck, Check, ChevronDown, Sparkles } from 'lucide-react';
+import {
+  Building2,
+  User,
+  Check,
+  ChevronRight,
+  Sparkles,
+  Copy,
+} from 'lucide-react';
 
 export interface OrganizationInfo {
   id: string;
@@ -27,27 +34,67 @@ export interface WorkspaceItem {
   organization: OrganizationInfo;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  ORG_OWNER: 'Chủ sở hữu',
-  ORG_ADMIN: 'Quản trị tổ chức',
-  ASSESSOR: 'Người đánh giá',
-  EVALUATOR: 'Người đánh giá',
-  REPORT_VIEWER: 'Xem báo cáo',
-  MEMBER: 'Thành viên',
-};
+// Global in-memory cache for 0ms instant loading
+let cachedWorkspaces: WorkspaceItem[] | null = null;
+let cachedPlanTier: 'FREE' | 'PRO' = 'FREE';
+let isPrefetched = false;
+
+function prefetchWorkspaces() {
+  if (typeof window === 'undefined' || isPrefetched) return;
+  isPrefetched = true;
+  fetch('/api/organizations/my')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (data?.workspaces) {
+        cachedWorkspaces = data.workspaces;
+        if (data.planTier) {
+          cachedPlanTier = data.planTier.toUpperCase() === 'PRO' ? 'PRO' : 'FREE';
+        }
+        try {
+          sessionStorage.setItem('nexa_cached_workspaces', JSON.stringify(data.workspaces));
+        } catch {}
+      }
+    })
+    .catch(() => {});
+}
+
+// Prefetch immediately on client bundle load
+if (typeof window !== 'undefined') {
+  prefetchWorkspaces();
+}
 
 interface AvatarWorkspaceSectionProps {
   onClose: () => void;
+  userAvatarUrl?: string | null;
+  userDisplayName?: string;
 }
 
-export function AvatarWorkspaceSection({ onClose }: AvatarWorkspaceSectionProps) {
+export function AvatarWorkspaceSection({
+  onClose,
+}: AvatarWorkspaceSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>([]);
+
+  // Instant state initialization from in-memory cache or sessionStorage
+  const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>(() => {
+    if (cachedWorkspaces) return cachedWorkspaces;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('nexa_cached_workspaces');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          cachedWorkspaces = parsed;
+          return parsed;
+        }
+      } catch {}
+    }
+    return [];
+  });
+
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('personal');
-  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
-  const [personalPlan, setPersonalPlan] = useState<'FREE' | 'PRO'>('FREE');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [personalPlan, setPersonalPlan] = useState<'FREE' | 'PRO'>(cachedPlanTier);
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const getCookie = (name: string) => {
@@ -62,16 +109,24 @@ export function AvatarWorkspaceSection({ onClose }: AvatarWorkspaceSectionProps)
     const currentId = cookieWs || localWs || 'personal';
     setActiveWorkspaceId(currentId);
 
+    const controller = new AbortController();
+
     const fetchWorkspaces = async () => {
       try {
-        const res = await fetch('/api/organizations/my');
+        const res = await fetch('/api/organizations/my', { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           if (data.workspaces) {
+            cachedWorkspaces = data.workspaces;
             setWorkspaces(data.workspaces);
-            setIsPlatformAdmin(!!data.isPlatformAdmin);
+            try {
+              sessionStorage.setItem('nexa_cached_workspaces', JSON.stringify(data.workspaces));
+            } catch {}
+
             if (data.planTier) {
-              setPersonalPlan(data.planTier.toUpperCase() === 'PRO' ? 'PRO' : 'FREE');
+              const tier = data.planTier.toUpperCase() === 'PRO' ? 'PRO' : 'FREE';
+              cachedPlanTier = tier;
+              setPersonalPlan(tier);
             }
 
             if (pathname?.startsWith('/org/')) {
@@ -80,19 +135,24 @@ export function AvatarWorkspaceSection({ onClose }: AvatarWorkspaceSectionProps)
               if (matched) {
                 setActiveWorkspaceId(`org_${matched.organization.id}`);
               }
-            } else if (pathname?.startsWith('/personal')) {
+            } else {
               setActiveWorkspaceId('personal');
-            } else if (pathname?.startsWith('/admin')) {
-              setActiveWorkspaceId('admin');
             }
           }
         }
-      } catch (err) {
-        console.error('Failed to load workspaces in avatar menu:', err);
+      } catch (err: unknown) {
+        const isAbort = (err as { name?: string })?.name === 'AbortError';
+        if (!isAbort) {
+          console.warn('Could not load workspaces in avatar menu:', (err as Error)?.message || err);
+        }
       }
     };
 
     fetchWorkspaces();
+
+    return () => {
+      controller.abort();
+    };
   }, [pathname]);
 
   const handleSelectWorkspace = (id: string, slug?: string) => {
@@ -112,201 +172,206 @@ export function AvatarWorkspaceSection({ onClose }: AvatarWorkspaceSectionProps)
       router.push('/personal/dashboard');
     } else if (slug) {
       router.push(`/org/${slug}`);
-    } else if (id === 'admin') {
-      router.push('/admin/dashboard');
     } else {
       router.refresh();
     }
   };
 
   const isPersonalActive = pathname?.startsWith('/personal') || activeWorkspaceId === 'personal';
-  const isAdminActive = pathname?.startsWith('/admin') || activeWorkspaceId === 'admin';
   const currentActiveOrg = workspaces.find((w) =>
     pathname?.startsWith(`/org/${w.organization.slug}`) || activeWorkspaceId === `org_${w.organization.id}`
   );
 
+  const activeName = currentActiveOrg ? currentActiveOrg.organization.name : 'Cá nhân';
+  const inviteCode = currentActiveOrg?.organization.code || currentActiveOrg?.organization.slug || '';
+
+  const handleCopyInviteCode = () => {
+    if (!inviteCode) return;
+    navigator.clipboard.writeText(inviteCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="py-2.5 border-b border-slate-100 dark:border-zinc-850">
-      {/* Phía trên: Thẻ gói tài khoản & CTA Nâng cấp */}
-      <div className="mx-3 mb-2.5 p-2.5 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-            Gói dịch vụ cá nhân
-          </span>
-          <span
-            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-              personalPlan === 'PRO'
-                ? 'bg-blue-600 text-white dark:bg-blue-500'
-                : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300'
-            }`}
+      {/* 1. NÂNG CẤP PRO Ở CÁ NHÂN: Đặt ở PHÍA TRÊN không gian làm việc */}
+      {isPersonalActive && !currentActiveOrg && personalPlan === 'FREE' && (
+        <div className="px-3 pb-2.5">
+          <Link
+            href="/personal/billing"
+            onClick={onClose}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/40 text-blue-700 dark:text-blue-300 hover:brightness-95 transition-all text-xs font-semibold shadow-2xs"
           >
-            {personalPlan}
-          </span>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Nâng cấp NEXA PRO</span>
+            </div>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white font-mono">
+              PRO
+            </span>
+          </Link>
         </div>
+      )}
 
-        {personalPlan === 'FREE' ? (
-          <Link
-            href="/personal/billing"
-            onClick={onClose}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs"
-          >
-            <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />
-            <span>Nâng cấp PRO</span>
-          </Link>
-        ) : (
-          <Link
-            href="/personal/billing"
-            onClick={onClose}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium text-blue-600 dark:text-blue-400 bg-white dark:bg-zinc-950 border border-blue-200 dark:border-blue-900/60 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Quản lý gói PRO</span>
-          </Link>
-        )}
+      {/* 2. Tiêu đề nhóm Không gian làm việc */}
+      <div className="px-4 pb-1.5 text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+        Không gian làm việc
       </div>
 
-      {/* Mục Không gian làm việc thiết kế dạng Dropdown */}
-      <div className="px-3">
-        <div className="px-1 pb-1 text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
-          Không gian làm việc
-        </div>
-
-        {/* Dropdown Trigger Button */}
+      {/* 3. Main Workspace Row (Clickable Trigger with perfectly anchored flyout) */}
+      <div className="px-2 relative">
         <button
           type="button"
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="w-full flex items-center justify-between px-2.5 py-2 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs transition-colors cursor-pointer"
-          aria-label="Chọn không gian làm việc"
-          aria-expanded={isDropdownOpen}
+          onClick={() => setIsFlyoutOpen(!isFlyoutOpen)}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer group text-left ${
+            isFlyoutOpen
+              ? 'bg-slate-100 dark:bg-zinc-850'
+              : 'hover:bg-slate-50 dark:hover:bg-zinc-850/80'
+          }`}
+          aria-expanded={isFlyoutOpen}
+          aria-label="Chuyển đổi không gian làm việc"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            {isAdminActive ? (
-              <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-purple-600 dark:text-purple-400" strokeWidth={1.75} />
-            ) : currentActiveOrg ? (
-              <Building2 className="w-3.5 h-3.5 shrink-0 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            {currentActiveOrg ? (
+              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
             ) : (
-              <User className="w-3.5 h-3.5 shrink-0 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+              <User className="w-4 h-4 text-slate-600 dark:text-neutral-400 shrink-0" strokeWidth={1.75} />
             )}
-            <span className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-              {isAdminActive
-                ? 'Quản trị nền tảng NEXA'
-                : currentActiveOrg
-                ? currentActiveOrg.organization.name
-                : 'Cá nhân'}
-            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-sm text-slate-900 dark:text-neutral-100 truncate">
+                {activeName}
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                {currentActiveOrg
+                  ? (currentActiveOrg.organization.plan_tier?.toUpperCase() === 'ENTERPRISE' ? 'Enterprise' : 'Business')
+                  : (personalPlan === 'PRO' ? 'Pro' : 'Miễn phí')}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 ml-1">
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700">
-              {isAdminActive
-                ? 'ADMIN'
-                : currentActiveOrg
-                ? `${ROLE_LABELS[currentActiveOrg.role] || currentActiveOrg.role} · BUSINESS`
-                : personalPlan}
-            </span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 transition-transform ${
-                isDropdownOpen ? 'rotate-180' : ''
-              }`}
-              strokeWidth={1.75}
-            />
-          </div>
+          <ChevronRight
+            className={`w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-neutral-200 transition-transform shrink-0 ${
+              isFlyoutOpen ? 'rotate-90 sm:rotate-0' : ''
+            }`}
+            strokeWidth={2}
+          />
         </button>
 
-        {/* Dropdown Options List */}
-        {isDropdownOpen && (
-          <div className="mt-1.5 p-1 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 space-y-0.5 animate-in fade-in-50 zoom-in-95">
-            {/* 1. Personal Workspace Option */}
-            <button
-              type="button"
-              onClick={() => {
-                handleSelectWorkspace('personal');
-                setIsDropdownOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded text-xs transition-colors cursor-pointer text-left ${
-                isPersonalActive && !isAdminActive
-                  ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
-                  : 'hover:bg-white dark:hover:bg-zinc-800 text-neutral-700 dark:text-zinc-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <User className="w-3.5 h-3.5 shrink-0 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                <span className="truncate">Cá nhân</span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700 font-bold">
-                  {personalPlan}
-                </span>
-                {isPersonalActive && !isAdminActive && (
-                  <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={2} />
-                )}
-              </div>
-            </button>
+        {/* 4. Flyout Submenu "Chuyển đổi" - Định vị chuẩn xác ngang hàng với nút bấm */}
+        {isFlyoutOpen && (
+          <div className="mt-2 sm:mt-0 sm:absolute sm:right-[calc(100%+8px)] sm:top-0 w-full sm:w-64 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xl p-2.5 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-zinc-800 sm:border-none mb-1">
+              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                Chuyển đổi
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsFlyoutOpen(false)}
+                className="sm:hidden text-xs text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-neutral-100 font-medium px-1.5 py-0.5 rounded"
+              >
+                Đóng
+              </button>
+            </div>
 
-            {/* 2. Organizations Options */}
-            {workspaces.map((ws) => {
-              const isOrgActive = !isAdminActive && (
-                pathname?.startsWith(`/org/${ws.organization.slug}`) ||
-                activeWorkspaceId === `org_${ws.organization.id}` ||
-                activeWorkspaceId === ws.organization.id
-              );
-              return (
-                <button
-                  key={ws.membershipId}
-                  type="button"
-                  onClick={() => {
-                    handleSelectWorkspace(`org_${ws.organization.id}`, ws.organization.slug);
-                    setIsDropdownOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded text-xs transition-colors cursor-pointer text-left ${
-                    isOrgActive
-                      ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
-                      : 'hover:bg-white dark:hover:bg-zinc-800 text-neutral-700 dark:text-zinc-300'
-                  }`}
-                >
-                  <div className="flex flex-col min-w-0 pr-1">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-3.5 h-3.5 shrink-0 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                      <span className="truncate font-medium text-neutral-900 dark:text-neutral-100">{ws.organization.name}</span>
-                    </div>
-                    <div className="pl-5.5 text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
-                      {ROLE_LABELS[ws.role] || ws.role} · <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">BUSINESS</span>
-                    </div>
-                  </div>
-                  {isOrgActive && (
-                    <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 ml-1" strokeWidth={2} />
-                  )}
-                </button>
-              );
-            })}
-
-            {/* 3. Platform Admin Option */}
-            {isPlatformAdmin && (
+            {/* Danh sách không gian làm việc: TÊN + GÓI TƯƠNG ỨNG + DẤU TICK */}
+            <div className="space-y-0.5 max-h-[240px] overflow-y-auto">
+              {/* Option 1: Cá nhân */}
               <button
                 type="button"
                 onClick={() => {
-                  handleSelectWorkspace('admin');
-                  setIsDropdownOpen(false);
+                  handleSelectWorkspace('personal');
+                  setIsFlyoutOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded text-xs transition-colors cursor-pointer text-left ${
-                  isAdminActive
-                    ? 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-semibold'
-                    : 'hover:bg-white dark:hover:bg-zinc-800 text-purple-700 dark:text-purple-400'
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer text-left ${
+                  isPersonalActive
+                    ? 'bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-neutral-100'
+                    : 'hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-700 dark:text-zinc-300'
                 }`}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-purple-600 dark:text-purple-400" strokeWidth={1.75} />
-                  <span className="truncate font-medium">Quản trị nền tảng NEXA</span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 font-bold">
-                    ADMIN
+                <div className="flex flex-col min-w-0 pr-2">
+                  <span className={`text-xs truncate ${isPersonalActive ? 'font-bold text-slate-900 dark:text-neutral-100' : 'font-medium text-slate-800 dark:text-zinc-200'}`}>
+                    Cá nhân
                   </span>
-                  {isAdminActive && (
-                    <Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" strokeWidth={2} />
-                  )}
+                  <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                    {personalPlan === 'PRO' ? 'Pro' : 'Miễn phí'}
+                  </span>
                 </div>
+                {isPersonalActive && (
+                  <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 ml-2" strokeWidth={2.5} />
+                )}
               </button>
+
+              {/* Option 2+: Các tổ chức */}
+              {workspaces.map((ws) => {
+                const isOrgActive =
+                  pathname?.startsWith(`/org/${ws.organization.slug}`) ||
+                  activeWorkspaceId === `org_${ws.organization.id}` ||
+                  activeWorkspaceId === ws.organization.id;
+
+                const planLabel = ws.organization.plan_tier?.toUpperCase() === 'ENTERPRISE'
+                  ? 'Enterprise'
+                  : 'Business';
+
+                return (
+                  <button
+                    key={ws.membershipId}
+                    type="button"
+                    onClick={() => {
+                      handleSelectWorkspace(`org_${ws.organization.id}`, ws.organization.slug);
+                      setIsFlyoutOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer text-left ${
+                      isOrgActive
+                        ? 'bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-neutral-100'
+                        : 'hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-700 dark:text-zinc-300'
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className={`text-xs truncate ${isOrgActive ? 'font-bold text-slate-900 dark:text-neutral-100' : 'font-medium text-slate-800 dark:text-zinc-200'}`}>
+                        {ws.organization.name}
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                        {planLabel}
+                      </span>
+                    </div>
+                    {isOrgActive && (
+                      <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 ml-2" strokeWidth={2.5} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Khi chuyển sang tổ chức: Có mã mời tham gia thay thế */}
+            {currentActiveOrg && inviteCode && (
+              <div className="pt-2 mt-2 border-t border-slate-100 dark:border-zinc-800">
+                <div className="p-2 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-slate-500 dark:text-neutral-400 font-medium">Mã mời tham gia:</span>
+                    <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-200/80 dark:border-blue-900">
+                      {inviteCode}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyInviteCode}
+                    className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-1 px-2 rounded text-[11px] font-semibold bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-750 text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-600 font-medium">Đã sao chép mã</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Sao chép mã mời</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}

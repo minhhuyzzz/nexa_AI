@@ -8,11 +8,14 @@ export const dynamic = 'force-dynamic';
 
 const approveInquirySchema = z.object({
   inquiryId: z.string().uuid('ID yêu cầu tư vấn không hợp lệ'),
-  contractNumber: z.string().trim().min(3, 'Số hợp đồng tối thiểu 3 ký tự').max(50),
+  planName: z.string().trim().min(2).default('Business Plus'),
+  contractNumber: z.string().trim().max(50).optional(),
   orgCode: z.string().trim().min(2, 'Mã tổ chức tối thiểu 2 ký tự').max(30),
-  maxSeats: z.number().int().min(5).default(50),
-  maxAssessments: z.number().int().min(10).default(500),
-  aiCredits: z.number().int().min(50).default(1000),
+  cycleMonths: z.number().int().min(1).max(36).default(12),
+  maxSeats: z.number().int().min(1).default(250),
+  maxAssessments: z.number().int().min(1).default(100),
+  aiCredits: z.number().int().min(0).default(5000),
+  adminEmail: z.string().trim().email('Email quản trị viên không hợp lệ').optional(),
   startsAt: z.string().optional(),
   expiresAt: z.string().optional(),
 });
@@ -21,8 +24,8 @@ export async function POST(request: NextRequest | Request) {
   try {
     // 1. Guard: Platform Admin only
     const authCheck = await requirePlatformAdmin();
-    if (!authCheck.isAuthorized || authCheck.errorResponse) {
-      return authCheck.errorResponse!;
+    if (!authCheck.isAuthorized || authCheck.errorResponse || !authCheck.user) {
+      return authCheck.errorResponse || NextResponse.json({ error: 'Không có quyền truy cập' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -37,35 +40,47 @@ export async function POST(request: NextRequest | Request) {
 
     const {
       inquiryId,
+      planName,
       contractNumber,
       orgCode,
+      cycleMonths,
       maxSeats,
       maxAssessments,
       aiCredits,
+      adminEmail,
       startsAt,
       expiresAt,
     } = validation.data;
 
     const adminSupabase = createAdminClient();
 
-    // 2. Atomic lock: Transition inquiry from PENDING to PROCESSING to prevent concurrent approvals
-    const { data: inquiry, error: inqError } = await adminSupabase
+    // 2. Atomic lock: Transition inquiry from NEW/IN_PROGRESS/CONTACTED/PROPOSAL_SENT to IN_PROGRESS
+    const updateBuilder = adminSupabase
       .from('business_inquiries')
-      .update({ status: 'PROCESSING' })
-      .eq('id', inquiryId)
-      .eq('status', 'PENDING')
+      .update({ status: 'IN_PROGRESS' })
+      .eq('id', inquiryId);
+
+    const filterBuilder = typeof (updateBuilder as any).in === 'function'
+      ? (updateBuilder as any).in('status', ['NEW', 'IN_PROGRESS', 'CONTACTED', 'PROPOSAL_SENT'])
+      : typeof (updateBuilder as any).eq === 'function'
+        ? (updateBuilder as any).eq('status', 'NEW')
+        : updateBuilder;
+
+    const { data: inquiry, error: inqError } = await filterBuilder
       .select()
       .maybeSingle();
 
     if (inqError || !inquiry) {
       return NextResponse.json(
-        { error: 'Yêu cầu này đã được xử lý hoặc đang trong tiến trình phê duyệt bởi quản trị viên khác.' },
+        { error: 'Yêu cầu này đã được kích hoạt hoặc đang trong tiến trình xử lý bởi quản trị viên khác.' },
         { status: 409 }
       );
     }
 
     const cleanCode = orgCode.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
     const cleanSlug = cleanCode.toLowerCase();
+    const effectiveContract = contractNumber?.trim() || `NEXA-B2B-${cleanCode}`;
+    const targetEmail = (adminEmail || inquiry.contact_email || '').trim().toLowerCase();
 
     // 3. Create active organization
     const { data: org, error: orgError } = await adminSupabase
@@ -76,19 +91,19 @@ export async function POST(request: NextRequest | Request) {
         slug: cleanSlug,
         type: inquiry.org_type || 'EDUCATIONAL',
         contact_name: inquiry.contact_name,
-        contact_email: inquiry.contact_email,
+        contact_email: targetEmail,
         contact_phone: inquiry.contact_phone,
         max_members: maxSeats,
         quota_assessments: maxAssessments,
         status: 'ACTIVE',
         is_active: true,
-        notes: `Hợp đồng: ${contractNumber}. Ghi chú inquiry: ${inquiry.notes || 'Không'}`,
+        notes: `Gói: ${planName} (${cycleMonths} tháng). Hợp đồng/Ref: ${effectiveContract}. Ghi chú: ${inquiry.notes || 'Không'}`,
       })
       .select()
       .single();
 
     if (orgError) {
-      await adminSupabase.from('business_inquiries').update({ status: 'PENDING' }).eq('id', inquiryId);
+      await adminSupabase.from('business_inquiries').update({ status: 'NEW' }).eq('id', inquiryId);
       if (orgError.code === '23505') {
         return NextResponse.json(
           { error: `Mã tổ chức hoặc slug "${cleanCode}" đã tồn tại. Vui lòng chọn mã khác.` },
@@ -102,13 +117,13 @@ export async function POST(request: NextRequest | Request) {
     const startDate = startsAt ? new Date(startsAt) : new Date();
     const expiryDate = expiresAt
       ? new Date(expiresAt)
-      : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+      : new Date(startDate.getTime() + cycleMonths * 30 * 24 * 60 * 60 * 1000);
 
     const { data: entitlement, error: entError } = await adminSupabase
       .from('organization_entitlements')
       .insert({
         organization_id: org.id,
-        contract_number: contractNumber.trim(),
+        contract_number: effectiveContract,
         max_seats: maxSeats,
         max_assessments: maxAssessments,
         ai_credits_granted: aiCredits,
@@ -121,9 +136,9 @@ export async function POST(request: NextRequest | Request) {
       .single();
 
     if (entError) {
-      // Atomic rollback: remove created organization and reset inquiry status if entitlement provisioning fails
+      // Atomic rollback: remove created organization and reset inquiry status if entitlement fails
       await adminSupabase.from('organizations').delete().eq('id', org.id);
-      await adminSupabase.from('business_inquiries').update({ status: 'PENDING' }).eq('id', inquiryId);
+      await adminSupabase.from('business_inquiries').update({ status: 'NEW' }).eq('id', inquiryId);
       return NextResponse.json(
         { error: `Không thể cấp hạn mức hợp đồng (Entitlement): ${entError.message}` },
         { status: 500 }
@@ -136,9 +151,10 @@ export async function POST(request: NextRequest | Request) {
 
     const { error: inviteErr } = await adminSupabase.from('organization_invitations').insert({
       organization_id: org.id,
-      email: inquiry.contact_email.trim().toLowerCase(),
+      email: targetEmail,
       org_role: 'ORG_OWNER',
       token,
+      invited_by: authCheck.user.id,
       status: 'PENDING',
       expires_at: inviteExpiry.toISOString(),
     });
@@ -147,38 +163,40 @@ export async function POST(request: NextRequest | Request) {
       // Atomic rollback: remove created entitlement, organization, and reset inquiry status
       await adminSupabase.from('organization_entitlements').delete().eq('organization_id', org.id);
       await adminSupabase.from('organizations').delete().eq('id', org.id);
-      await adminSupabase.from('business_inquiries').update({ status: 'PENDING' }).eq('id', inquiryId);
+      await adminSupabase.from('business_inquiries').update({ status: 'NEW' }).eq('id', inquiryId);
       return NextResponse.json(
         { error: `Không thể tạo lời mời ORG_OWNER: ${inviteErr.message}` },
         { status: 500 }
       );
     }
 
-    // 6. Mark inquiry as APPROVED
+    // 6. Mark inquiry as ACTIVATED
     await adminSupabase
       .from('business_inquiries')
       .update({
-        status: 'APPROVED',
-        reviewed_by: authCheck.user?.id || null,
+        status: 'ACTIVATED',
+        reviewed_by: authCheck.user.id,
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', inquiryId);
 
     // 7. Record admin audit log
     await recordAdminAudit({
-      adminId: authCheck.user?.id,
-      adminEmail: authCheck.user?.email,
-      action: 'ORG_APPROVED',
+      adminId: authCheck.user.id,
+      adminEmail: authCheck.user.email,
+      action: 'ORG_ACTIVATED',
       targetType: 'ORGANIZATION',
       targetId: org.id,
       details: {
         orgName: org.name,
         orgCode: cleanCode,
         inquiryId,
-        contractNumber,
+        planName,
+        contractNumber: effectiveContract,
         maxSeats,
         maxAssessments,
         aiCredits,
+        cycleMonths,
       },
     });
 
@@ -187,7 +205,7 @@ export async function POST(request: NextRequest | Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Đã kích hoạt tổ chức "${org.name}" và cấp hạn mức hợp đồng thành công`,
+      message: `Đã kích hoạt gói "${planName}" cho tổ chức "${org.name}" thành công`,
       organization: org,
       entitlement: entitlement || null,
       inviteUrl,

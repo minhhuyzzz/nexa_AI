@@ -63,7 +63,8 @@ export async function POST(request: Request) {
 
     // 2. Validate mã trường / B2B organization nếu người dùng có nhập
     let linkedOrgId: string | null = null;
-    let targetPlanTier = profile.plan_tier || 'FREE';
+    // V3: Giữ nguyên gói cá nhân độc lập (FREE/PRO)
+    const personalPlanTier = profile.plan_tier || 'FREE';
 
     if (orgCode && orgCode.trim()) {
       const cleanCode = orgCode.trim().toUpperCase();
@@ -82,7 +83,6 @@ export async function POST(request: Request) {
       }
 
       linkedOrgId = orgData.id;
-      targetPlanTier = 'ENTERPRISE';
     }
 
     // 3. Kiểm tra trùng biệt danh (nếu người dùng thay đổi biệt danh so với gợi ý tự động)
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       .update({
         role,
         nickname: cleanNickname,
-        plan_tier: targetPlanTier,
+        plan_tier: personalPlanTier,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
       })

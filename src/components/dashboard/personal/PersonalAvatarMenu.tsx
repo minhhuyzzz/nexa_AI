@@ -133,7 +133,7 @@ export function PersonalAvatarMenu() {
               onClick={() => setIsOpen(false)}
             />
 
-            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-md py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
               <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-850">
                 <div className="flex items-center gap-3">
@@ -155,8 +155,12 @@ export function PersonalAvatarMenu() {
                 </div>
               </div>
 
-              {/* Workspace Switcher in Avatar */}
-              <AvatarWorkspaceSection onClose={() => setIsOpen(false)} />
+              {/* Workspace Switcher in Avatar (Canva-inspired) */}
+              <AvatarWorkspaceSection
+                onClose={() => setIsOpen(false)}
+                userAvatarUrl={avatarUrl}
+                userDisplayName={displayName}
+              />
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">

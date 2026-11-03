@@ -75,7 +75,7 @@ describe('/api/leaderboard Route Handler (PTS Slice)', () => {
       },
     } as any);
 
-    const res = await GET();
+    const res = await GET(new Request('http://localhost:3000/api/leaderboard'));
     expect(res.status).toBe(200);
 
     const data = await res.json();

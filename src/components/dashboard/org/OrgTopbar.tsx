@@ -32,12 +32,10 @@ export function OrgTopbar({ orgName, orgSlug }: OrgTopbarProps) {
           : 'bg-transparent border-b border-transparent'
       }`}
     >
-      {/* Left: Organization Badge */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-neutral-800 dark:text-zinc-200 bg-slate-50/90 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-md font-semibold shadow-2xs">
-          <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span className="truncate max-w-[260px]">{orgName}</span>
-        </div>
+      {/* Left: Workspace breadcrumb */}
+      <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-zinc-300">
+        <Building2 className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+        <span className="truncate max-w-[260px] font-semibold text-slate-800 dark:text-neutral-200">{orgName}</span>
       </div>
 
       {/* Right: Notification and Avatar */}

@@ -75,9 +75,11 @@ export function WorkspaceSwitcher() {
     setActiveWorkspaceId(currentId);
 
     // Fetch user organizations and plan
+    const controller = new AbortController();
+
     const fetchWorkspaces = async () => {
       try {
-        const res = await fetch('/api/organizations/my');
+        const res = await fetch('/api/organizations/my', { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           if (data.workspaces) {
@@ -106,12 +108,19 @@ export function WorkspaceSwitcher() {
             }
           }
         }
-      } catch (e) {
-        console.error('Failed to load workspaces', e);
+      } catch (e: unknown) {
+        const isAbort = (e as { name?: string })?.name === 'AbortError';
+        if (!isAbort) {
+          console.warn('Could not load workspaces:', (e as Error)?.message || e);
+        }
       }
     };
 
     fetchWorkspaces();
+
+    return () => {
+      controller.abort();
+    };
   }, [pathname]);
 
   useEffect(() => {

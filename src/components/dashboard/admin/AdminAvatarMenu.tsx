@@ -12,7 +12,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
-import { AvatarWorkspaceSection } from '../AvatarWorkspaceSection';
 
 export function AdminAvatarMenu() {
   const router = useRouter();
@@ -76,7 +75,7 @@ export function AdminAvatarMenu() {
               onClick={() => setIsOpen(false)}
             />
 
-            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 rounded-md shadow-sm py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
               <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-850">
                 <div className="flex items-center gap-3">
@@ -94,19 +93,16 @@ export function AdminAvatarMenu() {
                 </div>
               </div>
 
-              {/* Workspace Switcher in Avatar */}
-              <AvatarWorkspaceSection onClose={() => setIsOpen(false)} />
-
               {/* Status info */}
-              <div className="p-3 mx-2 my-2 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/70 dark:border-zinc-800">
+              <div className="p-3 mx-3 my-2.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-900/50">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-slate-500 dark:text-zinc-400 text-[11px]">Quyền hạn</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-900 dark:bg-zinc-800 text-white dark:text-zinc-200 border border-slate-700 dark:border-zinc-700">
+                  <span className="text-purple-700 dark:text-purple-300 text-[11px] font-semibold">Quyền hạn</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-700 text-white shadow-2xs">
                     SUPER ADMIN
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-zinc-400">
-                  Toàn quyền quản trị hạ tầng & dữ liệu
+                <div className="text-[11px] text-purple-600 dark:text-purple-400">
+                  Toàn quyền quản trị hạ tầng &amp; dữ liệu nền tảng
                 </div>
               </div>
 

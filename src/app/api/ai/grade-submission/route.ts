@@ -186,7 +186,7 @@ export async function POST(request: Request) {
           )
         )
       `)
-      .eq('item_id', itemId);
+      .eq('item_id', targetItemId);
 
     if (rubricError || !rubrics || rubrics.length === 0) {
       return NextResponse.json(
@@ -286,9 +286,6 @@ export async function POST(request: Request) {
       throw evalError;
     }
 
-    // Settle credits on success
-    await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
-
     // 6. Recalculate deterministic scores & verify evidence quotes (MOD-03 / Task 3.2)
     const validatedEvaluation = GradingValidatorService.validateAndRecalculateScores(
       evaluation,
@@ -296,7 +293,7 @@ export async function POST(request: Request) {
       answer.text_response
     );
 
-    // 7. Save AI evaluation result into public.ai_evaluations as DRAFT for Evaluator review
+    // 7. Save AI evaluation result into public.ai_evaluations as DRAFT for Evaluator review (P1-02)
     const { data: evalRecord, error: saveError } = await supabase
       .from('ai_evaluations')
       .insert({
@@ -317,9 +314,18 @@ export async function POST(request: Request) {
       .select('id, created_at')
       .single();
 
-    if (saveError) {
+    if (saveError || !evalRecord) {
       console.error('Failed to save AI evaluation:', saveError);
+      // Rollback reservation and release credits (Fail-closed)
+      await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'RELEASE');
+      return NextResponse.json(
+        { error: 'Không thể lưu kết quả chấm bài AI vào cơ sở dữ liệu. Lượt credits đã được hoàn trả an toàn.' },
+        { status: 500 }
+      );
     }
+
+    // Settle credits only after evaluation record is successfully persisted
+    const settleResult = await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
 
     // 8. GRADE-01: Keep AI score in ai_evaluations as DRAFT only.
     // Do NOT write to submission_answers.score_awarded or assessment_submissions.final_score.
@@ -331,7 +337,7 @@ export async function POST(request: Request) {
       })
       .eq('id', submissionId);
 
-    const remainingCredits = reservation.remainingCredits ?? profile.credits ?? 0;
+    const remainingCredits = settleResult.remainingCredits ?? reservation.remainingCredits ?? profile.credits ?? 0;
 
     return NextResponse.json({
       success: true,

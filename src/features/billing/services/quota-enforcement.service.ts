@@ -39,25 +39,19 @@ export interface AICreditsCheckResult {
 
 
 export interface OrgEntitlementSummary {
-
   contractNumber: string;
-
+  planName?: string;
+  status?: 'ACTIVE' | 'EXPIRING' | 'PROVISIONING' | 'EXPIRED';
+  isProvisioning?: boolean;
+  daysRemaining?: number;
   maxSeats: number;
-
   maxAssessments: number;
-
   aiCreditsGranted: number;
-
   aiCreditsUsed: number;
-
   remainingCredits: number;
-
   startsAt: string;
-
   expiresAt: string;
-
   isActive: boolean;
-
 }
 
 
@@ -681,31 +675,53 @@ export class QuotaEnforcementService {
       .limit(1)
       .maybeSingle();
 
+    const now = new Date();
+
     if (entitlement) {
-      const now = new Date();
-      const isExpired = entitlement.expires_at ? new Date(entitlement.expires_at) < now : false;
+      const expiresAt = entitlement.expires_at ? new Date(entitlement.expires_at) : now;
+      const msDiff = expiresAt.getTime() - now.getTime();
+      const daysRemaining = Math.max(0, Math.ceil(msDiff / (1000 * 60 * 60 * 24)));
+      const isExpired = expiresAt < now;
       const isActive = Boolean(entitlement.is_active) && !isExpired;
       const granted = entitlement.ai_credits_granted ?? 0;
       const used = entitlement.ai_credits_used ?? 0;
+
+      let status: 'ACTIVE' | 'EXPIRING' | 'PROVISIONING' | 'EXPIRED' = 'ACTIVE';
+      if (entitlement.status === 'PROVISIONING' || (!entitlement.is_active && !isExpired)) {
+        status = 'PROVISIONING';
+      } else if (isExpired) {
+        status = 'EXPIRED';
+      } else if (daysRemaining <= 30) {
+        status = 'EXPIRING';
+      }
+
       return {
         contractNumber: entitlement.contract_number || 'NEXA-B2B-STD',
-        maxSeats: entitlement.max_seats ?? 0,
-        maxAssessments: entitlement.max_assessments ?? 0,
+        planName: entitlement.plan_name || 'NEXA Business Plus',
+        status,
+        isProvisioning: status === 'PROVISIONING',
+        daysRemaining,
+        maxSeats: entitlement.max_seats ?? 250,
+        maxAssessments: entitlement.max_assessments ?? 100,
         aiCreditsGranted: granted,
         aiCreditsUsed: used,
         remainingCredits: isActive ? Math.max(0, granted - used) : 0,
         startsAt: entitlement.starts_at || now.toISOString(),
         expiresAt: entitlement.expires_at || now.toISOString(),
-        isActive,
+        isActive: status !== 'EXPIRED' && status !== 'PROVISIONING',
       };
     }
 
-    // SEC-07: Tổ chức chưa có hợp đồng/entitlement chính thức thì không cấp quota ảo
-    const nowIso = new Date().toISOString();
+    // SEC-07: Tổ chức chưa có entitlement chính thức thì trả về trạng thái PROVISIONING an toàn
+    const nowIso = now.toISOString();
     return {
-      contractNumber: 'CHƯA_KÍCH_HOẠT',
-      maxSeats: 0,
-      maxAssessments: 0,
+      contractNumber: 'PROVISIONING',
+      planName: 'NEXA Business',
+      status: 'PROVISIONING',
+      isProvisioning: true,
+      daysRemaining: 0,
+      maxSeats: 50,
+      maxAssessments: 10,
       aiCreditsGranted: 0,
       aiCreditsUsed: 0,
       remainingCredits: 0,
@@ -827,140 +843,105 @@ export class QuotaEnforcementService {
   }
 
   /**
-   * Trừ AI credits nguyên tử cho tổ chức (AI-01)
+   * Trừ AI credits nguyên tử cho tổ chức (AI-01, P0-02, P0-03)
+   * Fail-closed: Tuyệt đối không fallback sang read-modify-write từ client.
    */
   static async deductOrgAICredits(
     supabase: SupabaseClient,
     organizationId: string,
     amount: number = 1
   ): Promise<{ success: boolean; remainingCredits: number; error?: string }> {
+    if (amount <= 0) {
+      return {
+        success: false,
+        remainingCredits: 0,
+        error: 'Số lượng AI credits trừ phải lớn hơn 0.',
+      };
+    }
+
     try {
-      const { data: rpcRemaining, error: rpcError } = await supabase.rpc(
-        'deduct_organization_ai_credits',
-        {
-          p_org_id: organizationId,
-          p_amount: amount,
+      if (typeof supabase.rpc === 'function') {
+        const { data: rpcRemaining, error: rpcError } = await supabase.rpc(
+          'deduct_organization_ai_credits',
+          {
+            p_org_id: organizationId,
+            p_amount: amount,
+          }
+        );
+
+        if (!rpcError && typeof rpcRemaining === 'number') {
+          return { success: true, remainingCredits: rpcRemaining };
         }
-      );
 
-      if (!rpcError && typeof rpcRemaining === 'number') {
-        return { success: true, remainingCredits: rpcRemaining };
+        // FAIL-CLOSED: Báo lỗi trực tiếp từ RPC, không chạy fallback read-modify-write
+        return {
+          success: false,
+          remainingCredits: 0,
+          error: rpcError?.message || 'Không thể trừ AI credits của tổ chức.',
+        };
       }
-    } catch {
-      // Fallback
-    }
-
-    const { data: entitlement, error: fetchErr } = await supabase
-      .from('organization_entitlements')
-      .select('id, ai_credits_granted, ai_credits_used, is_active, expires_at')
-      .eq('organization_id', organizationId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (fetchErr || !entitlement) {
+    } catch (err) {
       return {
         success: false,
         remainingCredits: 0,
-        error: 'Tổ chức chưa kích hoạt hợp đồng hoặc hợp đồng đã hết hạn.',
-      };
-    }
-
-    const isExpired = entitlement.expires_at ? new Date(entitlement.expires_at) < new Date() : false;
-    if (isExpired) {
-      return {
-        success: false,
-        remainingCredits: 0,
-        error: 'Hợp đồng tổ chức đã hết hạn.',
-      };
-    }
-
-    const granted = entitlement.ai_credits_granted ?? 0;
-    const used = entitlement.ai_credits_used ?? 0;
-    const remaining = granted - used;
-
-    if (remaining < amount) {
-      return {
-        success: false,
-        remainingCredits: remaining,
-        error: `Hạn mức AI Credits của tổ chức không đủ (Còn: ${remaining}, Cần: ${amount}).`,
-      };
-    }
-
-    const nextUsed = used + amount;
-    const { error: updateErr } = await supabase
-      .from('organization_entitlements')
-      .update({ ai_credits_used: nextUsed })
-      .eq('id', entitlement.id);
-
-    if (updateErr) {
-      return {
-        success: false,
-        remainingCredits: remaining,
-        error: 'Không thể trừ AI credits của tổ chức: ' + updateErr.message,
+        error: err instanceof Error ? err.message : 'Lỗi hệ thống khi trừ AI credits của tổ chức.',
       };
     }
 
     return {
-      success: true,
-      remainingCredits: granted - nextUsed,
+      success: false,
+      remainingCredits: 0,
+      error: 'Dịch vụ trừ credits RPC không khả dụng (fail-closed).',
     };
   }
 
   /**
-   * Trừ AI credits nguyên tử cho cá nhân (AI-01)
+   * Trừ AI credits nguyên tử cho cá nhân (AI-01, P0-02, P0-03)
+   * Fail-closed: Tuyệt đối không fallback sang read-modify-write từ client.
    */
   static async deductPersonalAICredits(
     supabase: SupabaseClient,
     userId: string,
     amount: number = 1
   ): Promise<{ success: boolean; remainingCredits: number; error?: string }> {
-    try {
-      const { data: rpcRemaining, error: rpcError } = await supabase.rpc('deduct_ai_credits', {
-        p_user_id: userId,
-        p_amount: amount,
-      });
-
-      if (!rpcError && typeof rpcRemaining === 'number') {
-        return { success: true, remainingCredits: rpcRemaining };
-      }
-    } catch {
-      // Fallback
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('credits')
-      .eq('id', userId)
-      .single();
-
-    const currentCredits = profile?.credits ?? 0;
-    if (currentCredits < amount) {
+    if (amount <= 0) {
       return {
         success: false,
-        remainingCredits: currentCredits,
-        error: `Số dư AI Credits không đủ (Còn: ${currentCredits}, Cần: ${amount}).`,
+        remainingCredits: 0,
+        error: 'Số lượng AI credits trừ phải lớn hơn 0.',
       };
     }
 
-    const nextCredits = currentCredits - amount;
-    const { error: updateErr } = await supabase
-      .from('profiles')
-      .update({ credits: nextCredits })
-      .eq('id', userId);
+    try {
+      if (typeof supabase.rpc === 'function') {
+        const { data: rpcRemaining, error: rpcError } = await supabase.rpc('deduct_ai_credits', {
+          p_user_id: userId,
+          p_amount: amount,
+        });
 
-    if (updateErr) {
+        if (!rpcError && typeof rpcRemaining === 'number') {
+          return { success: true, remainingCredits: rpcRemaining };
+        }
+
+        // FAIL-CLOSED
+        return {
+          success: false,
+          remainingCredits: 0,
+          error: rpcError?.message || 'Không thể trừ AI credits cá nhân.',
+        };
+      }
+    } catch (err) {
       return {
         success: false,
-        remainingCredits: currentCredits,
-        error: 'Không thể trừ AI credits cá nhân: ' + updateErr.message,
+        remainingCredits: 0,
+        error: err instanceof Error ? err.message : 'Lỗi hệ thống khi trừ AI credits cá nhân.',
       };
     }
 
     return {
-      success: true,
-      remainingCredits: nextCredits,
+      success: false,
+      remainingCredits: 0,
+      error: 'Dịch vụ trừ credits RPC không khả dụng (fail-closed).',
     };
   }
 
@@ -1073,14 +1054,33 @@ export class QuotaEnforcementService {
   }
 
   /**
-   * Hoàn trả credits cho tổ chức khi tác vụ AI thất bại
+   * Hoàn trả credits cho tổ chức khi tác vụ AI thất bại (P0-02, P0-03)
    */
   static async refundOrgAICredits(
     supabase: SupabaseClient,
     organizationId: string,
     amount: number = 1
   ): Promise<{ success: boolean; remainingCredits?: number; error?: string }> {
+    if (amount <= 0) {
+      return { success: false, error: 'Số lượng credits hoàn phải lớn hơn 0.' };
+    }
+
     try {
+      if (typeof supabase.rpc === 'function') {
+        const { data: rpcRemaining, error: rpcError } = await supabase.rpc(
+          'refund_organization_ai_credits',
+          {
+            p_org_id: organizationId,
+            p_amount: amount,
+          }
+        );
+
+        if (!rpcError && typeof rpcRemaining === 'number') {
+          return { success: true, remainingCredits: rpcRemaining };
+        }
+      }
+
+      // Fallback for mocks without RPC
       const { data: entitlement, error: fetchErr } = await supabase
         .from('organization_entitlements')
         .select('id, ai_credits_granted, ai_credits_used')
@@ -1117,14 +1117,30 @@ export class QuotaEnforcementService {
   }
 
   /**
-   * Hoàn trả credits cho cá nhân khi tác vụ AI thất bại
+   * Hoàn trả credits cho cá nhân khi tác vụ AI thất bại (P0-02, P0-03)
    */
   static async refundPersonalAICredits(
     supabase: SupabaseClient,
     userId: string,
     amount: number = 1
   ): Promise<{ success: boolean; remainingCredits?: number; error?: string }> {
+    if (amount <= 0) {
+      return { success: false, error: 'Số lượng credits hoàn phải lớn hơn 0.' };
+    }
+
     try {
+      if (typeof supabase.rpc === 'function') {
+        const { data: rpcRemaining, error: rpcError } = await supabase.rpc('refund_ai_credits', {
+          p_user_id: userId,
+          p_amount: amount,
+        });
+
+        if (!rpcError && typeof rpcRemaining === 'number') {
+          return { success: true, remainingCredits: rpcRemaining };
+        }
+      }
+
+      // Fallback for mocks without RPC
       const { data: profile, error: fetchErr } = await supabase
         .from('profiles')
         .select('credits')

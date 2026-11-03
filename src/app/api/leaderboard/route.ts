@@ -19,10 +19,14 @@ export interface LeaderboardEntry {
 const REDIS_CACHE_KEY = 'nexa:leaderboard:pts:top100';
 const CACHE_TTL_SECONDS = 60; // 60 seconds TTL
 
-export async function GET() {
+export async function GET(req: Request) {
   const startTime = performance.now();
   const redis = getRedisClient();
   const supabase = await createClient();
+
+  const url = req?.url ? new URL(req.url) : null;
+  const period = (url?.searchParams.get('period') || 'all').toLowerCase();
+  const cacheKey = `${REDIS_CACHE_KEY}:${period}`;
 
   try {
     let leaderboard: LeaderboardEntry[] = [];
@@ -31,7 +35,7 @@ export async function GET() {
     // 1. Try to read leaderboard from Upstash Redis cache
     if (redis) {
       try {
-        const cached = await redis.get<LeaderboardEntry[]>(REDIS_CACHE_KEY);
+        const cached = await redis.get<LeaderboardEntry[]>(cacheKey);
         if (cached && Array.isArray(cached) && cached.length > 0) {
           leaderboard = cached;
           isCached = true;
@@ -43,10 +47,20 @@ export async function GET() {
 
     // 2. Cache miss or Redis unavailable -> Query Supabase directly
     if (leaderboard.length === 0) {
-      const { data: profiles, error } = await supabase
+      let query = supabase
         .from('profiles')
-        .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization, created_at')
-        .eq('role', 'LEARNER')
+        .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization, created_at, updated_at')
+        .eq('role', 'LEARNER');
+
+      if (period === 'week') {
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('updated_at', weekAgo);
+      } else if (period === 'month') {
+        const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('updated_at', monthAgo);
+      }
+
+      const { data: profiles, error } = await query
         .order('points', { ascending: false })
         .order('created_at', { ascending: true })
         .limit(100);
@@ -68,7 +82,7 @@ export async function GET() {
 
         if (redis && leaderboard.length > 0) {
           try {
-            await redis.set(REDIS_CACHE_KEY, leaderboard, { ex: CACHE_TTL_SECONDS });
+            await redis.set(cacheKey, leaderboard, { ex: CACHE_TTL_SECONDS });
           } catch (saveCacheErr) {
             console.warn('Failed to cache leaderboard into Redis:', saveCacheErr);
           }
@@ -142,6 +156,7 @@ export async function GET() {
 
     return NextResponse.json(
       {
+        period,
         cached: isCached,
         fetchTimeMs,
         total: leaderboard.length,

@@ -159,7 +159,7 @@ export function OrgSettingsView({
           Cấu hình & Quản trị {org.name}
         </h1>
         <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-          Quản lý thông tin định danh, miền email hợp lệ, chính sách khảo thí và hợp đồng dịch vụ.
+          Quản lý thông tin định danh, miền email hợp lệ, chính sách khảo thí và gói dịch vụ.
         </p>
       </div>
 
@@ -222,7 +222,7 @@ export function OrgSettingsView({
           }`}
         >
           <FileText className="w-4 h-4" strokeWidth={1.75} />
-          <span>Hợp đồng & Đóng góp ý kiến</span>
+          <span>Gói dịch vụ & Hạn ngạch</span>
         </button>
       </div>
 
@@ -331,7 +331,7 @@ export function OrgSettingsView({
                 <h2 className="text-sm font-bold text-rose-900 dark:text-rose-300">Vùng Quản trị Nhạy cảm (Danger Zone)</h2>
               </div>
               <p className="text-xs text-slate-600 dark:text-neutral-400">
-                Các thao tác tạm ngưng hoặc hủy bỏ quyền truy cập tổ chức chỉ được thực hiện khi có yêu cầu bằng văn bản hoặc kết thúc hợp đồng dịch vụ.
+                Các thao tác tạm ngưng hoặc hủy bỏ quyền truy cập tổ chức chỉ được thực hiện khi có yêu cầu bằng văn bản hoặc kết thúc kỳ dịch vụ.
               </p>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
                 <div>
@@ -568,7 +568,7 @@ export function OrgSettingsView({
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-850">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Chi Tiết Hợp Đồng & Hạn Ngạch</h2>
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Chi Tiết Gói Dịch Vụ & Hạn Ngạch</h2>
               </div>
               <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono">
                 B2B ENTERPRISE
@@ -596,12 +596,12 @@ export function OrgSettingsView({
                   </div>
                 ) : (
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                    Hợp đồng gói Business tổ chức theo thỏa thuận hạn mức đã phê duyệt.
+                    Gói Business tổ chức theo thỏa thuận hạn mức đã phê duyệt.
                   </p>
                 )}
                 <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                   {hasMaxSeats
-                    ? `Tổ chức đã sử dụng ${currentMembers} chỗ trên tổng hạn mức ${org.max_members} thành viên theo hợp đồng.`
+                    ? `Tổ chức đã sử dụng ${currentMembers} chỗ trên tổng hạn mức ${org.max_members} thành viên của gói.`
                     : `Hiện có ${currentMembers} thành viên đang hoạt động.`}
                 </p>
               </div>
@@ -614,7 +614,7 @@ export function OrgSettingsView({
                     Hạn ngạch Khảo thí Đơn vị
                   </span>
                   <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100">
-                    {org.quota_assessments ? `${org.quota_assessments} bài` : 'Theo thỏa thuận hợp đồng'}
+                    {org.quota_assessments ? `${org.quota_assessments} bài` : 'Theo thỏa thuận gói dịch vụ'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-neutral-400">
@@ -625,10 +625,10 @@ export function OrgSettingsView({
 
             <div className="pt-2 flex justify-between items-center text-xs border-t border-slate-100 dark:border-zinc-850">
               <span className="text-slate-500 dark:text-neutral-400">
-                Cần nâng cấp hạn mức hoặc gia hạn thời gian hợp đồng?
+                Cần nâng cấp hạn mức hoặc gia hạn thời gian sử dụng?
               </span>
               <a
-                href="mailto:enterprise@nexa.vn?subject=Yeu%20cau%20gia%20han%20hop%20dong%20NEXA"
+                href="mailto:enterprise@nexa.vn?subject=Yeu%20cau%20gia%20han%20goi%20NEXA"
                 className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold"
               >
                 <span>Liên hệ chuyên viên B2B</span>

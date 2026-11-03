@@ -1,137 +1,169 @@
-# Danh Sách Nhiệm Vụ Triển Khai (Todo List): Khắc Phục 3 Dashboard ce74dea
+# Danh Sách Nhiệm Vụ Triển Khai: NEXA SaaS Business v3.0 & Khắc Phục Toàn Diện Review (03/11/2026)
 
 > **Tài liệu nguồn:** [`tasks/plan.md`](file:///c:/nexa/tasks/plan.md)  
-> **Đặc tả kỹ thuật:** [`docs/NEXA_SPEC_REMEDIATION_VNEXT_ce74dea.md`](file:///c:/nexa/docs/NEXA_SPEC_REMEDIATION_VNEXT_ce74dea.md)
+> **Căn cứ đánh giá:** [`c:\Users\CPS\Downloads\NEXA_REVIEW_2026-11-03.md`](file:///c:/Users/CPS/Downloads/NEXA_REVIEW_2026-11-03.md) & [`c:\Users\CPS\Downloads\NEXA_ORG_ANALYTICS_UI_UX_SPEC.md`](file:///c:/Users/CPS/Downloads/NEXA_ORG_ANALYTICS_UI_UX_SPEC.md)  
+> **Quy chuẩn thực thi:** [`AGENTS.md`](file:///c:/nexa/AGENTS.md), [`security-and-hardening`](file:///c:/nexa/.agents/skills/security-and-hardening/SKILL.md), [`planning-and-task-breakdown`](file:///c:/nexa/.agents/skills/planning-and-task-breakdown/SKILL.md).
 
 ---
 
-## Phase 1: Nền tảng Bảo mật, Kiểm soát Phiên & RBAC Admin (auth-security-rbac)
+## Phase 0: Khắc Phục Khẩn Cấp Các Lỗ Hổng P0 (Security & Concurrency)
 
-- [x] **Task 1.1: Migration 34 — Cột kiểm soát phiên & Quyền Admin nội bộ**
-  - [x] Thêm `tokens_revoked_at TIMESTAMPTZ` vào bảng `profiles`.
-  - [x] Thêm `admin_role` với các quyền: `SUPER_ADMIN`, `OPERATIONS_ADMIN`, `CONTENT_ADMIN`, `FINANCE_ADMIN`, `AI_OPERATOR`.
-  - [x] Áp dụng migration forward-only và kiểm tra index.
+- [x] **Task 0.1: Migration 39 Vá Lỗ Hổng Bảo Mật RPC AI Credits (P0-02)**
+  - **Mô tả:** Viết file `src/database/migrations/39_secure_ai_credits_rpc.sql`:
+    1. Thu hồi quyền EXECUTE khỏi `PUBLIC`, `anon`, `authenticated` trên hàm `deduct_organization_ai_credits`.
+    2. Chỉ cấp EXECUTE cho `service_role`.
+    3. Thêm ràng buộc `p_amount > 0` (chặn `p_amount <= 0`).
+    4. Thiết lập rõ `SET search_path = public, pg_temp;`.
+    5. Viết thêm hàm RPC an toàn `refund_organization_ai_credits` với row-locking tương tự.
+    6. Tạo bảng `ai_credit_reservations` lưu trữ ledger giữ trước để bảo đảm idempotency.
+  - **Tiêu chí chấp nhận:**
+    - [x] Role `anon` và `authenticated` không thể gọi RPC qua REST/Supabase client.
+    - [x] Gọi hàm với `p_amount <= 0` văng exception rõ ràng, không làm giảm `ai_credits_used`.
+  - **Tệp:** `src/database/migrations/39_secure_ai_credits_rpc.sql`.
 
-- [x] **Task 1.2: Thu hồi phiên thực sự (Revoke Session Real Implementation) — NEXA-01**
-  - [x] Trong `src/app/api/admin/users/route.ts`: Xử lý `REVOKE_SESSION` gọi `supabase.auth.admin.signOut(userId, 'global')`.
-  - [x] Cập nhật `tokens_revoked_at = NOW()` vào bảng `profiles`.
-  - [x] Cập nhật `src/lib/auth/getEffectiveUser.ts`: Từ chối phiên cũ có thời điểm phát hành trước `tokens_revoked_at`.
-  - [x] Kiểm thử `AUTH-REV-01`: Đảm bảo phiên cũ bị 401, không báo success giả.
+- [x] **Task 0.2: Triệt Tiêu Read-Modify-Write Fallback & Idempotent Ledger (P0-03)**
+  - **Mô tả:** Trong `src/features/billing/services/quota-enforcement.service.ts`:
+    1. Xóa bỏ hoàn toàn fallback read-modify-write (`select` -> `nextUsed = used + amount` -> `update`) trong cả `deductOrgAICredits` và `deductPersonalAICredits`.
+    2. Áp dụng nguyên tắc **Fail-Closed**: nếu RPC lỗi thì trả về thất bại ngay.
+    3. Thống nhất `refundOrgAICredits` và `refundPersonalAICredits` gọi RPC SQL nguyên tử.
+  - **Tiêu chí chấp nhận:**
+    - [x] Không còn cập nhật số dư bằng `update` client-side không có lock.
+    - [x] Fail-closed an toàn khi RPC gặp sự cố.
+  - **Tệp:** `src/features/billing/services/quota-enforcement.service.ts`.
 
-- [x] **Task 1.3: Cưỡng chế chặn tài khoản bị khóa (is_suspended) — NEXA-02**
-  - [x] Trong `src/middleware.ts`: Đọc `profile.is_suspended`. Nếu `true`, chuyển hướng về `/account-suspended`.
-  - [x] Trong `src/lib/auth/getEffectiveUser.ts`: Ném lỗi `AccountSuspendedError` (HTTP 403) chặn mọi API nhạy cảm.
-  - [x] Tạo trang `/account-suspended/page.tsx` thông báo thân thiện và kênh liên hệ hỗ trợ.
-  - [x] Chặn việc Super Admin tự khóa tài khoản của chính mình hoặc tự tước quyền.
-  - [x] Kiểm thử `AUTH-SUSP-01`: Đã login trước khi Admin khóa $\rightarrow$ mọi request tiếp theo bị từ chối 403.
-
-- [x] **Task 1.4: Phân quyền Admin nội bộ theo Action (Granular Admin RBAC) — NEXA-03**
-  - [x] Xây dựng guard helper `requirePlatformPermission(permission)` trong `src/lib/auth/admin-guard.ts`.
-  - [x] Gắn guard vào các API `/api/admin/transactions/*` (yêu cầu `FINANCE_ADMIN` hoặc `SUPER_ADMIN`).
-  - [x] Gắn guard vào `/api/admin/ai-gateway` (yêu cầu `AI_OPERATOR` hoặc `SUPER_ADMIN`).
-  - [x] Kiểm thử `RBAC-ADMIN-01`: `CONTENT_ADMIN` gọi Finance API bị từ chối 403.
-
----
-
-## Phase 2: Toàn Vẹn Ngân Hàng Câu Hỏi & Phân Quyền Creator (item-bank-schema)
-
-- [x] **Task 2.1: Migration 34 — Chuẩn hóa bảng question_bank_items**
-  - [x] Thêm cột `rubric_definition JSONB`, `owner_user_id UUID REFERENCES auth.users(id)`, `scope VARCHAR(20) DEFAULT 'PERSONAL'`.
-  - [x] Ánh xạ enum độ khó 4 bậc DigComp (`FOUNDATION`, `INTERMEDIATE`, `ADVANCED`, `HIGHLY_SPECIALIZED`).
-  - [x] Ràng buộc liên kết bảng con `question_bank_options` cho các câu hỏi trắc nghiệm (MCQ).
-
-- [x] **Task 2.2: Chính sách RLS cho Creator Cá Nhân — NEXA-08**
-  - [x] Cập nhật policy RLS trên `question_bank_items` cho phép `owner_user_id = auth.uid()` được tạo, sửa, đọc câu hỏi của mình.
-  - [x] Chặn người dùng sửa câu hỏi của người khác (trừ `CONTENT_ADMIN` / `SUPER_ADMIN`).
-  - [x] Kiểm thử `QB-02`: Creator A không sửa được item của Creator B.
-
-- [x] **Task 2.3: QuestionBankWriteService dùng chung — NEXA-07, NEXA-13, NEXA-17**
-  - [x] Tạo `src/features/assessments/services/question-bank-write.service.ts`.
-  - [x] Xử lý lưu Transaction nguyên tử: ghi `question_bank_items` và ghi `question_bank_options`.
-  - [x] Ràng buộc bắt buộc 1 trong 5 miền năng lực `domain_id IN ('D1','D2','D3','D4','D5')`.
-  - [x] Kiểm thử `QB-01`: Personal Free/Pro tạo MCQ lưu thành công cả item và options.
-
-- [x] **Task 2.4: Nâng cấp Editor & Importer câu hỏi**
-  - [x] Refactor `src/app/(dashboard)/personal/item-bank/[id]/page.tsx` sử dụng `QuestionBankWriteService`.
-  - [x] Refactor `src/features/assessments/components/ItemBankImporter.tsx` sử dụng `QuestionBankWriteService`.
-  - [x] Kiểm thử `QB-03`: Nhập 10 câu có 1 câu lỗi $\rightarrow$ báo lỗi dòng sai, 9 câu hợp lệ lưu thành công.
+- [x] **Task 0.3: Áp Dụng Migration 38 & Chuẩn Hóa FSM Inquiries (P0-01)**
+  - **Mô tả:** Đồng bộ triệt để check constraint của `business_inquiries` và route `approve/route.ts`:
+    1. Migration 38 đã mở rộng `CHECK (status IN ('NEW', 'CONTACTED', 'IN_PROGRESS', 'PROPOSAL_SENT', 'ACTIVATED', 'APPROVED', 'REJECTED', 'CLOSED', 'NEEDS_INFO'))`.
+    2. Sửa `approve/route.ts` lock `IN_PROGRESS` từ các trạng thái cho phép (`NEW | IN_PROGRESS | CONTACTED | PROPOSAL_SENT`) và cập nhật sang `ACTIVATED`.
+    3. Sửa mock test `business-inquiry.service.test.ts` sang trạng thái `NEW`.
+  - **Tiêu chí chấp nhận:**
+    - [x] Không còn vi phạm DB CHECK constraint khi phê duyệt Business.
+  - **Tệp:** `src/database/migrations/38_business_inquiries_and_renewals_v3.sql`, `src/app/api/admin/organizations/approve/route.ts`.
 
 ---
 
-## Phase 3: Bảo Mật & Toàn Vẹn Bộ Đề Khảo Thí (assessment-integrity)
+## Phase 1: Toàn Vẹn AI Grading & Quyền Lợi Khảo Thí P1
 
-- [x] **Task 3.1: Route Detail Bộ Đề — UUID Validation & 404 — NEXA-12**
-  - [x] Trong `src/app/(dashboard)/personal/assessments/[id]/page.tsx`: Kiểm tra `params.id` bằng UUID validator.
-  - [x] Nếu ID không hợp lệ $\rightarrow$ trả về `notFound()` (HTTP 404 chuẩn).
-  - [x] Xóa bỏ hoàn toàn truy vấn `.limit(1)` lấy đề ngẫu nhiên.
-  - [x] Kiểm thử `ASM-DETAIL-01`: Truy cập ID rác trả về 404.
+- [x] **Task 1.1: Sửa Bug `itemId` Rubric Query trong `/api/ai/grade-submission` (P1-01)**
+  - **Mô tả:** Trong `src/app/api/ai/grade-submission/route.ts`:
+    1. Đổi dòng 189 `.eq('item_id', itemId)` thành `.eq('item_id', targetItemId)`.
+  - **Tiêu chí chấp nhận:**
+    - [x] Chấm bài tự luận thành công khi request omit `itemId`.
+    - [x] Không bị lỗi 400 Rubric missing khi câu hỏi có Rubric hợp lệ.
+  - **Tệp:** `src/app/api/ai/grade-submission/route.ts`.
 
-- [x] **Task 3.2: Sanitized DTO — Không truyền is_correct cho thí sinh — NEXA-12**
-  - [x] Bóc tách trường `is_correct` và `explanation` khi người xem là thí sinh hoặc xem trước.
-  - [x] Chỉ hiển thị đáp án đúng khi người xem là Tác giả (`created_by = auth.uid()`) hoặc Giảng viên/Admin.
-  - [x] Kiểm thử `ASM-ANSWER-01`: Thí sinh mở bài thi không thấy `is_correct` trong response.
+- [x] **Task 1.2: Xử Lý `saveError` Fail-Closed & Hoàn Credits Cho AI Grading (P1-02)**
+  - **Mô tả:** Trong `src/app/api/ai/grade-submission/route.ts`:
+    1. Nếu `ai_evaluations.insert` gặp `saveError`:
+       - Gọi `settleOrReleaseCredits(..., 'RELEASE')` để hoàn trả 1 credit.
+       - Không cập nhật `grading_status = 'AI_DRAFT'`.
+       - Trả về HTTP 500 `{ error: 'Lỗi lưu bản ghi chấm bài AI...' }`.
+  - **Tiêu chí chấp nhận:**
+    - [x] Tuyệt đối không trả `success: true` khi DB không lưu được kết quả chấm.
+    - [x] Hoàn credit an toàn cho người dùng khi xảy ra lỗi hệ thống.
+  - **Tệp:** `src/app/api/ai/grade-submission/route.ts`.
 
-- [x] **Task 3.3: Quản lý Phiên bản Đề thi Bất biến (Immutable Snapshot) — NEXA-18**
-  - [x] Khi chuyển đề thi sang `PUBLISHED`, lưu toàn bộ câu hỏi/đáp án vào trường `snapshot_data JSONB`.
-  - [x] Đợt thi/Campaign chỉ đọc từ snapshot đã xuất bản.
+- [x] **Task 1.3: Cung Cấp Phân Hệ Gia Hạn Gói Business (P1-03a)**
+  - **Mô tả:** Hoàn thiện:
+    1. Tạo API `POST /api/organizations/[orgId]/renewal-requests` (status: `PENDING`).
+    2. Tạo API `POST /api/admin/business/renewals/[id]/approve` với thuật toán nối dài hạn dùng an toàn $\max(\text{now}, \text{current}) + \text{period}$.
+    3. Tạo giao diện `/org/[slug]/plan` và modal gia hạn thực tế.
+  - **Tệp:** `src/app/api/organizations/[orgId]/renewal-requests/route.ts`, `src/app/api/admin/business/renewals/`.
 
----
+- [x] **Task 1.4: Bổ Sung Nút "Gia Hạn / Nâng Cấp" Trên `/personal/billing` (P1-03b)**
+  - **Mô tả:** Trong `src/app/(dashboard)/personal/billing/page.tsx`:
+    1. Thay thế nút disabled "Đang sử dụng" bằng nút "Gia hạn gói" khi người dùng đang có gói PRO trả phí.
+    2. Kết nối tới luồng thanh toán payOS gia hạn cộng dồn an toàn.
+  - **Tệp:** `src/app/(dashboard)/personal/billing/page.tsx`.
 
-## Phase 4: Cách Ly Tenant & Báo Cáo 5 Miền Chuẩn Xác (campaign-and-analytics)
-
-- [x] **Task 4.1: Cách ly Lớp học Cá nhân vs Tổ chức — NEXA-09**
-  - [x] Trong `src/app/(dashboard)/personal/groups/page.tsx`: Lọc nghiêm ngặt `organization_id IS NULL`.
-  - [x] Kiểm thử `CLASS-SCOPE-01`: Người dùng tham gia lớp của Org không bị lẫn vào danh sách nhóm cá nhân.
-
-- [x] **Task 4.2: Truy vấn Campaign Detail theo đúng Đợt thi — NEXA-10, NEXA-20**
-  - [x] Trong `src/app/(dashboard)/org/[slug]/campaigns/[id]/page.tsx`: Truy vấn bài nộp lọc theo `.eq('campaign_id', campaign.id).eq('organization_id', org.id)`.
-  - [x] Đếm sĩ số thực tế từ danh sách lớp; hiển thị `0` khi lớp rỗng (xóa bỏ số `50` giả).
-  - [x] Kiểm thử `CAMP-01`, `CAMP-02`, `CAMP-03`: Dữ liệu phân tách tuyệt đối giữa các đợt và các tổ chức.
-
-- [x] **Task 4.3: Tích hợp domain_scores vào Org Analytics — NEXA-11**
-  - [x] Trong `src/app/(dashboard)/org/[slug]/analytics/page.tsx`: Truy vấn `domain_scores` từ các bài thi đã chấm.
-  - [x] Miền chưa có bài thi hiển thị `Chưa có dữ liệu` (`null`), không vẽ 0% giả.
-  - [x] Kiểm thử `COMP-01`: Chỉ D1 và D4 có điểm thì các miền khác là `null`.
-
----
-
-## Phase 5: Lưu Trữ Bền Vững & Chống Mock Toàn Hệ Thống (persisted-comms-settings)
-
-- [x] **Task 5.1: Chuông Thông báo Lưu Database (Persistent Notifications) — NEXA-06**
-  - [x] Tạo bảng `user_notifications` trong Migration 34.
-  - [x] Viết API `/api/notifications` (danh sách, đánh dấu đọc).
-  - [x] Cập nhật `NotificationBell.tsx` dùng API server, xóa sạch `localStorage`.
-  - [x] Kiểm thử `NOTIF-01`: Thông báo đồng bộ trên nhiều thiết bị.
-
-- [x] **Task 5.2: Cài đặt Tổ chức Lưu Database (Org Policies) — NEXA-05**
-  - [x] Tạo bảng `organization_policies` theo từng `organization_id`.
-  - [x] Viết API `GET` & `PATCH` `/api/org/[slug]/settings`.
-  - [x] Cập nhật `OrgSettingsView.tsx`: Xóa hardcode FPT domains, lưu và tải dữ liệu thật.
-  - [x] Kiểm thử `ORG-SETTING-01`, `ORG-SETTING-02`: Lưu thật vào DB, chặn MEMBER sửa cài đặt.
-
-- [x] **Task 5.3: Hòm thư Góp ý Thật (Feedback Tickets) — NEXA-19**
-  - [x] Tạo bảng `feedback_tickets` trong Migration 34.
-  - [x] Viết API `POST` & `GET` & `PATCH` `/api/feedback`.
-  - [x] Cập nhật `FeedbackModal.tsx` và Admin Inbox để đọc/ghi dữ liệu thật.
-  - [x] Kiểm thử `FEEDBACK-01`: Góp ý gửi từ client xuất hiện trong Admin Inbox thật.
-
-- [x] **Task 5.4: Xử lý Trung tâm Truyền thông Admin (Communications) — NEXA-04**
-  - [x] Broadcast: Lưu vào DB `user_notifications` tạo thông báo cho toàn bộ người dùng qua API `/api/admin/broadcast`.
-  - [x] Email hàng loạt: Gắn nhãn *"Tính năng đang phát triển — Kết nối Email Marketing Service"* và vô hiệu hóa nút gửi nếu chưa có queue (xóa bỏ hoàn toàn `setTimeout` giả lập).
-
-- [x] **Task 5.5: Nhận Lời Mời Tổ Chức Nguyên Tử (Atomic Org Invite) — NEXA-14**
-  - [x] Cập nhật `src/app/api/organizations/accept-invite/route.ts` với cơ chế claim PENDING nguyên tử và bù trừ lỗi.
-  - [x] Kiểm thử `ORG-INVT-01`: Hai request đồng thời chỉ chấp nhận 1 lần và trừ 1 ghế.
-
-- [x] **Task 5.6: Xuất CSV Tài Chính An Toàn Phía Server — NEXA-16**
-  - [x] Viết API `/api/admin/transactions/export`: Xử lý streaming/server-side, trung hòa ký tự CSV Injection (`=, +, -, @`), thêm UTF-8 BOM (`\uFEFF`).
-  - [x] Kiểm thử `PAY-CSV-01`: Xuất 500+ dòng an toàn font tiếng Việt.
+- [x] **Task 1.5: Đóng Gói Transaction Kích Hoạt Tổ Chức (P1-04)**
+  - **Mô tả:** Đảm bảo toàn bộ quá trình phê duyệt tổ chức (Inquiry -> Org -> Entitlement -> Invitation) có khả năng phục hồi hoàn toàn hoặc rollback an toàn.
+  - **Tệp:** `src/app/api/admin/organizations/approve/route.ts`.
 
 ---
 
-## Phase 6: Kiểm Thử Toàn Diện & Đóng Gói Hoàn Thiện
+## Phase 2: Toàn Vẹn Dữ Liệu Personal Dashboard (P1-05)
 
-- [x] **Task 6.1: Chạy toàn bộ 19 bài kiểm thử chấp nhận trong Spec**
-- [x] **Task 6.2: Kiểm tra biên dịch TypeScript (`npm run typecheck` 0 lỗi)**
-- [x] **Task 6.3: Kiểm tra toàn bộ Unit Test suite (`npm run test` 100% pass: 34 files, 163 tests)**
-- [x] **Task 6.4: Kiểm tra build hệ thống (`npm run build` thành công 90/90 static/dynamic routes)**
+- [x] **Task 2.1: Xóa Bỏ Baseline ID Giả & Điều Kiện Hóa Hero Banner (P1-05a)**
+  - **Mô tả:** Trong `src/app/(dashboard)/personal/dashboard/page.tsx`:
+    1. Xóa bỏ fallback `assessments[0]?.id || 'baseline-assessment'`.
+    2. Nếu không có bài khảo thí đầu vào published, hiển thị thông báo "Chưa mở đợt khảo thí", disable nút.
+    3. Chỉ hiển thị Hero Banner "Thiết lập Hồ sơ Năng lực Số Ban Đầu" khi `competencyProfile?.hasTakenAssessment === false`. Khi đã đánh giá, chuyển sang Hero "Tiếp tục Lộ trình Bồi dưỡng Năng lực Số".
+  - **Tệp:** `src/app/(dashboard)/personal/dashboard/page.tsx`.
+
+- [x] **Task 2.2: Động Hóa Stepper 5 Miền Theo Kết Quả RadarData Thực (P1-05b)**
+  - **Mô tả:** Trong `src/app/(dashboard)/personal/dashboard/page.tsx`:
+    1. Xóa bỏ mảng stepper hardcode D1 `active: true`.
+    2. Tính toán động từ `currentRadarData`: miền $\ge 70\%$ đánh dấu Đạt chuẩn, miền điểm thấp nhất/chưa đạt đánh dấu Cần ưu tiên (`active`).
+  - **Tệp:** `src/app/(dashboard)/personal/dashboard/page.tsx`.
+
+- [x] **Task 2.3: Chuẩn Hóa Milestone Học Tập & Filter Leaderboard Theo Kỳ (P1-05c)**
+  - **Mô tả:**
+    1. Mốc học tập `m2`: kiểm tra số bài đánh giá/học phần hoàn thành thực tế (`totalAssessmentsCompleted > 0`), tuyệt đối không dùng `stats.points > 1`.
+    2. Leaderboard: truyền query `?period=${leaderboardTab}` (`week`, `month`, `all`) vào API `/api/leaderboard` và lọc dữ liệu thật từ DB.
+  - **Tệp:**
+    - `src/app/(dashboard)/personal/dashboard/page.tsx`
+    - `src/app/api/leaderboard/route.ts`.
+
+---
+
+## Phase 3: Tinh Gọn UI Components (P2-01) & Chuẩn Hóa Tài Liệu (P2-02)
+
+- [x] **Task 3.1: Tinh Gọn & Đảm Bảo Tính Toàn Vẹn Personal Dashboard (P2-01)**
+  - **Mô tả:** Refactor các hook và state của `personal/dashboard/page.tsx`, đảm bảo code sạch sẽ, tuân thủ bảng màu Cobalt/Neutral AA (4 KPI cards trung tính, loại bỏ màu cầu vồng không cần thiết).
+  - **Tệp:** `src/app/(dashboard)/personal/dashboard/page.tsx`.
+
+- [x] **Task 3.2: Chuẩn Hóa Tài Liệu `AGENTS.md` & Cập Nhật Mô Hình Sản Phẩm (P2-02)**
+  - **Mô tả:**
+    1. Cập nhật `AGENTS.md` loại bỏ yêu cầu "hợp đồng bắt buộc", chuyển sang mô hình SaaS B2B Entitlements & Subscription tự động.
+    2. Tạo file `docs/PRODUCT_MODEL.md` ghi nhận mô hình SaaS 3 không gian chuẩn mực.
+  - **Tệp:** `AGENTS.md`, `docs/PRODUCT_MODEL.md`.
+
+- [x] **Task 3.3: Verification Suite Toàn Diện & Quality Gates**
+  - **Mô tả:** Chạy typecheck và toàn bộ unit & integration tests.
+  - **Tiêu chí chấp nhận:** 100% tests passed.
+
+---
+
+## Phase 4: Tái Thiết Kế Trang Báo Cáo Năng Lực Tổ Chức (Organization Analytics v3.0)
+
+> **Căn cứ đặc tả:** [`c:\Users\CPS\Downloads\NEXA_ORG_ANALYTICS_UI_UX_SPEC.md`](file:///c:/Users/CPS/Downloads/NEXA_ORG_ANALYTICS_UI_UX_SPEC.md) & [`NEXA_ORG_ANALYTICS_REVIEW.md`](file:///C:/Users/CPS/.gemini/antigravity/brain/5967b905-56c1-43f9-aed6-d8983c518bc7/NEXA_ORG_ANALYTICS_REVIEW.md)
+
+- [x] **Task 4.1: Mở Rộng Service & Types Cho Phân Tích Đa Chiều**
+  - **Mô tả:** Mở rộng `src/features/analytics/services/org-competency-analytics.service.ts` và tạo `src/features/analytics/types/org-analytics.types.ts`:
+    1. Định nghĩa types: `UnitCompetencyMetric`, `CampaignCompetencyMetric`, `TimeSeriesTrendPoint`, `OrgAnalyticsFilters`.
+    2. Thêm phương thức `aggregateByUnit(...)`: gom bài nộp theo lớp/đơn vị, tính điểm TB, tỷ lệ đạt, số bài.
+    3. Thêm phương thức `aggregateByCampaign(...)`: gom bài nộp theo từng chiến dịch/kỳ đánh giá.
+    4. Thêm phương thức `aggregateTimeSeriesTrend(...)`: tạo chuỗi thời gian xu hướng theo kỳ/tháng, chỉ tạo mốc khi có dữ liệu thật (không nội suy 0% giả).
+    5. Viết unit test bao phủ toàn bộ các phương thức mới.
+  - **Tệp:** `src/features/analytics/types/org-analytics.types.ts`, `src/features/analytics/services/org-competency-analytics.service.ts`, `src/features/analytics/services/org-competency-analytics.service.test.ts`.
+
+- [x] **Task 4.2: Xây Dựng UI Components Báo Cáo Chuẩn B2B SaaS**
+  - **Mô tả:** Xây dựng các component giao diện theo phong cách SaaS tối giản, bảng màu trung tính, xanh Cobalt `#245FE5` / `#2563EB`, hỗ trợ dark mode:
+    1. `DomainCompetencyTable.tsx`: Bảng dữ liệu 5 miền cốt lõi (D1-D5) thay cho 5 thanh tiến độ lặp lại; click dòng mở Drawer.
+    2. `DomainDetailDrawer.tsx`: Slide-out Drawer hiển thị chi tiết miền năng lực, hỗ trợ đóng phím Escape/X/Backdrop.
+    3. `UnitComparisonTable.tsx`: Bảng so sánh năng lực giữa các đơn vị/lớp.
+    4. `CampaignAnalyticsView.tsx`: Thống kê danh sách các đợt đánh giá.
+    5. `TrendAnalysisView.tsx`: Biểu đồ/bảng xu hướng năng lực theo thời gian nét mảnh.
+    6. `ExportReportModal.tsx`: Modal xuất báo cáo (PDF/CSV) có preview, vô hiệu hóa khi 0 bài hợp lệ.
+    7. `OrgAnalyticsFilterDrawer.tsx`: Drawer trượt quản lý bộ lọc theo đợt và đơn vị.
+    8. `OrgAnalyticsDashboard.tsx`: Container điều phối tabs, drawers, filters và empty state tập trung.
+  - **Tệp:** `src/features/analytics/components/*`.
+
+- [x] **Task 4.3: Tái Cấu Trúc Trang `/org/[slug]/analytics/page.tsx`**
+  - **Mô tả:** Tích hợp toàn diện các thành phần vào trang quản trị:
+    1. Đọc URL `searchParams` (`tab`, `campaignId`, `classId`).
+    2. Query dữ liệu tổ chức: `evaluator_classes` với `class_members`, `assessment_campaigns`, `assessment_submissions`.
+    3. Empty State tập trung chuẩn mực khi chưa có bài thi nào được duyệt.
+    4. 3 KPI metrics chính xác: Lượt đánh giá hợp lệ, Điểm trung bình, Tỷ lệ đạt chuẩn (loại bỏ hoàn toàn thẻ tĩnh "Khung chuẩn DigComp").
+    5. Thanh Tab 4 chế độ: Tổng quan, Theo đơn vị, Theo đợt đánh giá, Xu hướng.
+    6. Tích hợp thanh lọc chung và modal xuất báo cáo.
+  - **Tệp:** `src/app/(dashboard)/org/[slug]/analytics/page.tsx`.
+
+- [x] **Task 4.4: Xây Dựng Endpoint Server-Side Xuất Báo Cáo An Toàn**
+  - **Mô tả:** Tạo `/api/org/[slug]/analytics/export/route.ts` với bảo vệ phân quyền `requireOrgPagePermission(slug, 'VIEW_ANALYTICS')` và query scoped theo `organization_id`, sinh file CSV có UTF-8 BOM chuẩn tiếng Việt.
+  - **Tệp:** `src/app/api/org/[slug]/analytics/export/route.ts`, `src/app/api/org/[slug]/analytics/export/route.test.ts`.
+
+- [x] **Task 4.5: Kiểm Thử Toàn Diện & Typecheck**
+  - **Mô tả:** Chạy `npm test` và `npm run typecheck`, kiểm tra tính toàn vẹn và độ tương thích giao diện.
+  - **Kết quả:** 47 test files passed (269 tests 100% green), typecheck 0 lỗi.
