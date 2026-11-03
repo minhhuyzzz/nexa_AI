@@ -54,14 +54,15 @@ export async function POST(request: NextRequest | Request) {
 
     const adminSupabase = createAdminClient();
 
-    // 2. Atomic lock: Transition inquiry from NEW/IN_PROGRESS/CONTACTED/PROPOSAL_SENT to IN_PROGRESS
+    // 2. Atomic lock: Transition inquiry from NEW/CONTACTED/PROPOSAL_SENT to IN_PROGRESS
+    // CRITICAL (SEC-P0): Exclude 'IN_PROGRESS' to prevent concurrent race condition approval
     const updateBuilder = adminSupabase
       .from('business_inquiries')
       .update({ status: 'IN_PROGRESS' })
       .eq('id', inquiryId);
 
     const filterBuilder = typeof (updateBuilder as any).in === 'function'
-      ? (updateBuilder as any).in('status', ['NEW', 'IN_PROGRESS', 'CONTACTED', 'PROPOSAL_SENT'])
+      ? (updateBuilder as any).in('status', ['NEW', 'CONTACTED', 'PROPOSAL_SENT'])
       : typeof (updateBuilder as any).eq === 'function'
         ? (updateBuilder as any).eq('status', 'NEW')
         : updateBuilder;

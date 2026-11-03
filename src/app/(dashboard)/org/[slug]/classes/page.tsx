@@ -14,7 +14,7 @@ export default async function OrgClassesPage({
   const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
   const adminSupabase = createAdminClient();
 
-  // Fetch organization classes with relations
+  // 1. Fetch organization classes with relations
   const { data: rawClasses } = await adminSupabase
     .from('evaluator_classes')
     .select(`
@@ -36,6 +36,20 @@ export default async function OrgClassesPage({
     .eq('organization_id', org.id)
     .order('created_at', { ascending: false });
 
+  // 2. Fetch real pending submissions count per class (No fake numbers)
+  const { data: pendingSubs } = await adminSupabase
+    .from('assessment_submissions')
+    .select('id, class_id')
+    .eq('organization_id', org.id)
+    .eq('status', 'SUBMITTED');
+
+  const pendingByClass = new Map<string, number>();
+  (pendingSubs || []).forEach((s: any) => {
+    if (s.class_id) {
+      pendingByClass.set(s.class_id, (pendingByClass.get(s.class_id) || 0) + 1);
+    }
+  });
+
   const initialClasses: OrgClassItem[] = (rawClasses || []).map((cls: any) => {
     const membersCount = Array.isArray(cls.class_members) ? cls.class_members.length : 0;
     const assignmentsCount = Array.isArray(cls.class_assignments)
@@ -49,16 +63,16 @@ export default async function OrgClassesPage({
       description: cls.description,
       groupType: cls.group_type || 'CLASS',
       status: cls.status || 'ACTIVE',
-      term: cls.term || 'Học kỳ Fall 2026',
+      term: cls.term || null,
       instructorId: cls.instructor_id,
-      instructorName: cls.instructor_name || 'TS. Trần Thị Mai',
+      instructorName: cls.instructor_name || 'Chưa chỉ định',
       maxCapacity: cls.max_capacity || 50,
       settings: cls.settings || {},
       createdAt: cls.created_at,
       membersCount,
       assignmentsCount,
-      participationRate: membersCount > 0 ? 88 : null,
-      pendingGradingCount: assignmentsCount > 0 ? 5 : 0,
+      participationRate: null,
+      pendingGradingCount: pendingByClass.get(cls.id) || 0,
     };
   });
 

@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ArrowRight,
   RotateCcw,
+  Building2,
 } from 'lucide-react';
 import {
   PersonalSubmissionItem,
@@ -84,6 +85,14 @@ export function SubmissionCard({ item, onSelect }: SubmissionCardProps) {
               {item.className}
               {item.classCode ? ` (${item.classCode})` : ''}
             </span>
+
+            {item.organizationName && (
+              <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
+                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-zinc-700" />
+                <Building2 className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+                <span>{item.organizationName}</span>
+              </span>
+            )}
           </div>
 
           {item.description && (

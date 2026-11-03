@@ -31,11 +31,6 @@ interface OrgSidebarProps {
 const ROLE_LABELS: Record<string, string> = {
   ORG_OWNER: 'Quản trị viên',
   ORG_ADMIN: 'Quản trị viên',
-  ASSESSOR: 'Quản trị viên',
-  EVALUATOR: 'Quản trị viên',
-  REPORT_VIEWER: 'Thành viên',
-  MEMBER: 'Thành viên',
-  LEARNER: 'Thành viên',
 };
 
 interface NavItem {
@@ -50,104 +45,77 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export function OrgSidebar({ orgSlug, orgName, userRole = 'MEMBER' }: OrgSidebarProps) {
+export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
   const role = userRole.toUpperCase();
-  const roleLabel = ROLE_LABELS[role] || 'Thành viên';
+  const roleLabel = ROLE_LABELS[role] || 'Quản trị viên';
 
-  const isOwnerOrAdmin = role === 'ORG_OWNER' || role === 'ORG_ADMIN';
-  const isAssessor = role === 'ASSESSOR' || role === 'EVALUATOR';
-  const isReportViewer = role === 'REPORT_VIEWER';
-
-  let navGroups: NavGroup[] = [];
-
-  if (isOwnerOrAdmin || isAssessor || isReportViewer) {
-    navGroups = [
-      {
-        label: 'ĐIỀU HÀNH',
-        items: [
-          {
-            name: 'Tổng quan',
-            href: `/org/${orgSlug}`,
-            icon: Building2,
-            exact: true,
-          },
-          {
-            name: 'Thành viên',
-            href: `/org/${orgSlug}/members`,
-            icon: Users,
-          },
-          {
-            name: 'Nhóm & Đơn vị',
-            href: `/org/${orgSlug}/classes`,
-            icon: FolderKanban,
-          },
-        ],
-      },
-      {
-        label: 'ĐÁNH GIÁ NĂNG LỰC',
-        items: [
-          {
-            name: 'Đề đánh giá',
-            href: `/org/${orgSlug}/assessments`,
-            icon: FilePlus,
-          },
-          {
-            name: 'Khảo thí & Bài nộp',
-            href: `/org/${orgSlug}/campaigns`,
-            icon: Calendar,
-          },
-          {
-            name: 'Báo cáo năng lực',
-            href: `/org/${orgSlug}/analytics`,
-            icon: BarChart2,
-          },
-        ],
-      },
-      {
-        label: 'TÀI KHOẢN TỔ CHỨC',
-        items: [
-          {
-            name: 'Gói dịch vụ',
-            href: `/org/${orgSlug}/plan`,
-            icon: CreditCard,
-          },
-          {
-            name: 'Cài đặt',
-            href: `/org/${orgSlug}/settings`,
-            icon: Settings,
-          },
-        ],
-      },
-    ];
-  } else {
-    // MEMBER / LEARNER
-    navGroups = [
-      {
-        label: 'HỌC TẬP & ĐÁNH GIÁ',
-        items: [
-          {
-            name: 'Nhóm của tôi',
-            href: `/org/${orgSlug}/classes`,
-            icon: FolderKanban,
-          },
-          {
-            name: 'Bài được giao',
-            href: `/org/${orgSlug}/campaigns`,
-            icon: CheckSquare,
-          },
-          {
-            name: 'Kết quả của tôi',
-            href: `/org/${orgSlug}/my-results`,
-            icon: Award,
-          },
-        ],
-      },
-    ];
-  }
+  const navGroups: NavGroup[] = [
+    {
+      label: 'ĐIỀU HÀNH',
+      items: [
+        {
+          name: 'Tổng quan',
+          href: `/org/${orgSlug}`,
+          icon: Building2,
+          exact: true,
+        },
+        {
+          name: 'Thành viên',
+          href: `/org/${orgSlug}/members`,
+          icon: Users,
+        },
+        {
+          name: 'Nhóm & Đơn vị',
+          href: `/org/${orgSlug}/classes`,
+          icon: FolderKanban,
+        },
+      ],
+    },
+    {
+      label: 'ĐÁNH GIÁ NĂNG LỰC',
+      items: [
+        {
+          name: 'Đề đánh giá',
+          href: `/org/${orgSlug}/assessments`,
+          icon: FilePlus,
+        },
+        {
+          name: 'Đợt đánh giá',
+          href: `/org/${orgSlug}/campaigns`,
+          icon: Calendar,
+        },
+        {
+          name: 'Bàn chấm bài',
+          href: `/org/${orgSlug}/grading`,
+          icon: CheckSquare,
+        },
+        {
+          name: 'Báo cáo năng lực',
+          href: `/org/${orgSlug}/analytics`,
+          icon: BarChart2,
+        },
+      ],
+    },
+    {
+      label: 'TÀI KHOẢN TỔ CHỨC',
+      items: [
+        {
+          name: 'Gói sử dụng',
+          href: `/org/${orgSlug}/plan`,
+          icon: CreditCard,
+        },
+        {
+          name: 'Cài đặt',
+          href: `/org/${orgSlug}/settings`,
+          icon: Settings,
+        },
+      ],
+    },
+  ];
 
   const isActive = (item: NavItem) => {
     if (item.exact) {

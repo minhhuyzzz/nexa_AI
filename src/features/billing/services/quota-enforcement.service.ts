@@ -955,47 +955,108 @@ export class QuotaEnforcementService {
     amount: number = 1,
     requestId?: string
   ): Promise<CreditReservationResult> {
+    if (amount <= 0) {
+      return {
+        success: false,
+        payerType: payer.isOrg ? 'ORG' : 'PERSONAL',
+        payerId: payer.isOrg ? (payer.organizationId || '') : payer.userId,
+        amount,
+        error: 'Số lượng credits giữ trước phải lớn hơn 0.',
+      };
+    }
+
     const reservationId = requestId || `res_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    if (payer.isOrg && payer.organizationId) {
-      const deductRes = await this.deductOrgAICredits(supabase, payer.organizationId, amount);
+    // 1. Idempotency Check: Verify if this requestId was already reserved or processed
+    try {
+      if (typeof supabase.from === 'function') {
+        const { data: existing } = await supabase
+          .from('ai_credit_reservations')
+          .select('request_id, payer_type, payer_id, amount, status, remaining_credits')
+          .eq('request_id', reservationId)
+          .maybeSingle();
+
+        if (existing && existing.status) {
+          if (existing.status === 'RESERVED') {
+            return {
+              success: true,
+              reservationId: existing.request_id || reservationId,
+              payerType: (existing.payer_type || (payer.isOrg ? 'ORG' : 'PERSONAL')) as 'ORG' | 'PERSONAL',
+              payerId: existing.payer_id || (payer.isOrg ? (payer.organizationId || '') : payer.userId),
+              amount: existing.amount || amount,
+              remainingCredits: existing.remaining_credits,
+            };
+          } else {
+            return {
+              success: false,
+              payerType: (existing.payer_type || (payer.isOrg ? 'ORG' : 'PERSONAL')) as 'ORG' | 'PERSONAL',
+              payerId: existing.payer_id || (payer.isOrg ? (payer.organizationId || '') : payer.userId),
+              amount: existing.amount || amount,
+              error: `Yêu cầu giữ credits này đã được xử lý (trạng thái: ${existing.status}).`,
+            };
+          }
+        }
+      }
+    } catch {
+      // Continue if table is unconfigured or mocked differently
+    }
+
+    // 2. Perform atomic credit deduction
+    let deductRes: { success: boolean; remainingCredits: number; error?: string };
+    const payerType = payer.isOrg && payer.organizationId ? 'ORG' : 'PERSONAL';
+    const payerId = payer.isOrg && payer.organizationId ? payer.organizationId : payer.userId;
+
+    if (payerType === 'ORG') {
+      deductRes = await this.deductOrgAICredits(supabase, payerId, amount);
       if (!deductRes.success) {
         return {
           success: false,
           payerType: 'ORG',
-          payerId: payer.organizationId,
+          payerId,
           amount,
           error: deductRes.error || 'Hạn mức AI Credits của tổ chức không đủ.',
         };
       }
-      return {
-        success: true,
-        reservationId,
-        payerType: 'ORG',
-        payerId: payer.organizationId,
-        amount,
-        remainingCredits: deductRes.remainingCredits,
-      };
     } else {
-      const deductRes = await this.deductPersonalAICredits(supabase, payer.userId, amount);
+      deductRes = await this.deductPersonalAICredits(supabase, payerId, amount);
       if (!deductRes.success) {
         return {
           success: false,
           payerType: 'PERSONAL',
-          payerId: payer.userId,
+          payerId,
           amount,
           error: deductRes.error || 'Số dư AI Credits của bạn không đủ.',
         };
       }
-      return {
-        success: true,
-        reservationId,
-        payerType: 'PERSONAL',
-        payerId: payer.userId,
-        amount,
-        remainingCredits: deductRes.remainingCredits,
-      };
     }
+
+    // 3. Persist reservation to ai_credit_reservations table
+    try {
+      if (typeof supabase.from === 'function') {
+        const tableRef = supabase.from('ai_credit_reservations');
+        if (tableRef && typeof tableRef.insert === 'function') {
+          await tableRef.insert({
+            request_id: reservationId,
+            payer_type: payerType,
+            payer_id: payerId,
+            amount,
+            status: 'RESERVED',
+            remaining_credits: deductRes.remainingCredits,
+          });
+        }
+      }
+    } catch (insertErr) {
+      console.warn('Could not record ai_credit_reservations ledger:', insertErr);
+    }
+
+    return {
+      success: true,
+      reservationId,
+      payerType,
+      payerId,
+      amount,
+      remainingCredits: deductRes.remainingCredits,
+    };
   }
 
   /**
@@ -1017,6 +1078,30 @@ export class QuotaEnforcementService {
       };
     }
 
+    // 1. Check reservation status in DB to ensure idempotency and prevent double-refund
+    let currentRecord: { status: string; amount: number; remaining_credits?: number } | null = null;
+    try {
+      if (typeof supabase.from === 'function' && reservation.reservationId) {
+        const { data } = await supabase
+          .from('ai_credit_reservations')
+          .select('status, amount, remaining_credits')
+          .eq('request_id', reservation.reservationId)
+          .maybeSingle();
+        currentRecord = data;
+      }
+    } catch {}
+
+    if (currentRecord && currentRecord.status !== 'RESERVED') {
+      // Already settled or released! Do NOT refund or settle again (idempotent / chống double refund)
+      return {
+        success: true,
+        action: currentRecord.status as 'SETTLED' | 'RELEASED',
+        settledAmount: currentRecord.status === 'SETTLED' ? currentRecord.amount : 0,
+        refundedAmount: currentRecord.status === 'RELEASED' ? currentRecord.amount : 0,
+        remainingCredits: currentRecord.remaining_credits,
+      };
+    }
+
     if (action === 'RELEASE') {
       let refundRes: { success: boolean; remainingCredits?: number; error?: string };
       if (reservation.payerType === 'ORG') {
@@ -1024,6 +1109,22 @@ export class QuotaEnforcementService {
       } else {
         refundRes = await this.refundPersonalAICredits(supabase, reservation.payerId, reservation.amount);
       }
+
+      if (refundRes.success && reservation.reservationId) {
+        try {
+          if (typeof supabase.from === 'function') {
+            await supabase
+              .from('ai_credit_reservations')
+              .update({
+                status: 'RELEASED',
+                remaining_credits: refundRes.remainingCredits,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('request_id', reservation.reservationId);
+          }
+        } catch {}
+      }
+
       return {
         success: refundRes.success,
         action: 'RELEASED',
@@ -1036,13 +1137,35 @@ export class QuotaEnforcementService {
 
     const charged = actualAmount !== undefined ? Math.max(0, actualAmount) : reservation.amount;
     const refundDiff = Math.max(0, reservation.amount - charged);
+    let finalRemainingCredits = reservation.remainingCredits;
 
     if (refundDiff > 0) {
       if (reservation.payerType === 'ORG') {
-        await this.refundOrgAICredits(supabase, reservation.payerId, refundDiff);
+        const refundRes = await this.refundOrgAICredits(supabase, reservation.payerId, refundDiff);
+        if (refundRes.remainingCredits !== undefined) {
+          finalRemainingCredits = refundRes.remainingCredits;
+        }
       } else {
-        await this.refundPersonalAICredits(supabase, reservation.payerId, refundDiff);
+        const refundRes = await this.refundPersonalAICredits(supabase, reservation.payerId, refundDiff);
+        if (refundRes.remainingCredits !== undefined) {
+          finalRemainingCredits = refundRes.remainingCredits;
+        }
       }
+    }
+
+    if (reservation.reservationId) {
+      try {
+        if (typeof supabase.from === 'function') {
+          await supabase
+            .from('ai_credit_reservations')
+            .update({
+              status: 'SETTLED',
+              remaining_credits: finalRemainingCredits,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('request_id', reservation.reservationId);
+        }
+      } catch {}
     }
 
     return {
@@ -1050,11 +1173,13 @@ export class QuotaEnforcementService {
       action: 'SETTLED',
       settledAmount: charged,
       refundedAmount: refundDiff,
+      remainingCredits: finalRemainingCredits,
     };
   }
 
   /**
    * Hoàn trả credits cho tổ chức khi tác vụ AI thất bại (P0-02, P0-03)
+   * Fail-closed: Bắt buộc dùng RPC atomic, không dùng read-modify-write client-side.
    */
   static async refundOrgAICredits(
     supabase: SupabaseClient,
@@ -1066,7 +1191,7 @@ export class QuotaEnforcementService {
     }
 
     try {
-      if (typeof supabase.rpc === 'function') {
+      if (typeof supabase?.rpc === 'function') {
         const { data: rpcRemaining, error: rpcError } = await supabase.rpc(
           'refund_organization_ai_credits',
           {
@@ -1078,46 +1203,28 @@ export class QuotaEnforcementService {
         if (!rpcError && typeof rpcRemaining === 'number') {
           return { success: true, remainingCredits: rpcRemaining };
         }
+
+        return {
+          success: false,
+          error: rpcError?.message || 'Không thể hoàn credits tổ chức qua RPC.',
+        };
       }
-
-      // Fallback for mocks without RPC
-      const { data: entitlement, error: fetchErr } = await supabase
-        .from('organization_entitlements')
-        .select('id, ai_credits_granted, ai_credits_used')
-        .eq('organization_id', organizationId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (fetchErr || !entitlement) {
-        return { success: false, error: 'Không tìm thấy hợp đồng tổ chức để hoàn trả credit.' };
-      }
-
-      const nextUsed = Math.max(0, (entitlement.ai_credits_used ?? 0) - amount);
-      const { error: updateErr } = await supabase
-        .from('organization_entitlements')
-        .update({ ai_credits_used: nextUsed })
-        .eq('id', entitlement.id);
-
-      if (updateErr) {
-        return { success: false, error: updateErr.message };
-      }
-
-      return {
-        success: true,
-        remainingCredits: (entitlement.ai_credits_granted ?? 0) - nextUsed,
-      };
     } catch (err) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Lỗi hoàn trả credit tổ chức',
+        error: err instanceof Error ? err.message : 'Lỗi hệ thống khi hoàn credit tổ chức',
       };
     }
+
+    return {
+      success: false,
+      error: 'Dịch vụ hoàn credits RPC không khả dụng (fail-closed).',
+    };
   }
 
   /**
    * Hoàn trả credits cho cá nhân khi tác vụ AI thất bại (P0-02, P0-03)
+   * Fail-closed: Bắt buộc dùng RPC atomic, không dùng read-modify-write client-side.
    */
   static async refundPersonalAICredits(
     supabase: SupabaseClient,
@@ -1129,7 +1236,7 @@ export class QuotaEnforcementService {
     }
 
     try {
-      if (typeof supabase.rpc === 'function') {
+      if (typeof supabase?.rpc === 'function') {
         const { data: rpcRemaining, error: rpcError } = await supabase.rpc('refund_ai_credits', {
           p_user_id: userId,
           p_amount: amount,
@@ -1138,36 +1245,23 @@ export class QuotaEnforcementService {
         if (!rpcError && typeof rpcRemaining === 'number') {
           return { success: true, remainingCredits: rpcRemaining };
         }
+
+        return {
+          success: false,
+          error: rpcError?.message || 'Không thể hoàn credits cá nhân qua RPC.',
+        };
       }
-
-      // Fallback for mocks without RPC
-      const { data: profile, error: fetchErr } = await supabase
-        .from('profiles')
-        .select('credits')
-        .eq('id', userId)
-        .single();
-
-      if (fetchErr || !profile) {
-        return { success: false, error: 'Không tìm thấy hồ sơ người dùng để hoàn trả credit.' };
-      }
-
-      const nextCredits = (profile.credits ?? 0) + amount;
-      const { error: updateErr } = await supabase
-        .from('profiles')
-        .update({ credits: nextCredits })
-        .eq('id', userId);
-
-      if (updateErr) {
-        return { success: false, error: updateErr.message };
-      }
-
-      return { success: true, remainingCredits: nextCredits };
     } catch (err) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Lỗi hoàn trả credit cá nhân',
+        error: err instanceof Error ? err.message : 'Lỗi hệ thống khi hoàn credit cá nhân',
       };
     }
+
+    return {
+      success: false,
+      error: 'Dịch vụ hoàn credits RPC không khả dụng (fail-closed).',
+    };
   }
 }
 

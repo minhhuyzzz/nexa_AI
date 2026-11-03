@@ -49,10 +49,16 @@ export default async function OrgLayout({
     .single();
 
   if (!isSuperadmin && (!membership || membership.status !== 'ACTIVE')) {
-    redirect('/dashboard');
+    redirect('/personal/dashboard');
   }
 
   const userRole = isSuperadmin ? 'ORG_ADMIN' : membership?.org_role || 'MEMBER';
+
+  // Strict Spec Rule: Org Workspace is strictly for ORG_OWNER and ORG_ADMIN.
+  // Members must use Personal Workspace exclusively.
+  if (!isSuperadmin && userRole !== 'ORG_OWNER' && userRole !== 'ORG_ADMIN') {
+    redirect('/personal/dashboard');
+  }
 
   return (
     <div className="dashboard-shell min-h-screen flex bg-white text-slate-900 transition-colors">

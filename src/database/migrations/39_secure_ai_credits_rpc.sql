@@ -175,8 +175,8 @@ BEGIN
         RAISE EXCEPTION 'Số lượng credits hoàn phải lớn hơn 0 (nhận: %).', p_amount USING ERRCODE = 'P0003';
     END IF;
 
-    IF auth.uid() IS NOT NULL AND auth.uid() <> p_user_id AND NOT public.is_admin_or_service() THEN
-        RAISE EXCEPTION 'Không có quyền hoàn credits của người dùng khác.' USING ERRCODE = '42501';
+    IF NOT public.is_admin_or_service() THEN
+        RAISE EXCEPTION 'Chỉ backend service hoặc admin mới có quyền hoàn credits.' USING ERRCODE = '42501';
     END IF;
 
     SELECT credits INTO v_current_credits FROM public.profiles WHERE id = p_user_id FOR UPDATE;
@@ -194,7 +194,8 @@ $$;
 
 REVOKE ALL ON FUNCTION public.refund_ai_credits(UUID, INTEGER) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refund_ai_credits(UUID, INTEGER) FROM anon;
-GRANT EXECUTE ON FUNCTION public.refund_ai_credits(UUID, INTEGER) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.refund_ai_credits(UUID, INTEGER) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.refund_ai_credits(UUID, INTEGER) TO service_role;
 
 -- ------------------------------------------------------------------------------
 -- 5. Persistent AI Credit Reservations Ledger for Idempotency

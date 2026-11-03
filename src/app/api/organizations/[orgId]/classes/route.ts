@@ -213,15 +213,39 @@ export async function POST(
       settings,
     } = parsed.data;
 
-    let finalCode = classCode?.trim().toUpperCase();
-    if (!finalCode) {
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      const prefix =
-        groupType === 'DEPARTMENT' ? 'PB' : groupType === 'PROJECT_GROUP' ? 'DA' : 'NX';
-      finalCode = `${prefix}-${rand}`;
+    const adminSupabase = createAdminClient();
+
+    // Tự sinh mã lớp duy nhất, chống trùng lặp (Unambiguous chars: 2-9, A-Z excluding 0, O, 1, I)
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const prefix =
+      groupType === 'DEPARTMENT' ? 'PB' : groupType === 'PROJECT_GROUP' ? 'DA' : 'NX';
+
+    let finalCode = '';
+    let attempts = 0;
+    while (attempts < 8) {
+      let randPart = '';
+      for (let i = 0; i < 5; i++) {
+        randPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const candidate = `${prefix}-${randPart}`;
+
+      const { data: existing } = await adminSupabase
+        .from('evaluator_classes')
+        .select('id')
+        .eq('class_code', candidate)
+        .maybeSingle();
+
+      if (!existing) {
+        finalCode = candidate;
+        break;
+      }
+      attempts++;
     }
 
-    const adminSupabase = createAdminClient();
+    if (!finalCode) {
+      finalCode = `${prefix}-${Date.now().toString(36).toUpperCase()}`;
+    }
+
     const { data: newClass, error: insertError } = await adminSupabase
       .from('evaluator_classes')
       .insert({
@@ -230,10 +254,10 @@ export async function POST(
         description: description || null,
         group_type: groupType,
         status: 'ACTIVE',
-        term: term || 'Học kỳ Fall 2026',
+        term: term?.trim() || null,
         instructor_id: instructorId || null,
-        instructor_name: instructorName || null,
-        max_capacity: maxCapacity,
+        instructor_name: instructorName?.trim() || null,
+        max_capacity: maxCapacity || 1000,
         settings: settings || {
           allowJoinCode: true,
           isActiveListed: true,

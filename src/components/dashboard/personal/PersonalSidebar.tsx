@@ -31,7 +31,6 @@ const learningNavItems = [
 ];
 
 const workNavItems = [
-  { name: 'Tổ chức của tôi', href: '/personal/organizations', icon: Building2 },
   { name: 'Lớp & Nhóm', href: '/personal/groups', icon: Users },
   { name: 'Bài được giao', href: '/personal/submissions', icon: ListChecks },
 ];

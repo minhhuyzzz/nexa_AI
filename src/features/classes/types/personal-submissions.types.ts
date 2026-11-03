@@ -50,4 +50,8 @@ export interface PersonalSubmissionItem {
   evaluatorFeedback?: string;
   evaluatorGradedAt?: string;
   isPassed?: boolean;
+  organizationId?: string | null;
+  organizationName?: string | null;
+  sourceType?: 'CLASS_ASSIGNMENT' | 'CAMPAIGN';
+  campaignId?: string | null;
 }

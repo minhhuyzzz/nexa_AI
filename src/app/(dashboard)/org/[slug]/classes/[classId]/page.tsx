@@ -58,9 +58,9 @@ export default async function OrgClassDetailPage({
       email: prof?.email || '',
       roleInClass: m.role_in_class || 'STUDENT',
       subGroup: m.sub_group || null,
-      participationRate: 92,
+      participationRate: 0,
       joinedAt: m.joined_at,
-      lastActiveAt: 'Hôm nay, 14:32',
+      lastActiveAt: null,
     };
   });
 
@@ -111,6 +111,13 @@ export default async function OrgClassDetailPage({
     createdAt: a.created_at,
   }));
 
+  // Real pending submissions count for this class (No fake numbers)
+  const { count: pendingGradingCount } = await adminSupabase
+    .from('assessment_submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('class_id', classId)
+    .eq('status', 'SUBMITTED');
+
   // 4. Fetch organization members to serve as candidates for drawer
   const { data: orgUsers } = await adminSupabase
     .from('user_organizations')
@@ -159,16 +166,16 @@ export default async function OrgClassDetailPage({
     description: classRecord.description,
     groupType: classRecord.group_type || 'CLASS',
     status: classRecord.status || 'ACTIVE',
-    term: classRecord.term || 'Học kỳ Fall 2026',
+    term: classRecord.term || null,
     instructorId: classRecord.instructor_id,
-    instructorName: classRecord.instructor_name || 'TS. Trần Thị Mai',
-    maxCapacity: classRecord.max_capacity || 50,
+    instructorName: classRecord.instructor_name || null,
+    maxCapacity: classRecord.max_capacity || 1000,
     settings: classRecord.settings || {},
     createdAt: classRecord.created_at,
     membersCount: members.length,
     assignmentsCount: assignments.length,
-    participationRate: 92,
-    pendingGradingCount: 7,
+    participationRate: null,
+    pendingGradingCount: pendingGradingCount || 0,
   };
 
   return (

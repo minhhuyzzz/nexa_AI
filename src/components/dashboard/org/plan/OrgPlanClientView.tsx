@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   CreditCard,
   RefreshCw,
@@ -121,38 +122,49 @@ export function OrgPlanClientView({
       </div>
 
       {/* Hero Banner */}
-      <div className="p-6 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="relative overflow-hidden p-6 rounded-lg border border-slate-200 dark:border-zinc-800 bg-[#111726] text-white shadow-sm">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/dashboard/nexa-07-goi-su-dung.png"
+            alt="NEXA Business Plan"
+            fill
+            sizes="(max-width: 1200px) 100vw, 1200px"
+            className="object-cover opacity-20 object-right"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0d1424] via-[#0d1424]/90 to-transparent" />
+        </div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             <div>
               {isActive ? (
                 isExpiring ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                     Sắp hết hạn
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     Gói đang hoạt động
                   </span>
                 )
               ) : isProvisioning ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800">
-                  <Clock className="w-3 h-3 text-blue-600" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                  <Clock className="w-3 h-3 text-blue-400" />
                   Đang hoàn tất kích hoạt
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-neutral-300">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
                   Hết hạn
                 </span>
               )}
             </div>
 
-            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               {isProvisioning ? 'Đang cấp gói Business' : entitlements.planName || 'NEXA Business Plus'}
             </h2>
-            <p className="text-xs text-slate-600 dark:text-neutral-400">
+            <p className="text-xs text-slate-300">
               {isProvisioning
                 ? 'NEXA đang chuẩn bị quyền lợi dành cho tổ chức. Hạn mức và ngày hết hạn sẽ tự xuất hiện ngay sau khi hoàn tất.'
                 : 'Không gian của bạn đang có đầy đủ quyền lợi của gói Business Plus. Không phụ thuộc vào gói cá nhân.'}
@@ -161,18 +173,18 @@ export function OrgPlanClientView({
             {/* Metadata strip */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 text-xs">
               <div>
-                <span className="text-slate-400 dark:text-neutral-500 block text-[11px]">Có hiệu lực đến</span>
-                <strong className="text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">
+                <span className="text-slate-400 block text-[11px]">Có hiệu lực đến</span>
+                <strong className="text-white font-mono tabular-nums">
                   {formattedExpiresAt}
                 </strong>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-neutral-500 block text-[11px]">Chu kỳ gói</span>
-                <strong className="text-neutral-900 dark:text-neutral-100">12 tháng</strong>
+                <span className="text-slate-400 block text-[11px]">Chu kỳ gói</span>
+                <strong className="text-white">12 tháng</strong>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-neutral-500 block text-[11px]">Quản trị viên chính</span>
-                <strong className="text-neutral-900 dark:text-neutral-100 truncate block">
+                <span className="text-slate-400 block text-[11px]">Quản trị viên chính</span>
+                <strong className="text-white truncate block">
                   {ownerName}
                 </strong>
               </div>
@@ -180,16 +192,16 @@ export function OrgPlanClientView({
           </div>
 
           {/* Action CTA */}
-          <div className="flex flex-col items-start lg:items-end justify-center gap-2.5 shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-zinc-800">
+          <div className="relative z-10 flex flex-col items-start lg:items-end justify-center gap-2.5 shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-white/10">
             {isActive && (
-              <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">
+              <span className="text-xs font-medium text-slate-300">
                 {isExpiring ? (
-                  <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                  <span className="text-amber-400 font-semibold flex items-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     Gói sẽ hết hạn sau {daysRemaining} ngày
                   </span>
                 ) : (
-                  <span>Còn <strong className="font-mono text-neutral-900 dark:text-neutral-100">{daysRemaining}</strong> ngày trong kỳ hiện tại</span>
+                  <span>Còn <strong className="font-mono text-white">{daysRemaining}</strong> ngày trong kỳ hiện tại</span>
                 )}
               </span>
             )}
@@ -199,7 +211,7 @@ export function OrgPlanClientView({
                 {pendingRenewal ? (
                   <button
                     disabled
-                    className="h-9 px-4 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-2 cursor-not-allowed"
+                    className="h-9 px-4 rounded-md border border-amber-400/40 bg-amber-500/20 text-amber-300 text-xs font-semibold flex items-center gap-2 cursor-not-allowed"
                   >
                     <Clock className="w-3.5 h-3.5 animate-pulse" />
                     <span>Đang chờ gia hạn</span>
@@ -207,7 +219,7 @@ export function OrgPlanClientView({
                 ) : (
                   <button
                     onClick={() => setIsRenewOpen(true)}
-                    className="h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-2 transition-colors shadow-xs"
+                    className="h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Gia hạn gói</span>

@@ -25,6 +25,7 @@ import {
   ChevronDown,
   X,
   Loader2,
+  Building2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -39,6 +40,8 @@ interface ClassGroupItem {
   filesCount: number;
   isOwner: boolean;
   createdAt: string;
+  organizationId?: string | null;
+  organizationName?: string | null;
 }
 
 export default function LearnerGroupsPage() {
@@ -86,7 +89,7 @@ export default function LearnerGroupsPage() {
         return;
       }
 
-      // 1. Groups joined by user as learner
+      // 1. Groups joined by user as learner (includes both personal and organizational classes)
       const { data: memberRows } = await supabase
         .from('class_members')
         .select(`
@@ -100,6 +103,7 @@ export default function LearnerGroupsPage() {
             created_at,
             evaluator_id,
             organization_id,
+            organizations ( id, name, code, slug ),
             profiles:evaluator_id ( nickname ),
             class_members ( id ),
             class_assignments ( id, assessment_id ),
@@ -146,8 +150,8 @@ export default function LearnerGroupsPage() {
 
       (memberRows || []).forEach((m: any) => {
         const c = m?.evaluator_classes;
-        // Personal groups strictly only include classes with NO organization_id
-        if (c?.id && !c.organization_id && !combinedMap.has(c.id)) {
+        // Personal groups include both personal classes and classes assigned by organizations
+        if (c?.id && !combinedMap.has(c.id)) {
           combinedMap.set(c.id, { ...c, isOwner: false });
         }
       });
@@ -159,6 +163,7 @@ export default function LearnerGroupsPage() {
         ).length;
 
         const evalProf = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
+        const orgInfo = Array.isArray(c.organizations) ? c.organizations[0] : c.organizations;
 
         return {
           id: c.id,
@@ -171,6 +176,8 @@ export default function LearnerGroupsPage() {
           filesCount: (c.class_files || []).length,
           isOwner: Boolean(c.isOwner),
           createdAt: c.created_at,
+          organizationId: c.organization_id || null,
+          organizationName: orgInfo?.name || null,
         };
       });
 
@@ -469,7 +476,7 @@ export default function LearnerGroupsPage() {
                       </div>
                       <div>
                         <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-neutral-500 font-mono">
-                          LỚP / NHÓM HỌC TẬP
+                          {group.organizationName ? 'LỚP THUỘC TỔ CHỨC' : 'LỚP / NHÓM HỌC TẬP'}
                         </span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -514,9 +521,17 @@ export default function LearnerGroupsPage() {
 
                   {/* Card Body */}
                   <div className="p-4 sm:p-5 space-y-3">
-                    <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                      {group.name}
-                    </h3>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                        {group.name}
+                      </h3>
+                      {group.organizationName && (
+                        <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          <Building2 className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+                          <span className="truncate">{group.organizationName}</span>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-neutral-400 flex-wrap">
                       <span className="flex items-center gap-1.5">

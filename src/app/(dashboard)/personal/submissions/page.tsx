@@ -79,6 +79,8 @@ function LearnerSubmissionsContent() {
             name,
             class_code,
             evaluator_id,
+            organization_id,
+            organizations ( id, name, code, slug ),
             profiles:evaluator_id ( nickname )
           ),
           assessments (
@@ -94,6 +96,32 @@ function LearnerSubmissionsContent() {
         `)
         .in('class_id', classIds);
 
+      // Lấy các đợt khảo thí (assessment_campaigns) được giao cho các lớp này
+      const { data: campaignsData } = await supabase
+        .from('assessment_campaigns')
+        .select(`
+          id,
+          title,
+          status,
+          starts_at,
+          ends_at,
+          class_ids,
+          organization_id,
+          organizations ( id, name, code, slug ),
+          assessments (
+            id,
+            title,
+            description,
+            passing_score,
+            duration_minutes,
+            assessment_items (
+              id,
+              prompt
+            )
+          )
+        `)
+        .eq('status', 'ACTIVE');
+
       // Lấy bài nộp của người dùng
       const { data: userSubmissions } = await supabase
         .from('assessment_submissions')
@@ -101,6 +129,7 @@ function LearnerSubmissionsContent() {
           id,
           assessment_id,
           class_assignment_id,
+          campaign_id,
           status,
           grading_status,
           total_score,
@@ -118,10 +147,14 @@ function LearnerSubmissionsContent() {
 
       const subByAssignmentId = new Map<string, any>();
       const subByAssessmentId = new Map<string, any>();
+      const subByCampaignId = new Map<string, any>();
 
       (userSubmissions || []).forEach((s: any) => {
         if (s.class_assignment_id) {
           subByAssignmentId.set(s.class_assignment_id, s);
+        }
+        if (s.campaign_id) {
+          subByCampaignId.set(s.campaign_id, s);
         }
         if (s.assessment_id) {
           subByAssessmentId.set(s.assessment_id, s);
@@ -132,6 +165,7 @@ function LearnerSubmissionsContent() {
 
       const mapped: PersonalSubmissionItem[] = (assignmentsData || []).map((ca: any) => {
         const cls = Array.isArray(ca.evaluator_classes) ? ca.evaluator_classes[0] : ca.evaluator_classes;
+        const orgInfo = Array.isArray(cls?.organizations) ? cls.organizations[0] : cls?.organizations;
         const asm = Array.isArray(ca.assessments) ? ca.assessments[0] : ca.assessments;
         const items = asm?.assessment_items || [];
         const firstItem = items[0];
@@ -249,10 +283,118 @@ function LearnerSubmissionsContent() {
           evaluatorFeedback: existingSub?.evaluator_notes,
           evaluatorGradedAt: isGraded ? (submittedAtFormatted || '31/10/2026') : undefined,
           isPassed: existingSub?.total_score ? existingSub.total_score >= 7.0 : undefined,
+          organizationId: cls?.organization_id || null,
+          organizationName: orgInfo?.name || null,
+          sourceType: 'CLASS_ASSIGNMENT',
         };
       });
 
-      setAssignments(mapped);
+      // Map các đợt khảo thí tổ chức giao cho lớp
+      const relevantCampaigns = (campaignsData || []).filter((c: any) => {
+        const cClassIds = Array.isArray(c.class_ids) ? c.class_ids : [];
+        return cClassIds.some((cid: string) => classIds.includes(cid));
+      });
+
+      const mappedCampaigns: PersonalSubmissionItem[] = relevantCampaigns.map((camp: any) => {
+        const asm = Array.isArray(camp.assessments) ? camp.assessments[0] : camp.assessments;
+        const org = Array.isArray(camp.organizations) ? camp.organizations[0] : camp.organizations;
+        const items = asm?.assessment_items || [];
+        const firstItem = items[0];
+
+        const existingSub = subByCampaignId.get(camp.id) || subByAssessmentId.get(asm?.id);
+
+        const isGraded =
+          existingSub &&
+          (existingSub.status === 'EVALUATED' || existingSub.grading_status === 'COMPLETED');
+
+        const isSubmitted =
+          existingSub && existingSub.status === 'SUBMITTED' && !isGraded;
+
+        const isDraft = existingSub && existingSub.status === 'DRAFT';
+        const isResubmit = existingSub && existingSub.status === 'RESUBMISSION_REQUESTED';
+
+        const endDate = camp.ends_at ? new Date(camp.ends_at) : null;
+        const isOverdue = !!(endDate && endDate < now && !isGraded && !isSubmitted);
+
+        let statusKey: 'todo' | 'progress' | 'wait' | 'done' | 'resubmit' = 'todo';
+        let statusLabel = 'Chưa bắt đầu';
+
+        if (isGraded) {
+          statusKey = 'done';
+          statusLabel = 'Đã chấm';
+        } else if (isSubmitted) {
+          statusKey = 'wait';
+          statusLabel = 'Chờ đánh giá';
+        } else if (isResubmit) {
+          statusKey = 'resubmit';
+          statusLabel = 'Yêu cầu nộp lại';
+        } else if (isDraft) {
+          statusKey = 'progress';
+          statusLabel = 'Bản nháp';
+        }
+
+        let deadlineFormatted = 'Không giới hạn';
+        if (endDate) {
+          const d = endDate.getDate().toString().padStart(2, '0');
+          const m = (endDate.getMonth() + 1).toString().padStart(2, '0');
+          const y = endDate.getFullYear();
+          const hr = endDate.getHours().toString().padStart(2, '0');
+          const min = endDate.getMinutes().toString().padStart(2, '0');
+          deadlineFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
+        }
+
+        let submittedAtFormatted = undefined;
+        if (existingSub?.submitted_at) {
+          const sd = new Date(existingSub.submitted_at);
+          const d = sd.getDate().toString().padStart(2, '0');
+          const m = (sd.getMonth() + 1).toString().padStart(2, '0');
+          const y = sd.getFullYear();
+          const hr = sd.getHours().toString().padStart(2, '0');
+          const min = sd.getMinutes().toString().padStart(2, '0');
+          submittedAtFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
+        }
+
+        return {
+          id: `camp_${camp.id}`,
+          assessmentId: asm?.id || camp.id,
+          itemId: firstItem?.id,
+          title: camp.title || asm?.title || 'Đợt đánh giá năng lực',
+          className: 'Đợt khảo thí tổ chức',
+          classCode: org?.code || '',
+          evaluatorName: org?.name || 'Hội đồng khảo thí',
+          description: asm?.description || firstItem?.prompt || 'Bài đánh giá năng lực thuộc đợt khảo thí của tổ chức.',
+          requirements: [
+            'Hoàn thành bài đánh giá theo hướng dẫn của ban tổ chức.',
+            'Bài nộp sẽ được lưu trữ và báo cáo kết quả về tổ chức.',
+          ],
+          rubric: [
+            { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 4, awardedPoints: isGraded ? 3.5 : undefined },
+            { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
+            { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
+          ],
+          attachments: [],
+          deadline: camp.ends_at || undefined,
+          deadlineFormatted,
+          isOverdue,
+          status: statusKey,
+          statusLabel,
+          submissionId: existingSub?.id,
+          submittedAt: existingSub?.submitted_at,
+          submittedAtFormatted,
+          submittedVersion: 1,
+          officialScore: existingSub?.total_score,
+          maxScore: existingSub?.max_score || 10,
+          evaluatorFeedback: existingSub?.evaluator_notes,
+          evaluatorGradedAt: isGraded ? (submittedAtFormatted || 'Hôm nay') : undefined,
+          isPassed: existingSub?.total_score ? existingSub.total_score >= 7.0 : undefined,
+          organizationId: camp.organization_id,
+          organizationName: org?.name || null,
+          sourceType: 'CAMPAIGN',
+          campaignId: camp.id,
+        };
+      });
+
+      setAssignments([...mapped, ...mappedCampaigns]);
     } catch (err) {
       console.error('Error fetching submissions:', err);
       setAssignments([]);

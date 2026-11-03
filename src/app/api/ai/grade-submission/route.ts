@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getAIAdapter } from '@/features/ai-gateway/adapters';
 import { RubricDef } from '@/features/ai-gateway/types/grading.types';
 import { AIUsageLoggerService } from '@/features/ai-gateway/services/ai-usage-logger.service';
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
 
     const { submissionId, itemId } = validated.data;
     const supabase = await createClient();
+    const adminSupabase = createAdminClient();
 
     // 1. Authenticate user
     const {
@@ -232,8 +234,9 @@ export async function POST(request: Request) {
     };
 
     // 5. Reserve Credits Fail-Closed (MOD-02 / AI-07 / AI-12)
+    // Use adminSupabase (service_role) to execute atomic deduction and ledger persistence
     const reservation = await QuotaEnforcementService.reserveCredits(
-      supabase,
+      adminSupabase,
       {
         isOrg: payer.isOrg,
         organizationId: payer.organizationId,
@@ -282,7 +285,7 @@ export async function POST(request: Request) {
     });
 
     if (evalError || !evaluation) {
-      await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'RELEASE');
+      await QuotaEnforcementService.settleOrReleaseCredits(adminSupabase, reservation, 'RELEASE');
       throw evalError;
     }
 
@@ -317,7 +320,7 @@ export async function POST(request: Request) {
     if (saveError || !evalRecord) {
       console.error('Failed to save AI evaluation:', saveError);
       // Rollback reservation and release credits (Fail-closed)
-      await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'RELEASE');
+      await QuotaEnforcementService.settleOrReleaseCredits(adminSupabase, reservation, 'RELEASE');
       return NextResponse.json(
         { error: 'Không thể lưu kết quả chấm bài AI vào cơ sở dữ liệu. Lượt credits đã được hoàn trả an toàn.' },
         { status: 500 }
@@ -325,7 +328,7 @@ export async function POST(request: Request) {
     }
 
     // Settle credits only after evaluation record is successfully persisted
-    const settleResult = await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
+    const settleResult = await QuotaEnforcementService.settleOrReleaseCredits(adminSupabase, reservation, 'SETTLE', 1);
 
     // 8. GRADE-01: Keep AI score in ai_evaluations as DRAFT only.
     // Do NOT write to submission_answers.score_awarded or assessment_submissions.final_score.

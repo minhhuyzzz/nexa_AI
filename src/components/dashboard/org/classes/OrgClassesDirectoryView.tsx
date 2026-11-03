@@ -34,22 +34,10 @@ export function OrgClassesDirectoryView({
 }: OrgClassesDirectoryViewProps) {
   const [statusFilter, setStatusFilter] = useState<'ALL' | ClassStatus>('ALL');
   const [groupTypeFilter, setGroupTypeFilter] = useState<'ALL' | GroupType>('ALL');
-  const [instructorFilter, setInstructorFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
-
-  // Extract unique instructors for filter dropdown
-  const uniqueInstructors = useMemo(() => {
-    const set = new Set<string>();
-    classes.forEach((c) => {
-      if (c.instructorName && c.instructorName !== 'Chưa phân công') {
-        set.add(c.instructorName);
-      }
-    });
-    return Array.from(set);
-  }, [classes]);
+  const pageSize = 9;
 
   // Counts for status tabs
   const activeCount = classes.filter((c) => c.status === 'ACTIVE').length;
@@ -61,19 +49,18 @@ export function OrgClassesDirectoryView({
     return classes.filter((cls) => {
       if (statusFilter !== 'ALL' && cls.status !== statusFilter) return false;
       if (groupTypeFilter !== 'ALL' && cls.groupType !== groupTypeFilter) return false;
-      if (instructorFilter !== 'ALL' && cls.instructorName !== instructorFilter) return false;
 
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchesName = cls.name.toLowerCase().includes(query);
         const matchesCode = cls.classCode.toLowerCase().includes(query);
-        const matchesInstructor = (cls.instructorName || '').toLowerCase().includes(query);
-        if (!matchesName && !matchesCode && !matchesInstructor) return false;
+        const matchesTerm = (cls.term || '').toLowerCase().includes(query);
+        if (!matchesName && !matchesCode && !matchesTerm) return false;
       }
 
       return true;
     });
-  }, [classes, statusFilter, groupTypeFilter, instructorFilter, searchQuery]);
+  }, [classes, statusFilter, groupTypeFilter, searchQuery]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
@@ -195,11 +182,11 @@ export function OrgClassesDirectoryView({
 
       {/* Filter and Search Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-        <div className="sm:col-span-6 relative">
+        <div className="sm:col-span-8 relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Tìm theo mã lớp, tên lớp, giảng viên..."
+            placeholder="Tìm theo tên lớp, mã nhận diện, đợt..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -209,7 +196,7 @@ export function OrgClassesDirectoryView({
           />
         </div>
 
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-4">
           <select
             value={groupTypeFilter}
             onChange={(e) => {
@@ -218,105 +205,100 @@ export function OrgClassesDirectoryView({
             }}
             className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600"
           >
-            <option value="ALL">Loại nhóm: Tất cả</option>
+            <option value="ALL">Loại không gian: Tất cả</option>
             <option value="CLASS">Lớp học</option>
             <option value="DEPARTMENT">Phòng ban</option>
             <option value="PROJECT_GROUP">Nhóm dự án</option>
           </select>
         </div>
-
-        <div className="sm:col-span-3">
-          <select
-            value={instructorFilter}
-            onChange={(e) => {
-              setInstructorFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600"
-          >
-            <option value="ALL">Giảng viên: Tất cả</option>
-            {uniqueInstructors.map((ins) => (
-              <option key={ins} value={ins}>
-                {ins}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
-      {/* CARD VIEW */}
+      {/* CARD VIEW: Lưới thẻ cân đối dạng hình vuông / chữ nhật đứng */}
       {viewMode === 'card' && (
-        <div className="space-y-3">
+        <div>
           {paginatedClasses.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 dark:text-neutral-500 bg-slate-50/50 dark:bg-zinc-900/40 rounded-md border border-slate-200 dark:border-zinc-800">
-              <GraduationCap className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <div className="p-12 text-center text-slate-400 dark:text-neutral-500 bg-white dark:bg-[#111114] rounded-xl border border-dashed border-slate-200 dark:border-zinc-800">
+              <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-40 text-blue-600" />
               <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                Không tìm thấy lớp học nào phù hợp
+                Không tìm thấy lớp học hoặc nhóm nào
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                Thử thay đổi từ khóa tìm kiếm hoặc bấm nút Tạo lớp mới.
+                Thử thay đổi từ khóa tìm kiếm hoặc bấm nút Tạo lớp / nhóm mới.
               </p>
             </div>
           ) : (
-            paginatedClasses.map((cls) => (
-              <div
-                key={cls.id}
-                className="p-3.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/30 dark:bg-zinc-900/30 hover:border-slate-300 dark:hover:border-zinc-700 transition flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs"
-              >
-                {/* Left: Code, Name, Metadata */}
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900 tracking-wider">
-                      {cls.classCode}
-                    </span>
-                    <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                      {cls.name}
-                    </h4>
-                    {getGroupTypeBadge(cls.groupType)}
-                  </div>
-
-                  <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-neutral-400 flex-wrap font-mono tabular-nums">
-                    <span className="flex items-center gap-1 font-sans">
-                      <Users className="w-3 h-3 text-slate-400" />
-                      <strong>{cls.membersCount}</strong> thành viên
-                    </span>
-                    <span>•</span>
-                    <span className="font-sans">
-                      Phụ trách: <strong>{cls.instructorName || 'Chưa phân công'}</strong>
-                    </span>
-                    <span>•</span>
-                    <span className="font-sans text-slate-500">
-                      {cls.term || 'Học kỳ Fall 2026'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right: Metrics Pills & Action */}
-                <div className="flex items-center gap-2 flex-wrap md:flex-nowrap justify-between md:justify-end">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900 font-mono tabular-nums">
-                    <FileText className="w-3 h-3" /> Đã giao {cls.assignmentsCount} đề
-                  </span>
-
-                  {cls.participationRate !== null && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900 font-mono tabular-nums">
-                      <TrendingUp className="w-3 h-3" /> {cls.participationRate}% tham gia
-                    </span>
-                  )}
-
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900 font-mono tabular-nums">
-                    <Clock className="w-3 h-3" /> {cls.pendingGradingCount || 0} bài chờ chấm
-                  </span>
-
-                  <Link
-                    href={`/org/${slug}/classes/${cls.id}`}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-white hover:bg-blue-600 dark:hover:bg-blue-600 border border-blue-200 dark:border-blue-800 rounded transition shrink-0 ml-1"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
+              {paginatedClasses.map((cls) => {
+                const monogram = (cls.name ? cls.name[0] : 'K').toUpperCase();
+                return (
+                  <div
+                    key={cls.id}
+                    className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-700 transition-all shadow-xs hover:shadow-sm flex flex-col justify-between group"
                   >
-                    <span>Vào lớp</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            ))
+                    <div>
+                      {/* Top Bar: Monogram Box + Group Type Badge */}
+                      <div className="flex items-center justify-between mb-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-2xs shrink-0">
+                            {monogram}
+                          </div>
+                          <span className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200/80 dark:border-blue-900 tracking-wider">
+                            {cls.classCode}
+                          </span>
+                        </div>
+                        {getGroupTypeBadge(cls.groupType)}
+                      </div>
+
+                      {/* Class Name */}
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
+                        {cls.name}
+                      </h4>
+
+                      {/* Description or Fallback */}
+                      <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 leading-relaxed mb-4 min-h-[32px]">
+                        {cls.description || (cls.term ? `Đợt: ${cls.term}` : 'Không gian đào tạo và khảo thí năng lực số.')}
+                      </p>
+
+                      {/* Metadata Row */}
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400 pb-3.5 border-b border-slate-100 dark:border-zinc-800/80">
+                        <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-zinc-300">
+                          <Users className="w-3.5 h-3.5 text-slate-400" />
+                          <strong className="font-mono tabular-nums">{cls.membersCount}</strong> thành viên
+                        </span>
+                        {cls.term && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{cls.term}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom Action & Stats */}
+                    <div className="pt-3.5 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-neutral-400">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold tabular-nums">
+                          {cls.assignmentsCount} đề
+                        </span>
+                        {cls.pendingGradingCount ? (
+                          <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-900 tabular-nums">
+                            {cls.pendingGradingCount} bài nộp
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <Link
+                        href={`/org/${slug}/classes/${cls.id}`}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-lg border border-blue-200/80 dark:border-blue-900 transition-colors shrink-0"
+                      >
+                        <span>Vào lớp</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
@@ -330,7 +312,7 @@ export function OrgClassesDirectoryView({
                 <th className="py-2.5 px-3">Mã lớp</th>
                 <th className="py-2.5 px-3">Tên lớp / nhóm</th>
                 <th className="py-2.5 px-3">Loại nhóm</th>
-                <th className="py-2.5 px-3">Phụ trách</th>
+                <th className="py-2.5 px-3">Đợt / Học kỳ</th>
                 <th className="py-2.5 px-3">Thành viên</th>
                 <th className="py-2.5 px-3">Đề giao</th>
                 <th className="py-2.5 px-3">Tham gia</th>
@@ -358,7 +340,7 @@ export function OrgClassesDirectoryView({
                     </td>
                     <td className="py-2.5 px-3">{getGroupTypeBadge(cls.groupType)}</td>
                     <td className="py-2.5 px-3 text-slate-600 dark:text-neutral-300">
-                      {cls.instructorName || 'Chưa phân công'}
+                      {cls.term || '—'}
                     </td>
                     <td className="py-2.5 px-3 font-mono tabular-nums text-slate-600 dark:text-neutral-400">
                       {cls.membersCount}

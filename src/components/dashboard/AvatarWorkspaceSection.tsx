@@ -187,8 +187,12 @@ export function AvatarWorkspaceSection({
     }
   };
 
+  const adminWorkspaces = workspaces.filter(
+    (w) => w.role === 'ORG_OWNER' || w.role === 'ORG_ADMIN'
+  );
+
   const isPersonalActive = pathname?.startsWith('/personal') || activeWorkspaceId === 'personal';
-  const currentActiveOrg = workspaces.find((w) =>
+  const currentActiveOrg = adminWorkspaces.find((w) =>
     pathname?.startsWith(`/org/${w.organization.slug}`) || activeWorkspaceId === `org_${w.organization.id}`
   );
 
@@ -312,8 +316,8 @@ export function AvatarWorkspaceSection({
                 )}
               </button>
 
-              {/* Option 2+: Các tổ chức */}
-              {workspaces.map((ws) => {
+              {/* Option 2+: Các tổ chức quản trị (Chỉ hiển thị cho ORG_OWNER / ORG_ADMIN) */}
+              {adminWorkspaces.map((ws) => {
                 const isOrgActive =
                   pathname?.startsWith(`/org/${ws.organization.slug}`) ||
                   activeWorkspaceId === `org_${ws.organization.id}` ||

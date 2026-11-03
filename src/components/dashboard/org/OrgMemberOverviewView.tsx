@@ -1,3 +1,9 @@
+/**
+ * @deprecated [UX SPEC 2026-11-03] Member experience is now integrated 100% into Personal Workspace
+ * (/personal/groups and /personal/submissions). Non-admin roles (MEMBER, ASSESSOR, etc.) are strictly
+ * blocked from /org/[slug]/* console. This component is preserved for backward compatibility only.
+ */
+
 import Link from 'next/link';
 import { Building2, Calendar, Award, CheckCircle2, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 

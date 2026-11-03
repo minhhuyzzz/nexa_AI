@@ -182,15 +182,12 @@ describe('OrgQuotaEnforcementService', () => {
 
     it('should release (refund) credits if AI task fails', async () => {
       const mockSupabase = {
+        rpc: vi.fn().mockResolvedValue({ data: 95, error: null }),
         from: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          order: vi.fn().mockReturnThis(),
-          limit: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: { id: 'ent-1', ai_credits_granted: 100, ai_credits_used: 10, is_active: true },
-            error: null,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          insert: vi.fn().mockResolvedValue({ error: null }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockResolvedValue({ error: null }),
           }),
@@ -214,6 +211,43 @@ describe('OrgQuotaEnforcementService', () => {
       expect(settleRes.success).toBe(true);
       expect(settleRes.action).toBe('RELEASED');
       expect(settleRes.refundedAmount).toBe(5);
+      expect(settleRes.remainingCredits).toBe(95);
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('refund_organization_ai_credits', {
+        p_org_id: 'org-123',
+        p_amount: 5,
+      });
+    });
+
+    it('should prevent double refund if reservation is already RELEASED (idempotency)', async () => {
+      const mockSupabase = {
+        rpc: vi.fn(),
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { status: 'RELEASED', amount: 5, remaining_credits: 95 },
+            error: null,
+          }),
+        }),
+      };
+
+      const reservation = {
+        success: true,
+        reservationId: 'req-already-released',
+        payerType: 'ORG' as const,
+        payerId: 'org-123',
+        amount: 5,
+      };
+
+      const settleRes = await QuotaEnforcementService.settleOrReleaseCredits(
+        mockSupabase as any,
+        reservation,
+        'RELEASE'
+      );
+
+      expect(settleRes.success).toBe(true);
+      expect(settleRes.action).toBe('RELEASED');
+      expect(mockSupabase.rpc).not.toHaveBeenCalled(); // Chặn double refund
     });
 
     it('should reject negative or zero credits deduction (P0-02/P0-03 input validation)', async () => {

@@ -230,6 +230,25 @@ export function OrgMembersClientView({
         </span>
       </div>
 
+      {/* Pending Requests Attention Strip */}
+      {isManager && pendingRequestsCount > 0 && activeTab !== 'requests' && (
+        <div className="p-3.5 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" strokeWidth={1.75} />
+            <span className="text-amber-900 dark:text-amber-200 font-medium">
+              Có <strong className="font-bold font-mono tabular-nums">{pendingRequestsCount}</strong> người dùng đang yêu cầu tham gia tổ chức qua mã PIN.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('requests')}
+            className="px-3 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors shrink-0 cursor-pointer shadow-2xs"
+          >
+            Xét duyệt ngay
+          </button>
+        </div>
+      )}
+
       {/* 3. Underline Navigation Tabs (Image 2 exact replica) */}
       <div className="border-b border-slate-200 dark:border-zinc-800">
         <nav className="flex space-x-6 overflow-x-auto" aria-label="Tabs">

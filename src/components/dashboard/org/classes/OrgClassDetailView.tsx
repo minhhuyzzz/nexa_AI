@@ -6,7 +6,6 @@ import {
   ChevronRight,
   UserPlus,
   FileSpreadsheet,
-  MoreHorizontal,
   Copy,
   Check,
   GraduationCap,
@@ -14,17 +13,13 @@ import {
   Layers,
   Users,
   BookOpen,
-  Activity,
-  FolderKanban,
   Settings,
-  Calendar,
-  Clock,
-  ExternalLink,
+  ArrowRight,
+  ShieldAlert,
+  FileCheck,
+  ChevronLeft,
 } from 'lucide-react';
 import { ClassMemberRosterTable } from './ClassMemberRosterTable';
-import { ClassInstructorCard } from './ClassInstructorCard';
-import { ClassOperationalNotes } from './ClassOperationalNotes';
-import { UpcomingScheduleCard } from './UpcomingScheduleCard';
 import { AddClassMembersDrawer } from './AddClassMembersDrawer';
 import { AssignAssessmentModal } from './AssignAssessmentModal';
 import type { OrgClassItem, ClassMemberItem, ClassAssignmentItem, GroupType } from './types';
@@ -63,7 +58,7 @@ export function OrgClassDetailView({
   availableAssessments = [],
   isManager,
 }: OrgClassDetailViewProps) {
-  const [activeTab, setActiveTab] = useState<'members' | 'assignments' | 'activity' | 'resources' | 'settings'>('members');
+  const [activeTab, setActiveTab] = useState<'members' | 'assignments' | 'settings'>('members');
   const [members, setMembers] = useState<ClassMemberItem[]>(initialMembers);
   const [assignments, setAssignments] = useState<ClassAssignmentItem[]>(initialAssignments);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -77,6 +72,8 @@ export function OrgClassDetailView({
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
+
+  const monogram = (classData.name ? classData.name[0] : 'K').toUpperCase();
 
   const getGroupTypeBadge = (type: GroupType) => {
     switch (type) {
@@ -101,6 +98,17 @@ export function OrgClassDetailView({
     }
   };
 
+  const getGroupTypeLabel = (type: GroupType) => {
+    switch (type) {
+      case 'DEPARTMENT':
+        return 'Phòng ban';
+      case 'PROJECT_GROUP':
+        return 'Nhóm dự án';
+      default:
+        return 'Lớp học';
+    }
+  };
+
   const handleMemberRemoved = async (userId: string) => {
     try {
       const res = await fetch(
@@ -118,92 +126,96 @@ export function OrgClassDetailView({
   return (
     <div className="space-y-5">
       {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
-        <Link href={`/org/${slug}`} className="hover:text-blue-600 transition-colors">
-          Điều hành
+      <div>
+        <Link
+          href={`/org/${slug}/classes`}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-neutral-100 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Quay lại danh sách Lớp & Nhóm</span>
         </Link>
-        <ChevronRight className="w-3 h-3 text-slate-400" />
-        <Link href={`/org/${slug}/classes`} className="hover:text-blue-600 transition-colors">
-          Lớp & nhóm
-        </Link>
-        <ChevronRight className="w-3 h-3 text-slate-400" />
-        <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-          {classData.name}
-        </span>
-      </nav>
+      </div>
 
-      {/* Main Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-              {classData.name}
-            </h1>
-            <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900 tracking-wider">
-              {classData.classCode}
-            </span>
-            {getGroupTypeBadge(classData.groupType)}
+      {/* Unified Hero Banner */}
+      <div className="p-5 sm:p-6 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-start sm:items-center gap-4">
+          {/* Monogram Box */}
+          <div className="w-13 h-13 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xl shadow-xs shrink-0">
+            {monogram}
           </div>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-2xl">
-            {classData.description ||
-              `Lớp học thuộc tổ chức ${organizationName}, vận hành theo chương trình đào tạo chuẩn.`}
-          </p>
+
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl font-bold text-slate-900 dark:text-neutral-100 truncate">
+                {classData.name}
+              </h1>
+              <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200/80 dark:border-blue-900 tracking-wider">
+                {classData.classCode}
+              </span>
+              {getGroupTypeBadge(classData.groupType)}
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-2xl leading-relaxed">
+              {classData.description ||
+                `Không gian quản lý thành viên và tổ chức khảo thí thuộc tổ chức ${organizationName}.`}
+            </p>
+          </div>
         </div>
 
+        {/* Action Buttons for Managers */}
         {isManager && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <button
               type="button"
               onClick={() => setIsAddMembersOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              Thêm thành viên
+              <UserPlus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Thêm thành viên</span>
             </button>
             <button
               type="button"
               onClick={() => setIsAssignModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-xs transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition cursor-pointer"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              Giao đề đánh giá
-            </button>
-            <button
-              type="button"
-              className="p-2 text-slate-400 hover:text-neutral-900 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-            >
-              <MoreHorizontal className="w-4 h-4" />
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Giao đề đánh giá</span>
             </button>
           </div>
         )}
       </div>
 
       {/* Metadata Strip */}
-      <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-3.5 flex items-center justify-between gap-4 flex-wrap text-xs font-mono shadow-xs">
+      <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg p-3.5 flex items-center justify-between gap-4 flex-wrap text-xs shadow-xs">
         <div className="flex items-center gap-4 flex-wrap">
-          <span className="flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+          <span className="flex items-center gap-1.5 text-slate-700 dark:text-neutral-300">
             <Users className="w-3.5 h-3.5 text-slate-400" />
-            <strong className="tabular-nums">{members.length}</strong> thành viên
+            <strong className="font-mono tabular-nums">{members.length}</strong> thành viên
           </span>
           <span className="text-slate-300 dark:text-zinc-700">|</span>
-          <span className="font-sans text-neutral-800 dark:text-neutral-200">
-            Giảng viên: <strong>{classData.instructorName || 'TS. Trần Thị Mai'}</strong>
+          <span className="flex items-center gap-1.5 text-slate-700 dark:text-neutral-300">
+            <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+            <strong className="font-mono tabular-nums">{assignments.length}</strong> đề đã giao
           </span>
-          <span className="text-slate-300 dark:text-zinc-700">|</span>
-          <span className="font-sans text-slate-600 dark:text-neutral-400">
-            {classData.term || 'Học kỳ Fall 2026'}
-          </span>
+          {classData.term && (
+            <>
+              <span className="text-slate-300 dark:text-zinc-700">|</span>
+              <span className="text-slate-600 dark:text-neutral-400">
+                Đợt: <strong>{classData.term}</strong>
+              </span>
+            </>
+          )}
           <span className="text-slate-300 dark:text-zinc-700">|</span>
           <div className="flex items-center gap-1.5">
-            <span className="font-sans text-slate-600 dark:text-neutral-400">Mã gia nhập:</span>
-            <span className="font-bold text-blue-600 dark:text-blue-400">{classData.classCode}</span>
+            <span className="text-slate-500 dark:text-neutral-400">Mã lớp:</span>
+            <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{classData.classCode}</span>
             <button
               type="button"
               onClick={copyJoinCode}
-              title="Sao chép mã gia nhập"
-              className="p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded text-slate-400 hover:text-blue-600 transition"
+              title="Sao chép mã lớp"
+              className="p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded text-slate-400 hover:text-blue-600 transition cursor-pointer"
             >
-              {copiedCode ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+              {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
@@ -216,80 +228,59 @@ export function OrgClassDetailView({
         </div>
       </div>
 
-      {/* 5 Tab Navigation */}
+      {/* 3 Core Tabs Navigation */}
       <div className="border-b border-slate-200 dark:border-zinc-800">
         <nav className="flex space-x-2 sm:space-x-6 overflow-x-auto text-xs font-semibold">
           <button
+            type="button"
             onClick={() => setActiveTab('members')}
-            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
               activeTab === 'members'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900'
+                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-neutral-100'
             }`}
           >
             <Users className="w-4 h-4" />
             <span>Thành viên</span>
-            <span className="font-mono text-[11px] px-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 tabular-nums">
+            <span className="font-mono text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-zinc-800 tabular-nums">
               {members.length}
             </span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('assignments')}
-            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
               activeTab === 'assignments'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900'
+                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-neutral-100'
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>Đề đánh giá</span>
-            <span className="font-mono text-[11px] px-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 tabular-nums">
+            <span>Đề đánh giá đã giao</span>
+            <span className="font-mono text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-zinc-800 tabular-nums">
               {assignments.length}
             </span>
           </button>
 
           <button
-            onClick={() => setActiveTab('activity')}
-            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap ${
-              activeTab === 'activity'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            <span>Hoạt động</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('resources')}
-            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap ${
-              activeTab === 'resources'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900'
-            }`}
-          >
-            <FolderKanban className="w-4 h-4" />
-            <span>Tài nguyên</span>
-          </button>
-
-          <button
+            type="button"
             onClick={() => setActiveTab('settings')}
-            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-2 py-3 px-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
               activeTab === 'settings'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900'
+                : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-neutral-100'
             }`}
           >
             <Settings className="w-4 h-4" />
-            <span>Cài đặt</span>
+            <span>Cài đặt lớp</span>
           </button>
         </nav>
       </div>
 
-      {/* Main Workspace 2-Column Grid */}
+      {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column (8 cols) */}
+        {/* Left Column (8 cols): Tab Content */}
         <div className="lg:col-span-8 space-y-4">
           {activeTab === 'members' && (
             <ClassMemberRosterTable
@@ -300,43 +291,70 @@ export function OrgClassDetailView({
           )}
 
           {activeTab === 'assignments' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3 shadow-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                  Đề khảo thí đã giao cho lớp ({assignments.length})
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsAssignModalOpen(true)}
-                  className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded transition"
-                >
-                  + Giao đề mới
-                </button>
+            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+                    Đề khảo thí giao cho lớp ({assignments.length})
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-neutral-400">
+                    Các bài khảo thí được giao cho toàn bộ thành viên trong lớp thực hiện.
+                  </p>
+                </div>
+                {isManager && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAssignModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Giao đề mới</span>
+                  </button>
+                )}
               </div>
 
               {assignments.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  Chưa có đề đánh giá nào được giao cho lớp này.
+                <div className="py-12 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-lg text-slate-400 dark:text-neutral-500 space-y-2">
+                  <BookOpen className="w-8 h-8 mx-auto opacity-40 text-blue-600" />
+                  <p className="text-xs font-medium">Chưa có đề đánh giá nào được giao cho lớp này.</p>
+                  {isManager && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAssignModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+                    >
+                      <span>Bấm vào đây để giao đề đầu tiên</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {assignments.map((a) => (
                     <div
                       key={a.id}
-                      className="p-3 bg-slate-50/50 dark:bg-zinc-900/50 rounded border border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs"
+                      className="p-4 bg-slate-50/50 dark:bg-zinc-900/40 rounded-lg border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between gap-4 text-xs"
                     >
-                      <div>
-                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      <div className="space-y-1">
+                        <p className="font-bold text-slate-900 dark:text-neutral-100">
                           {a.title}
                         </p>
-                        <p className="text-[11px] text-slate-500 font-mono">
-                          Thời lượng: {a.durationMinutes} phút • Hạn nộp:{' '}
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
+                          Thời lượng: {a.durationMinutes} phút • Điểm đạt: {a.passingScore}% • Hạn nộp:{' '}
                           {a.deadline ? new Date(a.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
                         </p>
                       </div>
-                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[11px] font-medium border border-emerald-200">
-                        Đang mở
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
+                          Đang mở
+                        </span>
+                        <Link
+                          href={`/org/${slug}/grading`}
+                          className="px-2.5 py-1 rounded text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition"
+                        >
+                          Chấm bài
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -344,34 +362,161 @@ export function OrgClassDetailView({
             </div>
           )}
 
-          {activeTab === 'activity' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-6 text-center text-xs text-slate-500">
-              Nhật ký hoạt động lớp học đang được tổng hợp tự động.
-            </div>
-          )}
-
-          {activeTab === 'resources' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-6 text-center text-xs text-slate-500">
-              Thư mục tài nguyên bài giảng và tài liệu lab môn học.
-            </div>
-          )}
-
           {activeTab === 'settings' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-6 text-center text-xs text-slate-500">
-              Cấu hình bảo mật, mã tham gia và quyền hạn riêng của lớp học.
+            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 space-y-4 text-xs shadow-xs">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100 pb-2 border-b border-slate-100 dark:border-zinc-800">
+                Cài đặt & Quản trị Lớp học
+              </h3>
+
+              <div className="space-y-3 max-w-lg">
+                <div>
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
+                    Tên không gian
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={classData.name}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-600 dark:text-neutral-400 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
+                    Mã lớp tham gia
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      disabled
+                      value={classData.classCode}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 rounded-lg font-mono text-slate-600 dark:text-neutral-400 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={copyJoinCode}
+                      className="px-3 py-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg font-semibold hover:bg-blue-100 transition cursor-pointer shrink-0"
+                    >
+                      {copiedCode ? 'Đã sao chép' : 'Sao chép'}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
+                    Đợt / Học kỳ
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={classData.term || 'Chung'}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-600 dark:text-neutral-400 text-xs"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right Column (4 cols) */}
+        {/* Right Column (4 cols): Real Operational Sidebar */}
         <div className="lg:col-span-4 space-y-4">
-          <UpcomingScheduleCard />
-          <ClassInstructorCard name={classData.instructorName} />
-          <ClassOperationalNotes />
+          {/* Card 1: Mã tham gia & Hướng dẫn */}
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+                Mã tham gia lớp
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                Tự ghi danh
+              </span>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-zinc-900/60 rounded-lg border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-mono">MÃ THAM GIA</span>
+                <span className="text-base font-mono font-extrabold text-blue-600 dark:text-blue-400 tracking-wider">
+                  {classData.classCode}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={copyJoinCode}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer shadow-2xs"
+              >
+                {copiedCode ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Đã chép</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Sao chép</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+              Thành viên trong tổ chức có thể nhập mã này tại mục <strong>Lớp & Nhóm</strong> trong Không gian Cá nhân để tự ghi danh vào lớp.
+            </p>
+          </div>
+
+          {/* Card 2: Thống kê nhanh lớp */}
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-3">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono block pb-2 border-b border-slate-100 dark:border-zinc-800">
+              Thông tin vận hành
+            </span>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-zinc-800/80">
+                <span className="text-slate-500 dark:text-neutral-400">Loại không gian:</span>
+                <span className="font-semibold text-slate-800 dark:text-neutral-200">
+                  {getGroupTypeLabel(classData.groupType)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-zinc-800/80">
+                <span className="text-slate-500 dark:text-neutral-400">Tổng thành viên:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-neutral-100 tabular-nums">
+                  {members.length} người
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-zinc-800/80">
+                <span className="text-slate-500 dark:text-neutral-400">Đề thi đã giao:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-neutral-100 tabular-nums">
+                  {assignments.length} đề
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-slate-500 dark:text-neutral-400">Đợt / Học kỳ:</span>
+                <span className="font-medium text-slate-800 dark:text-neutral-200">
+                  {classData.term || 'Chung'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Bàn chấm bài tổ chức */}
+          <div className="bg-gradient-to-br from-blue-50/60 to-slate-50/60 dark:from-blue-950/30 dark:to-zinc-900/30 border border-blue-200/80 dark:border-blue-900/60 rounded-xl p-4 shadow-xs space-y-2">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold text-xs">
+              <FileCheck className="w-4 h-4" />
+              <span>Bàn Chấm Bài Khảo Thí</span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
+              Các bài thi được nộp bởi thành viên lớp sẽ tập trung tại Bàn chấm bài để giảng viên thẩm định theo Rubric chuẩn.
+            </p>
+            <Link
+              href={`/org/${slug}/grading`}
+              className="inline-flex items-center gap-1.5 pt-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              <span>Mở Bàn chấm bài</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Drawer: Add Class Members (Screen 04) */}
+      {/* Drawer: Add Class Members */}
       <AddClassMembersDrawer
         isOpen={isAddMembersOpen}
         onClose={() => setIsAddMembersOpen(false)}
@@ -379,15 +524,14 @@ export function OrgClassDetailView({
         classId={classData.id}
         className={classData.name}
         currentMemberCount={members.length}
-        maxCapacity={classData.maxCapacity || 50}
+        maxCapacity={classData.maxCapacity || 1000}
         candidates={orgCandidates}
         onSuccess={() => {
           setIsAddMembersOpen(false);
-          // Refresh list
         }}
       />
 
-      {/* Modal: Assign Assessment (Screen 05) */}
+      {/* Modal: Assign Assessment */}
       <AssignAssessmentModal
         isOpen={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
@@ -398,7 +542,6 @@ export function OrgClassDetailView({
         availableAssessments={availableAssessments}
         onSuccess={() => {
           setIsAssignModalOpen(false);
-          // Refresh list
         }}
       />
     </div>

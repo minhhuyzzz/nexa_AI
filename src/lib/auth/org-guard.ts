@@ -41,14 +41,14 @@ export interface OrgAuthContext {
 }
 
 const ACTION_ROLE_MAP: Record<OrgPermissionAction, OrgRole[]> = {
-  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'],
+  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN'],
   MANAGE_MEMBERS: ['ORG_OWNER', 'ORG_ADMIN'],
-  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
-  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
-  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN', 'REPORT_VIEWER'],
+  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN'],
+  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN'],
+  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN'],
   VIEW_AI_QUOTA: ['ORG_OWNER', 'ORG_ADMIN'],
   MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN'],
-  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN'],
   MANAGE_SETTINGS: ['ORG_OWNER', 'ORG_ADMIN'],
 };
 
@@ -155,8 +155,8 @@ export async function requireOrgPagePermission(
     : ACTION_ROLE_MAP[actionOrRoles];
 
   if (!context.isSuperadmin && !allowedRoles.includes(context.role)) {
-    // Insufficient permissions -> redirect to org home page
-    redirect(`/org/${slug}`);
+    // Insufficient permissions -> redirect safely to personal dashboard (Org console is Admin only)
+    redirect('/personal/dashboard');
   }
 
   return context;

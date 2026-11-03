@@ -55,7 +55,19 @@ export async function GET(request: NextRequest) {
 
     const classIds = (classMemberships || []).map((cm) => cm.class_id);
 
-    // 3. Fetch assignments for these classes
+    // 3. Fetch submissions already done by this user
+    const { data: userSubmissions } = await adminSupabase
+      .from('assessment_submissions')
+      .select('id, assessment_id, status, total_score')
+      .eq('user_id', user.id);
+
+    const completedAssessmentIds = new Set(
+      (userSubmissions || [])
+        .filter((s) => s.status === 'EVALUATED' || s.status === 'SUBMITTED')
+        .map((s) => s.assessment_id)
+    );
+
+    // 4. Fetch assignments for these classes
     let tasks: Array<{
       id: string;
       title: string;
@@ -85,22 +97,69 @@ export async function GET(request: NextRequest) {
         .order('deadline', { ascending: true });
 
       if (assignments) {
-        tasks = assignments.map((a: any) => {
-          const assm = a.assessments;
-          const cls = a.evaluator_classes;
-          const orgName = cls?.organizations?.name || primaryOrg?.name || 'Tổ chức của bạn';
-          return {
-            id: a.id,
-            title: assm?.title || 'Bài đánh giá năng lực số',
-            assessmentId: a.assessment_id,
+        tasks = assignments
+          .filter((a: any) => a.assessment_id && !completedAssessmentIds.has(a.assessment_id))
+          .map((a: any) => {
+            const assm = a.assessments;
+            const cls = a.evaluator_classes;
+            const orgName = cls?.organizations?.name || primaryOrg?.name || 'Tổ chức của bạn';
+            return {
+              id: a.id,
+              title: assm?.title || 'Bài đánh giá năng lực số',
+              assessmentId: a.assessment_id,
+              orgName,
+              className: cls?.name || 'Lớp của bạn',
+              deadline: a.deadline,
+              durationMinutes: assm?.duration_minutes || 45,
+              status: 'Chưa bắt đầu',
+              actionUrl: `/personal/take?assessmentId=${a.assessment_id}&assignmentId=${a.id}`,
+            };
+          });
+      }
+    }
+
+    // 5. Fetch active assessment campaigns for user's organizations
+    const { data: activeCampaigns } = await adminSupabase
+      .from('assessment_campaigns')
+      .select(`
+        id,
+        title,
+        status,
+        ends_at,
+        class_ids,
+        organization_id,
+        assessments ( id, title, duration_minutes ),
+        organizations ( id, name )
+      `)
+      .in('organization_id', orgIds)
+      .eq('status', 'ACTIVE')
+      .order('ends_at', { ascending: true });
+
+    if (activeCampaigns) {
+      for (const camp of activeCampaigns) {
+        const assm = (camp.assessments as any);
+        if (!assm?.id || completedAssessmentIds.has(assm.id)) continue;
+
+        // Check if student is targeted (either campaign targets whole org or student's class)
+        const targetClasses: string[] = Array.isArray(camp.class_ids) ? camp.class_ids : [];
+        const isTargeted =
+          targetClasses.length === 0 ||
+          targetClasses.some((tId) => classIds.includes(tId));
+
+        if (isTargeted) {
+          const orgName = (camp.organizations as any)?.name || primaryOrg?.name || 'Tổ chức';
+          tasks.push({
+            id: `camp_${camp.id}`,
+            title: camp.title || assm.title || 'Đợt khảo thí',
+            assessmentId: assm.id,
             orgName,
-            className: cls?.name || 'Lớp của bạn',
-            deadline: a.deadline,
-            durationMinutes: assm?.duration_minutes || 45,
-            status: 'Chưa bắt đầu',
-            actionUrl: `/personal/take?assessmentId=${a.assessment_id}&assignmentId=${a.id}`,
-          };
-        });
+            className: 'Đợt khảo thí tổ chức',
+            deadline: camp.ends_at,
+            durationMinutes: assm.duration_minutes || 45,
+            status: 'Đang diễn ra',
+            actionUrl: `/personal/take?assessmentId=${assm.id}&campaignId=${camp.id}`,
+          });
+        }
       }
     }
 
