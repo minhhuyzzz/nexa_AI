@@ -54,10 +54,6 @@ export function SubmissionEmptyState({ hasFilters, onClearFilters }: SubmissionE
         <span>Xem Lớp & Nhóm của tôi</span>
         <ArrowRight className="w-3.5 h-3.5" />
       </Link>
-
-      <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-6 font-mono">
-        Ở trạng thái trống không hiển thị thống kê giả hoặc nút tạo nhiệm vụ dành cho người học.
-      </p>
     </div>
   );
 }

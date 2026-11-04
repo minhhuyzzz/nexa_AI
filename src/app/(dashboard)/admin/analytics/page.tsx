@@ -154,14 +154,9 @@ function AdminAnalyticsContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Báo Cáo &amp; Phân Tích Vận Hành BI
-            </h1>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Thống kê lượt khảo thí, tỷ lệ đạt chuẩn năng lực số 5 miền, phễu tiến bộ và trích xuất dữ liệu báo cáo.
-          </p>
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            Báo Cáo &amp; Phân Tích Vận Hành BI
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -239,7 +234,7 @@ function AdminAnalyticsContent() {
               <span>Phễu Chuyển Đổi & Phát Triển Năng Lực Số (User Progression Funnel)</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Hành trình từ khi tạo tài khoản đến khi đạt chứng chỉ chuẩn DigComp.
+              Hành trình từ khi tạo tài khoản đến khi đạt chứng nhận năng lực số.
             </p>
           </div>
         </div>
@@ -278,7 +273,7 @@ function AdminAnalyticsContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-850 pb-3">
           <div>
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              Chỉ số Năng lực theo 5 Miền DigComp (European Digital Competence Framework)
+              Chỉ số Năng lực theo 5 Miền năng lực số cốt lõi
             </h2>
             <p className="text-xs text-slate-500 dark:text-neutral-400">
               So sánh điểm trung bình thực tế của người học so với Ngưỡng tham chiếu chuẩn (70%).
@@ -341,7 +336,7 @@ function AdminAnalyticsContent() {
                   <div
                     className="absolute top-0 bottom-0 w-0.5 bg-amber-600 z-10"
                     style={{ left: '70%' }}
-                    title="Ngưỡng chuẩn DigComp (70%)"
+                    title="Ngưỡng tham chiếu chuẩn (70%)"
                   />
                 </div>
               </div>

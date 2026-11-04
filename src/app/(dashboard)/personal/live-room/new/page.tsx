@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
@@ -38,11 +38,31 @@ interface Assessment {
   created_at: string;
 }
 
-export default function CreateLiveRoomWizardPage() {
+function CreateLiveRoomWizardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const classId = searchParams.get('classId');
+  const orgId = searchParams.get('orgId');
+  const orgSlug = searchParams.get('orgSlug');
 
   // Wizard Step: 1 = Chọn đề, 2 = Cấu hình phiên, 3 = Xác nhận
   const [step, setStep] = useState<1 | 2>(1);
+
+  // Attached Class info if launched from class
+  const [attachedClassName, setAttachedClassName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (classId) {
+      fetch(`/api/classes/${classId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.group?.name) {
+            setAttachedClassName(d.group.name);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [classId]);
 
   // Assessments Library
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -68,7 +88,7 @@ export default function CreateLiveRoomWizardPage() {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
   const [durationMinutes, setDurationMinutes] = useState(45);
-  const [roomMode, setRoomMode] = useState<'OPEN' | 'GROUP_ONLY'>('OPEN');
+  const [roomMode, setRoomMode] = useState<'OPEN' | 'GROUP_ONLY'>(classId ? 'GROUP_ONLY' : 'OPEN');
   const [startMode, setStartMode] = useState<'MANUAL' | 'SCHEDULED'>('MANUAL');
   const [submissionPolicy, setSubmissionPolicy] = useState<'WAIT_FOR_PUBLISH' | 'SHOW_ON_PUBLISH'>(
     'SHOW_ON_PUBLISH'
@@ -100,7 +120,7 @@ export default function CreateLiveRoomWizardPage() {
             id: a.id,
             title: a.title,
             domain: a.domain || 'Tổng hợp (5 miền)',
-            description: a.description || 'Đánh giá năng lực số theo chuẩn DigComp 2.2.',
+            description: a.description || 'Đánh giá 5 miền năng lực số chuẩn hóa.',
             duration_minutes: a.duration_minutes || 45,
             passing_score: a.passing_score || 70,
             item_count: a.item_count || 40,
@@ -171,6 +191,8 @@ export default function CreateLiveRoomWizardPage() {
           title: roomTitle.trim(),
           assessmentId: selectedAsmId,
           roomMode,
+          classId: classId || undefined,
+          organizationId: orgId || undefined,
           themeId: selectedTheme,
           scheduledStart: scheduledStartIso,
           durationMinutes,
@@ -195,7 +217,8 @@ export default function CreateLiveRoomWizardPage() {
           // Navigate to Host Waiting Room
           router.push(`/personal/live-room/${data.room.id}/host`);
         } else {
-          router.push('/personal/live-room');
+          const fallbackRedirect = orgSlug ? `/org/${orgSlug}/live-room` : '/personal/live-room';
+          router.push(fallbackRedirect);
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -213,12 +236,38 @@ export default function CreateLiveRoomWizardPage() {
       {/* Back button & Stepper Header */}
       <div className="space-y-4">
         <Link
-          href="/personal/live-room"
+          href={
+            orgSlug
+              ? `/org/${orgSlug}/live-room`
+              : classId
+              ? `/personal/groups/${classId}`
+              : '/personal/live-room'
+          }
           className="text-xs font-semibold text-slate-500 hover:text-blue-600 inline-flex items-center gap-1.5 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Quay lại Phòng thi trực tiếp</span>
+          <span>
+            {orgSlug
+              ? 'Quay lại Phòng thi tổ chức'
+              : classId
+              ? 'Quay lại không gian lớp'
+              : 'Quay lại Phòng thi trực tiếp'}
+          </span>
         </Link>
+
+        {attachedClassName && (
+          <div className="p-3 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+              <span className="font-bold">Đang tạo phòng thi trực tiếp cho:</span>
+              <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 font-semibold">
+                {attachedClassName}
+              </span>
+            </div>
+            <span className="text-[11px] text-blue-600 dark:text-blue-400">
+              Chế độ chỉ dành cho thành viên lớp
+            </span>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
@@ -359,7 +408,7 @@ export default function CreateLiveRoomWizardPage() {
                             <FileText className="w-4 h-4" />
                           </div>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                            Chuẩn DigComp
+                            Chuẩn hóa 5 miền
                           </span>
                         </div>
 
@@ -925,5 +974,19 @@ export default function CreateLiveRoomWizardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CreateLiveRoomWizardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-24 text-center text-xs text-slate-500">
+          Đang nạp trình khởi tạo phòng thi...
+        </div>
+      }
+    >
+      <CreateLiveRoomWizardContent />
+    </Suspense>
   );
 }

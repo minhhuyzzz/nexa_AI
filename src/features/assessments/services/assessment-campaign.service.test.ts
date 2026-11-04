@@ -168,7 +168,7 @@ describe('Assessment Campaigns & Org Grading Lifecycle (DEC-07, HITL, SEC-02, SE
           return { insert: mockCampaignInsert };
         }
         if (table === 'class_assignments') {
-          return { upsert: mockAssignmentUpsert };
+          return { insert: mockAssignmentUpsert, upsert: mockAssignmentUpsert };
         }
         return {};
       }),

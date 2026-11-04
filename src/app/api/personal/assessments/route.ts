@@ -11,6 +11,7 @@ const createAssessmentSchema = z.object({
   duration_minutes: z.number().int().min(5).max(360).optional().default(45),
   passing_score: z.number().min(1).max(100).optional().default(70),
   domain_codes: z.array(z.string()).optional().default(['01']),
+  organization_id: z.string().uuid().nullable().optional(),
 });
 
 export async function GET() {
@@ -151,7 +152,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { title, description, duration_minutes, passing_score } = parsed.data;
+    const { title, description, duration_minutes, passing_score, organization_id } = parsed.data;
 
     // 1. Primary insert using authenticated client (adheres to RLS & security rules)
     let createdRecord = null;
@@ -167,6 +168,7 @@ export async function POST(req: Request) {
         is_published: false,
         created_by: user.id,
         owner_user_id: user.id,
+        organization_id: organization_id || null,
       })
       .select()
       .single();
@@ -189,6 +191,7 @@ export async function POST(req: Request) {
             is_published: false,
             created_by: user.id,
             owner_user_id: user.id,
+            organization_id: organization_id || null,
           })
           .select()
           .single();

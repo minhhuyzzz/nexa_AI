@@ -1143,7 +1143,7 @@ export function AssessmentStudio({
                 {/* 1. Auto-Aggregated DigComp Domain Tags */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
-                    <span>Miền năng lực DigComp 3.0:</span>
+                    <span>Miền năng lực số:</span>
                     <span className="font-mono text-[11px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                       {Array.from(new Set(questions.map((q) => q.domain || 1))).length}/5 Miền
                     </span>
@@ -1342,7 +1342,7 @@ export function AssessmentStudio({
 
                 <div>
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Miền năng lực DigComp của câu:
+                    Miền năng lực của câu:
                   </label>
                   <select
                     value={currentQuestion.domain || 1}

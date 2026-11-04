@@ -20,6 +20,7 @@ import {
   Award,
   MessageSquare,
   CreditCard,
+  Radio,
 } from 'lucide-react';
 
 interface OrgSidebarProps {
@@ -92,6 +93,11 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
           name: 'Bàn chấm bài',
           href: `/org/${orgSlug}/grading`,
           icon: CheckSquare,
+        },
+        {
+          name: 'Phòng thi trực tiếp',
+          href: `/org/${orgSlug}/live-room`,
+          icon: Radio,
         },
         {
           name: 'Báo cáo năng lực',

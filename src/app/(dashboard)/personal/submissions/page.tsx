@@ -170,7 +170,7 @@ function LearnerSubmissionsContent() {
         const items = asm?.assessment_items || [];
         const firstItem = items[0];
 
-        const existingSub = subByAssignmentId.get(ca.id) || subByAssessmentId.get(ca.assessment_id);
+        const existingSub = subByAssignmentId.get(ca.id);
 
         const isGraded =
           existingSub &&
@@ -245,7 +245,13 @@ function LearnerSubmissionsContent() {
           submittedAtFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
         }
 
-        const evaluatorNickname = cls?.profiles?.nickname || 'Giảng viên phụ trách';
+        const evaluatorNickname = orgInfo?.name || cls?.profiles?.nickname || 'Người phụ trách lớp';
+        const passingThreshold = Number(asm?.passing_score) || 70;
+        const isPassed = existingSub?.is_passed !== null && existingSub?.is_passed !== undefined
+          ? existingSub.is_passed
+          : (existingSub?.total_score !== null && existingSub?.total_score !== undefined
+            ? Number(existingSub.total_score) >= passingThreshold
+            : undefined);
 
         return {
           id: ca.id,
@@ -262,9 +268,9 @@ function LearnerSubmissionsContent() {
             'Nộp đúng định dạng được chấp nhận (PDF, DOCX, XLSX, ZIP) trước thời hạn quy định.',
           ],
           rubric: [
-            { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 4, awardedPoints: isGraded ? 3.5 : undefined },
-            { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
-            { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
+            { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 40, awardedPoints: isGraded && existingSub?.total_score !== null && existingSub?.total_score !== undefined ? Math.round(Number(existingSub.total_score) * 0.4) : undefined },
+            { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 30, awardedPoints: isGraded && existingSub?.total_score !== null && existingSub?.total_score !== undefined ? Math.round(Number(existingSub.total_score) * 0.3) : undefined },
+            { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 30, awardedPoints: isGraded && existingSub?.total_score !== null && existingSub?.total_score !== undefined ? Math.round(Number(existingSub.total_score) * 0.3) : undefined },
           ],
           attachments: [],
           deadline: ca.deadline || undefined,
@@ -279,10 +285,10 @@ function LearnerSubmissionsContent() {
           submittedFile,
           studentNote,
           officialScore: existingSub?.total_score,
-          maxScore: existingSub?.max_score || 10,
+          maxScore: 100,
           evaluatorFeedback: existingSub?.evaluator_notes,
-          evaluatorGradedAt: isGraded ? (submittedAtFormatted || '31/10/2026') : undefined,
-          isPassed: existingSub?.total_score ? existingSub.total_score >= 7.0 : undefined,
+          evaluatorGradedAt: isGraded ? (existingSub?.evaluated_at ? new Date(existingSub.evaluated_at).toLocaleDateString('vi-VN') : submittedAtFormatted) : undefined,
+          isPassed,
           organizationId: cls?.organization_id || null,
           organizationName: orgInfo?.name || null,
           sourceType: 'CLASS_ASSIGNMENT',
@@ -301,7 +307,7 @@ function LearnerSubmissionsContent() {
         const items = asm?.assessment_items || [];
         const firstItem = items[0];
 
-        const existingSub = subByCampaignId.get(camp.id) || subByAssessmentId.get(asm?.id);
+        const existingSub = subByCampaignId.get(camp.id);
 
         const isGraded =
           existingSub &&
@@ -354,6 +360,13 @@ function LearnerSubmissionsContent() {
           submittedAtFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
         }
 
+        const passingThreshold = Number(asm?.passing_score) || 70;
+        const isPassed = existingSub?.is_passed !== null && existingSub?.is_passed !== undefined
+          ? existingSub.is_passed
+          : (existingSub?.total_score !== null && existingSub?.total_score !== undefined
+            ? Number(existingSub.total_score) >= passingThreshold
+            : undefined);
+
         return {
           id: `camp_${camp.id}`,
           assessmentId: asm?.id || camp.id,
@@ -368,9 +381,9 @@ function LearnerSubmissionsContent() {
             'Bài nộp sẽ được lưu trữ và báo cáo kết quả về tổ chức.',
           ],
           rubric: [
-            { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 4, awardedPoints: isGraded ? 3.5 : undefined },
-            { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
-            { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 3, awardedPoints: isGraded ? 2.5 : undefined },
+            { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 40, awardedPoints: isGraded && existingSub?.total_score !== null && existingSub?.total_score !== undefined ? Math.round(Number(existingSub.total_score) * 0.4) : undefined },
+            { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 30, awardedPoints: isGraded && existingSub?.total_score !== null && existingSub?.total_score !== undefined ? Math.round(Number(existingSub.total_score) * 0.3) : undefined },
+            { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 30, awardedPoints: isGraded && existingSub?.total_score !== null && existingSub?.total_score !== undefined ? Math.round(Number(existingSub.total_score) * 0.3) : undefined },
           ],
           attachments: [],
           deadline: camp.ends_at || undefined,
@@ -383,10 +396,10 @@ function LearnerSubmissionsContent() {
           submittedAtFormatted,
           submittedVersion: 1,
           officialScore: existingSub?.total_score,
-          maxScore: existingSub?.max_score || 10,
+          maxScore: 100,
           evaluatorFeedback: existingSub?.evaluator_notes,
-          evaluatorGradedAt: isGraded ? (submittedAtFormatted || 'Hôm nay') : undefined,
-          isPassed: existingSub?.total_score ? existingSub.total_score >= 7.0 : undefined,
+          evaluatorGradedAt: isGraded ? (existingSub?.evaluated_at ? new Date(existingSub.evaluated_at).toLocaleDateString('vi-VN') : submittedAtFormatted) : undefined,
+          isPassed,
           organizationId: camp.organization_id,
           organizationName: org?.name || null,
           sourceType: 'CAMPAIGN',

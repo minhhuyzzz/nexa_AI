@@ -62,8 +62,8 @@ const plans: Plan[] = [
         tooltip: 'Làm bài kiểm tra nhận thức và tư duy số cơ bản, chấm tức thì trong 0.01 giây.',
       },
       {
-        text: 'Đề thi chuyên sâu nâng cao: Bị khóa',
-        tooltip: 'Các bài thi tình huống, prompt AI và thực hành nộp tệp yêu cầu nâng cấp gói.',
+        text: 'Tạo tối đa 15 đề thi cá nhân',
+        tooltip: 'Soạn đề kiểm tra trắc nghiệm hoặc bài tập tình huống cho nhóm học tập.',
       },
       {
         text: '10 AI credits phân tích năng lực mỗi tháng',
@@ -74,18 +74,18 @@ const plans: Plan[] = [
         tooltip: 'Gửi đề bài mới vào kho cộng đồng để tích lũy điểm thưởng đua top bảng xếp hạng.',
       },
       {
-        text: 'Chứng chỉ',
+        text: 'Chứng nhận số hoàn thành bài thi (Mã QR tra cứu)',
         tooltip: 'Chứng nhận hoàn thành bài đánh giá có mã QR tra cứu trực tuyến.',
       },
     ],
     evaluatorFeatures: [
       {
-        text: '1 nhóm lớp tối đa 15 học viên',
+        text: 'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
         tooltip: 'Học viên tham gia qua liên kết mời, mã nhóm hoặc quét mã QR.',
       },
       {
-        text: '1 phòng thi trực tiếp mã PIN',
-        tooltip: 'Mở 1 phòng thi thời gian thực cho học viên làm bài tập trung.',
+        text: '3 phòng thi trực tiếp mã PIN (50 thí sinh/phòng)',
+        tooltip: 'Mở 3 phòng thi thời gian thực cho học viên làm bài tập trung.',
       },
       {
         text: 'Bàn chấm điểm thủ công',
@@ -121,7 +121,7 @@ const plans: Plan[] = [
         tooltip: 'AI phân tích chi tiết tư duy làm bài, chỉ rõ lỗi sai và cá nhân hóa lộ trình tối ưu.',
       },
       {
-        text: 'Chứng chỉ',
+        text: 'Chứng chỉ số nâng cao (Xác thực 2 chiều SHA-256)',
         tooltip: 'Chứng chỉ chuẩn nét cao bảo toàn chữ ký số vĩnh viễn, phù hợp đính kèm hồ sơ xin việc.',
       },
       {
@@ -131,12 +131,16 @@ const plans: Plan[] = [
     ],
     evaluatorFeatures: [
       {
-        text: 'Không giới hạn số lớp và học viên',
+        text: 'Không giới hạn số đề thi & ngân hàng câu hỏi',
+        tooltip: 'Thoải mái tạo đề thi cá nhân không bị giới hạn số lượng.',
+      },
+      {
+        text: 'Không giới hạn số lớp (tối đa 1.000 học viên/nhóm)',
         tooltip: 'Thoải mái tạo nhóm lớp cho toàn bộ các khóa đào tạo mà không lo đầy sĩ số.',
       },
       {
-        text: 'Không giới hạn phòng thi trực tiếp',
-        tooltip: 'Mở phòng thi bất cứ lúc nào với số lượng thí sinh đồng thời không giới hạn.',
+        text: 'Mở tới 20 phòng thi trực tiếp mã PIN (500 người/phòng)',
+        tooltip: 'Mở phòng thi bất cứ lúc nào với số lượng thí sinh đồng thời lớn.',
       },
       {
         text: 'Bàn chấm Split-view chuyên nghiệp',
@@ -284,61 +288,88 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* 4 Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch mb-20">
+        {/* 3-Column Centered Cards Grid */}
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch mb-20">
           {plans.map((plan) => {
             const discount = getDiscountPercent(plan);
+            const isPro = plan.isPopular;
+            const isBusiness = plan.id === 'business';
 
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-xl bg-white border flex flex-col justify-between transition-all duration-200 ${
-                  plan.isPopular
-                    ? 'border-sky-600 shadow-md ring-1 ring-sky-600/30'
+                className={`relative rounded-3xl bg-white border flex flex-col justify-between transition-all duration-200 ${
+                  isPro
+                    ? 'border-2 border-blue-600 shadow-xl ring-1 ring-blue-600/20 lg:-translate-y-2'
                     : 'border-slate-200 hover:border-slate-300 shadow-xs'
                 }`}
               >
                 {/* Popular Pill */}
-                {plan.isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-sky-600 text-white text-[11px] font-bold tracking-wide shadow-xs flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-sky-200" />
+                {isPro && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                    <Sparkles className="w-3.5 h-3.5 fill-current text-blue-200" />
                     <span>KHUYÊN DÙNG NHẤT</span>
                   </div>
                 )}
 
-                <div className="p-6">
+                <div className="p-7 sm:p-8">
                   {/* Card Header */}
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    <span className={`text-[11px] font-extrabold uppercase tracking-wider ${
+                      isPro ? 'text-blue-600' : 'text-slate-500'
+                    }`}>
                       {plan.badge}
                     </span>
 
                     {frequency === 'yearly' && discount && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
                         Giảm {discount}%
                       </span>
                     )}
                   </div>
 
-                  <h2 className="text-xl font-bold text-slate-900 mb-1.5">{plan.name}</h2>
-                  <p className="text-xs text-slate-500 leading-relaxed min-h-[2.5rem] mb-5">
+                  <h2 className="text-2xl font-black text-slate-900 mb-1.5">{plan.name}</h2>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed min-h-[2.5rem] mb-5">
                     {plan.info}
                   </p>
 
                   {/* Pricing Display */}
                   <div className="pb-5 mb-5 border-b border-slate-100">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                        {formatPrice(plan)}
-                      </span>
-                      <span className="text-xs font-medium text-slate-500">
-                        {getBillingPeriod(plan)}
-                      </span>
-                    </div>
-
-                    {frequency === 'yearly' && plan.price.yearly > 0 && (
-                      <div className="text-[11px] text-slate-500 mt-1 font-medium">
-                        Thu {plan.price.yearly.toLocaleString('vi-VN')} đ / năm
+                    {isBusiness ? (
+                      <div className="space-y-1">
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                          Liên hệ
+                        </div>
+                        <div className="text-xs font-medium text-slate-500">
+                          Báo giá linh hoạt theo quy mô triển khai
+                        </div>
+                      </div>
+                    ) : plan.price.monthly === 0 ? (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono tabular-nums">
+                          0đ
+                        </span>
+                        <span className="text-xs font-semibold text-slate-500">
+                          / vĩnh viễn
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono tabular-nums">
+                            {frequency === 'monthly'
+                              ? `${plan.price.monthly.toLocaleString('vi-VN')} đ`
+                              : `${Math.round(plan.price.yearly / 12).toLocaleString('vi-VN')} đ`}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-500">
+                            / tháng
+                          </span>
+                        </div>
+                        {frequency === 'yearly' && (
+                          <div className="text-[11px] font-medium text-emerald-600">
+                            Thanh toán {plan.price.yearly.toLocaleString('vi-VN')} đ / năm
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -427,27 +458,27 @@ export default function PricingPage() {
                 </div>
 
                 {/* Card Action Button */}
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
+                <div className="p-6 pt-0">
                   {plan.id === 'business' || plan.id === 'enterprise' ? (
                     <button
                       type="button"
                       onClick={() => setShowEnterpriseModal(true)}
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs bg-slate-900 hover:bg-slate-800 text-white cursor-pointer active:scale-[0.98]"
                     >
                       <span>{plan.btn.text}</span>
-                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
                     </button>
                   ) : (
                     <Link
                       href={plan.btn.href}
-                      className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors shadow-xs ${
+                      className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-[0.98] ${
                         plan.isPopular
-                          ? 'bg-sky-600 text-white hover:bg-sky-700'
-                          : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-200'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                       }`}
                     >
                       <span>{plan.btn.text}</span>
-                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
                     </Link>
                   )}
                 </div>
@@ -521,10 +552,10 @@ export default function PricingPage() {
                   <td className="py-3 px-3 text-slate-800 font-semibold">Có chuyên sâu</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-medium text-slate-900">Chứng chỉ</td>
-                  <td className="py-3 px-3 text-slate-600">Chứng chỉ</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Chứng chỉ</td>
-                  <td className="py-3 px-3 text-slate-900 font-bold">Chứng chỉ đồng thương hiệu</td>
+                  <td className="py-3 px-4 font-medium text-slate-900">Chứng nhận năng lực số</td>
+                  <td className="py-3 px-3 text-slate-600">Chứng nhận hoàn thành (QR)</td>
+                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Chứng chỉ Pro (SHA-256)</td>
+                  <td className="py-3 px-3 text-slate-900 font-bold">Chứng chỉ đồng thương hiệu riêng</td>
                 </tr>
 
                 {/* Section Header: Evaluator */}

@@ -141,7 +141,7 @@ export default function RegisterPage() {
       <div>
         <h2 className="text-xl font-bold text-slate-900 tracking-tight">Tạo tài khoản cá nhân</h2>
         <p className="text-xs text-slate-500 mt-1">
-          Học tập, đánh giá năng lực số DigComp và khởi tạo bài thi trên NEXA AI.
+          Học tập, đánh giá năng lực số toàn diện và khởi tạo bài thi trên NEXA AI.
         </p>
       </div>
 

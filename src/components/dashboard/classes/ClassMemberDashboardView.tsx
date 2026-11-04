@@ -98,9 +98,6 @@ export function ClassMemberDashboardView({
               <h3 className="text-xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
                 {nextAssignment.assessments?.title || 'Bài đánh giá năng lực số'}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                Bài kiểm tra chuẩn hóa được giảng viên giao cho lớp. Hãy chuẩn bị kỹ năng trước khi bắt đầu.
-              </p>
             </div>
 
             <div className="flex items-center gap-6 text-xs text-slate-500 dark:text-neutral-400 flex-wrap font-mono">

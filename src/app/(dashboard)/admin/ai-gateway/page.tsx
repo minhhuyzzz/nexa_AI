@@ -79,18 +79,9 @@ export default function AdminAiGatewayPage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-              AI INFRASTRUCTURE &amp; COST ACCOUNTING
-            </span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Quản trị AI Gateway &amp; Hạch toán Chi phí
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Giám sát lưu lượng đa mô hình, định mức tiêu thụ Token thực tế, độ trễ phản hồi và chi phí vận hành thương mại.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -287,7 +278,7 @@ export default function AdminAiGatewayPage() {
                     : feat === 'COMPETENCY_ANALYSIS' || feat === 'analyze-competency'
                     ? 'Phân tích năng lực & Đề xuất lộ trình'
                     : feat === 'TUTOR_CHAT' || feat === 'tutor-chat'
-                    ? 'Trợ lý gia sư AI DigComp'
+                    ? 'Trợ lý cố vấn học tập AI'
                     : feat;
 
                 return (

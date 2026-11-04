@@ -315,7 +315,7 @@ export function MasterCertificateCard({
               <p className="text-[11px] sm:text-xs lg:text-[13px] text-slate-600 leading-relaxed max-w-xl mx-auto pt-1 font-sans">
                 Ghi nhận học viên đã xuất sắc hoàn thành chuẩn năng lực cao nhất{' '}
                 <strong className="text-slate-900 font-semibold">Level 4: Highly Advanced</strong>{' '}
-                thuộc Khung Tham chiếu Năng lực Số Quốc tế DigComp 3.0 &amp; Nghị định 13/2023/NĐ-CP,
+                thuộc Khung Đánh giá 5 Miền Năng lực Số Chuẩn hóa &amp; Nghị định 13/2023/NĐ-CP,
                 thể hiện tư duy chiến lược số, làm chủ AI và an toàn thông tin chuyên sâu.
               </p>
 

@@ -89,18 +89,9 @@ export default function AdminCompliancePage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-              SECURITY AUDIT &amp; REGULATORY COMPLIANCE
-            </span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Tuân Thủ NĐ 13/2023 &amp; Giám Sát Liêm Chính Khảo Thí
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Kiểm toán việc lưu trữ đồng thuận bảo vệ dữ liệu cá nhân (PDPA) và truy vết sự kiện an toàn phòng thi trực tiếp.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

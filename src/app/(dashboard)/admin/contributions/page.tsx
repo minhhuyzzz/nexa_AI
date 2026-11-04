@@ -180,12 +180,6 @@ export default function AdminContributionsPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-              COMMUNITY CONTENT MODERATION
-            </span>
-          </div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Thẩm Định Đề Thi Đóng Góp Từ Cộng Đồng
@@ -194,9 +188,6 @@ export default function AdminContributionsPage() {
               Chờ thẩm định: <strong className="font-semibold text-amber-900">{countPending}</strong> đề bài
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Rà soát đề bài và tệp minh chứng do người học đề xuất trên CSDL trung tâm. Phê duyệt để tự động đưa vào Ngân hàng câu hỏi và cộng +100 điểm thưởng.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NexaLogo } from '@/components/brand/NexaLogo';
@@ -20,6 +20,7 @@ import {
   Radio,
   Share2,
   Trophy,
+  FileCheck,
 } from 'lucide-react';
 
 const learningNavItems = [
@@ -45,6 +46,29 @@ export function PersonalSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [canGrade, setCanGrade] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/personal/evaluator-check')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.canGrade) {
+          setCanGrade(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const dynamicWorkNavItems = [
+    ...workNavItems,
+    ...(canGrade
+      ? [{ name: 'Bài cần chấm', href: '/personal/grading', icon: FileCheck }]
+      : []),
+  ];
 
   const isRouteActive = (href: string) => {
     if (href === '/personal/dashboard' || href === '/dashboard') {
@@ -133,7 +157,7 @@ export function PersonalSidebar() {
                 </div>
               )}
               <div className="space-y-0.5">
-                {workNavItems.map((item) => {
+                {dynamicWorkNavItems.map((item) => {
                   const active = isRouteActive(item.href);
                   const Icon = item.icon;
                   return (

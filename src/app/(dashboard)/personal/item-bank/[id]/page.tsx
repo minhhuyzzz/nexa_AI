@@ -380,7 +380,7 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
 
             {/* Domain */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700 dark:text-zinc-300">Miền năng lực DigComp</label>
+              <label className="font-semibold text-slate-700 dark:text-zinc-300">Miền năng lực số</label>
               <select
                 value={domainId}
                 onChange={(e) => setDomainId(e.target.value)}

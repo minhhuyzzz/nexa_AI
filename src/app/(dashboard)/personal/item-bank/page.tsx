@@ -159,7 +159,7 @@ export default function EvaluatorItemBankPage() {
             code: item.code || (comp?.skill_code ? `D${comp.skill_code}-${item.type}-${idx + 1}` : `QB-${item.id.slice(0, 6)}`),
             domain: domain?.title || 'Thông tin & Dữ liệu số',
             skill: comp ? `${comp.skill_code} ${comp.title}` : 'Kỹ năng số tổng hợp',
-            level: item.difficulty_level || 'DigComp 3.0',
+            level: item.difficulty_level || 'Tiêu chuẩn',
             type: item.type || 'MCQ',
             prompt: item.prompt,
             rubricWeight: Number(item.default_points) || 10,

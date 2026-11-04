@@ -7,6 +7,8 @@ const createRoomSchema = z.object({
   title: z.string().min(3, 'Tên phòng thi tối thiểu 3 ký tự'),
   assessmentId: z.string().uuid('Mã đề thi không hợp lệ'),
   roomMode: z.enum(['OPEN', 'GROUP_ONLY']).default('OPEN'),
+  classId: z.string().uuid().nullable().optional(),
+  organizationId: z.string().uuid().nullable().optional(),
   themeId: z.enum(['minimal_white', 'space_blue', 'aurora', 'dark_professional']).default('minimal_white'),
   scheduledStart: z.string().nullable().optional(),
   durationMinutes: z.number().int().positive().optional(),
@@ -42,9 +44,10 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get('status');
-    const themeFilter = searchParams.get('theme');
+    const classIdFilter = searchParams.get('classId');
+    const orgIdFilter = searchParams.get('organizationId');
 
-    // 2. Fetch rooms created by this evaluator
+    // 2. Fetch rooms created by this evaluator or belonging to org
     let query = supabase
       .from('exam_rooms')
       .select(`
@@ -70,6 +73,8 @@ export async function GET(request: Request) {
         started_at,
         ended_at,
         created_at,
+        class_id,
+        organization_id,
         assessments (
           id,
           title,
@@ -87,14 +92,20 @@ export async function GET(request: Request) {
           joined_at
         )
       `)
-      .eq('created_by', user.id)
       .order('created_at', { ascending: false });
+
+    if (orgIdFilter) {
+      query = query.eq('organization_id', orgIdFilter);
+    } else {
+      query = query.eq('created_by', user.id);
+    }
+
+    if (classIdFilter) {
+      query = query.eq('class_id', classIdFilter);
+    }
 
     if (statusFilter && statusFilter !== 'ALL') {
       query = query.eq('status', statusFilter);
-    }
-    if (themeFilter && themeFilter !== 'ALL') {
-      query = query.eq('theme_id', themeFilter);
     }
 
     const { data: rooms, error } = await query;
@@ -180,6 +191,8 @@ export async function POST(request: Request) {
       title,
       assessmentId,
       roomMode,
+      classId,
+      organizationId,
       themeId,
       scheduledStart,
       allowLateJoin,
@@ -246,7 +259,9 @@ export async function POST(request: Request) {
         assessment_id: assessmentId,
         created_by: user.id,
         owner_user_id: user.id,
-        visibility: 'PERSONAL',
+        class_id: classId || null,
+        organization_id: organizationId || null,
+        visibility: organizationId ? 'ORGANIZATION' : 'PERSONAL',
         title,
         room_mode: roomMode,
         theme_id: themeId,

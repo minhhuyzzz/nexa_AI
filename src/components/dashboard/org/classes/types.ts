@@ -18,6 +18,9 @@ export interface OrgClassItem {
     allowJoinCode?: boolean;
     isActiveListed?: boolean;
     createResourceFolder?: boolean;
+    allowMemberPost?: boolean;
+    allowMemberUpload?: boolean;
+    [key: string]: any;
   };
   createdAt: string;
   membersCount: number;

@@ -1219,7 +1219,7 @@ function LearnerProfileContent() {
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                        Chứng chỉ Khung Năng Lực Số DigComp 3.0 — {cred.level || 'Level 4'}
+                        Chứng chỉ 5 Miền Năng Lực Số Chuẩn Hóa — {cred.level || 'Level 4'}
                       </h3>
                       <div className="flex items-center gap-2 mt-1 text-[11px] font-mono text-slate-500 dark:text-zinc-400">
                         <span>Mã: {cred.credential_id}</span>
@@ -1261,7 +1261,7 @@ function LearnerProfileContent() {
                 Chưa sở hữu chứng chỉ số
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mb-4 leading-relaxed">
-                Chứng chỉ Khung Năng Lực Số DigComp sẽ được cấp khi bạn hoàn thành chuẩn đạt các bài khảo thí hoặc đạt điểm tích lũy cấp độ cao.
+                Chứng chỉ Năng Lực Số sẽ được cấp khi bạn hoàn thành chuẩn đạt các bài khảo thí hoặc đạt điểm tích lũy cấp độ cao.
               </p>
               <Link
                 href="/personal/assessments"

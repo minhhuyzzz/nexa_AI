@@ -16,7 +16,7 @@ export default async function OrgClassDetailPage({
   params: Promise<{ slug: string; classId: string }>;
 }) {
   const { slug, classId } = await params;
-  const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
+  const { organization: org, user } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
   const adminSupabase = createAdminClient();
 
   // 1. Fetch class record (scoped to organization, support UUID or class_code)
@@ -200,6 +200,7 @@ export default async function OrgClassDetailPage({
       assignments={assignments}
       orgCandidates={orgCandidates}
       availableAssessments={availableAssessments}
+      currentUserId={user.id}
       isManager={true}
     />
   );

@@ -51,10 +51,10 @@ export async function POST(
 
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
 
-    // Verify ownership
+    // Verify ownership or org role
     const { data: assessment, error: asmError } = await db
       .from('assessments')
-      .select('id, created_by, owner_user_id')
+      .select('id, created_by, owner_user_id, organization_id')
       .eq('id', id)
       .maybeSingle();
 
@@ -62,7 +62,22 @@ export async function POST(
       return NextResponse.json({ error: 'Không tìm thấy đề đánh giá' }, { status: 404 });
     }
 
-    if (assessment.created_by !== user.id && assessment.owner_user_id !== user.id) {
+    let hasAccess = assessment.created_by === user.id || assessment.owner_user_id === user.id;
+
+    if (!hasAccess && assessment.organization_id) {
+      const { data: member } = await db
+        .from('organization_members')
+        .select('role')
+        .eq('organization_id', assessment.organization_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (member && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(member.role)) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Bạn không có quyền chỉnh sửa đề này' }, { status: 403 });
     }
 

@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export const dynamic = 'force-dynamic';
 
 const submitJoinSchema = z.object({
-  fullName: z.string().trim().min(2, 'Họ và tên tối thiểu 2 ký tự').max(100),
+  fullName: z.string().trim().max(100).optional().default(''),
   studentId: z.string().trim().max(50).optional().default(''),
 });
 
@@ -39,6 +39,7 @@ export async function GET(
         organizations (
           id,
           name,
+          slug,
           code,
           type,
           status,
@@ -119,6 +120,7 @@ export async function GET(
       organization: {
         id: targetOrg.id,
         name: targetOrg.name,
+        slug: targetOrg.slug,
         code: targetOrg.code || targetOrg.slug || '',
         type: targetOrg.type || 'ENTERPRISE',
       },
@@ -145,12 +147,12 @@ export async function POST(
 
     if (authErr || !user) {
       return NextResponse.json(
-        { error: 'Vui lòng đăng nhập tài khoản NEXA để gửi yêu cầu gia nhập tổ chức.' },
+        { error: 'Vui lòng đăng nhập tài khoản NEXA để gia nhập tổ chức.' },
         { status: 401 }
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const validation = submitJoinSchema.safeParse(body);
 
     if (!validation.success) {
@@ -166,12 +168,28 @@ export async function POST(
     // 1. Verify join code or organization code
     const { data: codeRow, error: codeErr } = await adminSupabase
       .from('organization_join_codes')
-      .select('id, code, organization_id, max_uses, used_count, expires_at, is_revoked')
+      .select(`
+        id,
+        code,
+        organization_id,
+        max_uses,
+        used_count,
+        expires_at,
+        is_revoked,
+        organizations (
+          id,
+          name,
+          slug,
+          status,
+          is_active
+        )
+      `)
       .eq('code', cleanCode)
       .maybeSingle();
 
     let orgId: string;
     let joinCodeId: string | null = null;
+    let targetOrg: any = null;
 
     if (codeRow && !codeErr) {
       if (codeRow.is_revoked) {
@@ -188,8 +206,9 @@ export async function POST(
 
       orgId = codeRow.organization_id;
       joinCodeId = codeRow.id;
+      targetOrg = codeRow.organizations as any;
     } else {
-      // Fallback: check if cleanCode matches an active organization's code
+      // Fallback: check if cleanCode matches an active organization
       const { data: orgRow } = await adminSupabase
         .from('organizations')
         .select('id, name, code, slug, status, is_active')
@@ -202,6 +221,7 @@ export async function POST(
 
       orgId = orgRow.id;
       joinCodeId = null;
+      targetOrg = orgRow;
     }
 
     // 2. Check if user is already an active member
@@ -213,61 +233,75 @@ export async function POST(
       .maybeSingle();
 
     if (existingMember && existingMember.status === 'ACTIVE') {
-      return NextResponse.json(
-        { error: 'Bạn đã là thành viên chính thức của tổ chức này.' },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: true,
+        alreadyMember: true,
+        message: 'Bạn đã là thành viên chính thức của tổ chức này.',
+        organizationSlug: targetOrg.slug,
+        organizationName: targetOrg.name,
+      });
     }
 
-    // 3. Check if user already submitted a request
-    const { data: existingRequest } = await adminSupabase
-      .from('organization_membership_requests')
-      .select('id, status')
-      .eq('organization_id', orgId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // 3. DIRECT JOIN: Activate user immediately as an organization member (No waiting queue!)
+    const { data: memberRow, error: memberErr } = await adminSupabase
+      .from('user_organizations')
+      .upsert(
+        {
+          organization_id: orgId,
+          user_id: user.id,
+          org_role: 'MEMBER',
+          status: 'ACTIVE',
+        },
+        { onConflict: 'user_id,organization_id' }
+      )
+      .select()
+      .single();
 
-    if (existingRequest) {
-      if (existingRequest.status === 'PENDING') {
-        return NextResponse.json(
-          { error: 'Yêu cầu tham gia của bạn đang chờ quản trị viên phê duyệt.' },
-          { status: 400 }
-        );
-      }
-      if (existingRequest.status === 'APPROVED') {
-        return NextResponse.json(
-          { error: 'Yêu cầu tham gia của bạn đã được phê duyệt trước đó.' },
-          { status: 400 }
-        );
-      }
+    if (memberErr) {
+      return NextResponse.json({ error: memberErr.message }, { status: 500 });
     }
 
-    // 4. Create membership request
-    const { data: requestRow, error: reqErr } = await adminSupabase
+    // 4. Increment join code usage count if joined via code
+    if (joinCodeId && codeRow) {
+      await adminSupabase
+        .from('organization_join_codes')
+        .update({ used_count: (codeRow.used_count || 0) + 1 })
+        .eq('id', joinCodeId);
+    }
+
+    // 5. Update user profile name if provided and not yet set
+    if (fullName && fullName.trim()) {
+      await adminSupabase
+        .from('profiles')
+        .update({ full_name: fullName.trim() })
+        .eq('id', user.id)
+        .is('full_name', null);
+    }
+
+    // 6. Record in membership requests table as APPROVED for audit history
+    await adminSupabase
       .from('organization_membership_requests')
       .upsert(
         {
           organization_id: orgId,
           user_id: user.id,
           join_code_id: joinCodeId,
-          full_name: fullName,
+          full_name: fullName || user.email || 'Thành viên',
           email: user.email || '',
           student_id: studentId || null,
-          status: 'PENDING',
+          status: 'APPROVED',
+          reviewed_at: new Date().toISOString(),
         },
         { onConflict: 'organization_id,user_id' }
-      )
-      .select()
-      .single();
-
-    if (reqErr) {
-      return NextResponse.json({ error: reqErr.message }, { status: 500 });
-    }
+      );
 
     return NextResponse.json({
       success: true,
-      message: 'Yêu cầu tham gia tổ chức đã được gửi thành công. Vui lòng chờ quản trị viên xét duyệt.',
-      request: requestRow,
+      message: `Chúc mừng bạn đã gia nhập thành công ${targetOrg.name}!`,
+      organizationSlug: targetOrg.slug,
+      organizationName: targetOrg.name,
+      member: memberRow,
+      request: { status: 'APPROVED' },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';

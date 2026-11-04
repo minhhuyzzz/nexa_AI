@@ -316,7 +316,7 @@ export function ClassMaterialsTab({ classId, role, currentUserId }: ClassMateria
                   <input
                     type="text"
                     required
-                    placeholder="VD: Hướng dẫn Khung Năng Lực Số DigComp 3.0"
+                    placeholder="VD: Hướng dẫn 5 Miền Năng Lực Số Chuẩn Hóa"
                     value={linkTitle}
                     onChange={(e) => setLinkTitle(e.target.value)}
                     className="w-full p-2 border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"

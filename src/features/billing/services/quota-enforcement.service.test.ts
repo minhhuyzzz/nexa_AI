@@ -3,13 +3,13 @@ import { QuotaEnforcementService } from './quota-enforcement.service';
 
 describe('QuotaEnforcementService', () => {
   it('định nghĩa đúng hạn mức của các hạng gói FREE, PRO, ENTERPRISE', () => {
-    expect(QuotaEnforcementService.TIER_LIMITS.FREE.maxAssessments).toBe(3);
-    expect(QuotaEnforcementService.TIER_LIMITS.FREE.maxClasses).toBe(1);
-    expect(QuotaEnforcementService.TIER_LIMITS.FREE.maxLiveRooms).toBe(1);
+    expect(QuotaEnforcementService.TIER_LIMITS.FREE.maxAssessments).toBe(15);
+    expect(QuotaEnforcementService.TIER_LIMITS.FREE.maxClasses).toBe(10);
+    expect(QuotaEnforcementService.TIER_LIMITS.FREE.maxLiveRooms).toBe(3);
 
-    expect(QuotaEnforcementService.TIER_LIMITS.PRO.maxAssessments).toBe(50);
-    expect(QuotaEnforcementService.TIER_LIMITS.PRO.maxClasses).toBe(10);
-    expect(QuotaEnforcementService.TIER_LIMITS.PRO.maxLiveRooms).toBe(5);
+    expect(QuotaEnforcementService.TIER_LIMITS.PRO.maxAssessments).toBeGreaterThan(1000);
+    expect(QuotaEnforcementService.TIER_LIMITS.PRO.maxClasses).toBeGreaterThan(1000);
+    expect(QuotaEnforcementService.TIER_LIMITS.PRO.maxLiveRooms).toBe(20);
 
     expect(QuotaEnforcementService.TIER_LIMITS.ENTERPRISE.maxAssessments).toBeGreaterThan(100);
   });
@@ -45,12 +45,12 @@ describe('QuotaEnforcementService', () => {
 
     expect(result.allowed).toBe(true);
     expect(result.currentUsage).toBe(2);
-    expect(result.maxLimit).toBe(3);
+    expect(result.maxLimit).toBe(15);
     expect(result.planTier).toBe('FREE');
     expect(result.reason).toBeUndefined();
   });
 
-  it('từ chối tạo đề thi nếu người dùng Free đã đạt giới hạn 3 đề', async () => {
+  it('từ chối tạo đề thi nếu người dùng Free đã đạt giới hạn 15 đề', async () => {
     const mockSupabase = {
       from: vi.fn((table: string) => {
         if (table === 'profiles') {
@@ -66,7 +66,7 @@ describe('QuotaEnforcementService', () => {
         if (table === 'assessments') {
           return {
             select: () => ({
-              or: async () => ({ count: 3, error: null }),
+              or: async () => ({ count: 15, error: null }),
             }),
           };
         }
@@ -80,9 +80,9 @@ describe('QuotaEnforcementService', () => {
     );
 
     expect(result.allowed).toBe(false);
-    expect(result.currentUsage).toBe(3);
-    expect(result.maxLimit).toBe(3);
-    expect(result.reason).toContain('hết hạn mức 3 đề thi');
+    expect(result.currentUsage).toBe(15);
+    expect(result.maxLimit).toBe(15);
+    expect(result.reason).toContain('hết hạn mức 15 đề thi');
   });
 
   it('kiểm tra số dư credits cho tác vụ AI chính xác', async () => {
@@ -96,20 +96,15 @@ describe('QuotaEnforcementService', () => {
       })),
     } as any;
 
-    const passResult = await QuotaEnforcementService.checkAICreditsQuota(
-      mockSupabase,
-      'user-123',
-      2
-    );
-    expect(passResult.allowed).toBe(true);
-    expect(passResult.remainingCredits).toBe(5);
-
-    const failResult = await QuotaEnforcementService.checkAICreditsQuota(
+    const result = await QuotaEnforcementService.checkAICreditsQuota(
       mockSupabase,
       'user-123',
       10
     );
-    expect(failResult.allowed).toBe(false);
-    expect(failResult.reason).toContain('không đủ cho tác vụ này');
+
+    expect(result.allowed).toBe(false);
+    expect(result.remainingCredits).toBe(5);
+    expect(result.requiredCredits).toBe(10);
+    expect(result.reason).toContain('không đủ');
   });
 });

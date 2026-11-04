@@ -11,6 +11,8 @@ import {
   Users,
   Settings,
   Share2,
+  Radio,
+  FileCheck,
 } from 'lucide-react';
 
 interface ClassHeaderProps {
@@ -27,10 +29,11 @@ interface ClassHeaderProps {
 }
 
 export function ClassHeader({
+  id,
   name,
   code,
   memberCount,
-  evaluatorName = 'Người quản lý',
+  evaluatorName = 'Quản trị viên',
   role,
   isChatOpen,
   onToggleChat,
@@ -78,7 +81,7 @@ export function ClassHeader({
               </span>
               {isOwner && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 font-mono">
-                  QUẢN LÝ
+                  QUẢN TRỊ VIÊN
                 </span>
               )}
             </div>
@@ -90,7 +93,7 @@ export function ClassHeader({
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-neutral-400 flex-wrap">
               <span className="font-mono">{memberCount} thành viên</span>
               <span>&bull;</span>
-              <span>Quản lý: <strong className="text-neutral-800 dark:text-zinc-200">{evaluatorName}</strong></span>
+              <span>Quản trị viên: <strong className="text-neutral-800 dark:text-zinc-200">{evaluatorName}</strong></span>
               <span>&bull;</span>
               <span>
                 Mã lớp: <strong className="font-mono text-neutral-900 dark:text-neutral-100">{code}</strong>
@@ -120,6 +123,30 @@ export function ClassHeader({
               </>
             )}
           </button>
+
+          {/* Live Room action button */}
+          {isOwner && (
+            <Link
+              href={`/personal/live-room/new?classId=${id}`}
+              className="px-3.5 py-2 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-2xs"
+              title="Mở phòng thi thời gian thực cho lớp này"
+            >
+              <Radio className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Thi trực tiếp</span>
+            </Link>
+          )}
+
+          {/* Grading workbench button */}
+          {isOwner && (
+            <Link
+              href={`/personal/grading?groupId=${id}`}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Chấm bài cho lớp này"
+            >
+              <FileCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Chấm bài</span>
+            </Link>
+          )}
 
           {/* Toggle Chat Drawer Button */}
           <button

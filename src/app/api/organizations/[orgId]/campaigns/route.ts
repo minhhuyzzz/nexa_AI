@@ -182,16 +182,16 @@ export async function POST(
       return NextResponse.json({ error: campErr?.message || 'Không thể tạo đợt đánh giá' }, { status: 500 });
     }
 
-    // SEC-03 6. Atomic assignment generation with rollback on failure
+    // 6. Generate distinct Assignment Instances linked to this campaign
     for (const cid of classIds) {
-      const { error: assignErr } = await adminSupabase.from('class_assignments').upsert(
-        {
-          class_id: cid,
-          assessment_id: assessmentId,
-          deadline: endTime.toISOString(),
-        },
-        { onConflict: 'class_id, assessment_id' }
-      );
+      const { error: assignErr } = await adminSupabase.from('class_assignments').insert({
+        class_id: cid,
+        assessment_id: assessmentId,
+        campaign_id: campaign.id,
+        deadline: endTime.toISOString(),
+        start_time: startTime.toISOString(),
+        status: 'PUBLISHED',
+      });
 
       if (assignErr) {
         // Rollback campaign to prevent dangling record

@@ -1,17 +1,17 @@
-# Graph Report - nexa  (2026-11-03)
+# Graph Report - nexa  (2026-11-04)
 
 ## Corpus Check
-- 954 files · ~1,628,693 words
+- 977 files · ~1,640,284 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 142 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
 ## Summary
-- 9231 nodes · 18047 edges · 518 communities (482 shown, 36 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 574 edges (avg confidence: 0.9)
+- 9037 nodes · 18089 edges · 473 communities (454 shown, 19 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 588 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b315a16f`
+- Built from commit: `09656e2d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,25 +19,25 @@
 - Taste Skill & Visual Design Tools
 - Taste Skill & Visual Design Tools
 - google-calendar/index.tsx
-- AssessmentStudio.tsx
+- Avatar
 - Organization Workspace & Teams
 - app/page.tsx
-- rubric.types.ts
-- NEXA_DASHBOARD_USE_CASE_ARCHITECTURE_REVIEW.md
+- contributions/route.ts
+- ĐẶC TẢ ĐÁNH GIÁ & TƯ DUY LẠI TOÀN DIỆN UI/UX 3 KHÔNG GIAN DASHBOARD — NEXA AI
 - Taste Skill & Visual Design Tools
-- admin.ts
+- requireOrgPagePermission
 - Taste Skill & Visual Design Tools
-- server.ts
-- Personal Workspace & Learner
+- next
+- createClient
 - requirePlatformAdmin
 - lucide-react
-- next
-- join-codes/route.ts
+- controls/index.tsx
+- feedback/route.ts
 - .agents/skills/impeccable/scripts/live-browser.js
 - .Github > Workflows > Ci.Yml
-- devDependencies
-- OrgAvatarMenu.tsx
-- jumps.mjs
+- package.json
+- ref_react
+- BÁO CÁO ĐÁNH GIÁ TOÀN DIỆN HỆ THỐNG NEXA AI (SYSTEM-WIDE AUDIT REVIEW)
 - Taste Skill & Visual Design Tools
 - .github/skills/impeccable/scripts/live-browser.js
 - learning-path/page.tsx
@@ -47,44 +47,44 @@
 - submissions/page.tsx
 - Taste Skill & Visual Design Tools
 - connectSSE
-- DomainAssessmentSummaryService
+- 2. DANH MỤC 8 MODULE CHỨC NĂNG CỐT LÕI
 - Taste Skill & Visual Design Tools
-- Application API Endpoints
+- ĐẶC TẢ THIẾT KẾ & LUỒNG NGHIỆP VỤ: PLATFORM ADMIN CONTROL PLANE
 - OrgMembersClientView.tsx
-- ref_node_fs
-- III. Review chi tiết Platform Admin (12 màn hình)
+- personal-phase2-learning-and-credentials.test.ts
+- 2. DANH MỤC 7 MODULE CHỨC NĂNG CỐT LÕI
 - Taste Skill & Visual Design Tools
-- createClient
+- zod
 - Personal Workspace & Learner
-- 5. Đặc tả Chi tiết từng Module (Module Specifications)
+- OrgClassDetailView.tsx
 - connectSSE
 - setLiveState
-- notion/index.tsx
+- SRS.md
 - setLiveState
 - el
 - .agents/skills/impeccable/scripts/modern-screenshot.umd.js
 - el
 - .github/skills/impeccable/scripts/modern-screenshot.umd.js
-- powerpoint/index.tsx
+- classes/types.ts
 - NEXA_AI_USE_CASE_REVIEW_TOAN_HE_THONG.md
 - ai-config.service.ts
 - Src > App > (Dashboard)
 - syncPageChatFocus
-- subscriptions/index.tsx
-- Bar
+- DEFAULT 3 × 3 PANEL SYSTEM
 - Stage
-- Src > Features > Competency
+- phone-touch/index.tsx
+- competency-radar/route.ts
 - Taste Skill & Visual Design Tools
 - syncPageChatFocus
 - .agents/skills/brandkit/SKILL.md
-- competency.types.ts
+- rubric.types.ts
 - taste-skill/skills/brandkit/SKILL.md
-- gemini.adapter.ts
+- onAnnotDown
 - Hardening Controls
-- OrgClassDetailView.tsx
+- [groupId]/page.tsx
 - csv-helper.ts
 - .agents/skills/impeccable/reference/new-work.md
-- Stage
+- kit/index.ts
 - 3. Lộ Trình 4 Đợt Triển Khai Chi Tiết
 - vitest
 - Taste Skill & Visual Design Tools
@@ -92,9 +92,9 @@
 - documentRefForElement
 - Src > App > (Dashboard)
 - documentRefForElement
-- hero-grid/index.tsx
+- HeroDemo.tsx
 - .agents/skills/impeccable/reference/live.md
-- phone-touch/index.tsx
+- gemini.adapter.ts
 - .github/skills/impeccable/reference/live.md
 - spotify/index.tsx
 - Src > App > Live
@@ -131,7 +131,7 @@
 - .github/skills/impeccable/reference/document.md
 - handleManualEditActivity
 - Documentation and ADRs
-- Framing
+- createAdminClient
 - .agents/skills/impeccable/reference/onboard.md
 - Incremental Implementation
 - .github/skills/impeccable/reference/onboard.md
@@ -139,7 +139,7 @@
 - Debugging and Error Recovery
 - High-Agency Frontend Skill
 - Agent Skills
-- Extract Flow
+- Chart
 - The Toolkit
 - Impeccable Asset Producer
 - The Toolkit
@@ -149,7 +149,7 @@
 - Design Audit
 - 4. Recipes
 - film-checks.mjs
-- ref_react
+- calendar/index.tsx
 - captureElementToBlob
 - createLiveBrowserDomHelpers
 - createLiveBrowserSessionState
@@ -157,7 +157,7 @@
 - Planning and Task Breakdown
 - Analysis & Synthesis Instructions
 - Analysis & Synthesis Instructions
-- phone-touch/index.tsx
+- subscriptions/index.tsx
 - Constraint-Driven Development
 - ReOrder: Keep Your Regulars Ordering Direct
 - Idea Refine
@@ -172,7 +172,7 @@
 - The run
 - SKILL: Industrial Brutalism & Tactical Telemetry UI
 - The run
-- Approach
+- OrgAnalyticsDashboard.tsx
 - actOnAgentTarget
 - Web Performance Auditor
 - Doubt-Driven Development
@@ -192,7 +192,7 @@
 - Using Agent Skills
 - Type
 - Generate Report
-- onAnnotDown
+- AssessmentStudio.tsx
 - Testing Patterns Reference (JavaScript/TypeScript)
 - CORE DIRECTIVE: AWWWARDS-LEVEL IMAGE ART DIRECTION
 - 2. THE COMBINATORIAL VARIATION ENGINE
@@ -211,17 +211,17 @@
 - Review Scope
 - Impeccable Asset Producer
 - Source-Driven Development
-- Type
-- NEXA AI — TÀI LIỆU ĐẶC TẢ HỆ THỐNG AI TOÀN DIỆN (SYSTEM SPECIFICATION)
+- competency.types.ts
+- VISUAL MODES
 - Review Framework
 - Refinement & Evaluation Criteria
 - .agents/skills/impeccable/reference/critique.md
 - Simplify the Design
 - Hardening Dimensions
 - Colour
-- Layout
+- excel/index.tsx
 - Colour
-- taste-skill/skills/taste-skill/scripts/lint.mjs
+- ref_node_path
 - 4. DESIGN ENGINEERING DIRECTIVES (Bias Correction)
 - 4. DESIGN ENGINEERING DIRECTIVES (Bias Correction)
 - .github/skills/impeccable/reference/critique.md
@@ -229,7 +229,7 @@
 - Hardening Dimensions
 - Approach
 - The Standing Checklist
-- slack/index.tsx
+- finder/index.tsx
 - .agents/skills/impeccable/reference/clarify.md
 - Nielsen's 10 Heuristics
 - Generate Combined Critique Report
@@ -239,8 +239,8 @@
 - Tells — the dated registry
 - film.mjs
 - Tells — the dated registry
-- dynamic-island/index.tsx
-- WorkspaceSwitcher.tsx
+- Phone
+- Layout
 - .github/skills/impeccable/reference/clarify.md
 - Nielsen's 10 Heuristics
 - .github/skills/impeccable/reference/polish.md
@@ -278,7 +278,7 @@
 - 18. EXTRA CREATIVITY & IMPLEMENTATION EDGE
 - Critique — judging the render
 - Stageshow
-- cursor-morph/index.tsx
+- admin-assessment-bank-client.tsx
 - Operate mode depth (and Read notes)
 - 1. Kiến Trúc & Quyết Định Then Chốt (Architecture Decisions - ADR)
 - Common Cognitive Load Violations
@@ -290,16 +290,16 @@
 - 8. ANTI-AI-SLOP RULES
 - Android platform
 - Persona-Based Design Testing
-- ParsedItemRow
+- raycast/index.tsx
 - Architectural Patterns
 - 12. THE COMBINATORIAL VARIATION ENGINE
 - 8. ANTI-AI-SLOP RULES
 - 9. AI TELLS (Forbidden Patterns)
 - 9. AI TELLS (Forbidden Patterns)
 - NEXA AI — Đặc tả Use Case theo 4 Actor & Rà soát CRUD
-- personal/assessments/page.tsx
-- 7. AI TELLS (Forbidden Patterns)
-- bulk-import/route.ts
+- join-codes/route.ts
+- BÁO CÁO TỔNG QUAN DỰ ÁN: NỀN TẢNG ĐÁNH GIÁ VÀ CHỨNG NHẬN PHÁT TRIỂN NĂNG LỰC SỐ DỰA TRÊN TRÍ TUỆ NHÂN TẠO (NEXA)
+- ParsedItemRow
 - Android platform
 - Persona-Based Design Testing
 - 1. Tổng Quan Kiến Trúc & Quyết Định Then Chốt (ADRs)
@@ -318,7 +318,7 @@
 - Reference Prompts
 - 33. CATEGORY-SPECIFIC BIAS
 - 13. COLOR & MATERIAL RULES
-- run_migration_04.js
+- Looks
 - scripts
 - tasteskill v2 (`design-taste-frontend`)
 - APPENDICES - Real Source-Backed Reference Material
@@ -329,8 +329,8 @@
 - 11. REDESIGN PROTOCOL
 - 3. DEFAULT ARCHITECTURE & CONVENTIONS
 - 6. PERFORMANCE & ACCESSIBILITY GUARDRAILS
-- compliance/page.tsx
-- BÁO CÁO TỔNG QUAN DỰ ÁN: NỀN TẢNG ĐÁNH GIÁ VÀ CHỨNG NHẬN PHÁT TRIỂN NĂNG LỰC SỐ DỰA TRÊN TRÍ TUỆ NHÂN TẠO (NEXA)
+- Type
+- powerpoint/index.tsx
 - Impeccable Finish Reviewer
 - Impeccable Manual Edit Applier
 - Generate Report
@@ -352,14 +352,14 @@
 - 5. IMAGE COUNT & PAGE SLICING
 - 4. HERO MINIMALISM RULES
 - Danh Sách Nhiệm Vụ Triển Khai (Todo List): NEXA vNext
-- calendar/index.tsx
-- Danh Sách Nhiệm Vụ: Đồng Bộ Assessment Authoring V2 & Tối Ưu Toàn Diện Organization Dashboard
+- Framing
+- ref_react
 - 5.2. Use case xuyên suốt bắt buộc cho Người học
 - contrasts.tsx
-- frameworks/page.tsx
+- linear/index.tsx
 - 21. MOBILE ANTI-AI-TELLS RULE
 - interface
-- excel/index.tsx
+- Verify
 - Region map
 - Ponytail
 - 7. Nguồn dẫn, dữ liệu và dấu vết kỹ thuật
@@ -373,7 +373,7 @@
 - 5. CONTEXT-AWARE PROACTIVITY
 - 8. DARK MODE PROTOCOL
 - ruled-bento/index.tsx
-- Danh Sách Công Việc Triển Khai (Todo List) — Nâng Cấp Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật
+- slack/index.tsx
 - PHẦN C — USE CASE DASHBOARD NGƯỜI ĐÁNH GIÁ
 - 33. DEFAULT SECTION PACKS
 - Impeccable Documenter
@@ -393,153 +393,108 @@
 - 3. Kiểm soát từ vựng và từ nối
 - References
 - Research
-- @google/genai
-- 2. PLATFORM MODE RULE
+- campaigns/route.ts
+- ai-config.service.ts
 - 37. EXAMPLE INTERPRETATIONS
-- 37. EXAMPLE INTERPRETATIONS
-- kit/index.ts
+- notion/index.tsx
+- campaigns/page.tsx
 - authoring/page.tsx
-- vitest
+- admin/organizations/page.tsx
 - 7. DIAL DEFINITIONS (Technical Reference)
 - 7. DIAL DEFINITIONS (Technical Reference)
 - stageshow/package.json
 - 15. DEFAULT SITE PACKS
 - Heuristics Scoring Guide
-- NEXA AI — Review Personal & Organization Business Dashboard
-- 6.2. Các phân hệ chức năng
+- 10. Ngân hàng đề NEXA và phân quyền nội dung
+- 11. Lộ trình học tập và hồ sơ năng lực
 - wikipedia/index.tsx
-- class-clash.mjs
+- 12. Lớp/nhóm, giao bài và phòng thi trực tiếp
 - .agents/skills/imagegen-frontend-web/SKILL.md
 - 20. EXAMPLE INTERPRETATIONS
-- organizations/page.tsx
+- [slug]/assessments/new/page.tsx
 - composition.tsx
-- typescript@^5.7.3
+- 13. Gói dịch vụ, Business và thanh toán
 - finder-glass/index.tsx
 - completed_phase0_to_7_plan.md
 - completed_phase0_to_7_todo.md
 - Diagnostic Scan
-- NEXA AI — Personal Dashboard: Review UX, kiến trúc sản phẩm và kế hoạch cải thiện
-- 14. Phát hiện kỹ thuật/bảo mật theo bằng chứng
+- 14. Báo cáo, AI và vận hành nền tảng
+- 1. Giới thiệu và mục tiêu
 - scenes.tsx
-- 7. Đặc tả Organization Workspace
-- NEXA AI — Review ngắn gọn cho Owner & Coding Agent
+- 4. Mô hình nghiệp vụ tổng thể
+- 9. Đánh giá, chấm điểm và công bố
 - staggered-bento/index.tsx
-- NEXA AI — Đặc tả mô hình sản phẩm Personal Workspace, Organization Workspace và Platform Admin
-- 7. Lộ trình và đề xuất khóa học — điểm khác biệt của NEXA
-- 12. Review từng trang Organization và hướng UI/UX
+- compliance/page.tsx
+- [slug]/assessments/page.tsx
+- 17. Yêu cầu giao diện và tích hợp
 - details.tsx
-- 12. Luồng nghiệp vụ quan trọng
-- 3. Nguyên tắc sản phẩm bất biến
-- 4. Các vấn đề Personal cần sửa
-- 16. Tiêu chí nghiệm thu bắt buộc
-- 2.1. Personal Workspace
-- 10. Quy tắc về tài nguyên, dữ liệu và quyền sở hữu
-- 15. Phạm vi triển khai theo giai đoạn
+- 2. Phạm vi sản phẩm
+- Observability Checklist
+- campaigns/new/page.tsx
+- backgrounds/index.tsx
+- Impeccable Documenter
+- .github/skills/impeccable/reference/doctor.md
+- run_migration_03.js
 - cursor.tsx
-- 17. Thứ tự triển khai đề xuất
-- Rehearse
+- [slug]/grading/page.tsx
+- contributions/page.tsx
 - relationships.tsx
-- Diagnostic Scan
+- personal/assessments/page.tsx
+- LOGO CONCEPT METHODS
 - Kế Hoạch Triển Khai: Nâng Cấp Toàn Diện Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật (P0 → P2)
-- 11. Quy tắc xác thực, phân quyền và bảo mật
-- 13. Yêu cầu giao diện và điều hướng
-- 14. Nguyên tắc chuyển đổi từ mô hình hiện tại
-- 9. Mô hình gói dịch vụ
-- 64. Bốn domain không được trộn
-- P0 — Sửa domain đang broken
-- 6. Mô hình Organization Business — từ liên hệ đến kích hoạt
-- 8. Mời thành viên: link, mã, CSV và phê duyệt
-- telegram/index.tsx
-- 16. Ma trận kiểm thử/tiêu chí nghiệm thu
-- domain-assessment-summary.service.ts
-- 5. Mô hình người dùng và quyền
-- 13. Phân biệt Radar / AI Analysis / Learning Path
-- 18. Ba khái niệm phải tách
-- 3. Personal Workspace
-- 55. Assessment Scope Model
-- 66. Đề xuất route mục tiêu
-- finder/index.tsx
-- 3. Sidebar / Information Architecture (IA)
-- 5. Trang Tổng quan: chuyển từ KPI tĩnh sang bảng điều khiển theo trạng thái
-- 8. AI trong Personal — 5 vị trí, 2 loại quyết định
-- HeroDemo.tsx
-- 11. Workflow lõi: Đợt đánh giá
+- 7. AI TELLS (Forbidden Patterns)
+- AIConfigService
+- PIIScrubberService
+- 12. Use Case phòng thi trực tiếp
+- Diagnostic Scan
+- .agents/skills/impeccable/reference/generate.md
+- Impeccable Documenter
+- Danh Sách Nhiệm Vụ: Rà Soát Toàn Diện Hệ Thống Theo Use Case & Tái Thiết Kế UI/UX Thành Viên
+- learning-paths/page.tsx
+- 2. PLATFORM MODE RULE
+- 37. EXAMPLE INTERPRETATIONS
+- users/page.tsx
+- Danh Sách Công Việc Triển Khai (Todo List) — Chuẩn Hóa 3 Dashboard & Toàn Vẹn Khảo Thí NEXA
+- billing/page.tsx
+- live-pin/waiting-room/page.tsx
 - choreography/index.tsx
-- 7. Personal và Organization liên quan thế nào
-- 35. `/personal/settings`
-- 44. Class Scope Model
-- 4. `/personal/dashboard`
-- 59. AI Gateway vs Settings
 - live-room.ts
-- 10. Result đang bị render hai lần
-- 12. `/personal/competency`
-- 14. `/personal/competency/analysis`
-- 16. Leaderboard
-- 19. Bug giữa Group List và Group Detail
-- 22. Turn-in hiện mới là UI simulation
-- 23. `/personal/credentials`
-- 25. Personal Authoring đang gọi Admin API
-- 26. `/personal/exams` là legacy
-- 27. `/personal/live-room`
-- 29. `/personal/live-pin`
-- 39. `/org/[slug]`
-- 43. Org Classes cũng bị workspace leak
-- 48. Admin Dashboard IA
-- 5. `/personal/assessments`
-- 76. User Journey mục tiêu
-- 7. `/personal/assessments/[id]`
-- 80. Kết luận
 - 16. Analytics và Audit Use Cases
 - boot
-- layout.mjs
 - .agents/skills/impeccable/SKILL.md
 - cursor-morph.tsx
-- 13. AI: chỉ Platform Admin điều khiển model
 - .github/skills/impeccable/reference/generate.md
 - compilerOptions
 - viewer.tsx
-- Visualize: Direction Comps & Asset Production
 - Operate mode depth (and Read notes)
-- dependencies
 - preview.tsx
-- Looks
 - Teaching pairs
-- Verify
-- .github/skills/impeccable/reference/doctor.md
 - edges.tsx
 - style.tsx
 - path
-- 3. Lộ Trình Triển Khai Theo Giai Đoạn (Phased Execution)
+- 4. Kế Hoạch Triển Khai Chi Tiết (Phân Kỳ Nhiệm Vụ)
 - ClockControl
 - NOTICE.md
 - Stageshow
 - Backgrounds and the whole picture
 - Bento
 - Choreography
-- RubricBuilder
 - scoring-and-radar.test.ts
-- scripts
 - Review
 - cursor-morph/README.md
 - products.md
-- Impeccable Documenter
-- Read
 - Operate
-- package.json
-- eslint.config.mjs
-- clsx
-- qrcode
 
 ## God Nodes (most connected - your core abstractions)
-1. `next` - 261 edges
-2. `createClient()` - 244 edges
-3. `createAdminClient()` - 205 edges
+1. `next` - 278 edges
+2. `createClient()` - 252 edges
+3. `createAdminClient()` - 225 edges
 4. `Stage()` - 204 edges
 5. `Bar()` - 118 edges
 6. `Window()` - 109 edges
-7. `Act` - 87 edges
-8. `Text()` - 82 edges
-9. `requirePlatformAdmin()` - 81 edges
+7. `requirePlatformAdmin()` - 97 edges
+8. `Act` - 87 edges
+9. `Text()` - 82 edges
 10. `filmChecksSource()` - 74 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -558,7 +513,7 @@
 - 2-file cycle: `.agents/skills/stageshow/teaching/composition.tsx -> .agents/skills/stageshow/teaching/contrasts.tsx -> .agents/skills/stageshow/teaching/composition.tsx`
 - 2-file cycle: `.agents/skills/stageshow/teaching/contrasts.tsx -> .agents/skills/stageshow/teaching/relationships.tsx -> .agents/skills/stageshow/teaching/contrasts.tsx`
 
-## Communities (518 total, 36 thin omitted)
+## Communities (473 total, 19 thin omitted)
 
 ### Community 0 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.07
@@ -569,64 +524,64 @@ Cohesion: 0.07
 Nodes (85): AIC_FIELDS, AIC_HEADERS, applyThumb(), ARCHIVE_LICENCE, args, argv, base(), clock() (+77 more)
 
 ### Community 2 - "google-calendar/index.tsx"
-Cohesion: 0.07
-Nodes (32): BrandMarks(), groups, names, Sheet(), clock(), clockFull(), EVENTS, FOUR (+24 more)
+Cohesion: 0.14
+Nodes (19): clock(), clockFull(), EVENTS, FOUR, GEO, GoogleCalendar(), Grid(), Header() (+11 more)
 
-### Community 3 - "AssessmentStudio.tsx"
-Cohesion: 0.11
-Nodes (23): AdminAssessmentBankClient(), AssessmentItemRecord, Props, AdminAssessmentDetailPage(), dynamic, metadata, AdminNewAssessmentPage(), metadata (+15 more)
+### Community 3 - "Avatar"
+Cohesion: 0.03
+Nodes (68): BrandMarks(), groups, names, Sheet(), DarkBento(), TRACKS, BUSY, Cell (+60 more)
 
 ### Community 4 - "Organization Workspace & Teams"
-Cohesion: 0.04
-Nodes (56): AccountSuspendedPage(), fetchSuspensionInfo(), ForgotPasswordPage(), LoginPage(), OnboardingPage(), loadInitialProfile(), RegisterPage(), AssessmentDetailPage() (+48 more)
+Cohesion: 0.05
+Nodes (48): AccountSuspendedPage(), fetchSuspensionInfo(), ForgotPasswordPage(), LoginPage(), OnboardingPage(), loadInitialProfile(), RegisterPage(), AssessmentDetailPage() (+40 more)
 
 ### Community 5 - "app/page.tsx"
-Cohesion: 0.07
-Nodes (39): AuthLayout(), FaqPage(), metadata, dynamic, FrameworkPage(), HomePage(), FeatureItem, FREQUENCY (+31 more)
+Cohesion: 0.06
+Nodes (42): AuthLayout(), FaqPage(), metadata, dynamic, FrameworkPage(), HomePage(), FeatureItem, FREQUENCY (+34 more)
 
-### Community 6 - "rubric.types.ts"
-Cohesion: 0.22
-Nodes (11): DEFAULT_LEVELS, RubricBuilderProps, RubricService, FullRubricDetail, RubricCriterion, RubricCriterionSchema, RubricDefinition, RubricDefinitionSchema (+3 more)
+### Community 6 - "contributions/route.ts"
+Cohesion: 0.16
+Nodes (12): createContributionSchema, GET(), PATCH(), POST(), reviewContributionSchema, completeSchema, POST(), GrantPointsParams (+4 more)
 
-### Community 7 - "NEXA_DASHBOARD_USE_CASE_ARCHITECTURE_REVIEW.md"
-Cohesion: 0.04
-Nodes (51): 11. Result Page nên là canonical, 15. `/personal/learning-path`, 17. Class / Group / Live Room đang bị trộn, 1. Kết luận tổng quan, 20. Kiến trúc route Class đề xuất, 21. `/personal/submissions`, 24. `/personal/authoring`, 28. Live Room lifecycle (+43 more)
+### Community 7 - "ĐẶC TẢ ĐÁNH GIÁ & TƯ DUY LẠI TOÀN DIỆN UI/UX 3 KHÔNG GIAN DASHBOARD — NEXA AI"
+Cohesion: 0.06
+Nodes (32): 1.1. Bản chất cốt lõi của NEXA AI, 1.2. Ba Trụ Cột Trải Nghiệm Cần "Suy Nghĩ Lại" (The Paradigm Shift), 1. TRIẾT LÝ THIẾT KẾ & TƯ DUY NGUYÊN BẢN (FIRST-PRINCIPLES PRODUCT DESIGN), 2.1. Bản Đồ Điều Hướng & Các Màn Hình Chức Năng Hiện Tại, 2.2. Đánh Giá Hiện Trạng & Ý Tưởng Tái Cấu Trúc Từng Trang, 2. KHÔNG GIAN 1: PERSONAL WORKSPACE (`/personal/*`), 3.1. Bản Đồ Phân Quyền & Các Màn Hình Chức Năng, 3.2. Đánh Giá Hiện Trạng & Ý Tưởng Tái Cấu Trúc Từng Trang (+24 more)
 
 ### Community 8 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.10
 Nodes (39): adjustments(), argv, assetQueries(), ASSETS_PATH, briefStop(), briefWords(), deal(), dealHero() (+31 more)
 
-### Community 9 - "admin.ts"
-Cohesion: 0.05
-Nodes (53): ALLOWED_CAMPAIGN_TRANSITIONS, campaignSchema, dynamic, GET(), PATCH(), POST(), updateCampaignSchema, dynamic (+45 more)
+### Community 9 - "requireOrgPagePermission"
+Cohesion: 0.09
+Nodes (24): dynamic, GET(), OrgAnalyticsPage(), dynamic, OrgCampaignDetailPage(), dynamic, OrgLiveRoomPage(), dynamic (+16 more)
 
 ### Community 10 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.10
 Nodes (39): adjustments(), argv, assetQueries(), ASSETS_PATH, briefStop(), briefWords(), deal(), dealHero() (+31 more)
 
-### Community 11 - "server.ts"
+### Community 11 - "next"
 Cohesion: 0.07
-Nodes (27): @payos/node, createIntentSchema, POST(), POST(), GET(), dynamic, GET(), ALLOWED_EXTENSIONS (+19 more)
+Nodes (21): nextConfig, next, @payos/node, POST(), GET(), DEFAULT_GOAL, dynamic, GET() (+13 more)
 
-### Community 12 - "Personal Workspace & Learner"
-Cohesion: 0.06
-Nodes (36): dynamic, GroupData, LearnerGroupDetailPage(), TabType, AssignmentItem, ClassAssignmentsTab(), ClassAssignmentsTabProps, defaultRubricCriteria (+28 more)
+### Community 12 - "createClient"
+Cohesion: 0.04
+Nodes (70): GET(), dynamic, POST(), submitSchema, dynamic, GET(), GET(), createClassSchema (+62 more)
 
 ### Community 13 - "requirePlatformAdmin"
-Cohesion: 0.04
-Nodes (93): dynamic, GET(), POST(), updateAiConfigSchema, dynamic, GET(), dynamic, POST() (+85 more)
+Cohesion: 0.03
+Nodes (100): dynamic, GET(), POST(), updateAiConfigSchema, dynamic, escapeCsvCell(), GET(), dynamic (+92 more)
 
 ### Community 14 - "lucide-react"
 Cohesion: 0.02
-Nodes (59): AiEventLog, AiGatewayStats, FeedbackTicket, ServicePlan, TransactionItem, AdminUsersPage(), UserRecord, UsersContent() (+51 more)
+Nodes (52): AiEventLog, AiGatewayStats, FeedbackTicket, CompetencyDomainItem, CompetencyItem, FrameworkItem, ServicePlan, TransactionItem (+44 more)
 
-### Community 15 - "next"
-Cohesion: 0.05
-Nodes (26): nextConfig, next, dynamic, escapeCsvCell(), GET(), dynamic, ImportItemRow, POST() (+18 more)
+### Community 15 - "controls/index.tsx"
+Cohesion: 0.06
+Nodes (40): DAYS, FLIGHTS, initial, poster, S, Controls(), DATA, DIFF (+32 more)
 
-### Community 16 - "join-codes/route.ts"
-Cohesion: 0.16
-Nodes (16): checkOrgManager(), checkRateLimit(), createJoinCodeSchema, dynamic, GET(), PATCH(), POST(), rateLimitMap (+8 more)
+### Community 16 - "feedback/route.ts"
+Cohesion: 0.12
+Nodes (20): dynamic, GET(), PATCH(), POST(), acceptSchema, GET(), POST(), checkRateLimit() (+12 more)
 
 ### Community 17 - ".agents/skills/impeccable/scripts/live-browser.js"
 Cohesion: 0.03
@@ -636,17 +591,17 @@ Nodes (139): applyGlobalBarLabelState(), applyLiveBarPreference(), applyParamDef
 Cohesion: 0.08
 Nodes (25): concurrency, cancel-in-progress, group, GEMINI_API_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL, jobs, quality-gate (+17 more)
 
-### Community 19 - "devDependencies"
-Cohesion: 0.12
-Nodes (16): devDependencies, eslint@^9.39.5, eslint-config-next@^15.5.28, postcss@^8.5.3, @types/node@^22.13.5, @types/qrcode@^1.5.6, @types/react@^19.0.10, @types/react-dom@^19.0.4 (+8 more)
+### Community 19 - "package.json"
+Cohesion: 0.05
+Nodes (49): dependencies, class-variance-authority@^0.7.1, clsx@^2.1.1, @google/genai@^2.30.0, lucide-react@^0.475.0, next@^15.2.1, @payos/node@^2.0.5, pdf-lib@^1.17.1 (+41 more)
 
-### Community 20 - "OrgAvatarMenu.tsx"
-Cohesion: 0.06
-Nodes (43): AdminLayout(), PersonalLayout(), CredentialItem, LearnerProfileContent(), LearnerProfilePage(), LearningStats, ProfileData, AdminAvatarMenu() (+35 more)
+### Community 20 - "ref_react"
+Cohesion: 0.05
+Nodes (67): GLYPHS, initial, KitExtras(), LINES, POSTER, REST, S, STRENGTH (+59 more)
 
-### Community 21 - "jumps.mjs"
-Cohesion: 0.16
-Nodes (17): Film, clipFindings(), finishReport(), has(), args, analyse(), contentChanges(), record() (+9 more)
+### Community 21 - "BÁO CÁO ĐÁNH GIÁ TOÀN DIỆN HỆ THỐNG NEXA AI (SYSTEM-WIDE AUDIT REVIEW)"
+Cohesion: 0.07
+Nodes (27): 10. KẾT LUẬN THẨM ĐỊNH (VERDICT), 1.1. Bản chất & Định vị Sản phẩm, 1.2. Thống kê Chỉ số Sức khỏe Mã nguồn (Codebase Health Metrics), 1. TỔNG QUAN HIỆN TRẠNG NỀN TẢNG (EXECUTIVE SUMMARY), 3.1. Mô hình Đánh giá 5 Miền Năng Lực Số, 3.2. Trình Soạn Thảo Đề (Authoring Engine V2), 3.3. Sơ đồ Luồng Khảo Thí Khép Kín (End-to-End Assessment Lifecycle), 3. KHUNG KHẢO THÍ & CHUẨN HÓA 5 MIỀN DIGCOMP (ASSESSMENT ENGINE) (+19 more)
 
 ### Community 22 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.09
@@ -669,60 +624,60 @@ Cohesion: 0.10
 Nodes (20): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+12 more)
 
 ### Community 27 - "OrgAnalyticsDashboard.tsx"
-Cohesion: 0.09
-Nodes (38): dynamic, GET(), dynamic, OrgAnalyticsPage(), Props, CohortLearningRecommendations(), DOMAIN_NAMES, Props (+30 more)
+Cohesion: 0.17
+Nodes (17): dynamic, Props, Props, Props, Props, Props, CANONICAL_DOMAINS, OrgCompetencyAnalyticsService (+9 more)
 
 ### Community 28 - "submissions/page.tsx"
 Cohesion: 0.11
 Nodes (26): LearnerSubmissionsContent(), LearnerSubmissionsPage(), SubmissionCard(), SubmissionCardProps, SubmissionDetailView(), SubmissionDetailViewProps, SubmissionEmptyState(), SubmissionEmptyStateProps (+18 more)
 
 ### Community 29 - "Taste Skill & Visual Design Tools"
-Cohesion: 0.21
-Nodes (4): Browser, findChrome(), Page, sleep()
+Cohesion: 0.13
+Nodes (8): devCommand(), main(), packageBin(), root, Browser, findChrome(), Page, sleep()
 
 ### Community 30 - "connectSSE"
 Cohesion: 0.06
 Nodes (83): applyPlaceholderDimensions(), applySavedSessionMeta(), buildParamsPanel(), checkpointPayload(), clampVariantIndex(), closedClipPath(), commitAcceptedVariantToDom(), completeParameterGenerationIfReady() (+75 more)
 
-### Community 31 - "DomainAssessmentSummaryService"
-Cohesion: 0.40
-Nodes (4): Danh Sách Công Việc Triển Khai (Todo List) — Chuẩn Hóa 3 Dashboard & Toàn Vẹn Khảo Thí NEXA, Đợt 1: Bảo Mật, Nộp Bài, Điểm Rubric & AI Draft (P0 Security Gate), Đợt 3: Vòng Đời Tổ Chức & Đợt Đánh Giá B2B (Organization Lifecycle), Đợt 4: Quản Trị Nền Tảng, Cấu Hình AI & Vận Hành (Admin Control Plane)
+### Community 31 - "2. DANH MỤC 8 MODULE CHỨC NĂNG CỐT LÕI"
+Cohesion: 0.11
+Nodes (17): 1. NGUYÊN TẮC VẬN HÀNH & CÁC QUY TẮC NGHIỆP VỤ ĐÃ CHỐT, 2. DANH MỤC 8 MODULE CHỨC NĂNG CỐT LÕI, 3.1. Luồng 1: Vòng Lặp Năng Lực Cốt Lõi (Đầu Vào $\rightarrow$ Lộ Trình $\rightarrow$ Chứng Chỉ Master), 3.2. Luồng 2: Nhận & Nộp Bài Tập Được Giao Từ Tổ Chức, 3.3. Luồng 3: Tự Luyện Tập Qua Thư Viện Đề (Free vs Pro), 3. CÁC LUỒNG NGHIỆP VỤ ĐẦU-CUỐI (END-TO-END FLOWS), 4. MA TRẬN DỮ LIỆU & QUYỀN HẠN: PERSONAL WORKSPACE, 5. TỔNG KẾT (+9 more)
 
 ### Community 32 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.21
 Nodes (4): Browser, findChrome(), Page, sleep()
 
-### Community 33 - "Application API Endpoints"
-Cohesion: 0.17
-Nodes (10): dynamic, POST(), submitSchema, completeSchema, POST(), GrantPointsParams, GrantPointsResult, PointEventType (+2 more)
+### Community 33 - "ĐẶC TẢ THIẾT KẾ & LUỒNG NGHIỆP VỤ: PLATFORM ADMIN CONTROL PLANE"
+Cohesion: 0.07
+Nodes (29): 1.1. Cách Ly Đặc Quyền Nền Tảng Tuyệt Đối, 1.2. Chuẩn Mực Dữ Liệu Thực Chứng (Zero Fake Data), 1. NGUYÊN TẮC CỐT LÕI & VỊ THẾ BẢO MẬT (SECURITY & ARCHITECTURE BARRIER), 2. BẢN ĐỒ 4 TRỤ CỘT NGHIỆP VỤ (11 MODULES HỆ THỐNG), 3. ĐẶC TẢ CHI TIẾT TỪNG MODULE CHỨC NĂNG, 4.1. Luồng 1: Tiếp Nhận & Kích Hoạt Khách Hàng Doanh Nghiệp B2B, 4.2. Luồng 2: Đối Soát Thủ Công Giao Dịch Thanh Toán PayOS Treo, 4.3. Luồng 3: Quản Lý Bản Quyền Đề Khảo Thí (Phát Hành Đề Free / Pro Lock) (+21 more)
 
 ### Community 34 - "OrgMembersClientView.tsx"
-Cohesion: 0.10
-Nodes (31): OrgMembersClientView(), Props, BulkMemberImportModal(), BulkMemberImportModalProps, ParsedMember, ApprovalQueueView(), ApprovalQueueViewProps, InviteMemberDrawer() (+23 more)
+Cohesion: 0.08
+Nodes (33): OrgMembersClientView(), Props, BulkMemberImportModal(), BulkMemberImportModalProps, ParsedMember, ApprovalQueueViewProps, InviteMemberDrawerProps, ROLE_PERMISSIONS (+25 more)
 
-### Community 35 - "ref_node_fs"
+### Community 35 - "personal-phase2-learning-and-credentials.test.ts"
+Cohesion: 0.09
+Nodes (20): generateSchema, POST(), GET(), dynamic, GET(), GET(), dynamic, GET() (+12 more)
+
+### Community 36 - "2. DANH MỤC 7 MODULE CHỨC NĂNG CỐT LÕI"
 Cohesion: 0.12
-Nodes (15): devCommand(), main(), packageBin(), root, args, asJson, byId, EXT (+7 more)
-
-### Community 36 - "III. Review chi tiết Platform Admin (12 màn hình)"
-Cohesion: 0.06
-Nodes (33): 10. `/admin/compliance` — Tuân thủ, bảo mật và khảo thí, 11. `/admin/settings` — Cài đặt nền tảng, 12. `/admin/analytics` — Phân tích vận hành nền tảng, 1. `/admin/dashboard` — Trung tâm điều hành, 2. `/admin/users` — Quản lý người dùng, 3. `/admin/organizations` — Khách hàng trường học & doanh nghiệp, 4. `/admin/content` — Đề thi hệ thống, 5. `/admin/frameworks` — Khung năng lực số (+25 more)
+Nodes (16): 1. MÔ HÌNH VAI TRÒ & PHÂN QUYỀN TINH GIẢN, 2. DANH MỤC 7 MODULE CHỨC NĂNG CỐT LÕI, 3.1. Luồng 1: Tiếp Nhận & Phân Lớp Thành Viên (Member Onboarding Flow), 3.2. Luồng 2: Vận Hành Đợt Khảo Thí & Chấm Bài (Assessment Campaign & Grading Flow), 3.3. Luồng 3: Theo Dõi & Xuất Báo Cáo Năng Lực (Analytics & Export Flow), 3. CÁC LUỒNG NGHIỆP VỤ ĐẦU-CUỐI (END-TO-END OPERATIONAL FLOWS), 4. MA TRẬN DỮ LIỆU & QUYỀN HẠN: ADMIN VS. MEMBER, 5. TỔNG KẾT (+8 more)
 
 ### Community 37 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.29
 Nodes (11): assert_contains(), assert_equal(), assert_not_contains(), assert_source_returns_to_caller(), run_test(), skill_test.sh script, test_help_returns_to_sourcing_caller(), test_help_uses_source_invocation() (+3 more)
 
-### Community 38 - "createClient"
-Cohesion: 0.03
-Nodes (104): zod, DELETE(), dynamic, GET(), PUT(), updateItemSchema, createItemSchema, dynamic (+96 more)
+### Community 38 - "zod"
+Cohesion: 0.08
+Nodes (41): zod, onboardingSchema, POST(), DELETE(), createFileSchema, GET(), POST(), GET() (+33 more)
 
 ### Community 39 - "Personal Workspace & Learner"
 Cohesion: 0.18
 Nodes (11): AIEvaluationData, CandidateSubmission, CriterionLevel, CriterionScoreResult, EvaluatorGradingContent(), EvaluatorGradingPage(), GroupOption, RubricCriterion (+3 more)
 
-### Community 40 - "5. Đặc tả Chi tiết từng Module (Module Specifications)"
-Cohesion: 0.09
-Nodes (22): 5.1.1. Nhiệm vụ, 5.1.2. State Machine của Tác vụ AI, 5.1.3. Hợp đồng API Gateway (Zod Contract), 5.1.4. Quy tắc Credits & Quota, 5.1. Module 1: `ai-orchestrator-gateway` (Lõi AI Gateway), 5.2.1. Nhiệm vụ, 5.2.2. Quy tắc Nghiệp vụ Rubric, 5.2.3. Schema Định nghĩa Rubric (Zod) (+14 more)
+### Community 40 - "OrgClassDetailView.tsx"
+Cohesion: 0.16
+Nodes (17): dynamic, OrgClassDetailPage(), AddClassMembersDrawer(), AddClassMembersDrawerProps, CandidateMember, ROLE_PERMISSIONS, AssignAssessmentModal(), AssignAssessmentModalProps (+9 more)
 
 ### Community 41 - "connectSSE"
 Cohesion: 0.06
@@ -732,9 +687,9 @@ Nodes (83): applyPlaceholderDimensions(), applySavedSessionMeta(), buildParamsPa
 Cohesion: 0.09
 Nodes (67): abortSvelteComponentInjection(), applyEditing(), beginNewLiveConfiguration(), buildLocatorForLeaf(), cancelEditing(), cancelEditingToPicking(), cancelInsertConfigure(), cleanup() (+59 more)
 
-### Community 43 - "notion/index.tsx"
-Cohesion: 0.15
-Nodes (13): Glass(), Crumb(), initial, Item, ITEMS, NotionSlash(), Page(), S (+5 more)
+### Community 43 - "SRS.md"
+Cohesion: 0.14
+Nodes (13): 15. Quy tắc nghiệp vụ bắt buộc, 16. Dữ liệu và mối quan hệ logic, 18. Yêu cầu phi chức năng, 19. Ma trận quyền và phạm vi dữ liệu, 20. Kịch bản nghiệp vụ và kiểm thử, 21. Tiêu chí nghiệm thu và truy vết, 22. Các vấn đề cần xác nhận, 3. Actor và quyền truy cập (+5 more)
 
 ### Community 44 - "setLiveState"
 Cohesion: 0.09
@@ -756,17 +711,17 @@ Nodes (57): actionLabel(), applyConfigureBarChrome(), bindConfigureCountPillTool
 Cohesion: 0.09
 Nodes (53): ae(), be(), bt(), Ce(), Ct(), de(), dt(), _e() (+45 more)
 
-### Community 49 - "powerpoint/index.tsx"
-Cohesion: 0.14
-Nodes (17): Big(), Box, Design, fit(), G, ICON, IDEAS, initial (+9 more)
+### Community 49 - "classes/types.ts"
+Cohesion: 0.12
+Nodes (22): dynamic, OrgClassAnalyticsPage(), dynamic, OrgClassesPage(), CreateClassModal(), CreateClassModalProps, TERM_SUGGESTIONS, EditClassModal() (+14 more)
 
 ### Community 50 - "NEXA_AI_USE_CASE_REVIEW_TOAN_HE_THONG.md"
-Cohesion: 0.07
-Nodes (29): 12.1. Danh mục use case Live, 12.2. Giám sát cho bài thi thường và bài thi Live, 12.3. Những gì web có thể và không thể đảm bảo, 12.4. Mô hình dữ liệu Live/Proctoring đề xuất, 12. Use Case phòng thi trực tiếp, 13.1. Không đồng nhất các khái niệm, 13.2. Use case hệ thống cần hỗ trợ, 13.3. Luồng phát hành chuẩn (+21 more)
+Cohesion: 0.08
+Nodes (23): 13.1. Không đồng nhất các khái niệm, 13.2. Use case hệ thống cần hỗ trợ, 13.3. Luồng phát hành chuẩn, 13. Use Case nội dung khảo thí, 17. Quyền CRUD/execute mục tiêu, 18. Các endpoint/route cần audit quyền ngay, 19.1. Quan hệ UML nên dùng, 19.2. Gói Use Case mục tiêu trong UML (+15 more)
 
 ### Community 51 - "ai-config.service.ts"
-Cohesion: 0.08
-Nodes (20): executeSQL(), fs, https, main(), path, executeSQL(), fs, https (+12 more)
+Cohesion: 0.18
+Nodes (10): executeSQL(), fs, https, main(), path, executeSQL(), fs, https (+2 more)
 
 ### Community 52 - "Src > App > (Dashboard)"
 Cohesion: 0.29
@@ -776,21 +731,21 @@ Nodes (6): AdminAnalyticsContent(), AdminAnalyticsPage(), AnalyticsData, Assessm
 Cohesion: 0.09
 Nodes (49): armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGuard(), buildSteerProcessingDots(), buildSteerQueueHint(), clearSteerAwaitTimer(), clearSteerFocusRecoverTimer(), collapsePageChat() (+41 more)
 
-### Community 54 - "subscriptions/index.tsx"
-Cohesion: 0.07
-Nodes (26): DarkHero(), initial, Label(), Mark(), OLD, Row(), S, Side() (+18 more)
+### Community 54 - "DEFAULT 3 × 3 PANEL SYSTEM"
+Cohesion: 0.20
+Nodes (10): 1. Logo Cover, 2. Logo Construction, 3. Digital Application, 4. Brand Essence, 5. Color System, 6. Typography, 7. Physical Application, 8. Image Direction (+2 more)
 
-### Community 55 - "Bar"
-Cohesion: 0.02
-Nodes (145): AiCards(), DAYS, FLIGHTS, initial, poster, S, AiChat(), initial (+137 more)
+### Community 55 - "Stage"
+Cohesion: 0.03
+Nodes (124): calendar, figma, notion, slack, AiCards(), AiChat(), initial, poster (+116 more)
 
-### Community 56 - "Stage"
-Cohesion: 0.04
-Nodes (75): calendar, figma, notion, slack, testFlight, Collection, CollectionStudy(), Detail (+67 more)
+### Community 56 - "phone-touch/index.tsx"
+Cohesion: 0.15
+Nodes (13): ART, CARD, CARD_NAMES, LIST_TEXT, MobileApp(), Pause(), Phase, Play() (+5 more)
 
-### Community 57 - "Src > Features > Competency"
-Cohesion: 0.17
-Nodes (10): 15. File references để lập kế hoạch sửa, 6.1. Vấn đề hiện tại, 6.2. Hợp đồng dữ liệu khuyến nghị (5 miền, không có skill score), 6.3. Mẫu giao diện Hồ sơ năng lực, 6.4. Thay đổi nguồn dữ liệu cần thực hiện khi coding, 6. Hồ sơ năng lực: chỉ đánh giá 5 miền, không chấm kỹ năng thành phần, CompetencyAggregationService, DomainScore (+2 more)
+### Community 57 - "competency-radar/route.ts"
+Cohesion: 0.27
+Nodes (6): dynamic, GET(), CompetencyAggregationService, DomainScore, LongitudinalRadarResult, SkillScore
 
 ### Community 58 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.60
@@ -804,53 +759,53 @@ Nodes (49): armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGua
 Cohesion: 0.04
 Nodes (44): 1. Logo Cover, 1. Monogram + Meaning, 2 × 3 REFERENCE-STYLE LAYOUT, 2. Logo Construction, 2. Product Action, 3. Digital Application, 3. Metaphor Fusion, 4. Brand Essence (+36 more)
 
-### Community 61 - "competency.types.ts"
-Cohesion: 0.14
-Nodes (15): CompetencyAnalysisContent(), CompetencyAnalysisPage(), AvailableModuleInput, CompetencyAnalysisOutputSchema, DomainScoreInput, PathwayStep, PathwayStepSchema, QuestionMistakeInput (+7 more)
+### Community 61 - "rubric.types.ts"
+Cohesion: 0.10
+Nodes (24): dynamic, POST(), dynamic, ImportItemRow, POST(), DELETE(), dynamic, GET() (+16 more)
 
 ### Community 62 - "taste-skill/skills/brandkit/SKILL.md"
-Cohesion: 0.04
-Nodes (44): 1. Logo Cover, 1. Monogram + Meaning, 2 × 3 REFERENCE-STYLE LAYOUT, 2. Logo Construction, 2. Product Action, 3. Digital Application, 3. Metaphor Fusion, 4. Brand Essence (+36 more)
+Cohesion: 0.10
+Nodes (19): 2 × 3 REFERENCE-STYLE LAYOUT, ANTI-GENERIC RULES, BOARD COMPOSITION DNA, BRAND INTAKE, BRAND STRATEGY FIRST, BRANDKIT IMAGE GENERATION SKILL, COLOR DISCIPLINE, CORE PRINCIPLE (+11 more)
 
-### Community 63 - "gemini.adapter.ts"
-Cohesion: 0.25
-Nodes (6): AIProviderAdapter, GeminiAdapter, PIIScrubberService, CompetencyAnalysisInput, CompetencyAnalysisOutput, RubricGradingInput
+### Community 63 - "onAnnotDown"
+Cohesion: 0.24
+Nodes (15): beginEditPin(), buildAnnotationsForCapture(), buildPinElement(), cancelEditingPin(), finalizeEditingPin(), initAnnotOverlay(), localCoords(), onAnnotDown() (+7 more)
 
 ### Community 64 - "Hardening Controls"
 Cohesion: 0.05
 Nodes (42): Broken Access Control, Broken Authentication, Cross-Site Scripting (XSS), Data Classification, Dependency Audit Triage, Destructive Operations on Derived Paths, File Upload Safety, Hardening Patterns (+34 more)
 
-### Community 65 - "OrgClassDetailView.tsx"
-Cohesion: 0.08
-Nodes (36): dynamic, OrgClassAnalyticsPage(), dynamic, OrgClassDetailPage(), dynamic, OrgClassesPage(), AddClassMembersDrawer(), AddClassMembersDrawerProps (+28 more)
+### Community 65 - "[groupId]/page.tsx"
+Cohesion: 0.06
+Nodes (37): dynamic, GroupData, LearnerGroupDetailPage(), TabType, AssignmentItem, ClassAssignmentsTab(), ClassAssignmentsTabProps, defaultRubricCriteria (+29 more)
 
 ### Community 66 - "csv-helper.ts"
 Cohesion: 0.22
 Nodes (14): AdminAssessmentDetailClient(), AssessmentDetailData, AssessmentItemDetail, AssessmentItemOption, Props, ProctoringState, parseCSV(), parseCSVLine() (+6 more)
 
 ### Community 67 - ".agents/skills/impeccable/reference/new-work.md"
-Cohesion: 0.06
-Nodes (28): Recommended Actions, Craft (deprecated alias), Impeccable Documenter, Input Contract, Output Contract, Workflow, Monorepo notes, Opting out of the boot check (+20 more)
+Cohesion: 0.05
+Nodes (32): Recommended Actions, Craft (deprecated alias), Monorepo notes, Opting out of the boot check, Step 2: Act by severity, Step 3: Deprecated fields are binding, Step 4: Do not overclaim on truth drift, What this owns, and what it does not (+24 more)
 
-### Community 68 - "Stage"
-Cohesion: 0.10
-Nodes (38): CursorMorphDemo(), CursorResize(), HANDLES, pull(), S, script(), START, checkSeam() (+30 more)
+### Community 68 - "kit/index.ts"
+Cohesion: 0.04
+Nodes (87): IMessage(), initial, S, SUGGEST, suggestions(), ArrowUp(), initial, Messages() (+79 more)
 
 ### Community 69 - "3. Lộ Trình 4 Đợt Triển Khai Chi Tiết"
 Cohesion: 0.22
 Nodes (8): 1. Bản Đồ Năng Lực (Capability Map) & Thứ Tự Triển Khai, 2. Các Quyết Định Kiến Trúc Then Chốt (ADR), 3. Lộ Trình 4 Đợt Triển Khai Chi Tiết, Kế Hoạch Triển Khai: Chuẩn Hóa Toàn Diện 3 Dashboard & Toàn Vẹn Khảo Thí NEXA (P0 → P2), Đợt 1: `security-and-grading` (P0: Bảo Mật, Nộp Bài, Điểm Rubric & AI Draft), Đợt 2: `personal-journey` (P1: Cá Nhân & Lộ Trình Tiến Bộ Thật), Đợt 3: `org-lifecycle` (P1: Vòng Đời Tổ Chức & Đợt Đánh Giá B2B), Đợt 4: `admin-control-plane` (P1/P2: Quản Trị Khách Hàng, AI & Tài Chính)
 
 ### Community 70 - "vitest"
-Cohesion: 0.05
-Nodes (40): @supabase/supabase-js, GET(), POST(), requestSchema, POST(), requestSchema, GET(), POST() (+32 more)
+Cohesion: 0.04
+Nodes (29): vitest, GET(), POST(), requestSchema, POST(), requestSchema, GET(), POST() (+21 more)
 
 ### Community 71 - "Taste Skill & Visual Design Tools"
 Cohesion: 0.60
 Nodes (4): print_help(), skill.sh script, skill_main(), SKILLS
 
 ### Community 72 - "isSuperadminEmail"
-Cohesion: 0.04
-Nodes (58): ADM-A01 — Platform Admin authorization chưa có một chuẩn thống nhất, @supabase/ssr, dynamic, GET(), mockRpc, mockSignInWithPassword, mockSignUp, loginSchema (+50 more)
+Cohesion: 0.05
+Nodes (47): 2.1. Phân Tích Hiện Trạng Từng Không Gian, 2. KIẾN TRÚC BA KHÔNG GIAN — MỘT DANH TÍNH (THREE SPACES, ONE IDENTITY), @supabase/ssr@^0.5.2, @supabase/supabase-js@^2.49.1, @supabase/ssr, @supabase/supabase-js, dynamic, GET() (+39 more)
 
 ### Community 73 - "documentRefForElement"
 Cohesion: 0.06
@@ -864,17 +819,17 @@ Nodes (6): AdminRoleDefinition, AdminSettingsContent(), AdminSettingsPage(), AIS
 Cohesion: 0.06
 Nodes (39): addManualContextText(), canRestoreManualEditElement(), collectEditableTextRows(), visit(), collectManualContextPieces(), walk(), contextElementForManualEdit(), copyEditContainerContext() (+31 more)
 
-### Community 76 - "hero-grid/index.tsx"
-Cohesion: 0.19
-Nodes (14): at(), composition(), Draft, HeroGrid(), Icons(), INITIAL, KEY_ROWS, Keys() (+6 more)
+### Community 76 - "HeroDemo.tsx"
+Cohesion: 0.09
+Nodes (27): FigmaDemo(), hex(), initial, LayerIcon(), LAYERS, MAYA, mayaAt(), S (+19 more)
 
 ### Community 77 - ".agents/skills/impeccable/reference/live.md"
 Cohesion: 0.08
 Nodes (22): Apply at system scale, Audit before choosing, Choose a strategy, Contrast and perception, Live-mode signature params, Verify, Visitor mode, Cleanup (+14 more)
 
-### Community 78 - "phone-touch/index.tsx"
-Cohesion: 0.15
-Nodes (13): ART, CARD, CARD_NAMES, LIST_TEXT, MobileApp(), Pause(), Phase, Play() (+5 more)
+### Community 78 - "gemini.adapter.ts"
+Cohesion: 0.24
+Nodes (6): AIProviderAdapter, GeminiAdapter, getAIAdapter(), CompetencyAnalysisInput, CompetencyAnalysisOutput, RubricGradingInput
 
 ### Community 79 - ".github/skills/impeccable/reference/live.md"
 Cohesion: 0.08
@@ -1012,9 +967,9 @@ Nodes (24): clearStoredManualApplyState(), fetchPendingCount(), handleManualEdit
 Cohesion: 0.09
 Nodes (22): ADR Lifecycle, ADR Template, API Documentation, Architecture Decision Records (ADRs), Changelog Maintenance, Common Rationalizations, Document Known Gotchas, Documentation and ADRs (+14 more)
 
-### Community 118 - "Framing"
-Cohesion: 0.29
-Nodes (6): Checks, Framing, Phones, Small formats and the page, The layouts, The rules
+### Community 118 - "createAdminClient"
+Cohesion: 0.06
+Nodes (51): approveInquirySchema, dynamic, POST(), GET(), dynamic, GET(), POST(), submitJoinSchema (+43 more)
 
 ### Community 119 - ".agents/skills/impeccable/reference/onboard.md"
 Cohesion: 0.09
@@ -1044,9 +999,9 @@ Nodes (24): 10. FINAL PRE-FLIGHT CHECK, 1. ACTIVE BASELINE CONFIGURATION, 2. DEF
 Cohesion: 0.10
 Nodes (21): Adoption, Agent Personas, Agent Skills, All 25 Skills, Build - Write the code, Commands, Contributing, Define - Clarify what to build (+13 more)
 
-### Community 126 - "Extract Flow"
-Cohesion: 0.25
-Nodes (7): Extract Flow, Step 1: Discover the Design System, Step 2: Identify Patterns, Step 3: Plan Extraction, Step 4: Extract & Enrich, Step 5: Migrate, Step 6: Document
+### Community 126 - "Chart"
+Cohesion: 0.05
+Nodes (36): ChartScrub(), DAYS, money(), NAMES, S, script(), TOTAL, W (+28 more)
 
 ### Community 127 - "The Toolkit"
 Cohesion: 0.10
@@ -1084,9 +1039,9 @@ Nodes (39): ease(), 1. The budget, 2. Four questions before any animation, 3. To
 Cohesion: 0.12
 Nodes (73): alphaOf(), animating(), cameraMoving(), checkStage(), collectSurfaces(), detectBoxEdges(), detectClipped(), detectClippedGlyph() (+65 more)
 
-### Community 136 - "ref_react"
-Cohesion: 0.04
-Nodes (76): Controls(), DATA, DIFF, initial, MORE, POSTER, ROWS, S (+68 more)
+### Community 136 - "calendar/index.tsx"
+Cohesion: 0.12
+Nodes (22): Step 2b: Stage the frontmatter, Avail, BUSY, Calendar(), carry(), Cell, cellRect(), DAYS (+14 more)
 
 ### Community 137 - "captureElementToBlob"
 Cohesion: 0.14
@@ -1116,9 +1071,9 @@ Nodes (18): 1. Define the Atmosphere, 2. Map the Color Palette, 3. Establish Typ
 Cohesion: 0.11
 Nodes (18): 1. Define the Atmosphere, 2. Map the Color Palette, 3. Establish Typography Rules, 4. Define the Hero Section, 5. Describe Component Stylings, 6. Define Layout Principles, 7. Define Responsive Rules, 8. Encode Motion Philosophy (+10 more)
 
-### Community 144 - "phone-touch/index.tsx"
-Cohesion: 0.05
-Nodes (36): ChartScrub(), DAYS, money(), NAMES, S, script(), TOTAL, W (+28 more)
+### Community 144 - "subscriptions/index.tsx"
+Cohesion: 0.09
+Nodes (22): DarkHero(), initial, Label(), Mark(), OLD, Row(), S, Side() (+14 more)
 
 ### Community 145 - "Constraint-Driven Development"
 Cohesion: 0.08
@@ -1153,7 +1108,7 @@ Cohesion: 0.12
 Nodes (16): Accessibility Checklist, Accessible Lists, ARIA Roles, Buttons vs. Links, Common Anti-Patterns, Common HTML Patterns, Content, Essential Checks (+8 more)
 
 ### Community 153 - "Security Checklist"
-Cohesion: 0.12
+Cohesion: 0.11
 Nodes (17): AI / LLM Security, Authentication, Authorization, CORS Configuration, Data Protection, Dependency Security, Destructive Path Operations, Error Handling (+9 more)
 
 ### Community 154 - "SKILL: Industrial Brutalism & Tactical Telemetry UI"
@@ -1176,9 +1131,9 @@ Nodes (16): 1. Skill Meta, 2.1 Swiss Industrial Print, 2.2 Tactical Telemetry & 
 Cohesion: 0.12
 Nodes (16): 10. Report, 1. Read the brief and the project, 2. Write the argument, 3. Draw the direction, 4. Find the idea, 5. Write the words, 6. Build it, still, 7. Gate (+8 more)
 
-### Community 159 - "Approach"
-Cohesion: 0.18
-Nodes (10): 1. Analyze Before Writing, 2. Test at the Right Level, 3. Follow the Prove-It Pattern for Bugs, 4. Write Descriptive Tests, 5. Cover These Scenarios, Approach, Composition, Output Format (+2 more)
+### Community 159 - "OrgAnalyticsDashboard.tsx"
+Cohesion: 0.14
+Nodes (18): Props, CohortLearningRecommendations(), DOMAIN_NAMES, Props, CampaignAnalyticsView(), DomainCompetencyTable(), Props, DomainDetailDrawer() (+10 more)
 
 ### Community 160 - "actOnAgentTarget"
 Cohesion: 0.29
@@ -1256,9 +1211,9 @@ Nodes (10): 1. What the study measured, 2. The scale: few sizes, far apart, 3. S
 Cohesion: 0.13
 Nodes (14): 1. Accessibility (A11y), 2. Performance, 3. Theming, 4. Responsive Design, 5. Implementation Integrity (CRITICAL), Audit Health Score, Detailed Findings by Severity, Diagnostic Scan (+6 more)
 
-### Community 179 - "onAnnotDown"
-Cohesion: 0.24
-Nodes (15): beginEditPin(), buildAnnotationsForCapture(), buildPinElement(), cancelEditingPin(), finalizeEditingPin(), initAnnotOverlay(), localCoords(), onAnnotDown() (+7 more)
+### Community 179 - "AssessmentStudio.tsx"
+Cohesion: 0.19
+Nodes (13): AdminAssessmentDetailPage(), dynamic, metadata, AdminNewAssessmentPage(), metadata, RubricBuilder(), AssessmentStudio(), AssessmentStudioProps (+5 more)
 
 ### Community 180 - "Testing Patterns Reference (JavaScript/TypeScript)"
 Cohesion: 0.14
@@ -1332,13 +1287,13 @@ Nodes (11): Act on the receipt, Assemble and review, Plan and asset review, Plan
 Cohesion: 0.15
 Nodes (12): Common Rationalizations, Overview, Red Flags, Retrieval Safety: Treat Fetched Content as Data, Source-Driven Development, Step 1: Detect Stack and Versions, Step 2: Fetch Official Documentation, Step 3: Implement Following Documented Patterns (+4 more)
 
-### Community 198 - "Type"
+### Community 198 - "competency.types.ts"
 Cohesion: 0.18
-Nodes (10): 1. What the study measured, 2. The scale: few sizes, far apart, 3. Setting display type, 4. Setting text, 5. Loading the fonts properly, 6. One family or two, 7. Details that separate set type from typed text, 8. Mistakes the inspector cannot see (+2 more)
+Nodes (12): CompetencyAnalysisContent(), CompetencyAnalysisPage(), AvailableModuleInput, CompetencyAnalysisOutputSchema, PathwayStep, PathwayStepSchema, RadarDataItem, RadarDataItemSchema (+4 more)
 
-### Community 199 - "NEXA AI — TÀI LIỆU ĐẶC TẢ HỆ THỐNG AI TOÀN DIỆN (SYSTEM SPECIFICATION)"
-Cohesion: 0.18
-Nodes (10): 1.1. Mục tiêu cốt lõi, 1.2. Bản chất sản phẩm: Đánh giá có bằng chứng, không phải Chatbot, 1. Mục tiêu và Bản chất Sản phẩm (Objective & Product Nature), 2. Capability Map & Thứ tự Xây dựng (Build Order), 3. Surface Assumptions (Các giả định kỹ thuật), 4. Kiến trúc Tổng thể & Ranh giới Hệ thống, 6. Quy chuẩn Giao diện & UX Chi tiết (Design & UX Standards), 7. Bảng Kiểm Thử & Nghiệm Thu (Acceptance Criteria) (+2 more)
+### Community 199 - "VISUAL MODES"
+Cohesion: 0.22
+Nodes (9): Cultural / Experimental, Dark Developer / Builder, Dark Nature / Calm System, Dark Product / Operator, Dark Security / Threat Intelligence, Light Editorial / Compliance, Luxury / Beauty / Fashion, VISUAL MODES (+1 more)
 
 ### Community 200 - "Review Framework"
 Cohesion: 0.17
@@ -1364,17 +1319,17 @@ Nodes (11): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Bound
 Cohesion: 0.17
 Nodes (11): 1. What the study measured, 2. The roles, 3. Proportion, 4. Surfaces without lines or shadows, 5. Colour fields, 6. Dark pages, 7. Colour and photographs, 8. Contrast (+3 more)
 
-### Community 206 - "Layout"
-Cohesion: 0.17
-Nodes (11): 1. What strong pages do, 2. Margins and the grid, 3. Where text sits, 4. Empty space, 5. Sections: carry the idea, vary the arrangement, 6. Navigation, 7. Endings, 8. The phone is a second composition (+3 more)
+### Community 206 - "excel/index.tsx"
+Cohesion: 0.19
+Nodes (12): Caret(), ChartObject(), Excel(), ExcelDemo(), fmt(), GEO, initial, Row() (+4 more)
 
 ### Community 207 - "Colour"
 Cohesion: 0.17
 Nodes (11): 1. What the study measured, 2. The roles, 3. Proportion, 4. Surfaces without lines or shadows, 5. Colour fields, 6. Dark pages, 7. Colour and photographs, 8. Contrast (+3 more)
 
-### Community 208 - "taste-skill/skills/taste-skill/scripts/lint.mjs"
-Cohesion: 0.17
-Nodes (11): args, asJson, byId, EXT, files, findings, R, roots (+3 more)
+### Community 208 - "ref_node_path"
+Cohesion: 0.06
+Nodes (34): args, classDefinitions(), findClashes(), splitSelectors(), unwrapAttributeWhere(), withoutConditions(), args, layoutResult() (+26 more)
 
 ### Community 209 - "4. DESIGN ENGINEERING DIRECTIVES (Bias Correction)"
 Cohesion: 0.17
@@ -1397,16 +1352,16 @@ Cohesion: 0.17
 Nodes (11): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Boundary Conditions, Error Handling, Hardening Dimensions, Input Validation & Sanitization, Internationalization (i18n), Performance Resilience (+3 more)
 
 ### Community 214 - "Approach"
-Cohesion: 0.15
-Nodes (10): Alerting, Dashboards, Distributed Tracing, Metrics, Observability Checklist, On-Call Questions (Start Here), Pre-Launch Gate, Structured Logging (+2 more)
+Cohesion: 0.17
+Nodes (10): 1. Analyze Before Writing, 2. Test at the Right Level, 3. Follow the Prove-It Pattern for Bugs, 4. Write Descriptive Tests, 5. Cover These Scenarios, Approach, Composition, Output Format (+2 more)
 
 ### Community 215 - "The Standing Checklist"
 Cohesion: 0.18
 Nodes (10): Correctness, Definition of Done, Definition of Done vs. Acceptance Criteria, Documentation, How to Apply, Integration, Quality, Red Flags (+2 more)
 
-### Community 216 - "slack/index.tsx"
-Cohesion: 0.24
-Nodes (13): Composer(), Face(), HoverBar(), I(), initial, Older(), poster, Rail() (+5 more)
+### Community 216 - "finder/index.tsx"
+Cohesion: 0.19
+Nodes (12): DragImage(), FileIcon(), FinderDemo(), Geo, Ghost, initial, Kind, Photo() (+4 more)
 
 ### Community 217 - ".agents/skills/impeccable/reference/clarify.md"
 Cohesion: 0.18
@@ -1437,20 +1392,20 @@ Cohesion: 0.18
 Nodes (10): 1. First wave (2023–2024), 2. Second wave (2025), 3. Third wave (2025–2026): the "fix" that became the look, 4. Gallery fashion, banned as house style, 5. Structural tells, 6. Copy tells, 7. Motion tells, 8. Why removal is not enough (+2 more)
 
 ### Community 224 - "film.mjs"
-Cohesion: 0.05
-Nodes (46): args, at, cameraSkipped, checkClips(), checkClipsForStage(), clipFor(), clipped, clipSamples (+38 more)
+Cohesion: 0.03
+Nodes (74): playwright-core@~1.48.2, Film, Lines that are never intentional, Other film lines, Prove the still before choreography, Rehearse, The host's own controls, The last pass (+66 more)
 
 ### Community 225 - "Tells — the dated registry"
 Cohesion: 0.18
 Nodes (10): 1. First wave (2023–2024), 2. Second wave (2025), 3. Third wave (2025–2026): the "fix" that became the look, 4. Gallery fashion, banned as house style, 5. Structural tells, 6. Copy tells, 7. Motion tells, 8. Why removal is not enough (+2 more)
 
-### Community 226 - "dynamic-island/index.tsx"
-Cohesion: 0.12
-Nodes (15): Bag(), BASE, Box, boxStyle(), BUD, DynamicIsland(), GEO, GROW (+7 more)
+### Community 226 - "Phone"
+Cohesion: 0.04
+Nodes (60): mail, testFlight, REVENUE, ROWS, Bag(), BASE, Box, boxStyle() (+52 more)
 
-### Community 227 - "WorkspaceSwitcher.tsx"
-Cohesion: 0.33
-Nodes (4): OrganizationInfo, OrgRoleType, ROLE_LABELS, WorkspaceItem
+### Community 227 - "Layout"
+Cohesion: 0.17
+Nodes (11): 1. What strong pages do, 2. Margins and the grid, 3. Where text sits, 4. Empty space, 5. Sections: carry the idea, vary the arrangement, 6. Navigation, 7. Endings, 8. The phone is a second composition (+3 more)
 
 ### Community 228 - ".github/skills/impeccable/reference/clarify.md"
 Cohesion: 0.18
@@ -1481,8 +1436,8 @@ Cohesion: 0.20
 Nodes (10): 22. STYLE VARIATION ENGINE, Decorative Asset Set, Image Art Direction Bias, Motion-Implied Language, Palette Logic, Signature Component Set, Structure Bias, Texture / Surface Treatment (+2 more)
 
 ### Community 235 - "AuthoringEditorTwoPane.tsx"
-Cohesion: 0.13
-Nodes (16): dynamic, metadata, PersonalAuthoringEditPage(), AuthoringEditorTwoPane(), AuthoringEditorTwoPaneProps, QuestionPickerDrawer(), QuestionPickerDrawerProps, AuthoringAssessment (+8 more)
+Cohesion: 0.11
+Nodes (19): dynamic, metadata, OrgAuthoringEditPage(), dynamic, metadata, PersonalAuthoringEditPage(), AuthoringEditorTwoPane(), AuthoringEditorTwoPaneProps (+11 more)
 
 ### Community 236 - "Init flow"
 Cohesion: 0.20
@@ -1525,8 +1480,8 @@ Cohesion: 0.20
 Nodes (10): Breakpoints: Content-Driven, Detect Input Method, Not Just Screen Size, Layout Adaptation Patterns, Mobile-First: Write It Right, Picture Element for Art Direction, Responsive Design, Responsive Images: Get It Right, Safe Areas: Handle the Notch (+2 more)
 
 ### Community 247 - "item-bank/[id]/page.tsx"
-Cohesion: 0.19
-Nodes (17): OptionItem, QuestionItemDetailPage(), fetchQuestion(), RubricBuilder(), batchImportQuestionBankItems(), CanonicalDifficultyLevel, CanonicalQuestionType, normalizeDifficulty() (+9 more)
+Cohesion: 0.13
+Nodes (24): OptionItem, QuestionItemDetailPage(), fetchQuestion(), CompetencyOption, EvaluatorItemBankPage(), formatTypeBadge(), formatTypeLabel(), QuestionItem (+16 more)
 
 ### Community 248 - "Responsive Design"
 Cohesion: 0.20
@@ -1600,17 +1555,17 @@ Nodes (8): 1. How to look, 2. The score, 3. Caps, 4. Writing the critique, 5. Wh
 Cohesion: 0.22
 Nodes (8): Examples, Gold, How hard to press, Product studies, Specimen and reference sheets, Stageshow, The one idea, The references
 
-### Community 267 - "cursor-morph/index.tsx"
-Cohesion: 0.25
-Nodes (6): MorphStyle, LABELS, ORDER, REST, S, STYLES
+### Community 267 - "admin-assessment-bank-client.tsx"
+Cohesion: 0.33
+Nodes (7): AdminAssessmentBankClient(), AssessmentItemRecord, Props, AdminContentPage(), dynamic, downloadCSVTemplate(), downloadMCQTemplate()
 
 ### Community 268 - "Operate mode depth (and Read notes)"
 Cohesion: 0.22
 Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes), Product constraints, Product permissions, The product slop test (+1 more)
 
 ### Community 269 - "1. Kiến Trúc & Quyết Định Then Chốt (Architecture Decisions - ADR)"
-Cohesion: 0.13
-Nodes (14): 1. Kiến Trúc & Quyết Định Then Chốt (Architecture Decisions - ADR), 2. Danh Sách Các Giai Đoạn Triển Khai (Phased Roadmap), 3. Phân Rã Công Việc Chi Tiết (Task List), 4. Bảng Ma Trận Sửa Đổi Lỗ Hổng Codebase (Traceability Matrix), ADR-01: Định Vị NEXA Intelligence là Applied AI Layer, ADR-02: Human-in-the-loop & Draft Isolation, ADR-03: Server Recalculation & Citation Verification, ADR-04: Quota Reservation & Idempotency theo Request ID (+6 more)
+Cohesion: 0.14
+Nodes (13): 1. Kiến Trúc & Quyết Định Then Chốt (Architecture Decisions - ADR), 2. Danh Sách Các Giai Đoạn Triển Khai (Phased Roadmap), 3. Phân Rã Công Việc Chi Tiết (Task List), ADR-01: Định Vị NEXA Intelligence là Applied AI Layer, ADR-02: Human-in-the-loop & Draft Isolation, ADR-03: Server Recalculation & Citation Verification, ADR-04: Quota Reservation & Idempotency theo Request ID, ADR-05: Chuẩn Hóa 5 Miền & Không Giả Lập Dữ Liệu (Zero Fake Data) (+5 more)
 
 ### Community 270 - "Common Cognitive Load Violations"
 Cohesion: 0.22
@@ -1648,9 +1603,9 @@ Nodes (8): Android platform, Color & theming, Components & motion, Layout & stru
 Cohesion: 0.25
 Nodes (8): 1. Impatient Power User: "Alex", 2. Confused First-Timer: "Jordan", 3. Accessibility-Dependent User: "Sam", 4. Deliberate Stress Tester: "Riley", 5. Distracted Mobile User: "Casey", Persona-Based Design Testing, Project-Specific Personas, Selecting Personas
 
-### Community 279 - "ParsedItemRow"
-Cohesion: 0.26
-Nodes (9): PublishValidationModal(), PublishValidationModalProps, QuestionBankDrawerProps, QuestionBankItem, AssessmentMetadata, AssessmentValidator, ValidationIssue, ValidationResult (+1 more)
+### Community 279 - "raycast/index.tsx"
+Cohesion: 0.17
+Nodes (12): Clip(), ENTRIES, Entry, EntryIcon(), FALLBACK, initial, RaycastDemo(), Root() (+4 more)
 
 ### Community 280 - "Architectural Patterns"
 Cohesion: 0.25
@@ -1676,17 +1631,17 @@ Nodes (8): 9.A Visual & CSS, 9. AI TELLS (Forbidden Patterns), 9.B Typography, 9
 Cohesion: 0.25
 Nodes (7): 0. Phạm vi Actor và nguyên tắc, 1. Actor: Guest — Khách chưa đăng nhập, 2. Actor: Personal User — Người dùng cá nhân, 3. Actor: Organization Admin — Quản trị viên tổ chức, 4. Actor: System Admin — Quản trị viên nền tảng NEXA, NEXA AI — Đặc tả Use Case theo 4 Actor & Rà soát CRUD, Quyền System Admin trên Personal và Organization
 
-### Community 286 - "personal/assessments/page.tsx"
-Cohesion: 0.29
-Nodes (5): AssessmentItem, domainList, dynamic, formatFilterOptions, tierFilterOptions
+### Community 286 - "join-codes/route.ts"
+Cohesion: 0.16
+Nodes (18): checkOrgManager(), checkRateLimit(), createJoinCodeSchema, dynamic, generateSecureJoinCode(), GET(), PATCH(), POST() (+10 more)
 
-### Community 287 - "7. AI TELLS (Forbidden Patterns)"
-Cohesion: 0.33
-Nodes (6): 7. AI TELLS (Forbidden Patterns), Content & Data (The "Jane Doe" Effect), External Resources & Components, Layout & Spacing, Typography, Visual & CSS
+### Community 287 - "BÁO CÁO TỔNG QUAN DỰ ÁN: NỀN TẢNG ĐÁNH GIÁ VÀ CHỨNG NHẬN PHÁT TRIỂN NĂNG LỰC SỐ DỰA TRÊN TRÍ TUỆ NHÂN TẠO (NEXA)"
+Cohesion: 0.18
+Nodes (10): 1. Kiến trúc Khung Năng lực Số Động (Dynamic Competency Framework Engine), 2. Đánh giá Năng lực Số Đa phương thức qua 4 Hình thức (4 Assessment Formats), 3. Ứng dụng AI Toàn diện (5 Nhiệm vụ), Đa Mô hình & Cơ chế Bấm Nút Kích Hoạt (On-Demand AI), A. Cơ chế Kích hoạt AI Theo Yêu cầu (On-Demand Trigger — Tiết kiệm tối đa chi phí Token), B. Kiến trúc Đa mô hình (`AIProviderAdapter`) & Huấn luyện AI 3 Tầng, BÁO CÁO TỔNG QUAN DỰ ÁN: NỀN TẢNG ĐÁNH GIÁ VÀ CHỨNG NHẬN PHÁT TRIỂN NĂNG LỰC SỐ DỰA TRÊN TRÍ TUỆ NHÂN TẠO (NEXA), I. TỔNG QUAN & ĐỊNH VỊ DỰ ÁN (EXECUTIVE SUMMARY), II. BỐI CẢNH & BÀI TOÁN THỰC TIỄN TẠI VIỆT NAM (PROBLEM STATEMENT) (+2 more)
 
-### Community 288 - "bulk-import/route.ts"
-Cohesion: 0.40
-Nodes (5): bulkImportSchema, checkOrgManager(), dynamic, memberRowSchema, POST()
+### Community 288 - "ParsedItemRow"
+Cohesion: 0.24
+Nodes (10): PublishValidationModal(), PublishValidationModalProps, QuestionBankDrawer(), QuestionBankDrawerProps, QuestionBankItem, AssessmentMetadata, AssessmentValidator, ValidationIssue (+2 more)
 
 ### Community 289 - "Android platform"
 Cohesion: 0.25
@@ -1760,9 +1715,9 @@ Nodes (7): 33. CATEGORY-SPECIFIC BIAS, Commerce, Fintech, Health / Fitness, Prod
 Cohesion: 0.29
 Nodes (7): 13. COLOR & MATERIAL RULES, Background Confidence Rule, Background-image harmony, Gradient Discipline, Materiality, Palette Discipline, Strong guidance
 
-### Community 307 - "run_migration_04.js"
-Cohesion: 0.40
-Nodes (5): executeSQL(), fs, https, main(), path
+### Community 307 - "Looks"
+Cohesion: 0.22
+Nodes (8): Check it, Defining a look, From a codebase, From a public site, Looks, The built-in looks, The tokens, What a look doesn't change
 
 ### Community 308 - "scripts"
 Cohesion: 0.29
@@ -1804,13 +1759,13 @@ Nodes (7): 3.A Stack, 3.B State, 3.C Icons, 3.D Emoji Policy, 3. DEFAULT ARCHITE
 Cohesion: 0.29
 Nodes (7): 6.A Hardware Acceleration, 6.B Reduced Motion (mandatory), 6.C Dark Mode (mandatory for any consumer-facing page), 6.D Core Web Vitals Targets, 6.E DOM Cost, 6.F Z-Index Restraint, 6. PERFORMANCE & ACCESSIBILITY GUARDRAILS
 
-### Community 318 - "compliance/page.tsx"
-Cohesion: 0.40
-Nodes (3): ComplianceTelemetry, ConsentLog, ProctoringEvent
-
-### Community 319 - "BÁO CÁO TỔNG QUAN DỰ ÁN: NỀN TẢNG ĐÁNH GIÁ VÀ CHỨNG NHẬN PHÁT TRIỂN NĂNG LỰC SỐ DỰA TRÊN TRÍ TUỆ NHÂN TẠO (NEXA)"
+### Community 318 - "Type"
 Cohesion: 0.18
-Nodes (10): 1. Kiến trúc Khung Năng lực Số Động (Dynamic Competency Framework Engine), 2. Đánh giá Năng lực Số Đa phương thức qua 4 Hình thức (4 Assessment Formats), 3. Ứng dụng AI Toàn diện (5 Nhiệm vụ), Đa Mô hình & Cơ chế Bấm Nút Kích Hoạt (On-Demand AI), A. Cơ chế Kích hoạt AI Theo Yêu cầu (On-Demand Trigger — Tiết kiệm tối đa chi phí Token), B. Kiến trúc Đa mô hình (`AIProviderAdapter`) & Huấn luyện AI 3 Tầng, BÁO CÁO TỔNG QUAN DỰ ÁN: NỀN TẢNG ĐÁNH GIÁ VÀ CHỨNG NHẬN PHÁT TRIỂN NĂNG LỰC SỐ DỰA TRÊN TRÍ TUỆ NHÂN TẠO (NEXA), I. TỔNG QUAN & ĐỊNH VỊ DỰ ÁN (EXECUTIVE SUMMARY), II. BỐI CẢNH & BÀI TOÁN THỰC TIỄN TẠI VIỆT NAM (PROBLEM STATEMENT) (+2 more)
+Nodes (10): 1. What the study measured, 2. The scale: few sizes, far apart, 3. Setting display type, 4. Setting text, 5. Loading the fonts properly, 6. One family or two, 7. Details that separate set type from typed text, 8. Mistakes the inspector cannot see (+2 more)
+
+### Community 319 - "powerpoint/index.tsx"
+Cohesion: 0.14
+Nodes (17): Big(), Box, Design, fit(), G, ICON, IDEAS, initial (+9 more)
 
 ### Community 320 - "Impeccable Finish Reviewer"
 Cohesion: 0.29
@@ -1853,8 +1808,8 @@ Cohesion: 0.33
 Nodes (6): 5. IMAGE COUNT & PAGE SLICING, Continuity Rule, Counting rule, Format, Section size variety, THIS IS THE PRIMARY OUTPUT RULE
 
 ### Community 330 - "Act"
-Cohesion: 0.05
-Nodes (29): BUSY, Cell, cellRect(), DAYS, END, HOURS, move(), S (+21 more)
+Cohesion: 0.04
+Nodes (37): CursorResize(), HANDLES, pull(), S, script(), START, AW, BW (+29 more)
 
 ### Community 331 - "10. Quy trình kiểm tra bắt buộc trước khi xuất đầu ra"
 Cohesion: 0.33
@@ -1896,13 +1851,13 @@ Nodes (7): 4. HERO MINIMALISM RULES, Absolute Hero Rules, Graphic Restraint, Hea
 Cohesion: 0.22
 Nodes (8): Danh Sách Nhiệm Vụ Triển Khai (Todo List): NEXA vNext, Giai Đoạn 1: Identity, Avatar Workspace Switcher & 3-Plan Business Onboarding (`MOD-AUTH-WS`), Giai Đoạn 2: Ngân Hàng Câu Hỏi Tái Sử Dụng & Assessment Studio 5-Tab Detail (`MOD-ITEM-BANK`, `MOD-ASSESS-ED`), Giai Đoạn 3: Triển Khai Thi — Campaign Wizard & Phòng Thi Trực Tiếp (`MOD-DELIVERY`), Giai Đoạn 4: Hồ Sơ Năng Lực Trong Profile, Lộ Trình Hành Động & Lớp/Nhóm Cá Nhân (`MOD-PROFILE`, `MOD-PERSONAL-GROUPS`), Giai Đoạn 5: Tổ Chức Business — RBAC 5 Vai Trò, Báo Cáo BI & Quản Trị Hợp Đồng (`MOD-ORG-MGMT`), Giai Đoạn 6: Platform Admin Control Plane & Trung Tâm Vận Hành (`MOD-ADMIN-CP`, `MOD-ADMIN-BI`), Giai Đoạn 7: Master Verification Suite & Knowledge Graph Sync
 
-### Community 341 - "calendar/index.tsx"
-Cohesion: 0.12
-Nodes (22): Step 2b: Stage the frontmatter, Avail, BUSY, Calendar(), carry(), Cell, cellRect(), DAYS (+14 more)
-
-### Community 342 - "Danh Sách Nhiệm Vụ: Đồng Bộ Assessment Authoring V2 & Tối Ưu Toàn Diện Organization Dashboard"
+### Community 341 - "Framing"
 Cohesion: 0.29
-Nodes (6): Danh Sách Nhiệm Vụ: Đồng Bộ Assessment Authoring V2 & Tối Ưu Toàn Diện Organization Dashboard, Giai đoạn P0: Vá Các Lỗ Hổng & Điểm Nghẽn Nghiệp Vụ Nghiêm Trọng (Stop-the-line), Giai đoạn P1: Nâng Cấp Trình Soạn Thảo Đề (Assessment Authoring V2) & Grading Engine, Giai đoạn P2: Thống Nhất Luồng Giao Đánh Giá / Tạo Đợt Khảo Thí (1 Form Duy Nhất), Giai đoạn P3: Hoàn Thiện Bàn Chấm Bài 3 Cột & Báo Cáo Năng Lực 5 Miền, Giai đoạn P4: Tối Ưu Hóa Các Trang Còn Lại (Tổng Quan, Thành Viên, Gói, Cài Đặt) & Kiểm Thử Toàn Diện
+Nodes (6): Checks, Framing, Phones, Small formats and the page, The layouts, The rules
+
+### Community 342 - "ref_react"
+Cohesion: 0.07
+Nodes (41): AdminLayout(), PersonalLayout(), CredentialItem, LearnerProfileContent(), LearnerProfilePage(), LearningStats, ProfileData, AdminAvatarMenu() (+33 more)
 
 ### Community 343 - "5.2. Use case xuyên suốt bắt buộc cho Người học"
 Cohesion: 0.29
@@ -1912,9 +1867,9 @@ Nodes (7): 5.1. Danh mục use case Người học, 5.2. Use case xuyên suốt 
 Cohesion: 0.09
 Nodes (27): MacPointer(), compositionLessons, continuityLessons, Action(), cases, Comparison(), Contrasts(), ExitScene() (+19 more)
 
-### Community 345 - "frameworks/page.tsx"
-Cohesion: 0.40
-Nodes (3): CompetencyDomainItem, CompetencyItem, FrameworkItem
+### Community 345 - "linear/index.tsx"
+Cohesion: 0.16
+Nodes (14): COMMANDS, initial, IssueRow(), LinearDemo(), Priority(), REST, Row, ROWS (+6 more)
 
 ### Community 346 - "21. MOBILE ANTI-AI-TELLS RULE"
 Cohesion: 0.40
@@ -1924,9 +1879,9 @@ Nodes (5): 21. MOBILE ANTI-AI-TELLS RULE, Copy AI tells, Layout AI tells, UI clu
 Cohesion: 0.40
 Nodes (4): interface, default_prompt, display_name, short_description
 
-### Community 348 - "excel/index.tsx"
-Cohesion: 0.19
-Nodes (12): Caret(), ChartObject(), Excel(), ExcelDemo(), fmt(), GEO, initial, Row() (+4 more)
+### Community 348 - "Verify"
+Cohesion: 0.25
+Nodes (7): Framing (first, because nothing else matters if this is wrong), Gate, Hand over, Hierarchy and density, Polish (last), Verify, What you see, what you do
 
 ### Community 349 - "Region map"
 Cohesion: 0.40
@@ -1977,12 +1932,12 @@ Cohesion: 0.40
 Nodes (5): 8.A Token Strategy (pick one, stick to it), 8.B Do Not Prescribe Specific Colors Here, 8.C Default Mode, 8.D Test in Both Modes Before Finishing, 8. DARK MODE PROTOCOL
 
 ### Community 361 - "ruled-bento/index.tsx"
-Cohesion: 0.10
-Nodes (27): Chrome(), Content(), Figure(), files, Specimen, specimens, Tool(), after (+19 more)
+Cohesion: 0.07
+Nodes (35): Chrome(), Content(), Figure(), files, Specimen, specimens, Tool(), after (+27 more)
 
-### Community 362 - "Danh Sách Công Việc Triển Khai (Todo List) — Nâng Cấp Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật"
-Cohesion: 0.40
-Nodes (4): Danh Sách Công Việc Triển Khai (Todo List) — Nâng Cấp Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật, Đợt 2: Trung Tâm Điều Hành Khách Hàng Business B2B, Đợt 3: Quản Trị Tài Chính, AI Gateway, Người Dùng & Audit, Đợt 4: Chuẩn Hóa Khảo Thí, Báo Cáo 5 Miền & Admin Control Plane
+### Community 362 - "slack/index.tsx"
+Cohesion: 0.24
+Nodes (13): Composer(), Face(), HoverBar(), I(), initial, Older(), poster, Rail() (+5 more)
 
 ### Community 363 - "PHẦN C — USE CASE DASHBOARD NGƯỜI ĐÁNH GIÁ"
 Cohesion: 0.33
@@ -2060,29 +2015,33 @@ Nodes (3): Cited Studies, Further Reading, References
 Cohesion: 0.50
 Nodes (3): [LLM Laziness](laziness/), Research, Topics
 
-### Community 383 - "2. PLATFORM MODE RULE"
-Cohesion: 0.50
-Nodes (4): 2. PLATFORM MODE RULE, Android-native premium, Cross-platform premium neutral, iOS-native premium
+### Community 382 - "campaigns/route.ts"
+Cohesion: 0.23
+Nodes (12): ALLOWED_CAMPAIGN_TRANSITIONS, campaignSchema, dynamic, GET(), PATCH(), POST(), updateCampaignSchema, dynamic (+4 more)
+
+### Community 383 - "ai-config.service.ts"
+Cohesion: 0.11
+Nodes (13): compat, __dirname, eslintConfig, __filename, executeSQL(), fs, https, main() (+5 more)
 
 ### Community 384 - "37. EXAMPLE INTERPRETATIONS"
 Cohesion: 0.50
 Nodes (4): 37. EXAMPLE INTERPRETATIONS, Example 1, Example 2, Example 3
 
-### Community 385 - "37. EXAMPLE INTERPRETATIONS"
-Cohesion: 0.50
-Nodes (4): 37. EXAMPLE INTERPRETATIONS, Example 1, Example 2, Example 3
+### Community 385 - "notion/index.tsx"
+Cohesion: 0.20
+Nodes (11): Crumb(), initial, Item, ITEMS, NotionSlash(), Page(), S, Scene() (+3 more)
 
-### Community 386 - "kit/index.ts"
-Cohesion: 0.04
-Nodes (68): mail, Checkout(), Phones(), Script, BrandAsset, brandMarks, BrandName, CodeLine (+60 more)
+### Community 386 - "campaigns/page.tsx"
+Cohesion: 0.31
+Nodes (7): CampaignItem, OrgCampaignsClientView(), OrgCampaignsClientViewProps, dynamic, OrgCampaignsPage(), OrgEmptyState(), OrgEmptyStateProps
 
 ### Community 387 - "authoring/page.tsx"
 Cohesion: 0.23
 Nodes (9): dynamic, PersonalAuthoringListPage(), AuthoringCard(), AuthoringCardItem, AuthoringCardProps, AuthoringListHeader(), AuthoringTabKey, AuthoringTabs() (+1 more)
 
-### Community 388 - "vitest"
-Cohesion: 0.07
-Nodes (20): vitest, POST(), acceptSchema, GET(), POST(), inviteSchema, POST(), checkRateLimit() (+12 more)
+### Community 388 - "admin/organizations/page.tsx"
+Cohesion: 0.36
+Nodes (6): AdminOrganizationsPage(), OrganizationItem, RenewalItem, ActivateBusinessModal(), ActivateBusinessModalProps, BusinessInquiryTarget
 
 ### Community 389 - "7. DIAL DEFINITIONS (Technical Reference)"
 Cohesion: 0.50
@@ -2093,8 +2052,8 @@ Cohesion: 0.50
 Nodes (4): 7. DIAL DEFINITIONS (Technical Reference), DESIGN_VARIANCE (Level 1-10), MOTION_INTENSITY (Level 1-10), VISUAL_DENSITY (Level 1-10)
 
 ### Community 391 - "stageshow/package.json"
-Cohesion: 0.08
-Nodes (31): dependencies, lucide-react@0.468.0, react@^18.3.1, react-dom@^18.3.1, description, devDependencies, postcss@^8.5.6, @types/react@^18.3.1 (+23 more)
+Cohesion: 0.07
+Nodes (36): dependencies, lucide-react@0.468.0, react@^18.3.1, react-dom@^18.3.1, description, devDependencies, postcss@^8.5.6, @types/react@^18.3.1 (+28 more)
 
 ### Community 392 - "15. DEFAULT SITE PACKS"
 Cohesion: 0.50
@@ -2104,33 +2063,37 @@ Nodes (4): 12-section pack, 15. DEFAULT SITE PACKS, 4-section pack, 8-section pa
 Cohesion: 0.50
 Nodes (4): Heuristics Scoring Guide, Issue Severity (P0–P3), Reference Material, Score Summary
 
-### Community 394 - "NEXA AI — Review Personal & Organization Business Dashboard"
-Cohesion: 0.08
-Nodes (24): 10.1. Org Manager — sidebar đề xuất, 10.2. Các vai trò khác, 10.3. Quy tắc menu, 10. Thiết kế lại sidebar Organization theo vai trò, 15.1. Organization, 15.2. Personal (tiếp nối bản review đã triển khai), 15. Backlog ưu tiên cho coding agent, 18. Giới hạn review và kết luận (+16 more)
+### Community 394 - "10. Ngân hàng đề NEXA và phân quyền nội dung"
+Cohesion: 0.50
+Nodes (4): 10.1. Nội dung chính thức và phát hành, 10.2. Quyền truy cập Free/Premium, 10.3. Tái sử dụng đề, 10. Ngân hàng đề NEXA và phân quyền nội dung
 
-### Community 395 - "6.2. Các phân hệ chức năng"
-Cohesion: 0.17
-Nodes (12): 6.1. Mục đích, 6.2. Các phân hệ chức năng, 6. Đặc tả Personal Workspace, A. Tổng quan cá nhân, B. Học và làm bài đánh giá, C. Hồ sơ năng lực và radar, D. Lộ trình học tập, E. Tạo và quản lý đề cá nhân (+4 more)
+### Community 395 - "11. Lộ trình học tập và hồ sơ năng lực"
+Cohesion: 0.50
+Nodes (4): 11.1. Quản trị lộ trình, 11.2. Hoạt động Personal, 11.3. Hồ sơ 5 miền năng lực, 11. Lộ trình học tập và hồ sơ năng lực
 
 ### Community 396 - "wikipedia/index.tsx"
 Cohesion: 0.13
 Nodes (22): CDX, CdxIcon(), CROPS, Fuji(), Header(), Infobox(), initial, Lake() (+14 more)
 
-### Community 397 - "class-clash.mjs"
-Cohesion: 0.36
-Nodes (6): args, classDefinitions(), findClashes(), splitSelectors(), unwrapAttributeWhere(), withoutConditions()
+### Community 397 - "12. Lớp/nhóm, giao bài và phòng thi trực tiếp"
+Cohesion: 0.50
+Nodes (4): 12.1. Hai nguồn lớp, một nơi nhận bài, 12.2. Giao đánh giá tổ chức, 12.3. Phòng thi trực tiếp, 12. Lớp/nhóm, giao bài và phòng thi trực tiếp
 
 ### Community 399 - "20. EXAMPLE INTERPRETATIONS"
 Cohesion: 0.50
 Nodes (4): 20. EXAMPLE INTERPRETATIONS, Example 1, Example 2, Example 3
 
-### Community 400 - "organizations/page.tsx"
-Cohesion: 0.36
-Nodes (6): AdminOrganizationsPage(), OrganizationItem, RenewalItem, ActivateBusinessModal(), ActivateBusinessModalProps, BusinessInquiryTarget
+### Community 400 - "[slug]/assessments/new/page.tsx"
+Cohesion: 0.32
+Nodes (6): dynamic, metadata, OrgNewAssessmentPage(), DOMAIN_OPTIONS, OrgNewAssessmentView(), Props
 
 ### Community 401 - "composition.tsx"
 Cohesion: 0.15
 Nodes (22): Anatomy(), Compact(), CompositionComparison(), Contrast(), ControlAlignment(), Decoration(), Density(), EdgeSeparation() (+14 more)
+
+### Community 402 - "13. Gói dịch vụ, Business và thanh toán"
+Cohesion: 0.50
+Nodes (4): 13.1. Gói cá nhân, 13.2. Vòng đời khách hàng Business, 13.3. Tính nhất quán giao dịch và quyền lợi, 13. Gói dịch vụ, Business và thanh toán
 
 ### Community 403 - "finder-glass/index.tsx"
 Cohesion: 0.13
@@ -2140,241 +2103,169 @@ Nodes (18): Column(), DOCUMENTS, FileIcon(), FILMS, FinderGlassDemo(), Geo, init
 Cohesion: 0.33
 Nodes (6): 1. Accessibility (VoiceOver / TalkBack), 2. Performance, 3. Appearance & Theming, 4. Platform Conformance (CRITICAL), 5. Adaptivity, Diagnostic Scan
 
-### Community 407 - "NEXA AI — Personal Dashboard: Review UX, kiến trúc sản phẩm và kế hoạch cải thiện"
-Cohesion: 0.08
-Nodes (25): 10.1. Yêu cầu đã chốt, 10.2. UI và dữ liệu cần có, 10.3. Code hiện tại cần thay, 10. Gói nâng cấp / Checkout: chuyển từ modal sang các trang riêng, 11.1. Ba thang đo phải tách, 11.2. Leaderboard, 11. Gamification, leaderboard và chứng chỉ, 12.1. Người mới (+17 more)
+### Community 407 - "14. Báo cáo, AI và vận hành nền tảng"
+Cohesion: 0.50
+Nodes (4): 14.1. Báo cáo Personal và Organization, 14.2. AI hỗ trợ chấm và phản hồi, 14.3. Điều hành nền tảng, 14. Báo cáo, AI và vận hành nền tảng
 
-### Community 408 - "14. Phát hiện kỹ thuật/bảo mật theo bằng chứng"
-Cohesion: 0.18
-Nodes (11): 14. Phát hiện kỹ thuật/bảo mật theo bằng chứng, ORG-F01 — [P0][CONFIRMED_IN_CODE][NEEDS_DEPLOY_TEST] RLS membership cho phép quá rộng, ORG-F02 — [P0][CONFIRMED_IN_CODE][NEEDS_RUNTIME_TEST] Admin Organizations API thiếu guard Platform Admin hiện rõ, ORG-F03 — [P1][CONFIRMED_IN_CODE] Org inactive vẫn qua layout khi membership ACTIVE, ORG-F04 — [P1][CONFIRMED_IN_CODE] Route tạo đề Org cần authorization theo organizationId, ORG-F05 — [P1][CONFIRMED_IN_CODE] Analytics đang dùng trạng thái/cột không nhất quán, ORG-F06 — [P1][CONFIRMED_IN_CODE] AI Quota giả định hạn mức, lộ model, tính không đúng kỳ, ORG-F07 — [P1][CONFIRMED_IN_CODE] Class Org điều hướng sang Personal (+3 more)
+### Community 408 - "1. Giới thiệu và mục tiêu"
+Cohesion: 0.50
+Nodes (4): 1.1. Mô tả sản phẩm, 1.2. Mục tiêu, 1.3. Quy ước thuật ngữ và mã, 1. Giới thiệu và mục tiêu
 
 ### Community 409 - "scenes.tsx"
 Cohesion: 0.24
 Nodes (20): Action(), ColoredLayers(), CropFiller(), DashboardPhone(), FileList(), FOLDER, LibraryApp(), Mark() (+12 more)
 
-### Community 410 - "7. Đặc tả Organization Workspace"
-Cohesion: 0.20
-Nodes (10): 7.1. Mục đích, 7.2. Tạo tổ chức và thiết lập ban đầu, 7.3. Thành viên và phân quyền, 7.4. Nhóm, lớp, phòng ban và chương trình, 7.5. Đề thi và ngân hàng câu hỏi dùng chung, 7.6. Giao bài, phòng thi và chấm kết quả, 7.7. Báo cáo và phân tích tổ chức, 7.8. Quota AI và ngân sách (+2 more)
+### Community 410 - "4. Mô hình nghiệp vụ tổng thể"
+Cohesion: 0.50
+Nodes (4): 4.1. Chuỗi giá trị B2C – Personal, 4.2. Chuỗi giá trị B2B – Organization, 4.3. Ba ranh giới sở hữu, 4. Mô hình nghiệp vụ tổng thể
 
-### Community 411 - "NEXA AI — Review ngắn gọn cho Owner & Coding Agent"
-Cohesion: 0.20
-Nodes (9): 1. Kết luận trong 30 giây, 2. Những gì commit mới **đã sửa** (đừng báo lỗi cũ như chưa sửa), 3. Việc agent cần sửa — theo thứ tự, 4. Use case chuẩn để agent không sửa sai khái niệm, 5. Checklist bàn giao cho Coding Agent, NEXA AI — Review ngắn gọn cho Owner & Coding Agent, P0 — Thanh toán: chưa đủ an toàn để mở production, P1 — Use case Dashboard đang sai hoặc chưa làm thật (+1 more)
+### Community 411 - "9. Đánh giá, chấm điểm và công bố"
+Cohesion: 0.50
+Nodes (4): 9.1. Cấu trúc đề và câu hỏi, 9.2. Quy tắc điểm và trạng thái, 9.3. Trạng thái độc lập, 9. Đánh giá, chấm điểm và công bố
 
 ### Community 412 - "staggered-bento/index.tsx"
 Cohesion: 0.19
 Nodes (18): after, AZ, Azulejo(), Beat, before, Book(), Coast(), CORNERS (+10 more)
 
-### Community 413 - "NEXA AI — Đặc tả mô hình sản phẩm Personal Workspace, Organization Workspace và Platform Admin"
-Cohesion: 0.22
-Nodes (8): 17. Các quyết định cần chốt trước khi triển khai chi tiết, 18. Hướng dẫn cho AI coding agent, 19. Tóm tắt quyết định sản phẩm, 1. Mục tiêu tài liệu, 2. Bối cảnh và vấn đề cần giải quyết, 4. Thuật ngữ, 8. Đặc tả Platform Admin, NEXA AI — Đặc tả mô hình sản phẩm Personal Workspace, Organization Workspace và Platform Admin
+### Community 413 - "compliance/page.tsx"
+Cohesion: 0.40
+Nodes (3): ComplianceTelemetry, ConsentLog, ProctoringEvent
 
-### Community 414 - "7. Lộ trình và đề xuất khóa học — điểm khác biệt của NEXA"
-Cohesion: 0.22
-Nodes (9): 7.1. Định vị sản phẩm: NEXA không phải kênh bán khóa học, 7.2. Chẩn đoán source hiện tại, 7.3. Hành trình 4 bước, chỉ dựa trên 5 miền, 7.4. Wireframe trang Lộ trình của tôi, 7.5. Chính sách tuyển chọn và gợi ý khóa học, 7.6. AI trong hệ thống gợi ý, 7.7. Data model và lộ trình triển khai, 7.8. Không khóa bài học vô lý (+1 more)
+### Community 414 - "[slug]/assessments/page.tsx"
+Cohesion: 0.32
+Nodes (6): dynamic, metadata, OrgAssessmentsPage(), AssessmentItemData, OrgAssessmentsListView(), Props
 
-### Community 415 - "12. Review từng trang Organization và hướng UI/UX"
-Cohesion: 0.22
-Nodes (9): 12. Review từng trang Organization và hướng UI/UX, ORG-UI01 — Tổng quan `/org/[slug]`, ORG-UI02 — Thành viên & Phân quyền `/members`, ORG-UI03 — Đề đánh giá `/assessments`, ORG-UI04 — Lớp & Nhóm `/classes`, ORG-UI05 — Báo cáo năng lực `/analytics`, ORG-UI06 — AI quota `/ai-quota`, ORG-UI07 — Settings `/settings` (+1 more)
+### Community 415 - "17. Yêu cầu giao diện và tích hợp"
+Cohesion: 0.67
+Nodes (3): 17.1. Cấu trúc giao diện, 17.2. Các tích hợp, 17. Yêu cầu giao diện và tích hợp
 
 ### Community 416 - "details.tsx"
 Cohesion: 0.15
 Nodes (15): Bar(), ChartDraw(), Copy(), DetailComparison(), detailLessons, Emoji(), Id, LINE (+7 more)
 
-### Community 417 - "12. Luồng nghiệp vụ quan trọng"
-Cohesion: 0.25
-Nodes (8): 12.1. Đăng ký và dùng Personal Workspace, 12.2. Tạo đề cá nhân, 12.3. Tạo nhóm và mở phòng thi trong Free, 12.4. Tạo và vận hành Organization Workspace, 12.5. Chuyển đổi giữa Personal và Organization, 12.6. Tác vụ AI và quota, 12.7. Cấp chứng chỉ, 12. Luồng nghiệp vụ quan trọng
+### Community 417 - "2. Phạm vi sản phẩm"
+Cohesion: 0.67
+Nodes (3): 2.1. Trong phạm vi, 2.2. Ngoài phạm vi hoặc không mặc định, 2. Phạm vi sản phẩm
 
-### Community 418 - "3. Nguyên tắc sản phẩm bất biến"
-Cohesion: 0.25
-Nodes (8): 3.1. Một người dùng cá nhân, nhiều chức năng, 3.2. Workspace xác định phạm vi làm việc, 3.3. Vai trò tổ chức không phải vai trò tài khoản toàn cục, 3.4. Gói dịch vụ không quyết định danh tính, 3.5. Free phải có giá trị sử dụng thực tế, 3.6. Quyền phải được cưỡng chế ở phía máy chủ, 3.7. Không đồng nhất điểm, năng lực và chứng chỉ, 3. Nguyên tắc sản phẩm bất biến
+### Community 418 - "Observability Checklist"
+Cohesion: 0.18
+Nodes (10): Alerting, Dashboards, Distributed Tracing, Metrics, Observability Checklist, On-Call Questions (Start Here), Pre-Launch Gate, Structured Logging (+2 more)
 
-### Community 419 - "4. Các vấn đề Personal cần sửa"
-Cohesion: 0.25
-Nodes (8): 4. Các vấn đề Personal cần sửa, PERS-F01 — [P0][CONFIRMED_IN_CODE] Fallback QR thanh toán có thông tin ngân hàng ghi cứng, PERS-F02 — [P1][CONFIRMED_IN_CODE] Bài đầu vào trong response chưa chắc tồn tại trong database, PERS-F03 — [P1][CONFIRMED_IN_CODE] Personal AI còn metadata nhà cung cấp/model, PERS-F04 — [P1/P2][CONFIRMED_IN_CODE] Course catalog fallback làm lệch danh mục đã duyệt, PERS-F05 — [P1][DESIGN_GAP] Lộ trình chưa phải chu trình phát triển năng lực hoàn chỉnh, PERS-F06 — [P2][DESIGN_GAP] Dashboard cá nhân thiếu hành động tiếp theo theo ngữ cảnh, PERS-F07 — [P2][NEEDS_RUNTIME_TEST] Checkout cần kiểm tra dữ liệu và trạng thái sau quay lại
+### Community 419 - "campaigns/new/page.tsx"
+Cohesion: 0.31
+Nodes (8): dynamic, OrgNewCampaignPage(), AssessmentOption, AssessorOption, CampaignWizardClient(), ClassOption, Props, QUICK_TITLE_SUGGESTIONS
 
-### Community 420 - "16. Tiêu chí nghiệm thu bắt buộc"
+### Community 420 - "backgrounds/index.tsx"
+Cohesion: 0.43
+Nodes (5): Backgrounds(), Digest(), Halftone(), studies, Study()
+
+### Community 421 - "Impeccable Documenter"
+Cohesion: 0.40
+Nodes (4): Impeccable Documenter, Input Contract, Output Contract, Workflow
+
+### Community 422 - ".github/skills/impeccable/reference/doctor.md"
 Cohesion: 0.29
-Nodes (7): 16.1. Tài khoản và Personal Workspace, 16.2. Tài nguyên và bảo mật, 16.3. Organization Workspace, 16.4. Gói dịch vụ và AI, 16.5. Dữ liệu lịch sử và chứng chỉ, 16.6. Chất lượng phát hành, 16. Tiêu chí nghiệm thu bắt buộc
+Nodes (6): Monorepo notes, Opting out of the boot check, Step 2: Act by severity, Step 3: Deprecated fields are binding, Step 4: Do not overclaim on truth drift, What this owns, and what it does not
 
-### Community 421 - "2.1. Personal Workspace"
-Cohesion: 0.29
-Nodes (7): 2.1. Personal Workspace, 2.2. Organization Workspace, 2.3. Platform Admin, 2. Mô hình Dashboard mục tiêu, Collaboration, Creator Tools, Learning
-
-### Community 422 - "10. Quy tắc về tài nguyên, dữ liệu và quyền sở hữu"
-Cohesion: 0.33
-Nodes (6): 10.1. Tài nguyên phải có phạm vi sở hữu, 10.2. Tách các phạm vi nội dung, 10.3. Đáp án và dữ liệu đánh giá nhạy cảm, 10.4. Radar và dữ liệu lịch sử, 10.5. Điểm tích lũy, 10. Quy tắc về tài nguyên, dữ liệu và quyền sở hữu
-
-### Community 423 - "15. Phạm vi triển khai theo giai đoạn"
-Cohesion: 0.33
-Nodes (6): 15. Phạm vi triển khai theo giai đoạn, Giai đoạn 1 — Chốt mô hình và bảo mật, Giai đoạn 2 — Lớp quyền và dữ liệu, Giai đoạn 3 — Personal Workspace, Giai đoạn 4 — Organization Workspace, Giai đoạn 5 — Thương mại và vận hành
+### Community 423 - "run_migration_03.js"
+Cohesion: 0.40
+Nodes (5): executeSQL(), fs, https, main(), path
 
 ### Community 424 - "cursor.tsx"
 Cohesion: 0.20
 Nodes (15): ARROW_HOTSPOT, GLYPHS, HOTSPOT, ripple(), MacCrosshair(), MacGrab(), MacIbeam(), MacOpenHand() (+7 more)
 
-### Community 425 - "17. Thứ tự triển khai đề xuất"
-Cohesion: 0.17
-Nodes (12): 9.1. Lý do không nên là module top-level, 9.2. Luồng mục tiêu, 9.3. Thiết kế điều hướng, 9.4. Ranh giới thực thể bắt buộc, 9. “Bàn chấm bài” — giữ engine, đổi entry point, 17. Thứ tự triển khai đề xuất, Phase 0 — Security gate trước khi cho khách sử dụng Business, Phase 1 — Business onboarding đúng nghĩa (+4 more)
-
-### Community 426 - "Rehearse"
-Cohesion: 0.25
-Nodes (7): Lines that are never intentional, Other film lines, Prove the still before choreography, Rehearse, The host's own controls, The last pass, What to watch
+### Community 425 - "[slug]/grading/page.tsx"
+Cohesion: 0.36
+Nodes (6): OrgGradingClientView(), Props, SubmissionAnswer, SubmissionItem, dynamic, OrgGradingPage()
 
 ### Community 427 - "relationships.tsx"
 Cohesion: 0.20
 Nodes (17): Actions(), change(), Check(), Horizontal(), initial, LessonId, List(), Person() (+9 more)
 
-### Community 429 - "Diagnostic Scan"
+### Community 428 - "personal/assessments/page.tsx"
+Cohesion: 0.29
+Nodes (5): AssessmentItem, domainList, dynamic, formatFilterOptions, tierFilterOptions
+
+### Community 429 - "LOGO CONCEPT METHODS"
+Cohesion: 0.33
+Nodes (6): 1. Monogram + Meaning, 2. Product Action, 3. Metaphor Fusion, 4. Negative Space, 5. Construction Geometry, LOGO CONCEPT METHODS
+
+### Community 430 - "Kế Hoạch Triển Khai: Nâng Cấp Toàn Diện Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật (P0 → P2)"
+Cohesion: 0.29
+Nodes (6): 1. Tầm Nhìn Kiến Trúc & Mục Tiêu, 2. Các Quyết Định Kiến Trúc Then Chốt (ADR), 3. Lộ Trình 4 Đợt Triển Khai (Roadmap), 4. Quản Trị Rủi Ro & Quy Tắc An Toàn, 5 Mục Tiêu Trọng Tâm:, Kế Hoạch Triển Khai: Nâng Cấp Toàn Diện Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật (P0 → P2)
+
+### Community 431 - "7. AI TELLS (Forbidden Patterns)"
+Cohesion: 0.33
+Nodes (6): 7. AI TELLS (Forbidden Patterns), Content & Data (The "Jane Doe" Effect), External Resources & Components, Layout & Spacing, Typography, Visual & CSS
+
+### Community 433 - "PIIScrubberService"
+Cohesion: 0.25
+Nodes (6): PIIScrubberService, Danh Sách Nhiệm Vụ Triển Khai (Todo List) — Hệ Thống AI Toàn Diện NEXA, Giai Đoạn 1: Rubric Engine & Structured Authoring (`MOD-01`), Giai Đoạn 2: Lõi AI Gateway, Quota Reservation & Bảo Mật PII (`MOD-02`), Giai Đoạn 3: Bàn Chấm Bài NEXA Assess & Human-in-the-loop Gate (`MOD-03`), Giai Đoạn 4: Cố Vấn NEXA Guide 5 Miền & Admin AI Control Center (`MOD-04`, `MOD-05`)
+
+### Community 434 - "12. Use Case phòng thi trực tiếp"
+Cohesion: 0.33
+Nodes (6): 12.1. Danh mục use case Live, 12.2. Giám sát cho bài thi thường và bài thi Live, 12.3. Những gì web có thể và không thể đảm bảo, 12.4. Mô hình dữ liệu Live/Proctoring đề xuất, 12. Use Case phòng thi trực tiếp, PHẦN F — LIVE EXAM, PROCTORING VÀ TRUY CẬP ĐỀ THI THÔNG THƯỜNG
+
+### Community 435 - "Diagnostic Scan"
 Cohesion: 0.33
 Nodes (6): 1. Accessibility (VoiceOver / TalkBack), 2. Performance, 3. Appearance & Theming, 4. Platform Conformance (CRITICAL), 5. Adaptivity, Diagnostic Scan
 
-### Community 430 - "Kế Hoạch Triển Khai: Nâng Cấp Toàn Diện Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật (P0 → P2)"
+### Community 436 - ".agents/skills/impeccable/reference/generate.md"
+Cohesion: 0.40
+Nodes (4): Step 1: Parse the request, Step 2: Reuse the page, then start, Step 3: Generate, Step 4: Accept and close
+
+### Community 437 - "Impeccable Documenter"
+Cohesion: 0.40
+Nodes (4): Impeccable Documenter, Input Contract, Output Contract, Workflow
+
+### Community 438 - "Danh Sách Nhiệm Vụ: Rà Soát Toàn Diện Hệ Thống Theo Use Case & Tái Thiết Kế UI/UX Thành Viên"
 Cohesion: 0.33
-Nodes (5): 1. Tầm Nhìn Kiến Trúc & Mục Tiêu, 3. Lộ Trình 4 Đợt Triển Khai (Roadmap), 4. Quản Trị Rủi Ro & Quy Tắc An Toàn, 5 Mục Tiêu Trọng Tâm:, Kế Hoạch Triển Khai: Nâng Cấp Toàn Diện Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật (P0 → P2)
+Nodes (5): Danh Sách Nhiệm Vụ: Rà Soát Toàn Diện Hệ Thống Theo Use Case & Tái Thiết Kế UI/UX Thành Viên, Giai đoạn 1: Tối Ưu Quản Lý Thành Viên & Tái Thiết Kế Modal Mời Thành Viên (P0), Giai đoạn 2: Khớp Đặc Tả UC-O09 Trên Trang Đợt Khảo Thí (P1), Giai đoạn 3: Rà Soát Tính Nhất Quán Giao Diện & Trải Nghiệm Toàn Hệ Thống (P2), Giai đoạn 4: Kiểm Thử Tự Động & Đảm Bảo Tính Toàn Vẹn Hệ Thống (P3)
 
-### Community 431 - "11. Quy tắc xác thực, phân quyền và bảo mật"
+### Community 439 - "learning-paths/page.tsx"
 Cohesion: 0.40
-Nodes (5): 11.1. Luồng xác thực, 11.2. Kiểm tra quyền cho mọi thao tác, 11.3. Supabase RLS, 11.4. Demo mode, 11. Quy tắc xác thực, phân quyền và bảo mật
+Nodes (3): DOMAIN_OPTIONS, LearningModuleItem, LearningPathItem
 
-### Community 432 - "13. Yêu cầu giao diện và điều hướng"
+### Community 440 - "2. PLATFORM MODE RULE"
+Cohesion: 0.50
+Nodes (4): 2. PLATFORM MODE RULE, Android-native premium, Cross-platform premium neutral, iOS-native premium
+
+### Community 441 - "37. EXAMPLE INTERPRETATIONS"
+Cohesion: 0.50
+Nodes (4): 37. EXAMPLE INTERPRETATIONS, Example 1, Example 2, Example 3
+
+### Community 442 - "users/page.tsx"
+Cohesion: 0.67
+Nodes (3): AdminUsersPage(), UserRecord, UsersContent()
+
+### Community 443 - "Danh Sách Công Việc Triển Khai (Todo List) — Chuẩn Hóa 3 Dashboard & Toàn Vẹn Khảo Thí NEXA"
 Cohesion: 0.40
-Nodes (5): 13.1. Personal Workspace, 13.2. Organization Workspace, 13.3. Chuyển workspace, 13.4. Quản trị nền tảng, 13. Yêu cầu giao diện và điều hướng
-
-### Community 433 - "14. Nguyên tắc chuyển đổi từ mô hình hiện tại"
-Cohesion: 0.40
-Nodes (5): 14.1. Không thực hiện đổi tên hàng loạt thiếu kiểm soát, 14.2. Phân tích đầy đủ các phụ thuộc cũ, 14.3. Chiến lược migration, 14.4. Bảo toàn dữ liệu, 14. Nguyên tắc chuyển đổi từ mô hình hiện tại
-
-### Community 434 - "9. Mô hình gói dịch vụ"
-Cohesion: 0.40
-Nodes (5): 9.1. Định hướng, 9.2. Ma trận quyền lợi đề xuất, 9.3. Quy tắc chưa được phép tự suy diễn, 9.4. Quy tắc entitlement, 9. Mô hình gói dịch vụ
-
-### Community 435 - "64. Bốn domain không được trộn"
-Cohesion: 0.40
-Nodes (5): 64. Bốn domain không được trộn, Assignment, Class, Live Room, Submission
-
-### Community 436 - "P0 — Sửa domain đang broken"
-Cohesion: 0.40
-Nodes (5): 69. Priority Backlog, P0.1. Class / Group, P0.2. Assignment / Submission, P0.3. Org Workspace Context, P0 — Sửa domain đang broken
-
-### Community 439 - "6. Mô hình Organization Business — từ liên hệ đến kích hoạt"
-Cohesion: 0.40
-Nodes (5): 6.1. Nguyên tắc sản phẩm, 6.2. State machine đề xuất, 6.3. Review hiện trạng code, 6.4. Trang Business nên thể hiện gì, 6. Mô hình Organization Business — từ liên hệ đến kích hoạt
-
-### Community 440 - "8. Mời thành viên: link, mã, CSV và phê duyệt"
-Cohesion: 0.33
-Nodes (6): 8.1. Hiện trạng đã có gì?, 8.2. Ba hình thức tham gia nên hỗ trợ, 8.3. Workflow link/mã tham gia, 8.4. Ma trận vai trò tối thiểu, 8.5. Những lỗi/gap liên quan lời mời hiện tại, 8. Mời thành viên: link, mã, CSV và phê duyệt
-
-### Community 441 - "telegram/index.tsx"
-Cohesion: 0.06
-Nodes (40): IMessage(), initial, S, SUGGEST, suggestions(), ArrowUp(), initial, Messages() (+32 more)
-
-### Community 442 - "16. Ma trận kiểm thử/tiêu chí nghiệm thu"
-Cohesion: 0.33
-Nodes (6): 16.1. RLS, quyền và tenant, 16.2. Mời thành viên và kích hoạt Business, 16.3. Đợt đánh giá và báo cáo 5 miền, 16.4. AI, thanh toán và Personal, 16.5. Quality gates, 16. Ma trận kiểm thử/tiêu chí nghiệm thu
-
-### Community 443 - "domain-assessment-summary.service.ts"
-Cohesion: 0.20
-Nodes (9): dynamic, GET(), CANONICAL_DIGCOMP_DOMAINS, CanonicalDomain, DomainAssessmentSummaryService, DomainScoreSummary, ItemCompetencyDomainJoin, UserCompetencySummary (+1 more)
-
-### Community 444 - "5. Mô hình người dùng và quyền"
-Cohesion: 0.50
-Nodes (4): 5.1. Danh tính nền tảng, 5.2. Vai trò đề xuất trong tổ chức, 5.3. Platform Admin, 5. Mô hình người dùng và quyền
-
-### Community 445 - "13. Phân biệt Radar / AI Analysis / Learning Path"
-Cohesion: 0.50
-Nodes (4): 13. Phân biệt Radar / AI Analysis / Learning Path, AI Analysis, Learning Path, Radar
-
-### Community 446 - "18. Ba khái niệm phải tách"
-Cohesion: 0.50
-Nodes (4): 18. Ba khái niệm phải tách, ASSIGNMENT, CLASS, LIVE ROOM
-
-### Community 447 - "3. Personal Workspace"
-Cohesion: 0.50
-Nodes (4): 3.1. Nhóm Learning, 3.2. Nhóm hoạt động cá nhân, 3.3. Nhóm Creator Tools, 3. Personal Workspace
-
-### Community 448 - "55. Assessment Scope Model"
-Cohesion: 0.50
-Nodes (4): 55. Assessment Scope Model, ORGANIZATION, PERSONAL, SYSTEM
-
-### Community 449 - "66. Đề xuất route mục tiêu"
-Cohesion: 0.50
-Nodes (4): 66. Đề xuất route mục tiêu, Admin, Organization, Personal
-
-### Community 450 - "finder/index.tsx"
-Cohesion: 0.19
-Nodes (12): DragImage(), FileIcon(), FinderDemo(), Geo, Ghost, initial, Kind, Photo() (+4 more)
-
-### Community 451 - "3. Sidebar / Information Architecture (IA)"
-Cohesion: 0.50
-Nodes (4): 3.1. Vấn đề hiện tại, 3.2. Sidebar mục tiêu, 3.3. Quy tắc hiển thị theo ngữ cảnh, 3. Sidebar / Information Architecture (IA)
-
-### Community 452 - "5. Trang Tổng quan: chuyển từ KPI tĩnh sang bảng điều khiển theo trạng thái"
-Cohesion: 0.50
-Nodes (4): 5.1. Câu hỏi trang này phải trả lời, 5.2. Thiết kế khuyến nghị, 5.3. Bốn trạng thái bắt buộc, 5. Trang Tổng quan: chuyển từ KPI tĩnh sang bảng điều khiển theo trạng thái
-
-### Community 454 - "8. AI trong Personal — 5 vị trí, 2 loại quyết định"
-Cohesion: 0.50
-Nodes (4): 8.1. AI được đặt vào đúng điểm chạm, 8.2. Cờ AI Xanh — Vàng — Đỏ, 8.3. AI credits & quota, 8. AI trong Personal — 5 vị trí, 2 loại quyết định
-
-### Community 455 - "HeroDemo.tsx"
-Cohesion: 0.09
-Nodes (27): FigmaDemo(), hex(), initial, LayerIcon(), LAYERS, MAYA, mayaAt(), S (+19 more)
-
-### Community 456 - "11. Workflow lõi: Đợt đánh giá"
-Cohesion: 0.50
-Nodes (4): 11.1. Tại sao cần Đợt đánh giá?, 11.2. Luồng tổ chức đánh giá, 11.3. Trạng thái đợt đánh giá đề xuất, 11. Workflow lõi: Đợt đánh giá
+Nodes (4): Danh Sách Công Việc Triển Khai (Todo List) — Chuẩn Hóa 3 Dashboard & Toàn Vẹn Khảo Thí NEXA, Đợt 1: Bảo Mật, Nộp Bài, Điểm Rubric & AI Draft (P0 Security Gate), Đợt 3: Vòng Đời Tổ Chức & Đợt Đánh Giá B2B (Organization Lifecycle), Đợt 4: Quản Trị Nền Tảng, Cấu Hình AI & Vận Hành (Admin Control Plane)
 
 ### Community 458 - "choreography/index.tsx"
 Cohesion: 0.19
 Nodes (12): Bank(), Checkout(), Choreography(), ChoreographyComparison(), choreographyLessons, initial, Locale, locales (+4 more)
 
-### Community 459 - "7. Personal và Organization liên quan thế nào"
-Cohesion: 0.50
-Nodes (4): 7.1. Một danh tính — nhiều workspace, 7.2. Workspace switcher — đề xuất UI, 7.3. Vấn đề đã xác nhận, 7. Personal và Organization liên quan thế nào
-
-### Community 460 - "35. `/personal/settings`"
-Cohesion: 0.67
-Nodes (3): 35. `/personal/settings`, Vấn đề UX, Đề xuất
-
-### Community 461 - "44. Class Scope Model"
-Cohesion: 0.67
-Nodes (3): 44. Class Scope Model, Organization, Personal
-
-### Community 462 - "4. `/personal/dashboard`"
-Cohesion: 0.67
-Nodes (3): 4. `/personal/dashboard`, Kiến trúc đề xuất, Mục tiêu use case
-
-### Community 463 - "59. AI Gateway vs Settings"
-Cohesion: 0.67
-Nodes (3): 59. AI Gateway vs Settings, AI Configuration, AI Operations
-
 ### Community 467 - "live-room.ts"
-Cohesion: 0.07
-Nodes (36): ActivityEvent, HostWaitingRoomPage(), Participant, RoomData, CreateLiveRoomWizardPage(), EvaluatorLiveRoomPage(), ExamRoomItem, LiveRoomContent() (+28 more)
+Cohesion: 0.06
+Nodes (40): ActivityEvent, HostWaitingRoomPage(), Participant, RoomData, Assessment, CreateLiveRoomWizardContent(), CreateLiveRoomWizardPage(), dynamic (+32 more)
 
 ### Community 489 - "16. Analytics và Audit Use Cases"
 Cohesion: 0.25
 Nodes (8): 14. Organization/B2B Use Cases, 15.1. Bảng dữ liệu tối thiểu đề xuất cho tài chính, 15. Billing và thương mại Use Cases, 16.1. Analytics Người đánh giá, 16.2. Analytics Admin, 16.3. Audit log không đồng nghĩa consent log, 16. Analytics và Audit Use Cases, PHẦN H — TỔ CHỨC, TÀI CHÍNH, ANALYTICS VÀ KIỂM TOÁN
 
 ### Community 490 - "boot"
-Cohesion: 0.24
-Nodes (11): clock, Host, installVirtualClock(), boot(), errorText(), params, showFailure(), Clock (+3 more)
-
-### Community 491 - "layout.mjs"
-Cohesion: 0.18
-Nodes (10): playwright-core@~1.48.2, launch(), args, auditLayout(), layoutResult(), errors, options, result (+2 more)
+Cohesion: 0.33
+Nodes (9): installVirtualClock(), boot(), errorText(), params, showFailure(), Clock, Controls, createFrameDriver() (+1 more)
 
 ### Community 492 - ".agents/skills/impeccable/SKILL.md"
-Cohesion: 0.08
-Nodes (21): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft floor, Refuse, Verify (+13 more)
+Cohesion: 0.06
+Nodes (28): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft floor, Refuse, Verify (+20 more)
 
 ### Community 493 - "cursor-morph.tsx"
-Cohesion: 0.17
-Nodes (13): Step 1: Run the pass, CIRCLE, CursorMorph(), HEAD, Look, path(), POINTER, Pt (+5 more)
-
-### Community 494 - "13. AI: chỉ Platform Admin điều khiển model"
-Cohesion: 0.50
-Nodes (4): 13.1. Ranh giới sản phẩm, 13.2. On-demand và Human in the Loop, 13.3. Những nơi cần dọn metadata model, 13. AI: chỉ Platform Admin điều khiển model
+Cohesion: 0.13
+Nodes (16): CIRCLE, CursorMorph(), HEAD, Look, MorphStyle, POINTER, Pt, rgba() (+8 more)
 
 ### Community 495 - ".github/skills/impeccable/reference/generate.md"
 Cohesion: 0.15
@@ -2388,37 +2279,17 @@ Nodes (11): compilerOptions, jsx, lib, module, moduleResolution, noEmit, skipLib
 Cohesion: 0.24
 Nodes (9): curated, examples, extra, groups, listed, products, specimens, mount() (+1 more)
 
-### Community 500 - "Visualize: Direction Comps & Asset Production"
-Cohesion: 0.33
-Nodes (5): After approval: the comp becomes a spec, Generate three compositional options, One approval point, Plates and provenance, Visualize: Direction Comps & Asset Production
-
 ### Community 501 - "Operate mode depth (and Read notes)"
 Cohesion: 0.22
 Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes), Product constraints, Product permissions, The product slop test (+1 more)
-
-### Community 502 - "dependencies"
-Cohesion: 0.12
-Nodes (16): dependencies, class-variance-authority@^0.7.1, lucide-react@^0.475.0, next@^15.2.1, @payos/node@^2.0.5, pdf-lib@^1.17.1, react@^19.0.0, @supabase/ssr@^0.5.2 (+8 more)
 
 ### Community 503 - "preview.tsx"
 Cohesion: 0.25
 Nodes (4): StillContext, Boundary, modules, mount()
 
-### Community 504 - "Looks"
-Cohesion: 0.22
-Nodes (8): Check it, Defining a look, From a codebase, From a public site, Looks, The built-in looks, The tokens, What a look doesn't change
-
 ### Community 505 - "Teaching pairs"
 Cohesion: 0.22
 Nodes (8): Details, Making a comparison, Motion between neighbors, Style (stills), Teaching pairs, UI details (stills), What a pair can't show, Whole scenes (stills)
-
-### Community 506 - "Verify"
-Cohesion: 0.22
-Nodes (8): Framing (first, because nothing else matters if this is wrong), Gate, Hand over, Hierarchy and density, Motion (animated scenes), Polish (last), Verify, What you see, what you do
-
-### Community 508 - ".github/skills/impeccable/reference/doctor.md"
-Cohesion: 0.29
-Nodes (6): Monorepo notes, Opting out of the boot check, Step 2: Act by severity, Step 3: Deprecated fields are binding, Step 4: Do not overclaim on truth drift, What this owns, and what it does not
 
 ### Community 509 - "edges.tsx"
 Cohesion: 0.28
@@ -2429,12 +2300,12 @@ Cohesion: 0.28
 Nodes (8): Card(), Deploy, DEPLOYS, ICON, Id, MadeUp(), StyleComparison(), styleLessons
 
 ### Community 511 - "path"
-Cohesion: 0.15
-Nodes (11): Step 1: Parse the request, Step 2: Reuse the page, then start, Step 3: Generate, Step 4: Accept and close, append-arrays, append-string, Config drift, Consent prompt (use this phrasing) (+3 more)
-
-### Community 512 - "3. Lộ Trình Triển Khai Theo Giai Đoạn (Phased Execution)"
 Cohesion: 0.18
-Nodes (10): 1. Mục Tiêu & Nguyên Tắc Bất Biến, 2. Kiến Trúc Luồng Dữ Liệu (End-to-End Workflow), 3. Lộ Trình Triển Khai Theo Giai Đoạn (Phased Execution), 4. Tiêu Chí Nghiệm Thu (Acceptance Criteria), Giai đoạn P0: Vá Các Lỗ Hổng & Điểm Nghẽn Nghiệp Vụ Nghiêm Trọng (Stop-the-line), Giai đoạn P1: Nâng Cấp Trình Soạn Thảo Đề (Assessment Authoring V2) & Grading Engine, Giai đoạn P2: Thống Nhất Luồng Giao Đánh Giá / Tạo Đợt Khảo Thí (1 Form Duy Nhất), Giai đoạn P3: Hoàn Thiện Bàn Chấm Bài & Báo Cáo Năng Lực 5 Miền (+2 more)
+Nodes (10): Step 1: Run the pass, append-arrays, append-string, Config drift, Consent prompt (use this phrasing), CSP detection (first-time only), Troubleshooting, Write the config (+2 more)
+
+### Community 512 - "4. Kế Hoạch Triển Khai Chi Tiết (Phân Kỳ Nhiệm Vụ)"
+Cohesion: 0.15
+Nodes (12): 1.1. Không Gian Tổ Chức (Organization Console — Actor: Org Admin), 1.2. Không Gian Cá Nhân (Personal Workspace — Actor: Personal User), 1.3. Không Gian Quản Trị Nền Tảng (Platform Admin — Actor: System Admin), 1. Kết Quả Rà Soát Toàn Hệ Thống Đối Chiếu Với Use Case (System-Wide UC Audit), 2. Kiến Trúc Luồng Quản Lý & Mời Thành Viên Mới (Proposed Modal Workflow), 3. Quy Chuẩn Giao Diện Chi Tiết Theo /impeccable & /frontend-ui-engineering, 4. Kế Hoạch Triển Khai Chi Tiết (Phân Kỳ Nhiệm Vụ), Giai đoạn 1: Tối Ưu Quản Lý Thành Viên & Tái Thiết Kế Modal Mời Thành Viên (P0) (+4 more)
 
 ### Community 517 - "NOTICE.md"
 Cohesion: 0.33
@@ -2456,57 +2327,29 @@ Nodes (5): Bento, Kinds of tile, Layouts, Planning a grid, The rules
 Cohesion: 0.33
 Nodes (5): A change passing through an interface, Choose the curve for the movement, Choreography, Review the full change, Timing has different jobs
 
-### Community 523 - "RubricBuilder"
-Cohesion: 0.40
-Nodes (4): Danh Sách Nhiệm Vụ Triển Khai (Todo List) — Hệ Thống AI Toàn Diện NEXA, Giai Đoạn 1: Rubric Engine & Structured Authoring (`MOD-01`), Giai Đoạn 3: Bàn Chấm Bài NEXA Assess & Human-in-the-loop Gate (`MOD-03`), Giai Đoạn 4: Cố Vấn NEXA Guide 5 Miền & Admin AI Control Center (`MOD-04`, `MOD-05`)
-
-### Community 525 - "scripts"
-Cohesion: 0.40
-Nodes (5): scripts, build, check:css, dev, typecheck
-
-### Community 532 - "Impeccable Documenter"
-Cohesion: 0.40
-Nodes (4): Impeccable Documenter, Input Contract, Output Contract, Workflow
-
-### Community 539 - "Read"
-Cohesion: 0.50
-Nodes (3): Comps, Directions, Read
-
 ### Community 542 - "Operate"
 Cohesion: 0.50
 Nodes (3): Comps, Directions, Operate
 
-### Community 543 - "package.json"
-Cohesion: 0.20
-Nodes (9): react-dom@^19.0.0, tailwindcss@^4.0.9, @tailwindcss/postcss@^4.0.9, react-dom, name, private, version, tailwindcss (+1 more)
-
-### Community 547 - "eslint.config.mjs"
-Cohesion: 0.29
-Nodes (4): compat, __dirname, eslintConfig, __filename
-
-### Community 551 - "clsx"
-Cohesion: 0.33
-Nodes (4): clsx@^2.1.1, tailwind-merge@^3.0.2, clsx, tailwind-merge
-
 ## Knowledge Gaps
 - **1 isolated node(s):** `SKILLS`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4678 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **36 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4498 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **19 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `AssessmentStudio.tsx`, `vitest`, `Organization Workspace & Teams`, `app/page.tsx`, `authoring/page.tsx`, `admin.ts`, `server.ts`, `Personal Workspace & Learner`, `requirePlatformAdmin`, `lucide-react`, `join-codes/route.ts`, `organizations/page.tsx`, `OrgAvatarMenu.tsx`, `grading.types.ts`, `learning-path/page.tsx`, `OrgAnalyticsDashboard.tsx`, `submissions/page.tsx`, `personal/assessments/page.tsx`, `package.json`, `bulk-import/route.ts`, `Application API Endpoints`, `createClient`, `Personal Workspace & Learner`, `Src > App > (Dashboard)`, `domain-assessment-summary.service.ts`, `competency.types.ts`, `compliance/page.tsx`, `OrgClassDetailView.tsx`, `csv-helper.ts`, `vitest`, `isSuperadminEmail`, `Src > App > (Dashboard)`, `live-room.ts`, `frameworks/page.tsx`, `WorkspaceSwitcher.tsx`, `AuthoringEditorTwoPane.tsx`, `app/layout.tsx`, `dependencies`, `item-bank/[id]/page.tsx`?**
-  _High betweenness centrality (0.094) - this node is a cross-community bridge._
-- **Are the 5 inferred relationships involving `createClient()` (e.g. with `[joinCode]/route.test.ts` and `leaderboard/route.test.ts`) actually correct?**
-  _`createClient()` has 5 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `warn()` connect `kit/index.ts` to `Observability Checklist`, `ref_react`, `Process`, `Stage`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Are the 13 inferred relationships involving `createClient()` (e.g. with `[joinCode]/route.test.ts` and `leaderboard/route.test.ts`) actually correct?**
+  _`createClient()` has 13 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `SKILLS` to the rest of the system?**
   _1 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Taste Skill & Visual Design Tools` be split into smaller, more focused modules?**
   _Cohesion score 0.06648426812585499 - nodes in this community are weakly interconnected._
-- **Why does `warn()` connect `Stage` to `ref_react`, `Process`, `Approach`?**
-  _High betweenness centrality (0.084) - this node is a cross-community bridge._
-- **Are the 14 inferred relationships involving `createAdminClient()` (e.g. with `SEC-02 — GET Campaigns không kiểm tra tư cách thành viên tổ chức` and `organizations/route.test.ts`) actually correct?**
-  _`createAdminClient()` has 14 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Structured Logging` connect `Observability Checklist` to `kit/index.ts`?**
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
+- **Are the 22 inferred relationships involving `createAdminClient()` (e.g. with `organizations/route.test.ts` and `transactions/route.test.ts`) actually correct?**
+  _`createAdminClient()` has 22 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Taste Skill & Visual Design Tools` be split into smaller, more focused modules?**
   _Cohesion score 0.06648426812585499 - nodes in this community are weakly interconnected._

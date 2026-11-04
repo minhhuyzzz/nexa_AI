@@ -92,7 +92,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 font-mono">
-                HỒ SƠ NĂNG LỰC SỐ CÔNG DÂN (DIGCOMP 3.0)
+                HỒ SƠ 5 MIỀN NĂNG LỰC SỐ CÔNG DÂN
               </span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">

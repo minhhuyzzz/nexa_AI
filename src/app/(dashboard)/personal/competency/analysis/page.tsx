@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
@@ -260,21 +260,12 @@ function CompetencyAnalysisContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-              BÁO CÁO PHÂN TÍCH NĂNG LỰC SỐ CHUYÊN SÂU
-            </span>
-          </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Chẩn đoán Khoảng trống Năng lực &amp; Lộ trình 4 Bước
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Đánh giá đa chiều theo 5 Miền năng lực số và định hướng lộ trình học tập cá nhân hóa.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">

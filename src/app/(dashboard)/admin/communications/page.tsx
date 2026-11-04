@@ -136,18 +136,9 @@ export default function AdminCommunicationsPage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 font-mono">
-              COMMUNICATIONS &amp; FEEDBACK CENTER
-            </span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Trung Tâm Truyền Thông &amp; Hộp Thư Góp Ý
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Tiếp nhận đóng góp ý kiến từ người dùng, phát thông báo lưu cơ sở dữ liệu và vận hành truyền thông nền tảng.
-          </p>
         </div>
 
         {activeTab === 'feedback' && (

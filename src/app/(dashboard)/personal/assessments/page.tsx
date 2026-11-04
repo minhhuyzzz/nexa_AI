@@ -77,7 +77,7 @@ export default function LearnerAssessmentsPage() {
         const mapped: AssessmentItem[] = data.map((a: any) => ({
           id: a.id,
           title: a.title,
-          description: a.description || 'Bài khảo thí chuẩn hóa năng lực số theo khung DigComp 3.0.',
+          description: a.description || 'Bài khảo thí chuẩn hóa năng lực số theo chuẩn 5 miền năng lực số.',
           domainName: a.domainName || 'Đa Miền Năng Lực Số',
           domainCodes: a.domainCodes || [],
           duration_minutes: a.duration_minutes || 30,
@@ -150,20 +150,11 @@ export default function LearnerAssessmentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              KHẢO THÍ CHUẨN HÓA
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Bài Khảo Thí Năng Lực Số
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            Bài đánh giá
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Danh mục bài đánh giá đo lường năng lực số, nhận phân tích khoảng trống và chứng chỉ số.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">

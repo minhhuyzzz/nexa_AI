@@ -122,14 +122,11 @@ export function OrgAnalyticsDashboard({
   return (
     <div className="space-y-6">
       {/* Page Header with Action Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-neutral-100 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-neutral-100 tracking-tight">
             Báo Cáo & Phân Tích Năng Lực Số
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Chẩn đoán chuẩn xác mức độ phát triển năng lực số 5 miền cốt lõi của đơn vị {orgName}.
-          </p>
         </div>
 
         {/* Toolbar Buttons */}

@@ -386,7 +386,7 @@ export default function PersonalAuthoringListPage() {
           <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-md mx-auto mb-6 leading-relaxed">
             {searchQuery || selectedDomain !== 'all' || activeTab !== 'all'
               ? 'Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ lọc để xem toàn bộ danh sách.'
-              : 'Hãy bắt đầu bằng cách soạn đề đánh giá đầu tiên theo chuẩn 5 miền năng lực số DigComp.'}
+              : 'Hãy bắt đầu bằng cách soạn đề đánh giá đầu tiên theo 5 miền năng lực số.'}
           </p>
 
           <Link

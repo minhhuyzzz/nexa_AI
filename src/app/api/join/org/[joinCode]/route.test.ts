@@ -138,6 +138,21 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
       },
     } as any);
 
+    const mockUpsertMember = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'uo-1',
+            organization_id: orgId,
+            user_id: 'user-candidate-1',
+            org_role: 'MEMBER',
+            status: 'ACTIVE',
+          },
+          error: null,
+        }),
+      }),
+    });
+
     const mockUpsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         single: vi.fn().mockResolvedValue({
@@ -145,7 +160,7 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
             id: 'req-1',
             organization_id: orgId,
             user_id: 'user-candidate-1',
-            status: 'PENDING',
+            status: 'APPROVED',
           },
           error: null,
         }),
@@ -171,6 +186,13 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
                     used_count: 5,
                     expires_at: new Date(Date.now() + 100000).toISOString(),
                     is_revoked: false,
+                    organizations: {
+                      id: orgId,
+                      name: 'Đại Học Quốc Gia',
+                      slug: 'dai-hoc-quoc-gia',
+                      status: 'ACTIVE',
+                      is_active: true,
+                    },
                   },
                   error: null,
                 }),
@@ -186,6 +208,16 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
                 eq: vi.fn().mockReturnValue({
                   maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
                 }),
+              }),
+            }),
+            upsert: mockUpsertMember,
+          };
+        }
+        if (table === 'profiles') {
+          return {
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockResolvedValue({ data: null, error: null }),
               }),
             }),
           };
@@ -215,10 +247,9 @@ describe('Public Join Org Code API (/api/join/org/[joinCode])', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.request.status).toBe('PENDING');
-    expect(mockUpsert).toHaveBeenCalledTimes(1);
-    // ORG-02: used_count is only incremented when approved, not on initial request creation
-    expect(mockUpdateCode).not.toHaveBeenCalled();
+    expect(body.member.status).toBe('ACTIVE');
+    expect(mockUpsertMember).toHaveBeenCalledTimes(1);
+    expect(mockUpdateCode).toHaveBeenCalledTimes(1);
   });
 
   it('GET: tìm thấy tổ chức khi nhập mã tổ chức trực tiếp (fallback)', async () => {

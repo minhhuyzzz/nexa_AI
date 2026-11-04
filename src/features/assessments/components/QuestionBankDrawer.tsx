@@ -145,7 +145,7 @@ export function QuestionBankDrawer({
               Ngân Hàng Câu Hỏi Khảo Thí
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Chọn câu hỏi chuẩn hóa DigComp từ kho trung tâm để đưa vào bài thi
+              Chọn câu hỏi chuẩn hóa từ kho trung tâm để đưa vào bài thi
             </p>
           </div>
           <button
@@ -250,7 +250,7 @@ export function QuestionBankDrawer({
                         </span>
                         {item.competencies && (
                           <span className="px-1.5 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded text-[10px] font-mono">
-                            DigComp {item.competencies.skill_code}
+                            Kỹ năng {item.competencies.skill_code}
                           </span>
                         )}
                         <span className="text-[10px] text-slate-500 font-mono ml-auto">

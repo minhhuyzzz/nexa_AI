@@ -354,9 +354,6 @@ export default function LearnerDashboardPage() {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-neutral-400">
-            Tiếp tục hành trình phát triển năng lực số cùng NEXA.
-          </p>
         </div>
 
         {/* Quick Indicators: Streak & Level (Borderless, Background-transparent, seamlessly blending with page) */}

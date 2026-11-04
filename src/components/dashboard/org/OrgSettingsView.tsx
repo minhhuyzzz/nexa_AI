@@ -185,17 +185,10 @@ export function OrgSettingsView({
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
-          <Building2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>CÀI ĐẶT &amp; QUẢN TRỊ TỔ CHỨC</span>
-        </div>
+      <div className="pb-4 border-b border-slate-200 dark:border-zinc-800">
         <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-          Cấu Hình Không Gian {org.name}
+          Cài đặt Tổ chức
         </h1>
-        <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-          Quản lý thông tin định danh, cơ chế phê duyệt tham gia, danh sách email cho phép và chính sách khảo thí.
-        </p>
       </div>
 
       {!isManager && (

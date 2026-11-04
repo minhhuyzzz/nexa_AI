@@ -139,7 +139,7 @@ export default async function OrgMyResultsPage({
             {avgScore !== null ? `${avgScore}%` : '—'}
           </div>
           <div className="text-[11px] text-slate-500 mt-2">
-            Theo khung năng lực số DigComp
+            Theo 5 miền năng lực số chuẩn hóa
           </div>
         </div>
       </div>

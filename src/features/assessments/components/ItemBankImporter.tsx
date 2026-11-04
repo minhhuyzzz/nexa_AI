@@ -238,7 +238,7 @@ Miền: D2
               <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-600 dark:text-zinc-400 flex items-start gap-2">
                 <HelpCircle className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
                 <span>
-                  Hệ thống tự động phát hiện cú pháp câu hỏi trắc nghiệm, phân loại miền DigComp và trích xuất đáp án đúng mà không gây lỗi dữ liệu.
+                  Hệ thống tự động phát hiện cú pháp câu hỏi trắc nghiệm, phân loại 5 miền năng lực và trích xuất đáp án đúng mà không gây lỗi dữ liệu.
                 </span>
               </div>
             </div>

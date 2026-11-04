@@ -66,16 +66,13 @@ export function OrgClassesDashboardClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Lớp &amp; Nhóm Đơn Vị
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Nhóm &amp; Đơn vị
             </h1>
-            <span className="text-xs px-2 py-0.5 rounded font-mono font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
-              {classes.length} đơn vị
+            <span className="text-xs px-2 py-0.5 rounded-full font-mono font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
+              {classes.length}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Quản lý các lớp học, phòng ban và nhóm học tập, đánh giá trực thuộc {organizationName}.
-          </p>
         </div>
 
         {isManager && (
@@ -115,8 +112,10 @@ export function OrgClassesDashboardClient({
         <OrgClassesDirectoryView
           classes={classes}
           slug={slug}
+          organizationId={organizationId}
           isManager={isManager}
           onOpenCreateClass={() => setIsCreateModalOpen(true)}
+          onRefresh={refreshClasses}
         />
       )}
 

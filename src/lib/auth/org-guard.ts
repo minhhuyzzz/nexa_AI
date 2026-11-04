@@ -15,7 +15,8 @@ export type OrgPermissionAction =
   | 'VIEW_AI_QUOTA'
   | 'MANAGE_CAMPAIGNS'
   | 'MANAGE_CLASSES'
-  | 'MANAGE_SETTINGS';
+  | 'MANAGE_SETTINGS'
+  | 'MANAGE_ASSESSMENTS';
 
 export interface OrgAuthContext {
   isAuthorized: boolean;
@@ -50,6 +51,7 @@ const ACTION_ROLE_MAP: Record<OrgPermissionAction, OrgRole[]> = {
   MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN'],
   MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN'],
   MANAGE_SETTINGS: ['ORG_OWNER', 'ORG_ADMIN'],
+  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN'],
 };
 
 /**

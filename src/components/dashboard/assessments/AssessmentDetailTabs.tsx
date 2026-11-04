@@ -165,7 +165,7 @@ export function AssessmentDetailTabs({
                   1:1 Bìa Đề Thi
                 </span>
                 <span className="text-[9px] text-slate-400 dark:text-zinc-500">
-                  {assessment.domainName || 'DigComp 3.0'}
+                  {assessment.domainName || '5 Miền Năng Lực'}
                 </span>
               </div>
             )}
@@ -568,7 +568,7 @@ export function AssessmentDetailTabs({
           {/* 5 Domains Coverage Progress */}
           <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-4 shadow-2xs text-xs">
             <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide">
-              Phân bổ trọng số theo 5 Miền Năng Lực DigComp 3.0
+              Phân bổ trọng số theo 5 Miền Năng Lực Số
             </h2>
 
             <div className="space-y-3">

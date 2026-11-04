@@ -281,9 +281,6 @@ function UsersContent() {
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Quản Lý Người Dùng &amp; Tài Khoản
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Quản trị phân quyền tài khoản, tạm khóa vi phạm và giám sát bảo mật phiên đăng nhập.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

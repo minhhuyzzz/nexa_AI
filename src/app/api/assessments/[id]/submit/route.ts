@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 const submitSchema = z.object({
   submissionId: z.string().uuid().optional(),
   classAssignmentId: z.string().uuid().optional(),
+  campaignId: z.string().uuid().optional(),
   timeSpentSeconds: z.number().int().min(0).default(0),
   answers: z.array(
     z.object({
@@ -39,7 +40,7 @@ export async function POST(
       );
     }
 
-    const { submissionId, classAssignmentId, timeSpentSeconds, answers } = validated.data;
+    const { submissionId, classAssignmentId, campaignId, timeSpentSeconds, answers } = validated.data;
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
 
@@ -56,7 +57,7 @@ export async function POST(
     // 2. Fetch assessment settings
     const { data: assessment, error: assessmentError } = await adminSupabase
       .from('assessments')
-      .select('id, passing_score, point_reward')
+      .select('id, passing_score, point_reward, is_vip, access_tier')
       .eq('id', assessmentId)
       .single();
 
@@ -67,11 +68,36 @@ export async function POST(
     const passingScore = Number(assessment.passing_score) || 70.0;
     const pointReward = Number(assessment.point_reward) || 10;
 
-    // 3. SEC-03: Validate classAssignmentId if provided
+    // 3. SEC-03: Validate Access Tier on Submit
+    const isVipAssessment = Boolean(assessment.is_vip || assessment.access_tier === 'VIP');
+    if (isVipAssessment) {
+      const { data: profile } = await adminSupabase
+        .from('profiles')
+        .select('plan_tier, role, admin_role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const isPaidUser = profile?.plan_tier && profile.plan_tier !== 'FREE';
+      const isPlatformStaff = profile?.role === 'ADMIN' || profile?.admin_role === 'SUPER_ADMIN';
+
+      if (!isPaidUser && !isPlatformStaff && !classAssignmentId && !campaignId) {
+        return NextResponse.json(
+          {
+            error: 'Bài khảo thí này thuộc phân hạng VIP / Premium. Vui lòng nâng cấp tài khoản để nộp bài.',
+            code: 'UPGRADE_REQUIRED',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    let resolvedCampaignId = campaignId || null;
+
+    // 4. SEC-03: Validate classAssignmentId if provided
     if (classAssignmentId) {
       const { data: assignment, error: assignError } = await adminSupabase
         .from('class_assignments')
-        .select('id, class_id, assessment_id')
+        .select('id, class_id, assessment_id, campaign_id')
         .eq('id', classAssignmentId)
         .maybeSingle();
 
@@ -87,6 +113,10 @@ export async function POST(
           { error: 'Nhiệm vụ bài tập không khớp với đề thi này' },
           { status: 400 }
         );
+      }
+
+      if (assignment.campaign_id && !resolvedCampaignId) {
+        resolvedCampaignId = assignment.campaign_id;
       }
 
       // Check candidate is actively enrolled in the assigned class
@@ -283,6 +313,7 @@ export async function POST(
         status: hasOpenResponse ? 'SUBMITTED' : 'EVALUATED',
         grading_status: hasOpenResponse ? 'PENDING_REVIEW' : 'COMPLETED',
         class_assignment_id: classAssignmentId || null,
+        campaign_id: resolvedCampaignId || null,
         total_score: hasOpenResponse ? null : totalScore,
         max_score: maxScore,
         percentage: percentage !== null ? Number(percentage.toFixed(2)) : null,

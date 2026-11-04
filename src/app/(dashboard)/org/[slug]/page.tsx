@@ -159,10 +159,6 @@ export default async function OrgOverviewPage({
         {/* Content */}
         <div className="relative z-10 max-w-xl">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-mono font-bold tracking-[0.14em] text-blue-400 uppercase">
-              BÀN ĐIỀU HÀNH TỔ CHỨC
-            </span>
-            <span className="text-slate-400">&bull;</span>
             <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
               {entitlements.planName || 'BUSINESS'}
             </span>
@@ -171,9 +167,6 @@ export default async function OrgOverviewPage({
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2 leading-tight">
             {org.name}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md">
-            Quản trị khảo thí, theo dõi 5 miền năng lực số DigComp và phát triển nhân lực số theo chuẩn quốc tế.
-          </p>
         </div>
 
         {/* CTAs */}
@@ -295,7 +288,7 @@ export default async function OrgOverviewPage({
                 Chưa có đợt khảo thí nào được tạo.
               </p>
               <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-0.5 mb-3">
-                Khởi tạo đợt đánh giá để giao đề thi chuẩn DigComp cho các nhóm.
+                Khởi tạo đợt đánh giá để giao đề thi cho các nhóm.
               </p>
               {isOwnerOrAdmin && (
                 <Link
@@ -389,7 +382,7 @@ export default async function OrgOverviewPage({
                   Chưa có dữ liệu khảo thí được phê duyệt
                 </p>
                 <p className="text-[11px] text-slate-400 dark:text-neutral-500 leading-relaxed">
-                  Khi các bài làm được chấm duyệt, phân tích năng lực 5 miền DigComp sẽ hiển thị tại đây theo thang điểm /100.
+                  Khi các bài làm được chấm duyệt, phân tích năng lực 5 miền sẽ hiển thị tại đây theo thang điểm /100.
                 </p>
               </div>
             ) : (
@@ -427,7 +420,7 @@ export default async function OrgOverviewPage({
           </div>
 
           <div className="pt-4 border-t border-slate-100 dark:border-zinc-800 mt-4 text-[11px] text-slate-500 dark:text-neutral-400 flex items-center justify-between">
-            <span>Chuẩn DigComp 2.2</span>
+            <span>Chuẩn hóa 5 miền</span>
             <span className="font-mono tabular-nums">{evaluatedCount} mẫu đánh giá</span>
           </div>
         </div>

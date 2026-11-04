@@ -192,7 +192,7 @@ export default function AssessmentDetailPage() {
       setAssessment({
         id: asm.id,
         title: asm.title,
-        description: asm.description || 'Bài khảo thí chuẩn hóa đo lường năng lực số công dân theo khung DigComp 3.0.',
+        description: asm.description || 'Bài khảo thí chuẩn hóa đo lường 5 miền năng lực số.',
         domainName: 'Đa Miền Năng Lực Số',
         duration_minutes: asm.duration_minutes || 45,
         passing_score: Number(asm.passing_score) || 70,

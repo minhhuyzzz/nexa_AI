@@ -36,15 +36,24 @@ import { QuestionPickerDrawer } from './QuestionPickerDrawer';
 
 interface AuthoringEditorTwoPaneProps {
   assessmentId: string;
+  returnUrl?: string;
+  previewUrl?: string;
+  organizationId?: string;
 }
 
-export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneProps) {
+export function AuthoringEditorTwoPane({
+  assessmentId,
+  returnUrl = '/personal/authoring',
+  previewUrl,
+  organizationId,
+}: AuthoringEditorTwoPaneProps) {
   const router = useRouter();
   const supabase = createClient();
 
   const [assessment, setAssessment] = useState<AuthoringAssessment | null>(null);
   const [questions, setQuestions] = useState<AuthoringQuestionItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
   const [loading, setLoading] = useState(true);
 
   // Autosave & Status
@@ -298,6 +307,7 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
       return updated;
     });
     setSelectedIndex(questions.length);
+    setMobileTab('editor');
   };
 
   const handleDuplicateQuestion = (idx: number) => {
@@ -421,7 +431,7 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
         <div className="flex items-center gap-3">
           <Link
-            href="/personal/authoring"
+            href={returnUrl}
             className="p-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
             title="Quay lại danh sách đề"
           >
@@ -495,7 +505,7 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
           </button>
 
           <Link
-            href={`/personal/authoring/${assessmentId}/preview`}
+            href={previewUrl || `/personal/authoring/${assessmentId}/preview`}
             className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
           >
             <span>Kiểm định &amp; Xem trước</span>
@@ -504,10 +514,38 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
         </div>
       </div>
 
+      {/* Mobile Tab Switcher */}
+      <div className="lg:hidden flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-800 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setMobileTab('list')}
+          className={`flex-1 py-1.5 rounded-lg text-center transition ${
+            mobileTab === 'list'
+              ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
+              : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          Danh sách câu hỏi ({questions.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('editor')}
+          className={`flex-1 py-1.5 rounded-lg text-center transition ${
+            mobileTab === 'editor'
+              ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
+              : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          Soạn câu #{selectedIndex + 1}
+        </button>
+      </div>
+
       {/* 2. Main Two-Pane Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left Pane: Question List Sidebar (4 cols) */}
-        <div className="lg:col-span-4 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3">
+        <div className={`lg:col-span-4 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3 ${
+          mobileTab === 'editor' ? 'hidden lg:block' : 'block'
+        }`}>
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-850">
             <div>
               <div className="flex items-center gap-1.5">
@@ -551,7 +589,10 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
               return (
                 <div
                   key={q.id}
-                  onClick={() => setSelectedIndex(idx)}
+                  onClick={() => {
+                    setSelectedIndex(idx);
+                    setMobileTab('editor');
+                  }}
                   className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-start gap-2.5 ${
                     isSelected
                       ? 'border-blue-600 dark:border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-1 ring-blue-500/20'
@@ -642,7 +683,9 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
 
         {/* Right Pane: Question Detail Editor or Empty State (8 cols) */}
         {currentQ ? (
-          <div className="lg:col-span-8 p-6 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-6">
+          <div className={`lg:col-span-8 p-6 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-6 ${
+            mobileTab === 'list' ? 'hidden lg:block' : 'block'
+          }`}>
             {/* Meta bar for current question */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-4 border-b border-slate-100 dark:border-zinc-850">
               {/* Type */}
@@ -941,12 +984,25 @@ export function AuthoringEditorTwoPane({ assessmentId }: AuthoringEditorTwoPaneP
 - Biểu đồ trực quan, định dạng rõ ràng"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+
+                  {/* Informative Workbench Flow Banner */}
+                  <div className="p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-blue-800 dark:text-blue-300">Luồng chấm bài thực hành:</span>
+                      <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 leading-relaxed">
+                        Học viên sẽ nộp Tệp (Word/Excel/ảnh) hoặc Đường dẫn (Google Drive/Figma). Bài làm sẽ tự động chuyển vào <strong>Bàn chấm bài (Grading Workbench)</strong> để giảng viên mở sản phẩm thực tế và chấm điểm theo barem này.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <div className="lg:col-span-8 p-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-4">
+          <div className={`lg:col-span-8 p-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-4 ${
+            mobileTab === 'list' ? 'hidden lg:block' : 'block'
+          }`}>
             <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
               <FileText className="w-8 h-8" strokeWidth={1.5} />
             </div>

@@ -96,10 +96,24 @@ export async function GET(
       realSubmissions = (subsData as typeof realSubmissions) || [];
     }
 
+    // Fetch evaluator name
+    let evaluatorName = 'Quản trị viên';
+    if (cls.evaluator_id) {
+      const { data: evalProf } = await supabase
+        .from('profiles')
+        .select('full_name, nickname')
+        .eq('id', cls.evaluator_id)
+        .maybeSingle();
+      if (evalProf) {
+        evaluatorName = evalProf.full_name || evalProf.nickname || 'Quản trị viên';
+      }
+    }
+
     return NextResponse.json({
       group: {
         id: cls.id,
         evaluatorId: cls.evaluator_id,
+        evaluatorName,
         name: cls.name,
         code: cls.class_code,
         description: cls.description || '',

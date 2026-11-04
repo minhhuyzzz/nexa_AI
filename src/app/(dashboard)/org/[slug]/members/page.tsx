@@ -22,7 +22,6 @@ export default async function OrgMembersPage({
     membersResult,
     classesResult,
     classMembersResult,
-    pendingRequestsResult,
     pendingInvitationsResult,
     entitlements,
   ] = await Promise.all([
@@ -59,21 +58,14 @@ export default async function OrgMembersPage({
       .select('user_id, evaluator_classes!inner(id, name, organization_id)')
       .eq('evaluator_classes.organization_id', org.id),
 
-    // 4. Pending membership requests
-    adminSupabase
-      .from('organization_membership_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', org.id)
-      .eq('status', 'PENDING'),
-
-    // 5. Pending invitations
+    // 4. Pending invitations
     adminSupabase
       .from('organization_invitations')
       .select('id', { count: 'exact', head: true })
       .eq('organization_id', org.id)
       .eq('status', 'PENDING'),
 
-    // 6. Entitlements
+    // 5. Entitlements
     QuotaEnforcementService.getOrgEntitlements(adminSupabase, org.id),
   ]);
 
@@ -126,7 +118,7 @@ export default async function OrgMembersPage({
         members={members}
         classes={classes}
         entitlements={entitlements}
-        pendingRequestsCount={pendingRequestsResult.count || 0}
+        maxMembers={org.max_members || 500}
         pendingInvitationsCount={pendingInvitationsResult.count || 0}
         isManager={Boolean(isManager)}
       />

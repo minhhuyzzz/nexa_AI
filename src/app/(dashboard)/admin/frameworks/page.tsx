@@ -205,9 +205,6 @@ export default function AdminFrameworksPage() {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Khung Năng Lực Số Chuẩn Hóa
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản trị 5 miền năng lực số và 21 kỹ năng chuẩn DigComp 2.2. Bạn có thể chỉnh sửa tên, mã hoặc thêm kỹ năng trực tiếp.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -242,14 +239,14 @@ export default function AdminFrameworksPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm font-bold text-slate-900">
-              {framework?.title || 'Khung Năng Lực Số Chuẩn Hóa EU DigComp 2.2'}
+              {framework?.title || 'Khung Năng Lực Số Chuẩn Hóa'}
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold font-mono">
-              PHIÊN BẢN {framework?.version || '2.2'}
+              PHIÊN BẢN {framework?.version || 'Chuẩn hóa'}
             </span>
           </div>
           <p className="text-xs text-slate-500 max-w-2xl">
-            {framework?.description || 'Khung chuẩn hóa năng lực số theo tiêu chuẩn EU DigComp 2.2 và thông tư chuẩn kỹ năng số quốc gia.'}
+            {framework?.description || 'Khung chuẩn hóa 5 miền năng lực số phục vụ đánh giá và bồi dưỡng toàn diện.'}
           </p>
         </div>
 

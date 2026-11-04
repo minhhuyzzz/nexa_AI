@@ -97,18 +97,9 @@ export default function PersonalNewAssessmentPage() {
 
       {/* 2. Header */}
       <div className="pb-4 border-b border-slate-100 dark:border-zinc-850">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
-          <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
-            BƯỚC 1: KHỞI TẠO NỘI DUNG ĐỀ
-          </span>
-        </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
           Khởi tạo đề đánh giá mới
         </h1>
-        <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-          Đặt tên đề, mục tiêu và phạm vi năng lực số trước khi bước vào soạn chi tiết câu hỏi.
-        </p>
       </div>
 
       {errorMessage && (
@@ -149,7 +140,7 @@ export default function PersonalNewAssessmentPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="VD: Bài khảo thí đo lường kỹ năng thông tin, dữ liệu và văn phòng số theo chuẩn DigComp."
+              placeholder="VD: Bài khảo thí đo lường kỹ năng thông tin, dữ liệu và văn phòng số."
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>

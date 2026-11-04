@@ -324,18 +324,9 @@ function LearningPathContent() {
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-850">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
-            <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
-              LỘ TRÌNH PHÁT TRIỂN NĂNG LỰC SỐ
-            </span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Lộ Trình Của Tôi
+            Lộ trình của tôi
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Hành trình học tập được cá nhân hóa theo mục tiêu của bạn. Học theo tốc độ riêng và phát triển toàn diện 5 miền năng lực số.
-          </p>
         </div>
 
         <Link

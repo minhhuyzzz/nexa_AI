@@ -211,16 +211,7 @@ function AdminSettingsContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 font-mono">
-              SYSTEM CONFIGURATION &amp; GOVERNANCE
-            </span>
-          </div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Cài Đặt Hệ Thống Nền Tảng</h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Cấu hình AI Gateway, quản lý 5 vai trò Admin nội bộ, tích hợp webhook và nhật ký kiểm toán.
-          </p>
         </div>
 
         <button

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 const inviteSchema = z.object({
   organizationId: z.string().uuid('ID tổ chức không hợp lệ'),
@@ -43,9 +44,9 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    const isPlatformAdmin = callerProfile?.role === 'ADMIN';
+    const isPlatformAdmin = callerProfile?.role === 'ADMIN' || isSuperadminEmail(user.email);
 
     if (!isPlatformAdmin) {
       const { data: membership } = await adminSupabase
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
         .eq('organization_id', organizationId)
         .eq('status', 'ACTIVE')
-        .single();
+        .maybeSingle();
 
       if (!membership || !['ORG_OWNER', 'ORG_ADMIN'].includes(membership.org_role)) {
         return NextResponse.json(
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
       .from('organizations')
       .select('id, name')
       .eq('id', organizationId)
-      .single();
+      .maybeSingle();
 
     if (orgError || !organization) {
       return NextResponse.json(
@@ -107,15 +108,19 @@ export async function POST(request: NextRequest) {
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     // Revoke any pending previous invitations for this email in this org
-    await adminSupabase
-      .from('organization_invitations')
-      .update({ status: 'REVOKED' })
-      .eq('organization_id', organizationId)
-      .eq('email', email.toLowerCase())
-      .eq('status', 'PENDING');
+    try {
+      await supabase
+        .from('organization_invitations')
+        .update({ status: 'REVOKED' })
+        .eq('organization_id', organizationId)
+        .eq('email', email.toLowerCase())
+        .eq('status', 'PENDING');
+    } catch {
+      // Non-blocking if previous record does not belong to caller
+    }
 
-    // 5. Insert new invitation
-    const { data: invitation, error: insertError } = await adminSupabase
+    // 5. Insert new invitation using user authenticated client (satisfies RLS invited_by = auth.uid())
+    let { data: invitation, error: insertError } = await supabase
       .from('organization_invitations')
       .insert({
         organization_id: organizationId,
@@ -129,9 +134,37 @@ export async function POST(request: NextRequest) {
       .select('id, token, email, org_role, status, expires_at, created_at')
       .single();
 
+    if (insertError) {
+      // Fallback to adminSupabase if service role is enabled
+      const adminRes = await adminSupabase
+        .from('organization_invitations')
+        .insert({
+          organization_id: organizationId,
+          email: email.toLowerCase(),
+          org_role: orgRole,
+          token,
+          status: 'PENDING',
+          invited_by: user.id,
+          expires_at: expiresAt.toISOString(),
+        })
+        .select('id, token, email, org_role, status, expires_at, created_at')
+        .single();
+
+      if (!adminRes.error && adminRes.data) {
+        invitation = adminRes.data;
+        insertError = null;
+      } else if (adminRes.error) {
+        insertError = adminRes.error;
+      }
+    }
+
     if (insertError || !invitation) {
+      console.error('[INVITE_INSERT_ERROR]', insertError);
       return NextResponse.json(
-        { error: 'Không thể tạo lời mời', details: insertError?.message },
+        {
+          error: 'Không thể tạo lời mời',
+          details: insertError?.message || 'Lỗi khi lưu trữ lời mời vào cơ sở dữ liệu',
+        },
         { status: 500 }
       );
     }

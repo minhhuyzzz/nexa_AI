@@ -141,11 +141,11 @@ export default async function OrgCampaignDetailPage({
     }
   }
 
-  // 4. Calculate Real KPIs
-  const inProgressCount = submissions.filter((s) => s.status === 'IN_PROGRESS').length;
+  // 4. Calculate Real KPIs (Strictly UC-O09: Chưa làm & Đã nộp; Không hiển thị Đang làm)
   const submittedCount = submissions.filter((s) => s.status === 'SUBMITTED').length;
   const gradedCount = submissions.filter((s) => s.status === 'EVALUATED').length;
   const totalSubmissions = submissions.length;
+  const notSubmittedCount = Math.max(0, totalAssigned - totalSubmissions);
   const passedCount = submissions.filter(
     (s) => s.status === 'EVALUATED' && Number(s.total_score) >= Number(campaign.passing_score)
   ).length;
@@ -196,7 +196,7 @@ export default async function OrgCampaignDetailPage({
 
           <div className="flex items-center gap-2">
             <Link
-              href={`/org/${slug}/grading`}
+              href={`/org/${slug}/grading?campaignId=${campaign.id}`}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shadow-2xs transition-colors shrink-0"
             >
               <FileCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -229,7 +229,7 @@ export default async function OrgCampaignDetailPage({
         </div>
       </div>
 
-      {/* KPI Real Stats Dashboard */}
+      {/* KPI Real Stats Dashboard (Strictly UC-O09) */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-2xs text-xs">
           <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">Được giao</span>
@@ -240,17 +240,9 @@ export default async function OrgCampaignDetailPage({
         </div>
 
         <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-2xs text-xs">
-          <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">Đang làm</span>
-          <span className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">
-            {inProgressCount}
-          </span>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Đang trong phòng thi</span>
-        </div>
-
-        <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-2xs text-xs">
           <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">Đã nộp bài</span>
           <span className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">
-            {submittedCount + gradedCount}
+            {totalSubmissions}
           </span>
           <span className="text-[10px] text-slate-400 block mt-0.5">Đã thu bài thi</span>
         </div>
@@ -269,6 +261,14 @@ export default async function OrgCampaignDetailPage({
             {passedCount}/{gradedCount || 0}
           </span>
           <span className="text-[10px] text-slate-400 block mt-0.5">Tỉ lệ đạt: {gradedCount > 0 ? Math.round((passedCount / gradedCount) * 100) : 0}%</span>
+        </div>
+
+        <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-2xs text-xs">
+          <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">Chưa nộp bài</span>
+          <span className="text-xl font-bold font-mono text-slate-700 dark:text-zinc-300">
+            {notSubmittedCount}
+          </span>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Chưa hoàn thành bài</span>
         </div>
       </div>
 
@@ -321,10 +321,10 @@ export default async function OrgCampaignDetailPage({
                               ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                               : s.status === 'SUBMITTED'
                               ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900'
-                              : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
                           }`}
                         >
-                          {isGraded ? 'Đã duyệt điểm' : s.status === 'SUBMITTED' ? 'Chờ chấm bài' : 'Đang làm'}
+                          {isGraded ? 'Đã duyệt điểm' : s.status === 'SUBMITTED' ? 'Chờ chấm bài' : 'Đã nộp'}
                         </span>
                       </td>
                       <td className="py-3 px-3 text-right font-mono font-bold">

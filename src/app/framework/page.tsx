@@ -122,7 +122,7 @@ export default async function FrameworkPage() {
             {framework?.title || 'Khung Năng Lực Số Chuẩn'}
           </h1>
           <p className="mt-3 text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            {framework?.description || 'Tham chiếu theo tiêu chuẩn EU DigComp 3.0, bao gồm 5 miền năng lực cốt lõi và 21 kỹ năng thành phần trên 8 cấp độ thành thạo (Basic, Intermediate, Advanced, Highly Advanced).'}
+            {framework?.description || 'Hệ thống đánh giá năng lực số toàn diện, bao gồm 5 miền năng lực cốt lõi trên các cấp độ thành thạo.'}
           </p>
           <div className="mt-4 flex items-center justify-center gap-3">
             <span className="text-xs px-2.5 py-1 rounded-md bg-white text-slate-800 border border-slate-200 shadow-xs">

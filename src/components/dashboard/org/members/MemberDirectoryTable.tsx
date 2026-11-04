@@ -138,7 +138,7 @@ export function MemberDirectoryTable({
                 setCurrentPage(1);
               }}
               placeholder="Tìm theo tên, email..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              className="w-full pl-9 pr-3.5 py-2 text-xs border border-slate-200/80 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-2xs"
             />
           </div>
 
@@ -148,7 +148,7 @@ export function MemberDirectoryTable({
               setRoleFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-2.5 py-1.5 text-xs border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-200 focus:outline-none"
+            className="px-3 py-2 text-xs border border-slate-200/80 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-200 focus:outline-none cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả vai trò</option>
             <option value="ADMIN">Quản trị viên</option>
@@ -161,7 +161,7 @@ export function MemberDirectoryTable({
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-2.5 py-1.5 text-xs border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-200 focus:outline-none"
+            className="px-3 py-2 text-xs border border-slate-200/80 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-200 focus:outline-none cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">Hoạt động</option>
@@ -173,7 +173,7 @@ export function MemberDirectoryTable({
           {isManager && onOpenBulkImport && (
             <button
               onClick={onOpenBulkImport}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
               <span>Nhập danh sách (.CSV)</span>
@@ -181,7 +181,7 @@ export function MemberDirectoryTable({
           )}
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
             <span>Xuất danh sách</span>
@@ -193,7 +193,7 @@ export function MemberDirectoryTable({
       </div>
 
       {/* Main Table */}
-      <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
+      <div className="rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

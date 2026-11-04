@@ -150,18 +150,9 @@ export default function AdminTransactionsPage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 font-mono">
-              FINANCIAL RECONCILIATION WORKBENCH
-            </span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Sổ Cái Giao Dịch &amp; Đối Soát Doanh Thu
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Kiểm soát thanh toán nâng cấp gói, đối soát chuyển khoản ngân hàng có căn cứ minh chứng và ghi nhận audit trail.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

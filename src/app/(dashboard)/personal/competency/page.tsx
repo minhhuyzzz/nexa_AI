@@ -86,17 +86,9 @@ export default function LearnerCompetencyHubPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-              KHUNG NĂNG LỰC SỐ
-            </span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Hồ Sơ Năng Lực Số Cá Nhân
+            Hồ sơ năng lực
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Bản đồ đánh giá năng lực số cá nhân theo 5 miền chuẩn DigComp với dữ liệu khảo thí thời gian thực.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -166,7 +158,7 @@ export default function LearnerCompetencyHubPage() {
             {loading ? '-' : domains.filter((d) => d.score !== null).length}
             <span className="text-sm font-normal text-slate-400 ml-1">/ 5 miền</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">Đánh giá chuẩn hóa 5 miền DigComp</div>
+          <div className="text-[11px] text-slate-500 mt-1">Đánh giá chuẩn hóa 5 miền năng lực số</div>
         </div>
 
         <div className="p-4 rounded-md border border-slate-200 bg-white shadow-xs">

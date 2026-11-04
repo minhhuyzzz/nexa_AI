@@ -82,20 +82,11 @@ export default function LeaderboardPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
       {/* 1. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider font-mono">
-              DANH HIỆU &amp; VINH DANH HOẠT ĐỘNG
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Bảng Xếp Hạng Hoạt Động (PTS)
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            Bảng xếp hạng
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Thi đua tích lũy điểm hoạt động (PTS) qua các bài khảo thí và học phần. Điểm PTS dùng để theo dõi sự chuyên cần và độc lập với hồ sơ 5 miền năng lực số DigComp.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -125,9 +116,6 @@ export default function LeaderboardPage() {
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider font-mono">
                   Bảng Vàng Danh Dự
                 </h2>
-                <p className="text-xs text-slate-500">
-                  Top 3 cá nhân có điểm tích lũy PTS cao nhất hệ thống
-                </p>
               </div>
             </div>
             <div className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-mono font-medium">
@@ -294,14 +282,11 @@ export default function LeaderboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Danh Sách Xếp Hạng Toàn Hệ Thống</span>
+              <span>Bảng thành tích toàn hệ thống</span>
               <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                {filteredList.length} học viên
+                {filteredList.length}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Thứ tự được sắp xếp theo tổng PTS tích lũy hợp lệ
-            </p>
           </div>
 
           <div className="relative max-w-xs w-full">

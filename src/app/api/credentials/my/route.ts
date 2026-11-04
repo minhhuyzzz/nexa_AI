@@ -9,53 +9,59 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-    let activeUser = user;
-    let profileData = null;
+    // 1. Authenticate user strictly (no unauthenticated fallback)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (activeUser) {
-      const { data: p } = await supabase
-        .from('profiles')
-        .select('id, full_name, points, role')
-        .eq('id', activeUser.id)
-        .single();
-      profileData = p;
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id, full_name, points, role')
+      .eq('id', user.id)
+      .single();
 
     if (!profileData) {
-      // Fallback to standard learner profile
-      const { data: fallbackProfile } = await supabase
-        .from('profiles')
-        .select('id, full_name, points, role')
-        .eq('email', 'learner@nexa.edu.vn')
-        .single();
-      profileData = fallbackProfile;
-      if (fallbackProfile) {
-        activeUser = { id: fallbackProfile.id } as typeof user;
-      }
-    }
-
-    if (!activeUser || !profileData) {
-      return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
+      return NextResponse.json({ error: 'Không tìm thấy hồ sơ người dùng' }, { status: 404 });
     }
 
     const currentPoints = profileData.points ?? 0;
     const candidateName = profileData.full_name || 'Học Viên Nexa';
-    const isUnlocked = currentPoints >= 450;
-    const requiredPoints = 450;
+    const requiredPoints = 500;
     const pointsNeeded = Math.max(0, requiredPoints - currentPoints);
+
+    // 2. Check roadmap completion status (Must complete 100% steps in personalized pathway)
+    const { data: latestAnalysis } = await supabase
+      .from('competency_analyses')
+      .select('id, learning_pathway')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const pathway = (latestAnalysis?.learning_pathway as Array<{ is_completed?: boolean }>) || [];
+    const totalSteps = pathway.length;
+    const completedSteps = pathway.filter((s) => Boolean(s.is_completed)).length;
+    const isRoadmapCompleted = totalSteps > 0 && completedSteps === totalSteps;
+
+    // Dual qualification rule: >= 500 PTS AND 100% roadmap completed
+    const isUnlocked = currentPoints >= requiredPoints && isRoadmapCompleted;
 
     // 3. Fetch Master Certificate if exists
     const { data: credentials } = await supabase
       .from('credentials')
       .select('*')
-      .eq('user_id', activeUser.id)
+      .eq('user_id', user.id)
       .eq('is_revoked', false)
       .order('issued_at', { ascending: false });
 
     let masterCredential = credentials && credentials.length > 0 ? credentials[0] : null;
 
-    // 4. Auto-issue Master Certificate if eligible (Level 4 >= 450 pts) and not yet issued
+    // 4. Auto-issue Master Certificate if eligible and not yet issued
     if (isUnlocked && !masterCredential) {
       const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
       const credentialCode = `NX-2026-MASTER-${randomHex}`;
@@ -83,7 +89,7 @@ export async function GET() {
           .insert({
             id: credentialId,
             credential_code: credentialCode,
-            user_id: activeUser.id,
+            user_id: user.id,
             submission_id: null,
             assessment_id: null,
             candidate_name: candidateName,
@@ -114,6 +120,9 @@ export async function GET() {
       points: currentPoints,
       requiredPoints,
       pointsNeeded,
+      isRoadmapCompleted,
+      completedSteps,
+      totalSteps,
       isUnlocked,
       masterCredential,
     });

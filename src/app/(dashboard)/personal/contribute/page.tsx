@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -81,39 +81,30 @@ export default function LearnerContributeOverviewPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-              COMMUNITY CONTRIBUTION HUB
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Quản Lý Đề Thi &amp; Sáng Kiến Đóng Góp
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Góp đề cộng đồng
             </h1>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-              Đề đã đóng góp: <strong className="font-semibold text-slate-900">{contributions.length}</strong>
+            <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
+              {contributions.length}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Theo dõi tiến độ thẩm định đề bài do bạn đề xuất, xem phản hồi từ Hội đồng Học thuật và nhận điểm thưởng tự động.
-          </p>
         </div>
 
         {/* Primary CTA */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={fetchMyContributions}
-            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium text-slate-700 dark:text-zinc-300 transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
             <span>Làm mới</span>
           </button>
           <Link
             href="/personal/contribute/new"
-            className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
             <span>Đóng góp đề bài mới</span>

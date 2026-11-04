@@ -530,7 +530,7 @@ export function AdminAssessmentDetailClient({
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
               <label className="block font-semibold text-slate-800 mb-1">
-                Kỹ Năng Mục Tiêu (DigComp 3.0) *
+                Kỹ Năng Mục Tiêu *
               </label>
               <select
                 value={qSkillCode}
@@ -1054,7 +1054,7 @@ export function AdminAssessmentDetailClient({
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
                         {item.rubric_guide ||
-                          'Chưa thiết lập tiêu chí Rubric. AI sẽ đánh giá theo chuẩn DigComp mặc định.'}
+                          'Chưa thiết lập tiêu chí Rubric. AI sẽ đánh giá theo thang đo năng lực số chuẩn.'}
                       </p>
                       <div className="pl-6 pt-1 text-[10px] text-slate-400">
                         Học viên được phép nộp: Thuyết minh giải pháp (văn bản) + Tải tệp đính kèm + Dán link URL minh chứng.

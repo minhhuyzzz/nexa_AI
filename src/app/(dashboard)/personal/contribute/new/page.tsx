@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
@@ -144,19 +144,10 @@ export default function NewContributionPage() {
       </div>
 
       {/* Header */}
-      <div className="pb-2 border-b border-slate-200">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-            COMMUNITY SUBMISSION
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Đóng Góp Tình Huống &amp; Đề Bài Khảo Thí Mới
+      <div className="pb-4 border-b border-slate-200/80 dark:border-zinc-800">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          Đóng góp đề bài mới
         </h1>
-        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-          Đề xuất tình huống thực tế hoặc gửi tệp đề bài khảo thí năng lực số cho Ban Thẩm định NEXA. Nhận ngay <span className="font-semibold text-emerald-700">+100 điểm thưởng</span> khi đề xuất được duyệt!
-        </p>
       </div>
 
       {submitted ? (

@@ -90,7 +90,7 @@ export default function LearnerGroupsPage() {
       }
 
       // 1. Groups joined by user as learner (includes both personal and organizational classes)
-      const { data: memberRows } = await supabase
+      const { data: memberRows, error: memberErr } = await supabase
         .from('class_members')
         .select(`
           id,
@@ -102,9 +102,9 @@ export default function LearnerGroupsPage() {
             description,
             created_at,
             evaluator_id,
+            owner_user_id,
             organization_id,
             organizations ( id, name, code, slug ),
-            profiles:evaluator_id ( nickname ),
             class_members ( id ),
             class_assignments ( id, assessment_id ),
             class_files ( id )
@@ -112,8 +112,12 @@ export default function LearnerGroupsPage() {
         `)
         .eq('user_id', user.id);
 
-      // 2. Personal groups created by user (evaluator_id = user.id AND organization_id IS NULL)
-      const { data: createdRows } = await supabase
+      if (memberErr) {
+        console.warn('Error fetching member classes:', memberErr.message);
+      }
+
+      // 2. Personal groups created by user (evaluator_id = user.id OR owner_user_id = user.id AND organization_id IS NULL)
+      const { data: createdRows, error: createdErr } = await supabase
         .from('evaluator_classes')
         .select(`
           id,
@@ -122,14 +126,18 @@ export default function LearnerGroupsPage() {
           description,
           created_at,
           evaluator_id,
+          owner_user_id,
           organization_id,
-          profiles:evaluator_id ( nickname ),
           class_members ( id ),
           class_assignments ( id, assessment_id ),
           class_files ( id )
         `)
-        .eq('evaluator_id', user.id)
+        .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`)
         .is('organization_id', null);
+
+      if (createdErr) {
+        console.warn('Error fetching created classes:', createdErr.message);
+      }
 
       // 3. User submissions to compute pending count
       const { data: mySubs } = await supabase
@@ -156,21 +164,46 @@ export default function LearnerGroupsPage() {
         }
       });
 
-      const formatted: ClassGroupItem[] = Array.from(combinedMap.values()).map((c) => {
+      // 4. Fetch evaluator/owner profile names in batch
+      const allClassItems = Array.from(combinedMap.values());
+      const distinctOwnerIds = Array.from(
+        new Set(
+          allClassItems
+            .map((c) => c.evaluator_id || c.owner_user_id)
+            .filter((id): id is string => Boolean(id) && id !== user.id)
+        )
+      );
+
+      const profileNameMap = new Map<string, string>();
+      if (distinctOwnerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, nickname')
+          .in('id', distinctOwnerIds);
+
+        (profiles || []).forEach((p) => {
+          profileNameMap.set(p.id, p.full_name || p.nickname || 'Quản trị viên');
+        });
+      }
+
+      const formatted: ClassGroupItem[] = allClassItems.map((c) => {
         const allAssignments = c.class_assignments || [];
         const pendingCount = allAssignments.filter(
           (a: any) => !submittedAssignmentIds.has(a.id)
         ).length;
 
-        const evalProf = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
         const orgInfo = Array.isArray(c.organizations) ? c.organizations[0] : c.organizations;
+        const ownerId = c.evaluator_id || c.owner_user_id;
+        const managerName = c.isOwner
+          ? 'Bạn (Quản trị viên)'
+          : (ownerId ? profileNameMap.get(ownerId) : null) || 'Quản trị viên';
 
         return {
           id: c.id,
           name: c.name || 'Lớp học không tên',
           code: c.class_code || '---',
           memberCount: (c.class_members || []).length,
-          evaluatorName: c.isOwner ? 'Bạn (Quản lý)' : evalProf?.nickname || 'Người quản lý',
+          evaluatorName: managerName,
           unreadPostsCount: 0,
           pendingAssignmentsCount: pendingCount,
           filesCount: (c.class_files || []).length,
@@ -257,18 +290,9 @@ export default function LearnerGroupsPage() {
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-850">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
-            <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
-              KHÔNG GIAN HỌC TẬP CÁ NHÂN
-            </span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Lớp & Nhóm của tôi
+            Lớp &amp; Nhóm của tôi
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Tạo không gian học tập riêng, giao bài đánh giá và cộng tác cùng mọi người.
-          </p>
         </div>
 
         {/* Action Buttons: Dropdown Join + Create Link */}
@@ -396,7 +420,7 @@ export default function LearnerGroupsPage() {
                 : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            <span>Tôi quản lý</span>
+            <span>Tôi quản trị</span>
             <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
               {managedCount}
             </span>
@@ -490,7 +514,7 @@ export default function LearnerGroupsPage() {
                     <div className="flex items-center gap-1.5">
                       {group.isOwner ? (
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-                          Quản lý
+                          Quản trị viên
                         </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700">
@@ -541,7 +565,7 @@ export default function LearnerGroupsPage() {
 
                       <span className="flex items-center gap-1.5">
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-zinc-700" />
-                        <span>Người quản lý: <strong>{group.evaluatorName}</strong></span>
+                        <span>Quản trị viên: <strong>{group.evaluatorName}</strong></span>
                       </span>
                     </div>
 
@@ -613,19 +637,6 @@ export default function LearnerGroupsPage() {
           </div>
         </div>
       )}
-
-      {/* 4. Bottom Informational Notice Banner */}
-      <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-start gap-3.5 text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
-        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" strokeWidth={1.75} />
-        <div>
-          <strong className="text-neutral-800 dark:text-zinc-200 block mb-0.5">
-            Không gian cá nhân độc lập và bảo mật
-          </strong>
-          <span>
-            Lớp học cá nhân được thiết kế cho nhu cầu tự học, ôn luyện nhóm và chia sẻ học liệu. Các lớp học chính thức thuộc trường học hoặc doanh nghiệp được quản lý cách ly tuyệt đối tại Không gian Tổ chức (Organization).
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

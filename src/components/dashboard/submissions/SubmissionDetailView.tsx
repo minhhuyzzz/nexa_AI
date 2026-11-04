@@ -35,13 +35,13 @@ export function SubmissionDetailView({ item, onBack, onNavigate }: SubmissionDet
   const requirements = item.requirements && item.requirements.length > 0 ? item.requirements : defaultRequirements;
 
   const defaultRubric = [
-    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 4 },
-    { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 3 },
-    { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 3 },
+    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 40 },
+    { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 30 },
+    { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 30 },
   ];
 
   const rubric = item.rubric && item.rubric.length > 0 ? item.rubric : defaultRubric;
-  const totalMaxPoints = rubric.reduce((sum, r) => sum + r.maxPoints, 0) || item.maxScore || 10;
+  const totalMaxPoints = rubric.reduce((sum, r) => sum + r.maxPoints, 0) || item.maxScore || 100;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">

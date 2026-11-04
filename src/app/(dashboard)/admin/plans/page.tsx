@@ -104,18 +104,9 @@ export default function AdminPlansPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
-              FINANCIAL ARCHITECTURE &amp; SERVICE TIERS
-            </span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Quản Lý Gói Dịch Vụ &amp; Định Mức Hợp Đồng
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Tách biệt rõ ràng giữa gói dịch vụ cá nhân (B2C) và hạn mức hợp đồng tổ chức (B2B Entitlements).
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

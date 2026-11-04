@@ -115,16 +115,9 @@ export default async function AdminDashboardPage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
-            <Building2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Platform Control Center</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Trung Tâm Điều Hành Nền Tảng
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Ưu tiên hàng đầu các hàng đợi tác vụ cần xử lý, quản trị khách hàng B2B và giám sát chất lượng khảo thí.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

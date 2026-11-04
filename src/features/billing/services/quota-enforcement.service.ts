@@ -72,15 +72,15 @@ export class QuotaEnforcementService {
 
     FREE: {
 
-      maxAssessments: 3,
+      maxAssessments: 15,
 
-      maxClasses: 1,
+      maxClasses: 10,
 
-      maxClassMembers: 15,
+      maxClassMembers: 100,
 
-      maxLiveRooms: 1,
+      maxLiveRooms: 3,
 
-      maxRoomParticipants: 15,
+      maxRoomParticipants: 50,
 
       baseCredits: 10,
 
@@ -88,31 +88,31 @@ export class QuotaEnforcementService {
 
     PRO: {
 
-      maxAssessments: 50,
+      maxAssessments: 999999,
 
-      maxClasses: 10,
+      maxClasses: 999999,
 
-      maxClassMembers: 100,
+      maxClassMembers: 1000,
 
-      maxLiveRooms: 5,
+      maxLiveRooms: 20,
 
-      maxRoomParticipants: 100,
+      maxRoomParticipants: 500,
 
-      baseCredits: 500,
+      baseCredits: 1000,
 
     },
 
     ENTERPRISE: {
 
-      maxAssessments: 9999,
+      maxAssessments: 999999,
 
-      maxClasses: 500,
+      maxClasses: 999999,
 
-      maxClassMembers: 10000,
+      maxClassMembers: 100000,
 
-      maxLiveRooms: 50,
+      maxLiveRooms: 100,
 
-      maxRoomParticipants: 1000,
+      maxRoomParticipants: 5000,
 
       baseCredits: 10000,
 

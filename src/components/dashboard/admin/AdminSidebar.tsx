@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   Shield,
   MessageSquare,
+  Compass,
 } from 'lucide-react';
 
 interface SubNavItem {
@@ -67,8 +68,8 @@ const adminNavSections: NavSection[] = [
     items: [
       { name: 'Ngân hàng đề & Học liệu', href: '/admin/content', icon: BookOpenCheck, exact: false },
       { name: 'Khung 5 miền năng lực', href: '/admin/frameworks', icon: Layers, exact: false },
-      { name: 'Bàn thẩm định 2 cột', href: '/admin/content-moderation', icon: FileCheck2, exact: false },
-      { name: 'Kiểm duyệt nội dung', href: '/admin/contributions', icon: FileCheck2, exact: false },
+      { name: 'Lộ trình & Học phần', href: '/admin/learning-paths', icon: Compass, exact: false },
+      { name: 'Kiểm duyệt đóng góp', href: '/admin/contributions', icon: FileCheck2, exact: false },
     ],
   },
   {

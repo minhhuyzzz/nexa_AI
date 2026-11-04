@@ -153,21 +153,21 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || 'Gửi yêu cầu tham gia thất bại.');
+        setErrorMessage(data.error || 'Tham gia tổ chức thất bại.');
         return;
       }
 
       setIsSuccess(true);
       setSuccessMsg(
         data.message ||
-          `Yêu cầu tham gia đã được gửi thành công đến ${checkResult.organization?.name}.`
+          `Chúc mừng bạn đã gia nhập thành công ${checkResult.organization?.name}.`
       );
 
       if (onSuccess) {
         onSuccess();
       }
     } catch {
-      setErrorMessage('Lỗi hệ thống khi gửi yêu cầu tham gia.');
+      setErrorMessage('Lỗi hệ thống khi tham gia tổ chức.');
     } finally {
       setSubmitting(false);
     }
@@ -211,10 +211,10 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
               </div>
               <div>
                 <h4 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
-                  Gửi yêu cầu gia nhập thành công!
+                  Gia nhập tổ chức thành công!
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-neutral-300 mt-1.5 leading-relaxed">
-                  {successMsg}
+                  {successMsg || `Chào mừng bạn đã trở thành thành viên của ${checkResult?.organization?.name}.`}
                 </p>
               </div>
 
@@ -242,7 +242,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                   }}
                   className="w-full py-2 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
                 >
-                  Hoàn tất
+                  Hoàn tất &amp; Bắt đầu
                 </button>
               </div>
             </div>
@@ -357,7 +357,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Đang gửi yêu cầu...</span>
+                          <span>Đang xử lý tham gia...</span>
                         </>
                       ) : (
                         <>

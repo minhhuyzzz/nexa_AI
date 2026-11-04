@@ -136,7 +136,7 @@ export function AdminAssessmentBankClient({
   const handleOpenCreateModal = () => {
     setEditingAssessment(null);
     setFormTitle('');
-    setFormDescription('Bài khảo thí chuẩn hóa đo lường năng lực số theo khung DigComp 3.0.');
+    setFormDescription('Bài khảo thí chuẩn hóa đo lường 5 miền năng lực số toàn diện.');
     setFormDuration(45);
     setFormPassingScore(70);
     setFormReward(50);
@@ -509,22 +509,12 @@ export function AdminAssessmentBankClient({
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="p-6 rounded-md bg-white border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              TRUNG TÂM QUẢN TRỊ KHO ĐỀ KHẢO THÍ &amp; HỌC LIỆU NĂNG LỰC SỐ
-            </span>
-          </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Ngân Hàng Đề Khảo Thí &amp; Quản Trị Khảo Hạch
+            Ngân Hàng Đề Khảo Thí
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Hệ thống ngân hàng khảo thí chuẩn hóa DigComp: Quản lý ma trận đề đa miền, cấu hình phân hạng
-            truy cập (Free / VIP), nạp hàng loạt từ file Excel/CSV, và thiết lập rubric thực hành.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -581,7 +571,7 @@ export function AdminAssessmentBankClient({
         </div>
 
         <div className="hidden sm:block text-[11px] text-slate-400 font-mono">
-          Chuẩn hóa DigComp Framework &bull; Dữ liệu thời gian thực
+          Chuẩn hóa 5 miền năng lực số &bull; Dữ liệu thời gian thực
         </div>
       </div>
 
@@ -1002,7 +992,7 @@ export function AdminAssessmentBankClient({
                     type="text"
                     value={importNewTitle}
                     onChange={(e) => setImportNewTitle(e.target.value)}
-                    placeholder="Ví dụ: Đánh giá Đa Miền Năng Lực Số Tổng Hợp DigComp 3.0"
+                    placeholder="Ví dụ: Đánh giá Đa Miền Năng Lực Số Tổng Hợp"
                     className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-sky-600"
                   />
                 </div>
@@ -1013,7 +1003,7 @@ export function AdminAssessmentBankClient({
               <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className="font-semibold text-slate-800">
-                    Tải tệp mẫu Excel / CSV chuẩn theo 5 Miền DigComp (UTF-8)
+                    Tải tệp mẫu Excel / CSV chuẩn theo 5 Miền năng lực số (UTF-8)
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button

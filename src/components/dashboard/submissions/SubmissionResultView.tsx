@@ -15,14 +15,14 @@ interface SubmissionResultViewProps {
 }
 
 export function SubmissionResultView({ item, onBack }: SubmissionResultViewProps) {
-  const score = item.officialScore ?? 8.5;
-  const maxScore = item.maxScore ?? 10;
+  const score = item.officialScore ?? 0;
+  const maxScore = item.maxScore ?? 100;
   const isPassed = item.isPassed ?? score >= (maxScore * 0.7);
 
   const defaultRubricBreakdown = [
-    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 4, awardedPoints: 3.5 },
-    { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 3, awardedPoints: 2.5 },
-    { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 3, awardedPoints: 2.5 },
+    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 40, awardedPoints: Math.round(score * 0.4) },
+    { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 30, awardedPoints: Math.round(score * 0.3) },
+    { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 30, awardedPoints: Math.round(score * 0.3) },
   ];
 
   const rubric = item.rubric && item.rubric.length > 0 ? item.rubric : defaultRubricBreakdown;

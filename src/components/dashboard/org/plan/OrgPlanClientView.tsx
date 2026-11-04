@@ -107,17 +107,11 @@ export function OrgPlanClientView({
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <div className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 tracking-wider uppercase mb-1">
-            TÀI KHOẢN TỔ CHỨC / GÓI
-          </div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Gói Business
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Quyền lợi đang sử dụng, mức tiêu thụ và gia hạn dịch vụ.
-          </p>
         </div>
       </div>
 

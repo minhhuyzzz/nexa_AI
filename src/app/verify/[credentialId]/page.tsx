@@ -192,7 +192,7 @@ export default async function VerifyCredentialKioskPage({
               <span className="text-slate-400 text-[11px] block mb-1">
                 KHUNG THAM CHIẾU TIÊU CHUẨN
               </span>
-              <span className="text-slate-700">EU DigComp 3.0 &amp; NĐ 13/2023/NĐ-CP</span>
+              <span className="text-slate-700">5 Miền Năng Lực Số Chuẩn Hóa &amp; NĐ 13/2023/NĐ-CP</span>
             </div>
           </div>
 
@@ -251,7 +251,7 @@ export default async function VerifyCredentialKioskPage({
               className="px-4 py-2 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-              Xem Khung Chuẩn DigComp 3.0
+              Xem Khung 5 Miền Năng Lực Số
             </Link>
           </div>
         </div>

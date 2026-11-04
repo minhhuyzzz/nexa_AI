@@ -126,7 +126,7 @@ export function PublishValidationModal({
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-md">
             <div className="text-xs font-medium text-slate-700 flex items-center gap-1.5 mb-1.5">
               <Layers className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-              Miền năng lực DigComp bao phủ:
+              Miền năng lực số bao phủ:
             </div>
             <div className="flex flex-wrap gap-1.5">
               {result.stats.coveredDomains.length > 0 ? (

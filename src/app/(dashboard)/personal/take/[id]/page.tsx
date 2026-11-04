@@ -62,11 +62,14 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
   const searchParams = useSearchParams();
   const roomId = searchParams.get('roomId');
   const pin = searchParams.get('pin');
+  const assignmentId = searchParams.get('assignmentId');
+  const campaignId = searchParams.get('campaignId');
 
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpgradeRequired, setIsUpgradeRequired] = useState(false);
 
   // Staged Exam Flow (One-way Section Lock)
   const [activeStage, setActiveStage] = useState<'STAGE_1_OBJECTIVE' | 'STAGE_2_PRACTICAL'>('STAGE_1_OBJECTIVE');
@@ -109,8 +112,21 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`/api/assessments/${assessmentId}`);
+        const qp = new URLSearchParams();
+        if (assignmentId) qp.set('assignmentId', assignmentId);
+        if (campaignId) qp.set('campaignId', campaignId);
+        if (roomId) qp.set('roomId', roomId);
+        if (pin) qp.set('pin', pin);
+        const qs = qp.toString() ? `?${qp.toString()}` : '';
+
+        const res = await fetch(`/api/assessments/${assessmentId}${qs}`);
         const data = await res.json();
+
+        if (res.status === 403 && (data.code === 'UPGRADE_REQUIRED' || data.error?.includes('VIP') || data.error?.includes('nâng cấp'))) {
+          setIsUpgradeRequired(true);
+          setError(data.error || 'Bài khảo thí này yêu cầu nâng cấp gói tài khoản VIP để tham gia.');
+          return;
+        }
 
         if (res.ok && data.assessment && data.items && data.items.length > 0) {
           setAssessment(data.assessment);
@@ -399,15 +415,48 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       const totalPracticalPoints = stage2Questions.reduce((acc, q) => acc + (q.points || 20), 0);
       const totalExamPoints = totalObjectivePoints + totalPracticalPoints;
 
+      // Call real backend submit API
+      const answersPayload = questions.map((q) => ({
+        itemId: q.id,
+        selectedOptionId: selectedAnswers[q.id] || null,
+        textResponse: textAnswers[q.id] || '',
+        evidenceUrl: evidenceUrls[q.id] || null,
+        liveUrl: liveUrls[q.id] || null,
+      }));
+
+      const totalSec = (assessment?.duration_minutes || 45) * 60;
+      const timeSpent = Math.max(0, totalSec - timeRemaining);
+
+      const submitRes = await fetch(`/api/assessments/${assessmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classAssignmentId: assignmentId || undefined,
+          campaignId: campaignId || undefined,
+          timeSpentSeconds: timeSpent,
+          answers: answersPayload,
+        }),
+      });
+
+      const submitData = await submitRes.json();
+      if (!submitRes.ok) {
+        if (submitRes.status === 403 && submitData.code === 'UPGRADE_REQUIRED') {
+          setIsUpgradeRequired(true);
+        }
+        throw new Error(submitData.error || 'Nộp bài thất bại');
+      }
+
       const resultPayload = {
         assessmentTitle: assessment?.title || 'Bài Khảo Thí Năng Lực Số',
-        objectiveScore: objectiveEarned,
+        objectiveScore: submitData.objectiveScore ?? objectiveEarned,
         totalObjectiveScore: totalObjectivePoints,
         totalPracticalPoints,
         totalExamPoints,
         hasPractical: stage2Questions.length > 0,
         submissionDate: new Date().toLocaleString('vi-VN'),
-        passed: (objectiveEarned / (totalObjectivePoints || 1)) >= ((assessment?.passing_score || 70) / 100),
+        passed: submitData.isPassed ?? ((objectiveEarned / (totalObjectivePoints || 1)) >= ((assessment?.passing_score || 70) / 100)),
+        officialScore: submitData.totalScore,
+        pointReward: submitData.pointReward,
       };
 
       setSubmittedResult(resultPayload);
@@ -465,6 +514,37 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-3">
         <div className="w-8 h-8 rounded-full border-2 border-sky-600 border-t-transparent animate-spin" />
         <p className="text-xs text-slate-500">Đang chuẩn bị phòng thi và bảo mật bài khảo thí...</p>
+      </div>
+    );
+  }
+
+  // Upgrade Required Screen
+  if (isUpgradeRequired) {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-[#111114] text-center space-y-4 shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+          <Sparkles className="w-6 h-6" strokeWidth={1.75} />
+        </div>
+        <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100">Yêu Cầu Nâng Cấp Gói VIP</h2>
+        <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
+          {error || 'Bài khảo thí này thuộc phân hạng VIP / Độc quyền. Hãy nâng cấp gói tài khoản cá nhân hoặc tham gia qua đợt khảo thí của tổ chức để mở khóa toàn bộ đề thi chuẩn hóa.'}
+        </p>
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+          <Link
+            href="/personal/pricing"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+          >
+            <span>Nâng cấp VIP ngay</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link
+            href="/personal/assessments"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Về thư viện đề</span>
+          </Link>
+        </div>
       </div>
     );
   }

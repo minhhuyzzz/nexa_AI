@@ -20,6 +20,7 @@ type TabType = 'stream' | 'assignments' | 'materials' | 'members' | 'settings';
 interface GroupData {
   id: string;
   evaluatorId: string;
+  evaluatorName?: string;
   name: string;
   code: string;
   description: string;
@@ -101,6 +102,7 @@ export default function LearnerGroupDetailPage() {
         code={group.code}
         createdAt={group.createdAt}
         memberCount={group.memberCount}
+        evaluatorName={isOwner ? 'Bạn (Quản trị viên)' : (group.evaluatorName || 'Quản trị viên')}
         role={userClassRole}
         isChatOpen={isChatOpen}
         onToggleChat={() => setIsChatOpen((prev) => !prev)}

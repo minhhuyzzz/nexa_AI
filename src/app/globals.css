@@ -10,6 +10,10 @@
   --color-warm-border: #fde68a;
   --color-warm-foreground: #92400e;
 
+  /* Energy Volt Accent (#D4FF24) */
+  --color-volt: #d4ff24;
+  --color-volt-glow: rgba(212, 255, 36, 0.4);
+
   /* Cobalt Blue Scale per AGENTS.md 3.1 & 3.2 */
   --color-blue-50: #eff6ff;
   --color-blue-100: #dbeafe;

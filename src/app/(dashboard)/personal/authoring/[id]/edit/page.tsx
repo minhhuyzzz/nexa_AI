@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Biên soạn câu hỏi | NEXA Authoring Studio',
-  description: 'Trình biên soạn câu hỏi 2 vùng chuẩn hóa năng lực số DigComp',
+  description: 'Trình biên soạn câu hỏi 2 vùng chuẩn hóa 5 miền năng lực số',
 };
 
 export default async function PersonalAuthoringEditPage({

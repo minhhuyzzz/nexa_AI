@@ -73,27 +73,24 @@ export function OrgCampaignsClientView({
   return (
     <div className="space-y-6">
       {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-neutral-100 tracking-tight">
-              Đợt Khảo Thí &amp; Đánh Giá
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Đợt khảo thí
             </h1>
-            <span className="px-2 py-0.5 text-xs font-semibold font-mono rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
-              {campaigns.length} đợt
+            <span className="px-2 py-0.5 text-xs font-semibold font-mono rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
+              {campaigns.length}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Điều phối các đợt khảo thí tập trung, phân công người chấm và giao đề thi tới các nhóm thuộc {organizationName}.
-          </p>
         </div>
 
         {isManager && (
           <Link
             href={`/org/${slug}/campaigns/new`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
           >
-            <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
             <span>Tạo đợt đánh giá mới</span>
           </Link>
         )}
@@ -232,7 +229,7 @@ export function OrgCampaignsClientView({
 
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/org/${slug}/grading`}
+                      href={`/org/${slug}/grading?campaignId=${c.id}`}
                       className="flex-1 h-8 px-2.5 rounded bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center justify-center gap-1 transition-colors border border-blue-200/60 dark:border-blue-900"
                     >
                       <FileCheck className="w-3.5 h-3.5" />

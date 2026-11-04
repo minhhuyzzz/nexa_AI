@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get('groupId') || searchParams.get('classId');
 
-    // 2. Fetch classes owned or evaluated by this user
+    // 2. Fetch personal classes owned or evaluated by this user (strictly isolated from organization classes)
     const { data: rawClasses } = await supabase
       .from('evaluator_classes')
       .select(`
@@ -27,7 +27,15 @@ export async function GET(req: Request) {
         class_code,
         class_members ( user_id )
       `)
+      .is('organization_id', null)
       .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
+
+    if (!rawClasses || rawClasses.length === 0) {
+      return NextResponse.json({
+        submissions: [],
+        classes: [],
+      });
+    }
 
     const groupMap = new Map<string, { id: string; name: string; code: string }>();
     (rawClasses || []).forEach((c: any) => {
@@ -44,9 +52,11 @@ export async function GET(req: Request) {
       } else {
         filterUserIds = [];
       }
+    } else {
+      filterUserIds = Array.from(new Set((rawClasses || []).flatMap((c: any) => (c.class_members || []).map((m: any) => m.user_id))));
     }
 
-    if (filterUserIds !== null && filterUserIds.length === 0) {
+    if (filterUserIds.length === 0) {
       return NextResponse.json({
         submissions: [],
         classes: (rawClasses || []).map((c: any) => ({
@@ -57,7 +67,7 @@ export async function GET(req: Request) {
       });
     }
 
-    // 4. Fetch submissions (latest first)
+    // 4. Fetch submissions (latest first, strictly isolate personal from organization)
     let subQuery = supabase
       .from('assessment_submissions')
       .select(`
@@ -75,18 +85,17 @@ export async function GET(req: Request) {
         time_spent_seconds,
         submitted_at,
         created_at,
-        assessments (
+        assessments!inner (
           id,
           title,
-          passing_score
+          passing_score,
+          organization_id
         )
       `)
+      .is('assessments.organization_id', null)
+      .in('user_id', filterUserIds)
       .order('created_at', { ascending: false })
       .limit(50);
-
-    if (filterUserIds && filterUserIds.length > 0) {
-      subQuery = subQuery.in('user_id', filterUserIds);
-    }
 
     const { data: rawSubmissions, error: subError } = await subQuery;
 

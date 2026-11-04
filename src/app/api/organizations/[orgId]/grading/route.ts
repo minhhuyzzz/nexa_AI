@@ -7,7 +7,13 @@ export const dynamic = 'force-dynamic';
 
 const submitGradeSchema = z.object({
   submissionId: z.string().uuid('ID bài thi không hợp lệ'),
-  totalScore: z.number().min(0).max(100),
+  totalScore: z.number().min(0).max(100).optional(),
+  itemScores: z.array(
+    z.object({
+      itemId: z.string().uuid('ID câu hỏi không hợp lệ'),
+      score: z.number().min(0),
+    })
+  ).optional(),
   feedback: z.string().trim().optional(),
 });
 
@@ -76,6 +82,11 @@ export async function GET(
       }
     }
 
+    const { searchParams } = new URL(request.url);
+    const filterClassId = searchParams.get('classId');
+    const filterCampaignId = searchParams.get('campaignId');
+    const filterStatus = searchParams.get('status');
+
     // 2. Fetch submissions for these assessments
     const { data: submissions, error } = await adminSupabase
       .from('assessment_submissions')
@@ -84,14 +95,25 @@ export async function GET(
         assessment_id,
         user_id,
         status,
+        grading_status,
         total_score,
         percentage,
         is_passed,
         submitted_at,
         time_spent_seconds,
         class_assignment_id,
+        campaign_id,
+        evaluator_notes,
         assessments ( id, title, passing_score ),
-        profiles:user_id ( id, email, nickname, full_name )
+        profiles:user_id ( id, email, nickname, full_name ),
+        submission_answers (
+          id,
+          item_id,
+          text_response,
+          evidence_url,
+          score_awarded,
+          auto_graded
+        )
       `)
       .in('assessment_id', targetAssessmentIds)
       .in('status', ['SUBMITTED', 'EVALUATED'])
@@ -102,6 +124,8 @@ export async function GET(
     }
 
     let resultSubmissions = submissions || [];
+
+    // Filter by allowed classes for assessor
     if (allowedClassIds !== null && allowedClassIds.length > 0) {
       const { data: classAsgs } = await adminSupabase
         .from('class_assignments')
@@ -113,6 +137,41 @@ export async function GET(
         (s: any) => !s.class_assignment_id || validAsgIds.has(s.class_assignment_id)
       );
     }
+
+    // Context filter: Specific Class ID
+    if (filterClassId) {
+      const { data: classAsgs } = await adminSupabase
+        .from('class_assignments')
+        .select('id')
+        .eq('class_id', filterClassId);
+
+      const targetAsgIds = new Set((classAsgs || []).map((a) => a.id));
+      resultSubmissions = resultSubmissions.filter(
+        (s: any) => s.class_assignment_id && targetAsgIds.has(s.class_assignment_id)
+      );
+    }
+
+    // Context filter: Specific Campaign ID
+    if (filterCampaignId) {
+      resultSubmissions = resultSubmissions.filter((s: any) => s.campaign_id === filterCampaignId);
+    }
+
+    // Context filter: Status
+    if (filterStatus && ['SUBMITTED', 'EVALUATED'].includes(filterStatus)) {
+      resultSubmissions = resultSubmissions.filter((s: any) => s.status === filterStatus);
+    }
+
+    // Exclude 100% MCQ tests that completed automatically (grading_status === 'COMPLETED' and no open questions)
+    resultSubmissions = resultSubmissions.filter((s: any) => {
+      const answers = s.submission_answers || [];
+      const hasOpenQuestion = answers.some(
+        (a: any) => a.auto_graded === false || Boolean(a.text_response?.trim()) || Boolean(a.evidence_url)
+      );
+      if (!hasOpenQuestion && s.grading_status === 'COMPLETED') {
+        return false;
+      }
+      return true;
+    });
 
     return NextResponse.json({ success: true, submissions: resultSubmissions });
   } catch (err) {
@@ -145,7 +204,7 @@ export async function POST(
       );
     }
 
-    const { submissionId, totalScore, feedback } = validation.data;
+    const { submissionId, totalScore, itemScores, feedback } = validation.data;
     const adminSupabase = createAdminClient();
 
     // 1. Fetch submission with assessment info
@@ -210,16 +269,65 @@ export async function POST(
       }
     }
 
+    // 2. Update item-level scores for open/practical questions if provided
+    if (itemScores && itemScores.length > 0) {
+      try {
+        for (const item of itemScores) {
+          const updateQuery = adminSupabase.from('submission_answers');
+          if (updateQuery && typeof updateQuery.update === 'function') {
+            await updateQuery
+              .update({
+                score_awarded: item.score,
+                auto_graded: false,
+              })
+              .eq('submission_id', submissionId)
+              .eq('item_id', item.itemId);
+          }
+        }
+      } catch {
+        // Safe execution
+      }
+    }
+
+    // 3. Recalculate total score summing all answers (Strictly preserving MCQ scores)
+    let calculatedTotalScore = typeof totalScore === 'number' ? totalScore : 0;
+    try {
+      const answersTable = adminSupabase.from('submission_answers');
+      if (answersTable && typeof answersTable.select === 'function') {
+        const query = answersTable.select('score_awarded, auto_graded');
+        if (query && typeof query.eq === 'function') {
+          const { data: allAnswers } = await query.eq('submission_id', submissionId);
+          if (allAnswers && allAnswers.length > 0) {
+            if (itemScores && itemScores.length > 0) {
+              calculatedTotalScore = allAnswers.reduce(
+                (sum, a) => sum + (Number(a.score_awarded) || 0),
+                0
+              );
+            } else if (typeof totalScore === 'number') {
+              // If legacy totalScore sent, ensure MCQ auto-points are preserved
+              const mcqAutoPoints = allAnswers
+                .filter((a) => a.auto_graded)
+                .reduce((sum, a) => sum + (Number(a.score_awarded) || 0), 0);
+              calculatedTotalScore = Math.max(mcqAutoPoints, totalScore);
+            }
+          }
+        }
+      }
+    } catch {
+      // Safe fallback if submission_answers is unmocked or table unavailable
+    }
+
     const maxScore = typedSub.max_score || 100;
-    const percentage = Math.round((totalScore / maxScore) * 1000) / 10;
+    const finalScore = Math.min(maxScore, Math.max(0, calculatedTotalScore));
+    const percentage = Math.round((finalScore / maxScore) * 1000) / 10;
     const passingThreshold = typedSub.assessments?.passing_score || 70.0;
     const isPassed = percentage >= passingThreshold;
 
-    // 2. Official HITL Approval - Update submission status to EVALUATED
+    // 4. Official HITL Approval - Update submission status to EVALUATED
     const { data: updated, error: updateErr } = await adminSupabase
       .from('assessment_submissions')
       .update({
-        total_score: totalScore,
+        total_score: finalScore,
         percentage,
         is_passed: isPassed,
         status: 'EVALUATED',

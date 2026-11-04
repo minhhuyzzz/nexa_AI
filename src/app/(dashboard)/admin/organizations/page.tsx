@@ -184,18 +184,12 @@ export default function AdminOrganizationsPage() {
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header */}
-      <div>
-        <div className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 tracking-wider uppercase mb-1">
-          NEXA PLATFORM / BUSINESS
-        </div>
+      <div className="pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
               Yêu cầu &amp; Quản trị Tổ chức
             </h1>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Tiếp nhận đăng ký Business, kích hoạt gói và phê duyệt gia hạn tập trung.
-            </p>
           </div>
         </div>
       </div>

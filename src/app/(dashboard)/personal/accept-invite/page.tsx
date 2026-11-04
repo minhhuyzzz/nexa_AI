@@ -86,65 +86,65 @@ function AcceptInviteContent() {
 
   if (loading) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
-        <Loader2 className="w-8 h-8 text-sky-600 animate-spin mb-3" />
-        <p className="text-xs text-slate-500 font-medium">Đang kiểm tra lời mời tham gia tổ chức...</p>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center font-sans">
+        <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mb-3" />
+        <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium">Đang kiểm tra lời mời tham gia tổ chức...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto py-12 px-4">
-      <div className="bg-white border border-slate-200 rounded-md p-6 sm:p-8 shadow-xs text-center">
-        <div className="w-12 h-12 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center mx-auto text-sky-600 mb-4">
+    <div className="max-w-md mx-auto py-12 px-4 font-sans">
+      <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl text-center">
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 mb-4">
           <Building2 className="w-6 h-6" strokeWidth={1.75} />
         </div>
 
-        <h1 className="text-lg font-bold text-slate-900 tracking-tight mb-1">
+        <h1 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight mb-1">
           Lời mời gia nhập Tổ chức
         </h1>
-        <p className="text-xs text-slate-500 mb-6">
-          NEXA AI Multi-tenant Organization Workspace
+        <p className="text-xs text-slate-500 dark:text-neutral-400 mb-6">
+          Không gian khảo thí &amp; đánh giá năng lực số đa tổ chức
         </p>
 
         {error && (
-          <div className="p-3 mb-6 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 text-left">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="p-3.5 mb-6 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2 text-left">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
         {success ? (
           <div className="space-y-4">
-            <div className="p-4 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 justify-center">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2 justify-center">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span className="font-semibold">Đã gia nhập thành công! Đang chuyển hướng...</span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-400 dark:text-neutral-500">
               Bạn đang được đưa đến không gian làm việc của tổ chức.
             </p>
           </div>
         ) : inviteData ? (
           <div className="space-y-6">
-            <div className="bg-slate-50 border border-slate-200 rounded-md p-4 text-left space-y-2.5">
+            <div className="bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 text-left space-y-2.5">
               <div>
-                <span className="text-[11px] text-slate-400 block font-medium">Tổ chức</span>
-                <span className="text-sm font-bold text-slate-900">{inviteData.organization.name}</span>
-                <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200 text-slate-700">
+                <span className="text-[11px] text-slate-400 dark:text-neutral-500 block font-medium">Tổ chức</span>
+                <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{inviteData.organization.name}</span>
+                <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300">
                   {inviteData.organization.code}
                 </span>
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-400 block font-medium">Vai trò được cấp</span>
-                <span className="text-xs font-semibold text-slate-800">
+                <span className="text-[11px] text-slate-400 dark:text-neutral-500 block font-medium">Vai trò được cấp</span>
+                <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                   {inviteData.orgRole === 'ADMIN' ? 'Quản trị viên Tổ chức' : 'Thành viên'}
                 </span>
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-400 block font-medium">Email nhận thư</span>
-                <span className="text-xs font-mono text-slate-600">{inviteData.email}</span>
+                <span className="text-[11px] text-slate-400 dark:text-neutral-500 block font-medium">Email nhận thư</span>
+                <span className="text-xs font-mono text-slate-600 dark:text-neutral-400">{inviteData.email}</span>
               </div>
             </div>
 
@@ -152,7 +152,7 @@ function AcceptInviteContent() {
               <button
                 onClick={handleAccept}
                 disabled={accepting}
-                className="w-full py-2.5 px-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 {accepting ? (
                   <>
@@ -161,7 +161,7 @@ function AcceptInviteContent() {
                   </>
                 ) : (
                   <>
-                    <span>Chấp nhận & Tham gia ngay</span>
+                    <span>Chấp nhận &amp; Tham gia ngay</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -169,7 +169,7 @@ function AcceptInviteContent() {
 
               <Link
                 href="/personal/dashboard"
-                className="w-full py-2 px-4 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors"
+                className="w-full py-2 px-4 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-neutral-400 text-xs font-medium transition-colors"
               >
                 Bỏ qua, về Workspace Cá nhân
               </Link>
@@ -178,7 +178,7 @@ function AcceptInviteContent() {
         ) : (
           <Link
             href="/personal/dashboard"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-neutral-900 text-xs font-semibold transition-colors"
           >
             Quay lại Tổng quan Cá nhân
           </Link>
@@ -193,7 +193,7 @@ export default function AcceptInvitePage() {
     <Suspense
       fallback={
         <div className="min-h-[50vh] flex items-center justify-center">
-          <Loader2 className="w-6 h-6 text-sky-600 animate-spin" />
+          <Loader2 className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
         </div>
       }
     >

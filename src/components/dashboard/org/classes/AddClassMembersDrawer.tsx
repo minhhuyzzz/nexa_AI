@@ -94,6 +94,17 @@ export function AddClassMembersDrawer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Close on ESC key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const remainingSlots = Math.max(0, maxCapacity - currentMemberCount);
@@ -156,19 +167,35 @@ export function AddClassMembersDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-4xl bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col h-full overflow-hidden">
-        {/* Drawer Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-class-member-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+    >
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Centered Modal Dialog */}
+      <div className="relative w-full max-w-4xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+        {/* Modal Header */}
+        <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-zinc-900/40">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-              <UserPlus className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+              <UserPlus className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              <h2
+                id="add-class-member-modal-title"
+                className="text-base font-bold text-neutral-900 dark:text-neutral-100"
+              >
                 Thêm thành viên vào lớp
               </h2>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                 Bổ sung học viên hoặc giảng viên vào {className}
               </p>
             </div>
@@ -176,9 +203,10 @@ export function AddClassMembersDrawer({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+            aria-label="Đóng"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" strokeWidth={1.75} />
           </button>
         </div>
 

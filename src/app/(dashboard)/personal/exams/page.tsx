@@ -59,7 +59,7 @@ export default function EvaluatorExamsPage() {
         const mapped: ExamItem[] = data.map((a: any) => ({
           id: a.id,
           title: a.title,
-          description: a.description || 'Bài khảo thí chuẩn hóa năng lực số theo khung DigComp 3.0.',
+          description: a.description || 'Bài khảo thí chuẩn hóa năng lực số theo chuẩn 5 miền năng lực số.',
           durationMinutes: a.duration_minutes || 45,
           passingScore: Number(a.passing_score) || 70,
           pointReward: a.point_reward || 50,
@@ -90,7 +90,7 @@ export default function EvaluatorExamsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newTitle.trim(),
-          description: newDescription.trim() || 'Bài khảo thí chuẩn hóa năng lực số theo khung DigComp 3.0.',
+          description: newDescription.trim() || 'Bài khảo thí chuẩn hóa năng lực số theo chuẩn 5 miền năng lực số.',
           duration_minutes: Number(newDuration),
           passing_score: Number(newPassingScore),
           point_reward: Number(newPoints),
