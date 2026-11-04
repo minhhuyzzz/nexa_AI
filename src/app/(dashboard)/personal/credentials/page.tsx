@@ -55,14 +55,14 @@ export default function LearnerCredentialsPage() {
   const pointsRemaining = Math.max(0, targetPoints - points);
   const progressPercent = Math.min(100, Math.round((points / targetPoints) * 100));
 
-  const credentialCode =
-    data?.masterCredential?.credential_code ||
-    (isUnlocked ? 'NX-2026-MASTER-8F3A2B' : 'NX-2026-MASTER-LOCKED');
+  const credentialCode = data?.masterCredential?.credential_code || undefined;
   const issuedAt = data?.masterCredential?.issued_at;
   const qrDataUrl = data?.masterCredential?.qr_data;
   const verificationUrl = data?.masterCredential?.id
     ? `/verify/${data.masterCredential.id}`
-    : `/verify/${credentialCode}`;
+    : credentialCode
+    ? `/verify/${credentialCode}`
+    : undefined;
 
   return (
     <div className="space-y-5">

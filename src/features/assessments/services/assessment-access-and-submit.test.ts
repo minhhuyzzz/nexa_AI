@@ -416,6 +416,37 @@ describe('UC-P03, UC-P04, UC-P05, UC-A11: Assessment Access Control & Submission
               }),
             };
           }
+          if (table === 'assessment_campaigns') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: {
+                      id: campaignId,
+                      assessment_id: freeAssessmentId,
+                      organization_id: orgId,
+                      status: 'ACTIVE',
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'campaign_participants') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({
+                      data: { id: 'part-1', campaign_id: campaignId, user_id: freeUserId },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
           if (table === 'assessment_submissions') {
             return {
               insert: vi.fn().mockReturnValue({
@@ -491,6 +522,137 @@ describe('UC-P03, UC-P04, UC-P05, UC-A11: Assessment Access Control & Submission
           delta: 30,
         })
       );
+    });
+
+    it('chặn 403 khi client truyền campaignId giả mạo hoặc không thuộc danh sách thí sinh', async () => {
+      vi.mocked(createClient).mockResolvedValueOnce({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: freeUserId } }, error: null }),
+        },
+      } as any);
+
+      vi.mocked(createAdminClient).mockReturnValueOnce({
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'assessments') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: freeAssessmentId, is_vip: false, access_tier: 'FREE', passing_score: 70 },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'assessment_campaigns') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: { id: campaignId, assessment_id: freeAssessmentId, organization_id: orgId },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'campaign_participants') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'user_organizations') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
+        }),
+      } as any);
+
+      const req = new Request(`http://localhost:3000/api/assessments/${freeAssessmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timeSpentSeconds: 100,
+          campaignId: campaignId,
+          answers: [],
+        }),
+      });
+
+      const res = await submitAssessment(req, { params: Promise.resolve({ id: freeAssessmentId }) });
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.error).toContain('Bạn không thuộc danh sách thí sinh của đợt khảo thí này');
+    });
+
+    it('chặn 403 khi tài khoản VIP đã hết hạn gói cước', async () => {
+      vi.mocked(createClient).mockResolvedValueOnce({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: vipUserId } }, error: null }),
+        },
+      } as any);
+
+      vi.mocked(createAdminClient).mockReturnValueOnce({
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'assessments') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: vipAssessmentId, is_vip: true, access_tier: 'VIP', passing_score: 70 },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: {
+                      plan_tier: 'PRO',
+                      role: 'LEARNER',
+                      current_period_end: new Date(Date.now() - 10000000).toISOString(), // Expired
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
+        }),
+      } as any);
+
+      const req = new Request(`http://localhost:3000/api/assessments/${vipAssessmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timeSpentSeconds: 100,
+          answers: [],
+        }),
+      });
+
+      const res = await submitAssessment(req, { params: Promise.resolve({ id: vipAssessmentId }) });
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.code).toBe('UPGRADE_REQUIRED');
     });
   });
 });

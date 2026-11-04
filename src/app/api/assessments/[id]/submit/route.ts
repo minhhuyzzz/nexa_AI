@@ -68,32 +68,11 @@ export async function POST(
     const passingScore = Number(assessment.passing_score) || 70.0;
     const pointReward = Number(assessment.point_reward) || 10;
 
-    // 3. SEC-03: Validate Access Tier on Submit
-    const isVipAssessment = Boolean(assessment.is_vip || assessment.access_tier === 'VIP');
-    if (isVipAssessment) {
-      const { data: profile } = await adminSupabase
-        .from('profiles')
-        .select('plan_tier, role, admin_role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      const isPaidUser = profile?.plan_tier && profile.plan_tier !== 'FREE';
-      const isPlatformStaff = profile?.role === 'ADMIN' || profile?.admin_role === 'SUPER_ADMIN';
-
-      if (!isPaidUser && !isPlatformStaff && !classAssignmentId && !campaignId) {
-        return NextResponse.json(
-          {
-            error: 'Bài khảo thí này thuộc phân hạng VIP / Premium. Vui lòng nâng cấp tài khoản để nộp bài.',
-            code: 'UPGRADE_REQUIRED',
-          },
-          { status: 403 }
-        );
-      }
-    }
-
     let resolvedCampaignId = campaignId || null;
+    let isAuthorizedClassAssignment = false;
+    let isAuthorizedCampaignParticipant = false;
 
-    // 4. SEC-03: Validate classAssignmentId if provided
+    // 3. SEC-03: Validate classAssignmentId if provided
     if (classAssignmentId) {
       const { data: assignment, error: assignError } = await adminSupabase
         .from('class_assignments')
@@ -130,6 +109,90 @@ export async function POST(
       if (!isMember) {
         return NextResponse.json(
           { error: 'Bạn không phải là thành viên của lớp học được giao bài tập này' },
+          { status: 403 }
+        );
+      }
+
+      isAuthorizedClassAssignment = true;
+    }
+
+    // 4. SEC-03: Validate campaignId if provided
+    if (campaignId) {
+      const { data: campaign, error: campError } = await adminSupabase
+        .from('assessment_campaigns')
+        .select('id, assessment_id, organization_id, status')
+        .eq('id', campaignId)
+        .maybeSingle();
+
+      if (campError || !campaign) {
+        return NextResponse.json(
+          { error: 'Đợt khảo thí không tồn tại hoặc đã bị hủy' },
+          { status: 404 }
+        );
+      }
+
+      if (campaign.assessment_id && campaign.assessment_id !== assessmentId) {
+        return NextResponse.json(
+          { error: 'Đợt khảo thí không khớp với đề thi này' },
+          { status: 400 }
+        );
+      }
+
+      // Verify participant in campaign_participants or org membership
+      const { data: participant } = await adminSupabase
+        .from('campaign_participants')
+        .select('id')
+        .eq('campaign_id', campaignId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (participant) {
+        isAuthorizedCampaignParticipant = true;
+      } else if (campaign.organization_id) {
+        const { data: orgMember } = await adminSupabase
+          .from('user_organizations')
+          .select('id')
+          .eq('organization_id', campaign.organization_id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (orgMember) {
+          isAuthorizedCampaignParticipant = true;
+        }
+      }
+
+      // If user is also enrolled in an assignment linked to this campaign, allow
+      if (isAuthorizedClassAssignment && resolvedCampaignId === campaignId) {
+        isAuthorizedCampaignParticipant = true;
+      }
+
+      if (!isAuthorizedCampaignParticipant) {
+        return NextResponse.json(
+          { error: 'Bạn không thuộc danh sách thí sinh của đợt khảo thí này' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 5. SEC-03: Validate Access Tier on Submit (VIP / Premium paywall & entitlement expiry)
+    const isVipAssessment = Boolean(assessment.is_vip || assessment.access_tier === 'VIP');
+    if (isVipAssessment) {
+      const { data: profile } = await adminSupabase
+        .from('profiles')
+        .select('plan_tier, role, admin_role, subscription_status, current_period_end')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const isPaidTier = Boolean(profile?.plan_tier && profile.plan_tier !== 'FREE');
+      const isPeriodActive = !profile?.current_period_end || new Date(profile.current_period_end).getTime() > Date.now();
+      const isPaidUser = isPaidTier && isPeriodActive;
+      const isPlatformStaff = profile?.role === 'ADMIN' || profile?.admin_role === 'SUPER_ADMIN';
+
+      if (!isPaidUser && !isPlatformStaff && !isAuthorizedClassAssignment && !isAuthorizedCampaignParticipant) {
+        return NextResponse.json(
+          {
+            error: 'Bài khảo thí này thuộc phân hạng VIP / Premium. Vui lòng nâng cấp tài khoản để nộp bài.',
+            code: 'UPGRADE_REQUIRED',
+          },
           { status: 403 }
         );
       }

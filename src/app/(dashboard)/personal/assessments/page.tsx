@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -31,7 +31,7 @@ interface AssessmentItem {
   type: string;
   types: string[];
   isVip?: boolean;
-  accessTier?: 'FREE' | 'VIP';
+  accessTier?: 'FREE' | 'PRO' | 'VIP';
 }
 
 const domainList = [
@@ -51,15 +51,15 @@ const formatFilterOptions = [
 
 const tierFilterOptions = [
   { id: 'ALL' as const, label: 'Tất cả phân hạng' },
-  { id: 'FREE' as const, label: 'Miễn phí' },
-  { id: 'VIP' as const, label: 'VIP' },
+  { id: 'FREE' as const, label: 'Miễn phí (FREE)' },
+  { id: 'PRO' as const, label: 'Nâng cao (PRO)' },
 ];
 
 export default function LearnerAssessmentsPage() {
   const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tierFilter, setTierFilter] = useState<'ALL' | 'FREE' | 'VIP'>('ALL');
+  const [tierFilter, setTierFilter] = useState<'ALL' | 'FREE' | 'PRO'>('ALL');
   const [isTierMenuOpen, setIsTierMenuOpen] = useState(false);
   const [formatFilter, setFormatFilter] = useState<'ALL' | 'MCQ' | 'SCENARIO' | 'DIGITAL_EVIDENCE'>('ALL');
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
@@ -142,7 +142,7 @@ export default function LearnerAssessmentsPage() {
 
     const matchesTier =
       tierFilter === 'ALL' ||
-      (tierFilter === 'VIP' ? Boolean(test.isVip || test.accessTier === 'VIP') : !test.isVip && test.accessTier !== 'VIP');
+      (tierFilter === 'PRO' ? Boolean(test.isVip || test.accessTier === 'VIP') : !test.isVip && test.accessTier !== 'VIP');
 
     return matchesSearch && matchesFormat && matchesDomain && matchesTier;
   });
@@ -196,14 +196,14 @@ export default function LearnerAssessmentsPage() {
               }}
               className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
                 selectedDomains.length > 0
-                  ? 'border-sky-500 bg-sky-50/60 text-sky-800 font-semibold shadow-xs'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
                   : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
               }`}
             >
               <Filter className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
               <span>{getDropdownButtonLabel()}</span>
               {selectedDomains.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-sky-600 text-white text-[10px] flex items-center justify-center font-bold">
+                <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center font-bold">
                   {selectedDomains.length}
                 </span>
               )}
@@ -221,7 +221,7 @@ export default function LearnerAssessmentsPage() {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsDomainMenuOpen(false)}
                 />
-                <div className="absolute left-0 top-full mt-1.5 w-64 bg-white border border-slate-200 rounded-md shadow-md py-1.5 z-30 animate-in fade-in-50 duration-100">
+                <div className="absolute left-0 top-full mt-1.5 w-64 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
                   <div className="px-3 py-1.5 flex items-center justify-between border-b border-slate-100">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Tích chọn miền
@@ -229,7 +229,7 @@ export default function LearnerAssessmentsPage() {
                     <button
                       type="button"
                       onClick={selectedDomains.length > 0 ? clearDomains : selectAllDomains}
-                      className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold"
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold"
                     >
                       {selectedDomains.length > 0 ? 'Bỏ chọn hết' : 'Chọn tất cả'}
                     </button>
@@ -248,7 +248,7 @@ export default function LearnerAssessmentsPage() {
                           <div
                             className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
                               isChecked
-                                ? 'bg-sky-600 border-sky-600 text-white'
+                                ? 'bg-blue-600 border-blue-600 text-white'
                                 : 'border-slate-300 bg-white'
                             }`}
                           >
@@ -296,7 +296,7 @@ export default function LearnerAssessmentsPage() {
               }}
               className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
                 formatFilter !== 'ALL'
-                  ? 'border-sky-500 bg-sky-50/60 text-sky-800 font-semibold shadow-xs'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
                   : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
               }`}
             >
@@ -305,7 +305,7 @@ export default function LearnerAssessmentsPage() {
                 {formatFilterOptions.find((m) => m.id === formatFilter)?.label || 'Tất cả dạng bài'}
               </span>
               {formatFilter !== 'ALL' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
               )}
               <ChevronDown
                 className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${
@@ -321,7 +321,7 @@ export default function LearnerAssessmentsPage() {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsFormatMenuOpen(false)}
                 />
-                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-48 bg-white border border-slate-200 rounded-md shadow-md py-1.5 z-30 animate-in fade-in-50 duration-100">
+                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-48 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
                   <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Dạng bài
@@ -333,7 +333,7 @@ export default function LearnerAssessmentsPage() {
                           setFormatFilter('ALL');
                           setIsFormatMenuOpen(false);
                         }}
-                        className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold"
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold"
                       >
                         Mặc định
                       </button>
@@ -358,7 +358,7 @@ export default function LearnerAssessmentsPage() {
                           <div
                             className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
                               isSelected
-                                ? 'bg-sky-600 border-sky-600 text-white'
+                                ? 'bg-blue-600 border-blue-600 text-white'
                                 : 'border-slate-300 bg-white'
                             }`}
                           >
@@ -387,7 +387,7 @@ export default function LearnerAssessmentsPage() {
               }}
               className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
                 tierFilter !== 'ALL'
-                  ? 'border-sky-500 bg-sky-50/60 text-sky-800 font-semibold shadow-xs'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
                   : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
               }`}
             >
@@ -396,7 +396,7 @@ export default function LearnerAssessmentsPage() {
                 {tierFilterOptions.find((t) => t.id === tierFilter)?.label || 'Tất cả phân hạng'}
               </span>
               {tierFilter !== 'ALL' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
               )}
               <ChevronDown
                 className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${
@@ -412,7 +412,7 @@ export default function LearnerAssessmentsPage() {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsTierMenuOpen(false)}
                 />
-                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 bg-white border border-slate-200 rounded-md shadow-md py-1.5 z-30 animate-in fade-in-50 duration-100">
+                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
                   <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Phân hạng
@@ -424,7 +424,7 @@ export default function LearnerAssessmentsPage() {
                           setTierFilter('ALL');
                           setIsTierMenuOpen(false);
                         }}
-                        className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold"
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold"
                       >
                         Mặc định
                       </button>
@@ -447,8 +447,8 @@ export default function LearnerAssessmentsPage() {
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            {opt.id === 'VIP' && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
+                            {opt.id === 'PRO' && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
                                 VIP
                               </span>
                             )}
@@ -461,7 +461,7 @@ export default function LearnerAssessmentsPage() {
                               {opt.label}
                             </span>
                           </div>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-600 stroke-[2.5]" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 stroke-[2.5]" />}
                         </button>
                       );
                     })}
@@ -497,7 +497,7 @@ export default function LearnerAssessmentsPage() {
       {/* Grid of Assessments */}
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-          <Loader2 className="w-6 h-6 animate-spin text-sky-600 mb-2" strokeWidth={1.75} />
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400 mb-2" strokeWidth={1.75} />
           <p className="text-xs">Đang tải danh mục bài khảo thí...</p>
         </div>
       ) : filteredTests.length === 0 ? (
@@ -518,7 +518,7 @@ export default function LearnerAssessmentsPage() {
             <Link
               key={test.id}
               href={`/personal/assessments/${test.id}`}
-              className="aspect-square p-5 rounded-md bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-2xs transition-all flex flex-col justify-between group text-xs"
+              className="p-5 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-2xs transition-all flex flex-col justify-between group text-xs min-h-[220px]"
             >
               <div>
                 {/* 1:1 Aspect ratio square badge / icon header */}
@@ -526,12 +526,13 @@ export default function LearnerAssessmentsPage() {
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 truncate max-w-[140px]">
                     {test.domainName}
                   </span>
-                  {test.isVip || test.accessTier === 'VIP' ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                      VIP
+                  {test.isVip || test.accessTier === 'VIP' || test.accessTier === 'PRO' ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs">
+                      <Lock className="w-2.5 h-2.5" />
+                      PRO
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium font-mono bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium font-mono bg-slate-100 dark:bg-zinc-850 text-slate-600 dark:text-neutral-400 border border-slate-200 dark:border-zinc-800">
                       FREE
                     </span>
                   )}

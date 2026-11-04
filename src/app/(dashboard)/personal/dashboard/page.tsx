@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -101,6 +101,7 @@ export default function LearnerDashboardPage() {
   } | null>(null);
 
   const [assessments, setAssessments] = useState<RealAssessment[]>([]);
+  const [baselineTest, setBaselineTest] = useState<{ id: string; title: string; duration_minutes?: number } | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [orgWork, setOrgWork] = useState<{
     hasOrganization: boolean;
@@ -191,6 +192,20 @@ export default function LearnerDashboardPage() {
       }
     }
 
+    async function loadBaselineAssessment() {
+      try {
+        const res = await fetch('/api/assessments/baseline', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.baselineAssessment) {
+            setBaselineTest(json.baselineAssessment);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load baseline assessment:', e);
+      }
+    }
+
     async function loadCompetencyProfile() {
       try {
         const res = await fetch('/api/personal/competency-profile', { cache: 'no-store' });
@@ -225,6 +240,7 @@ export default function LearnerDashboardPage() {
 
     loadStats();
     loadAssessments();
+    loadBaselineAssessment();
     loadLeaderboard();
     loadCompetencyProfile();
     loadOrgWork();
@@ -233,6 +249,7 @@ export default function LearnerDashboardPage() {
       loadStats();
       loadCompetencyProfile();
       loadAssessments();
+      loadBaselineAssessment();
       loadLeaderboard();
       loadOrgWork();
     };
@@ -242,8 +259,33 @@ export default function LearnerDashboardPage() {
   }, []);
 
   const progressRatio = Math.min(100, Math.round((stats.points / (stats.levelNextTarget || 150)) * 100));
-  const baselineTest = assessments.find((a) => a.is_published || a.status === 'PUBLISHED') || assessments[0] || null;
   const baselineTestId = baselineTest?.id || null;
+
+  // Real 7-day week calendar calculated dynamically from current date and real login streak
+  const weekDays = useMemo(() => {
+    const now = new Date();
+    const jsDay = now.getDay();
+    const currentDayIdx = jsDay === 0 ? 6 : jsDay - 1; // 0 for Monday (T2) .. 6 for Sunday (CN)
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - currentDayIdx);
+
+    const labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    return labels.map((label, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const isToday = i === currentDayIdx;
+      const isFuture = i > currentDayIdx;
+      const daysDiff = currentDayIdx - i;
+      const isDone = !isFuture && (daysDiff < stats.loginStreak && stats.loginStreak > 0);
+
+      return {
+        label,
+        num: d.getDate(),
+        done: isDone,
+        today: isToday,
+      };
+    });
+  }, [stats.loginStreak]);
 
   // 5 Standard domains without any DigComp text
   const defaultRadarData: DomainScore[] = [
@@ -370,15 +412,7 @@ export default function LearnerDashboardPage() {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              {[
-                { label: 'T2', num: 26, done: false },
-                { label: 'T3', num: 27, done: false },
-                { label: 'T4', num: 28, done: false },
-                { label: 'T5', num: 29, done: true },
-                { label: 'T6', num: 30, done: true },
-                { label: 'T7', num: 31, done: true },
-                { label: 'CN', num: 1, today: true },
-              ].map((item) => (
+              {weekDays.map((item) => (
                 <div key={item.label} className="flex flex-col items-center gap-0.5">
                   <span className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium">{item.label}</span>
                   <span

@@ -1,26 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Building2,
-  Shield,
-  Key,
-  Users,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Mail,
-  Sliders,
-  FileText,
   Save,
-  Plus,
-  Trash2,
-  ExternalLink,
-  MessageSquare,
-  Lock,
-  UserCheck,
-  Check,
   RotateCcw,
+  CheckCircle2,
+  Copy,
+  Check,
+  Upload,
+  Trash2,
+  AlertCircle,
+  Building2,
+  User,
+  Mail,
+  Phone,
+  Fingerprint,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 
 interface OrgSettingsViewProps {
@@ -28,595 +25,666 @@ interface OrgSettingsViewProps {
     id: string;
     name: string;
     slug: string;
-    type?: string | null;
     code?: string | null;
+    type?: string | null;
+    logo_url?: string | null;
+    description?: string | null;
     contact_name?: string | null;
     contact_email?: string | null;
     contact_phone?: string | null;
-    created_at?: string | null;
     is_active?: boolean;
-    max_members?: number | null;
-    quota_assessments?: number | null;
+    created_at?: string | null;
   };
-  currentMembers: number;
-  userRole: string;
-  isManager: boolean;
+  currentMembers?: number;
+  userRole?: string;
+  isManager?: boolean;
 }
+
+const ORG_TYPES = [
+  { value: 'UNIVERSITY', label: 'Trường Đại học / Học viện' },
+  { value: 'COLLEGE', label: 'Trường Cao đẳng / Trung cấp' },
+  { value: 'SCHOOL', label: 'Trường Phổ thông / Trung học' },
+  { value: 'ENTERPRISE', label: 'Doanh nghiệp / Tập đoàn' },
+  { value: 'GOVERNMENT', label: 'Cơ quan / Tổ chức Nhà nước' },
+  { value: 'EDTECH', label: 'Tổ chức Đào tạo / EdTech' },
+  { value: 'OTHER', label: 'Khác' },
+];
 
 export function OrgSettingsView({
   org,
-  currentMembers,
-  userRole,
-  isManager,
+  userRole = 'ORG_ADMIN',
+  isManager = true,
 }: OrgSettingsViewProps) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'join-mechanism' | 'allowlist' | 'policy' | 'feedback'>('profile');
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Policy state
-  const [domains, setDomains] = useState<string[]>([]);
-  const [initialDomains, setInitialDomains] = useState<string[]>([]);
-  const [newDomain, setNewDomain] = useState('');
+  // Group A: Organization Profile State
+  const [name, setName] = useState(org.name || '');
+  const [type, setType] = useState(org.type || 'UNIVERSITY');
+  const [logoUrl, setLogoUrl] = useState(org.logo_url || '');
+  const [description, setDescription] = useState(org.description || '');
 
-  const [tabSwitchAlert, setTabSwitchAlert] = useState(true);
-  const [autoSubmitTimeout, setAutoSubmitTimeout] = useState(true);
-  const [requireApprovalForJoinCode, setRequireApprovalForJoinCode] = useState(false);
-  const [enablePinJoin, setEnablePinJoin] = useState(true);
+  // Group B: Contact Information State
+  const [contactName, setContactName] = useState(org.contact_name || '');
+  const [contactEmail, setContactEmail] = useState(org.contact_email || '');
+  const [contactPhone, setContactPhone] = useState(org.contact_phone || '');
 
-  const [initialTabSwitchAlert, setInitialTabSwitchAlert] = useState(true);
-  const [initialAutoSubmit, setInitialAutoSubmit] = useState(true);
-  const [initialRequireApproval, setInitialRequireApproval] = useState(false);
-  const [initialEnablePinJoin, setInitialEnablePinJoin] = useState(true);
+  // Initial Snapshot for isDirty & Reset
+  const [initialSnapshot, setInitialSnapshot] = useState({
+    name: org.name || '',
+    type: org.type || 'UNIVERSITY',
+    logoUrl: org.logo_url || '',
+    description: org.description || '',
+    contactName: org.contact_name || '',
+    contactEmail: org.contact_email || '',
+    contactPhone: org.contact_phone || '',
+  });
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Feedback form state
-  const [feedbackText, setFeedbackText] = useState('');
-  const [feedbackSent, setFeedbackSent] = useState(false);
-
-  useEffect(() => {
-    async function loadPolicies() {
-      try {
-        const res = await fetch(`/api/org/${org.slug}/settings`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.policy) {
-            const loadedDomains = data.policy.allowed_domains || [];
-            const loadedCheat = Boolean(data.policy.anti_cheat_enabled);
-            const loadedFull = Boolean(data.policy.fullscreen_enforced);
-
-            setDomains(loadedDomains);
-            setInitialDomains(loadedDomains);
-            setTabSwitchAlert(loadedCheat);
-            setInitialTabSwitchAlert(loadedCheat);
-            setAutoSubmitTimeout(loadedFull);
-            setInitialAutoSubmit(loadedFull);
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load org policies:', err);
-      }
-    }
-    loadPolicies();
-  }, [org.slug]);
-
-  // Dirty state calculation
   const isDirty =
-    JSON.stringify(domains) !== JSON.stringify(initialDomains) ||
-    tabSwitchAlert !== initialTabSwitchAlert ||
-    autoSubmitTimeout !== initialAutoSubmit ||
-    requireApprovalForJoinCode !== initialRequireApproval ||
-    enablePinJoin !== initialEnablePinJoin;
+    name.trim() !== initialSnapshot.name.trim() ||
+    type !== initialSnapshot.type ||
+    logoUrl !== initialSnapshot.logoUrl ||
+    description.trim() !== initialSnapshot.description.trim() ||
+    contactName.trim() !== initialSnapshot.contactName.trim() ||
+    contactEmail.trim() !== initialSnapshot.contactEmail.trim() ||
+    contactPhone.trim() !== initialSnapshot.contactPhone.trim();
 
-  const handleReset = () => {
-    setDomains(initialDomains);
-    setTabSwitchAlert(initialTabSwitchAlert);
-    setAutoSubmitTimeout(initialAutoSubmit);
-    setRequireApprovalForJoinCode(initialRequireApproval);
-    setEnablePinJoin(initialEnablePinJoin);
-  };
+  // Status & Feedback State
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState(false);
 
-  const handleAddDomain = () => {
-    const trimmed = newDomain.trim().toLowerCase().replace(/^@/, '');
-    if (trimmed && !domains.includes(trimmed)) {
-      setDomains([...domains, trimmed]);
-      setNewDomain('');
+  // Beforeunload prompt when unsaved changes exist
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // Copy helper
+  const copyToClipboard = async (text: string, type: 'code' | 'slug') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === 'code') {
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 2000);
+      } else {
+        setCopiedSlug(true);
+        setTimeout(() => setCopiedSlug(false), 2000);
+      }
+    } catch {
+      // ignore
     }
   };
 
-  const handleRemoveDomain = (domainToRemove: string) => {
-    setDomains(domains.filter((d) => d !== domainToRemove));
+  // Image Upload Handler
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Tệp được chọn không phải là hình ảnh hợp lệ (PNG, JPG, SVG, WebP).');
+      return;
+    }
+
+    // Limit size to 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage('Kích thước ảnh vượt quá giới hạn cho phép (tối đa 2MB).');
+      return;
+    }
+
+    setErrorMessage('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setLogoUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleSavePolicy = async () => {
+  const handleRemoveLogo = () => {
+    setLogoUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Reset to initial values
+  const handleReset = () => {
+    setName(initialSnapshot.name);
+    setType(initialSnapshot.type);
+    setLogoUrl(initialSnapshot.logoUrl);
+    setDescription(initialSnapshot.description);
+    setContactName(initialSnapshot.contactName);
+    setContactEmail(initialSnapshot.contactEmail);
+    setContactPhone(initialSnapshot.contactPhone);
+    setErrorMessage('');
+    setSaveSuccess(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Submit Handler
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!isDirty || isSaving || !isManager) return;
+
+    // Validation
+    if (!name.trim()) {
+      setErrorMessage('Tên tổ chức không được để trống.');
+      return;
+    }
+    if (name.trim().length < 2) {
+      setErrorMessage('Tên tổ chức phải có ít nhất 2 ký tự.');
+      return;
+    }
+    if (contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
+      setErrorMessage('Email liên hệ không đúng định dạng.');
+      return;
+    }
+
     setIsSaving(true);
+    setErrorMessage('');
+    setSaveSuccess(false);
+
     try {
       const res = await fetch(`/api/org/${org.slug}/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          allowed_domains: domains,
-          anti_cheat_enabled: tabSwitchAlert,
-          fullscreen_enforced: autoSubmitTimeout,
+          organizationData: {
+            name: name.trim(),
+            type,
+            logo_url: logoUrl || null,
+            description: description.trim() || null,
+            contact_name: contactName.trim() || null,
+            contact_email: contactEmail.trim() || null,
+            contact_phone: contactPhone.trim() || null,
+          },
         }),
       });
-      if (res.ok) {
-        setInitialDomains(domains);
-        setInitialTabSwitchAlert(tabSwitchAlert);
-        setInitialAutoSubmit(autoSubmitTimeout);
-        setInitialRequireApproval(requireApprovalForJoinCode);
-        setInitialEnablePinJoin(enablePinJoin);
 
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2500);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Có lỗi xảy ra khi lưu thay đổi.');
       }
-    } catch (err) {
-      console.error('Error saving org policy:', err);
+
+      // Update snapshot
+      const updatedSnapshot = {
+        name: name.trim(),
+        type,
+        logoUrl,
+        description: description.trim(),
+        contactName: contactName.trim(),
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim(),
+      };
+      setInitialSnapshot(updatedSnapshot);
+      setSaveSuccess(true);
+      router.refresh();
+
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Lỗi kết nối máy chủ');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSendFeedback = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedbackText.trim()) return;
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organizationId: org.id,
-          category: 'FEATURE_REQUEST',
-          subject: `Góp ý từ tổ chức ${org.name}`,
-          content: feedbackText.trim(),
-        }),
-      });
-      if (res.ok) {
-        setFeedbackSent(true);
-        setTimeout(() => {
-          setFeedbackSent(false);
-          setFeedbackText('');
-        }, 2500);
-      }
-    } catch (err) {
-      console.error('Error sending feedback:', err);
-    }
-  };
+  // Monogram initials fallback
+  const orgInitials = name.trim()
+    ? name
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join('')
+        .toUpperCase()
+    : 'NX';
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="pb-4 border-b border-slate-200 dark:border-zinc-800">
-        <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-          Cài đặt Tổ chức
-        </h1>
+    <div className="max-w-4xl mx-auto space-y-6 pb-20">
+      {/* ============================================================ */}
+      {/* 1. PAGE HEADER                                              */}
+      {/* ============================================================ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Cài đặt tổ chức
+            </h1>
+            <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+              @{org.slug}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400">
+            Quản lý hồ sơ nhận diện, thông tin người phụ trách và mã định danh của đơn vị.
+          </p>
+        </div>
+
+        {/* Global Action State Bar (Desktop) */}
+        {isDirty && (
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 animate-in fade-in duration-200">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Hoàn tác</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave()}
+              disabled={isSaving || !isManager}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Lưu thay đổi</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
-      {!isManager && (
-        <div className="p-3.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
-          <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" strokeWidth={1.75} />
-          <div>
-            <p className="font-semibold">Chế độ xem thông tin (Chỉ đọc)</p>
-            <p className="text-amber-700 dark:text-amber-400 mt-0.5">
-              Bạn đang ở vai trò <span className="font-mono font-bold">{userRole}</span>. Chỉ Quản trị viên (ORG_ADMIN) hoặc Chủ sở hữu (ORG_OWNER) mới có quyền lưu thay đổi cấu hình.
-            </p>
+      {/* FEEDBACK BANNERS */}
+      {saveSuccess && (
+        <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="text-xs sm:text-sm font-medium">
+            Đã lưu thông tin hồ sơ tổ chức thành công.
           </div>
         </div>
       )}
 
-      {/* Main 2-Column Vertical Layout (Spec V4) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Category Navigation List (3 cols) */}
-        <div className="lg:col-span-3 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] p-2 space-y-1 shadow-xs">
-          <button
-            type="button"
-            onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-semibold transition-colors cursor-pointer text-left ${
-              activeTab === 'profile'
-                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
-                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850'
-            }`}
-          >
-            <Building2 className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-            <span>Thông tin đơn vị</span>
-          </button>
+      {errorMessage && (
+        <div className="p-4 rounded-xl border border-rose-200 dark:border-rose-900/70 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-200 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+          <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+          <div className="text-xs sm:text-sm font-medium">{errorMessage}</div>
+        </div>
+      )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('join-mechanism')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-semibold transition-colors cursor-pointer text-left ${
-              activeTab === 'join-mechanism'
-                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
-                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850'
-            }`}
-          >
-            <Key className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-            <span>Cơ chế gia nhập &amp; PIN</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('allowlist')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-semibold transition-colors cursor-pointer text-left ${
-              activeTab === 'allowlist'
-                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
-                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850'
-            }`}
-          >
-            <Mail className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-            <span>Miền Email (Allowlist)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('policy')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-semibold transition-colors cursor-pointer text-left ${
-              activeTab === 'policy'
-                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
-                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850'
-            }`}
-          >
-            <Sliders className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-            <span>Chính sách khảo thí</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('feedback')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-semibold transition-colors cursor-pointer text-left ${
-              activeTab === 'feedback'
-                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
-                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-            <span>Góp ý &amp; Phản hồi</span>
-          </button>
+      {/* ============================================================ */}
+      {/* 2. GROUP A: HỒ SƠ TỔ CHỨC                                   */}
+      {/* ============================================================ */}
+      <section className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] p-5 sm:p-6 shadow-xs space-y-6">
+        <div className="border-b border-slate-100 dark:border-zinc-800/80 pb-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              Hồ sơ tổ chức
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+            Thông tin thương hiệu và nhận diện hiển thị trên toàn bộ không gian đào tạo và báo cáo.
+          </p>
         </div>
 
-        {/* Right Column: Settings Form Canvas (9 cols) */}
-        <div className="lg:col-span-9 space-y-6">
-          {/* TAB 1: PROFILE */}
-          {activeTab === 'profile' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg p-6 space-y-5 shadow-xs">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Thông tin Định danh Đơn vị
-                  </h2>
-                </div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                  {org.is_active ? 'Đang hoạt động' : 'Tạm ngưng'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="block text-slate-500 dark:text-neutral-400 font-medium mb-1.5">
-                    Tên Tổ chức / Đơn vị
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    defaultValue={org.name}
-                    className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-medium focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-500 dark:text-neutral-400 font-medium mb-1.5">
-                    Mã định danh URL (Slug)
-                  </label>
-                  <div className="flex items-center">
-                    <span className="px-3 py-2 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 border border-r-0 border-slate-200 dark:border-zinc-800 rounded-l font-mono text-[11px]">
-                      /org/
-                    </span>
-                    <input
-                      type="text"
-                      readOnly
-                      defaultValue={org.slug}
-                      className="w-full px-3 py-2 rounded-r border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-mono font-medium focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-500 dark:text-neutral-400 font-medium mb-1.5">
-                    Mã đơn vị (Org Code)
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    defaultValue={org.code || 'CHƯA_CẤP'}
-                    className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-mono font-medium focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-500 dark:text-neutral-400 font-medium mb-1.5">
-                    Loại hình tổ chức
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    defaultValue={
-                      org.type === 'EDUCATIONAL'
-                        ? 'Trường học / Cơ sở Đào tạo'
-                        : org.type === 'GOVERNMENT'
-                        ? 'Cơ quan Quản lý / Nhà nước'
-                        : 'Doanh nghiệp / Tập đoàn'
-                    }
-                    className="w-full px-3 py-2 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-medium focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: JOIN MECHANISM */}
-          {activeTab === 'join-mechanism' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg p-6 space-y-5 shadow-xs">
-              <div className="pb-4 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Key className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Cơ Chế Tham Gia &amp; Mã PIN Đơn Vị
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Kiểm soát cách nhân sự, học viên tìm kiếm và gia nhập tổ chức.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-neutral-100">
-                      Cho phép tham gia bằng Mã Đơn Vị / Mã PIN
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 max-w-lg leading-relaxed">
-                      Khi bật, người dùng có thể nhập mã <code className="font-mono font-bold text-blue-600 dark:text-blue-400">{org.code || org.slug.toUpperCase()}</code> tại trang /join để yêu cầu gia nhập.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={enablePinJoin}
-                    onChange={(e) => setEnablePinJoin(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                  />
-                </div>
-
-                <div className="p-4 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-neutral-100">
-                      Bắt buộc Quản trị viên duyệt (Approval Required)
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 max-w-lg leading-relaxed">
-                      Mọi yêu cầu tham gia qua mã PIN sẽ vào Hàng chờ phê duyệt (`/org/{org.slug}/members`) thay vì tự động kích hoạt tài khoản.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={requireApprovalForJoinCode}
-                    onChange={(e) => setRequireApprovalForJoinCode(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: ALLOWLIST */}
-          {activeTab === 'allowlist' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg p-6 space-y-5 shadow-xs">
-              <div className="pb-4 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Danh Sách Tên Miền Email Hợp Lệ (Allowlist)
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Chỉ những người dùng sở hữu email thuộc các miền này mới được gia nhập tổ chức.
-                </p>
-              </div>
-
-              {isManager && (
-                <div className="flex items-center gap-2 max-w-md">
-                  <input
-                    type="text"
-                    value={newDomain}
-                    onChange={(e) => setNewDomain(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddDomain())}
-                    placeholder="VD: poly.edu.vn hoặc company.com"
-                    className="flex-1 h-9 px-3 text-xs rounded border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddDomain}
-                    className="h-9 px-3.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm miền</span>
-                  </button>
+        {/* Logo / Avatar Section */}
+        <div>
+          <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-2">
+            Logo tổ chức
+          </label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Visual Preview */}
+            <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt={name || 'Logo'}
+                  className="w-full h-full object-contain p-1.5"
+                />
+              ) : (
+                <div className="w-full h-full bg-blue-600 text-white font-extrabold text-xl sm:text-2xl flex items-center justify-center tracking-wider select-none">
+                  {orgInitials}
                 </div>
               )}
+            </div>
 
-              <div className="space-y-2 pt-2">
-                {domains.length === 0 ? (
-                  <p className="text-xs text-slate-400 dark:text-neutral-500 italic">
-                    Chưa thiết lập miền email. Mọi địa chỉ email hợp lệ đều có thể tham gia nếu được mời.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {domains.map((dom) => (
-                      <span
-                        key={dom}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-neutral-200 text-xs font-mono font-medium border border-slate-200 dark:border-zinc-700"
-                      >
-                        @{dom}
-                        {isManager && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDomain(dom)}
-                            className="text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer"
-                            aria-label={`Xóa miền ${dom}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
-                      </span>
-                    ))}
-                  </div>
+            {/* Upload & Actions */}
+            <div className="space-y-1.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleLogoUpload}
+                className="hidden"
+                disabled={!isManager}
+              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!isManager}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
+                  <span>Thay logo</span>
+                </button>
+                {logoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    disabled={!isManager}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xóa logo</span>
+                  </button>
                 )}
               </div>
+              <p className="text-[11px] text-slate-400 dark:text-neutral-500">
+                Tải ảnh tệp PNG, JPG, WebP hoặc SVG (tối đa 2MB). Xem trước ngay trên khung hình.
+              </p>
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* TAB 4: POLICY */}
-          {activeTab === 'policy' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg p-6 space-y-5 shadow-xs">
-              <div className="pb-4 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Chính Sách Khảo Thí &amp; Giám Sát Chống Gian Lận
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Thiết lập quy chế làm bài thi chuẩn hóa cho các đợt đánh giá thuộc tổ chức.
-                </p>
+        {/* Tên & Loại hình tổ chức */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor="org-name"
+              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5"
+            >
+              Tên tổ chức <span className="text-rose-500">*</span>
+            </label>
+            <input
+              id="org-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={!isManager}
+              placeholder="Ví dụ: Trường Đại học FPT, Tập đoàn Viettel..."
+              className="w-full px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-600 dark:focus:border-blue-500 transition-colors disabled:opacity-60"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="org-type"
+              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5"
+            >
+              Loại hình tổ chức
+            </label>
+            <select
+              id="org-type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              disabled={!isManager}
+              className="w-full px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-blue-600 dark:focus:border-blue-500 transition-colors disabled:opacity-60 cursor-pointer"
+            >
+              {ORG_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Mô tả ngắn */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label
+              htmlFor="org-description"
+              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
+            >
+              Mô tả ngắn
+            </label>
+            <span className="text-[11px] font-mono text-slate-400 dark:text-neutral-500">
+              {description.length}/500
+            </span>
+          </div>
+          <textarea
+            id="org-description"
+            rows={3}
+            maxLength={500}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={!isManager}
+            placeholder="Giới thiệu ngắn gọn về sứ mệnh, quy mô hoặc định hướng đào tạo năng lực số của đơn vị..."
+            className="w-full px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-600 dark:focus:border-blue-500 transition-colors resize-y disabled:opacity-60"
+          />
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* 3. GROUP B: THÔNG TIN LIÊN HỆ                                */}
+      {/* ============================================================ */}
+      <section className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="border-b border-slate-100 dark:border-zinc-800/80 pb-4">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              Thông tin liên hệ
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+            Đầu mối đại diện tiếp nhận thông báo vận hành, hỗ trợ kỹ thuật và thông tin bản quyền.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Người phụ trách */}
+          <div>
+            <label
+              htmlFor="contact-name"
+              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5"
+            >
+              Người phụ trách
+            </label>
+            <div className="relative">
+              <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id="contact-name"
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                disabled={!isManager}
+                placeholder="Họ và tên người đại diện"
+                className="w-full pl-8 pr-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-600 dark:focus:border-blue-500 transition-colors disabled:opacity-60"
+              />
+            </div>
+          </div>
+
+          {/* Email liên hệ */}
+          <div>
+            <label
+              htmlFor="contact-email"
+              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5"
+            >
+              Email liên hệ
+            </label>
+            <div className="relative">
+              <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id="contact-email"
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                disabled={!isManager}
+                placeholder="contact@donvi.edu.vn"
+                className="w-full pl-8 pr-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-600 dark:focus:border-blue-500 transition-colors disabled:opacity-60"
+              />
+            </div>
+          </div>
+
+          {/* Số điện thoại */}
+          <div>
+            <label
+              htmlFor="contact-phone"
+              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5"
+            >
+              Số điện thoại
+            </label>
+            <div className="relative">
+              <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id="contact-phone"
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                disabled={!isManager}
+                placeholder="024 1234 5678 / 0912..."
+                className="w-full pl-8 pr-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-600 dark:focus:border-blue-500 transition-colors disabled:opacity-60"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* 4. GROUP C: THÔNG TIN ĐỊNH DANH — CHỈ ĐỌC                   */}
+      {/* ============================================================ */}
+      <section className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Fingerprint className="w-4 h-4 text-slate-500 dark:text-neutral-400" />
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Thông tin định danh &bull; Chỉ đọc
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+              Mã đơn vị và đường dẫn kỹ thuật được cấp cố định để đảm bảo tính toàn vẹn dữ liệu và liên kết hệ thống.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          {/* Mã đơn vị */}
+          <div className="p-3.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+                Mã đơn vị
               </div>
-
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-neutral-100">
-                      Cảnh báo chuyển tab khi làm bài thi
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 max-w-lg leading-relaxed">
-                      Ghi nhận số lần học viên rời khỏi màn hình bài thi và hiển thị cảnh báo vi phạm quy chế.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={tabSwitchAlert}
-                    onChange={(e) => setTabSwitchAlert(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                  />
-                </div>
-
-                <div className="p-4 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-neutral-100">
-                      Tự động nộp bài khi hết giờ (Auto-submit)
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 max-w-lg leading-relaxed">
-                      Hệ thống tự động khóa và gửi bài nộp khi đồng hồ đếm ngược của đợt thi về 00:00.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={autoSubmitTimeout}
-                    onChange={(e) => setAutoSubmitTimeout(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                  />
-                </div>
+              <div className="font-mono font-bold text-sm text-neutral-900 dark:text-neutral-100 mt-0.5 tabular-nums">
+                {org.code || 'CHƯA CẤP'}
               </div>
             </div>
-          )}
+            {org.code && (
+              <button
+                type="button"
+                onClick={() => copyToClipboard(org.code || '', 'code')}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-200 transition-colors cursor-pointer"
+                title="Sao chép mã đơn vị"
+              >
+                {copiedCode ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Đã chép</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-[11px]">Sao chép</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
 
-          {/* TAB 5: FEEDBACK */}
-          {activeTab === 'feedback' && (
-            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg p-6 space-y-5 shadow-xs">
-              <div className="pb-4 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Đóng Góp Ý Kiến &amp; Yêu Cầu Tính Năng
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Gửi phản hồi trực tiếp tới đội ngũ phát triển sản phẩm NEXA AI.
-                </p>
+          {/* Đường dẫn Slug */}
+          <div className="p-3.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] flex items-center justify-between gap-3">
+            <div className="min-w-0 pr-2">
+              <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+                Đường dẫn tổ chức
               </div>
-
-              <form onSubmit={handleSendFeedback} className="space-y-4 max-w-xl">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-neutral-300 mb-1.5">
-                    Nội dung ý kiến
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                    placeholder="Mô tả tính năng hoặc đề xuất cải tiến cho không gian tổ chức của bạn..."
-                    className="w-full p-3 rounded border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    Gửi ý kiến đóng góp
-                  </button>
-                  {feedbackSent && (
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" />
-                      Đã gửi phản hồi thành công!
-                    </span>
-                  )}
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Sticky Dirty State Bar */}
-          {isDirty && isManager && (
-            <div className="sticky bottom-4 z-40 p-4 rounded-lg bg-[#111726] text-white border border-blue-500/30 shadow-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2">
-              <div className="flex items-center gap-2.5 text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="font-medium text-slate-200">
-                  Bạn có các thay đổi cấu hình chưa được lưu.
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition cursor-pointer"
-                >
-                  Hoàn tác
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSavePolicy}
-                  disabled={isSaving}
-                  className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  {isSaving ? (
-                    <span>Đang lưu...</span>
-                  ) : (
-                    <>
-                      <Save className="w-3.5 h-3.5" />
-                      <span>Lưu thay đổi</span>
-                    </>
-                  )}
-                </button>
+              <div className="font-mono text-xs font-semibold text-neutral-800 dark:text-neutral-200 mt-1 truncate">
+                /org/{org.slug}
               </div>
             </div>
-          )}
+            <button
+              type="button"
+              onClick={() => copyToClipboard(`/org/${org.slug}`, 'slug')}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-200 transition-colors cursor-pointer shrink-0"
+              title="Sao chép đường dẫn"
+            >
+              {copiedSlug ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Đã chép</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-[11px]">Sao chép</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </section>
 
-          {isSaved && (
-            <div className="p-3 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Đã lưu thành công cấu hình tổ chức!</span>
-            </div>
+      {/* ============================================================ */}
+      {/* 5. BOTTOM ACTION BAR (Sticky on scroll when dirty)          */}
+      {/* ============================================================ */}
+      <div className="pt-2 flex items-center justify-between">
+        <div className="text-xs text-slate-500 dark:text-neutral-400">
+          {isDirty ? (
+            <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Bạn có thay đổi chưa lưu
+            </span>
+          ) : (
+            <span>Mọi thay đổi đã được đồng bộ với hệ thống.</span>
           )}
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={!isDirty || isSaving}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Hoàn tác</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSave()}
+            disabled={!isDirty || isSaving || !isManager}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Đang lưu...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Lưu thay đổi</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

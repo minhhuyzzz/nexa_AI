@@ -392,6 +392,133 @@ describe('Personal User Phase 2: Learning Roadmap & Credentials (UC-P08, UC-P09,
       expect(data.pointsAwarded).toBe(0);
       expect(PointLedgerService.grantPoints).not.toHaveBeenCalled();
     });
+
+    it('chặn 403 khi cố hoàn thành bài học chưa phát hành (is_published = false)', async () => {
+      vi.mocked(createClient).mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId } }, error: null }),
+        },
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'learning_modules') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: moduleId, title: 'Bài Nháp', is_published: false, point_reward: 30 },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          return { select: vi.fn().mockReturnThis() };
+        }),
+      } as any);
+
+      const req = new NextRequest('http://localhost:3000/api/learning/complete', {
+        method: 'POST',
+        body: JSON.stringify({ moduleId }),
+      });
+
+      const res = await completeLearningModule(req);
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.error).toContain('chưa được phát hành');
+    });
+
+    it('chặn 403 khi bài học có tiên quyết nhưng người học chưa hoàn thành', async () => {
+      const prereqId = 'pppppppp-1111-2222-3333-444444444444';
+      vi.mocked(createClient).mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId } }, error: null }),
+        },
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'learning_modules') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: moduleId, title: 'Bài Nâng Cao', is_published: true, prerequisite_module_id: prereqId, point_reward: 30 },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'user_learning_progress') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }), // Chưa hoàn thành tiên quyết
+                  }),
+                }),
+              }),
+            };
+          }
+          return { select: vi.fn().mockReturnThis() };
+        }),
+      } as any);
+
+      const req = new NextRequest('http://localhost:3000/api/learning/complete', {
+        method: 'POST',
+        body: JSON.stringify({ moduleId }),
+      });
+
+      const res = await completeLearningModule(req);
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.code).toBe('PREREQUISITE_REQUIRED');
+    });
+
+    it('chặn 403 khi bài học gắn bài khảo thí nhưng thí sinh chưa đạt điểm', async () => {
+      const assessId = 'asssssss-1111-2222-3333-444444444444';
+      vi.mocked(createClient).mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId } }, error: null }),
+        },
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'learning_modules') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: moduleId, title: 'Thực Hành Có Đề', is_published: true, assessment_id: assessId, point_reward: 50 },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'assessment_submissions') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockReturnValue({
+                      limit: vi.fn().mockReturnValue({
+                        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }), // Chưa có bài đạt
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return { select: vi.fn().mockReturnThis() };
+        }),
+      } as any);
+
+      const req = new NextRequest('http://localhost:3000/api/learning/complete', {
+        method: 'POST',
+        body: JSON.stringify({ moduleId }),
+      });
+
+      const res = await completeLearningModule(req);
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.code).toBe('ASSESSMENT_REQUIRED');
+    });
   });
 
   // =========================================================================
@@ -770,6 +897,29 @@ describe('Personal User Phase 2: Learning Roadmap & Credentials (UC-P08, UC-P09,
       expect(res.status).toBe(410);
       const data = await res.json();
       expect(data.error).toContain('Gian lận thi cử');
+    });
+
+    it('từ chối 404 khi mã chứng chỉ không tồn tại (chặn sinh mã NX- khống)', async () => {
+      vi.mocked(createClient).mockResolvedValue({
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'Not found' },
+              }),
+            }),
+          }),
+        }),
+      } as any);
+
+      const fakeCode = 'NX-2026-MASTER-FAKE999';
+      const req = new NextRequest(`http://localhost:3000/api/credentials/${fakeCode}/pdf`);
+      const res = await getCredentialPdf(req, { params: Promise.resolve({ id: fakeCode }) });
+
+      expect(res.status).toBe(404);
+      const data = await res.json();
+      expect(data.error).toContain('Không tìm thấy chứng chỉ số');
     });
   });
 });

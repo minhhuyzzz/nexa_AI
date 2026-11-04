@@ -99,4 +99,51 @@ describe('/api/leaderboard Route Handler (PTS Slice)', () => {
     // Không bao giờ order theo avg_competency_score
     expect(mockOrder).not.toHaveBeenCalledWith('avg_competency_score', expect.anything());
   });
+
+  it('hỗ trợ query period=week và period=month lọc thời gian tương ứng', async () => {
+    const mockGte = vi.fn().mockReturnValue({
+      order: vi.fn().mockReturnValue({
+        order: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    const mockEq = vi.fn().mockReturnValue({
+      gte: mockGte,
+      order: vi.fn().mockReturnValue({
+        order: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: mockEq,
+        }),
+      }),
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+      },
+    } as any);
+
+    const resWeek = await GET(new Request('http://localhost:3000/api/leaderboard?period=week'));
+    expect(resWeek.status).toBe(200);
+    const dataWeek = await resWeek.json();
+    expect(dataWeek.period).toBe('week');
+    expect(mockGte).toHaveBeenCalledWith('updated_at', expect.any(String));
+
+    const resMonth = await GET(new Request('http://localhost:3000/api/leaderboard?period=month'));
+    expect(resMonth.status).toBe(200);
+    const dataMonth = await resMonth.json();
+    expect(dataMonth.period).toBe('month');
+  });
 });

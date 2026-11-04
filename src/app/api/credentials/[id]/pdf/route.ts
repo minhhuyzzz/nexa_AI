@@ -18,24 +18,10 @@ export async function GET(
     } else {
       query = query.eq('credential_code', credentialId);
     }
-    const { data: dbCred } = await query.single();
-    let cred = dbCred;
-
-    if (!cred && credentialId.toUpperCase().startsWith('NX-')) {
-      cred = {
-        id: credentialId,
-        credential_code: credentialId.toUpperCase(),
-        candidate_name: 'Học Viên Nexa',
-        assessment_title: 'Chứng Nhận Năng Lực Số Toàn Diện (NEXA Master Certificate)',
-        score_percentage: 100,
-        total_score: 450,
-        max_score: 450,
-        competency_level: 'Level 4: Highly Advanced',
-        issued_at: new Date().toISOString(),
-        is_revoked: false,
-        revoked_reason: null,
-      };
-    }
+    const { data: dbCred } = typeof query.maybeSingle === 'function'
+      ? await query.maybeSingle()
+      : await query.single();
+    const cred = dbCred;
 
     if (!cred) {
       return NextResponse.json({ error: 'Không tìm thấy chứng chỉ số' }, { status: 404 });

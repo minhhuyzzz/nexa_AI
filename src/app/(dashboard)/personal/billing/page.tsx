@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -108,47 +108,47 @@ export default function LearnerBillingPage() {
       {/* Page Header */}
       <div className="pb-2">
         <div className="flex items-center gap-2 mb-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+          <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
             TÀI KHOẢN &amp; HẠN MỨC
           </span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           Gói Dịch Vụ &amp; Thanh Toán Cá Nhân
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
           Quản lý gói tài khoản người học, nhận chứng chỉ số có mã QR tra cứu và nâng cấp AI credits cho lộ trình cá nhân.
         </p>
       </div>
 
       {/* Error alert if any */}
       {errorMsg && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-md text-xs font-medium flex items-center gap-2">
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Current Subscription Status */}
-      <div className="p-6 rounded-md border border-slate-200 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="text-xs text-slate-500">Gói tài khoản hiện tại</div>
+          <div className="text-xs text-slate-500 dark:text-neutral-400">Gói tài khoản hiện tại</div>
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
               {planDetails?.planName || currentPlanCode}
             </h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-md font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+            <span className="text-xs px-2.5 py-0.5 rounded-xl font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
               Đang hoạt động
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-neutral-400 mt-1">
             <span>
               Số dư AI credits khả dụng:{' '}
-              <span className="font-mono font-bold text-slate-800">{credits} credits</span>
+              <span className="font-mono font-bold text-neutral-800 dark:text-zinc-200">{credits} credits</span>
             </span>
             {planDetails?.expiresAt && (
               <span>
-                &bull; Hạn dùng đến: <span className="font-mono font-semibold text-slate-800">{new Date(planDetails.expiresAt).toLocaleDateString('vi-VN')}</span>
+                &bull; Hạn dùng đến: <span className="font-mono font-semibold text-neutral-800 dark:text-zinc-200">{new Date(planDetails.expiresAt).toLocaleDateString('vi-VN')}</span>
               </span>
             )}
           </div>
@@ -158,7 +158,7 @@ export default function LearnerBillingPage() {
       {/* Plans Grid from Database */}
       {isLoadingPlans ? (
         <div className="py-12 flex justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-sky-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -173,56 +173,56 @@ export default function LearnerBillingPage() {
             return (
               <div
                 key={p.id}
-                className={`flex flex-col justify-between rounded-md border p-6 transition-all duration-200 ${
+                className={`flex flex-col justify-between rounded-xl border p-6 transition-all duration-200 ${
                   isCurrent
-                    ? 'border-sky-600 bg-sky-50/20 shadow-xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/20 dark:bg-blue-950/20 shadow-xs'
+                    : 'border-slate-200/80 dark:border-zinc-800 bg-white hover:border-slate-300'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono font-bold text-slate-700">
+                    <span className="text-xs font-mono font-bold text-neutral-700 dark:text-zinc-300">
                       {p.code}
                     </span>
                     {isCurrent && (
-                      <span className="text-[11px] font-bold px-2 py-0.5 bg-sky-600 text-white rounded">
+                      <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-600 text-white rounded">
                         Gói hiện tại
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
                     {p.name}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 min-h-[32px] leading-relaxed">
+                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 min-h-[32px] leading-relaxed">
                     {p.description}
                   </p>
 
-                  <div className="my-5 pb-5 border-b border-slate-200">
+                  <div className="my-5 pb-5 border-b border-slate-200/80 dark:border-zinc-800">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold font-mono tracking-tight text-slate-900">
+                      <span className="text-2xl font-bold font-mono tracking-tight text-neutral-900 dark:text-neutral-100">
                         {isFree ? 'Miễn phí' : `${p.price_vnd.toLocaleString('vi-VN')} đ`}
                       </span>
                       {!isFree && (
-                        <span className="text-xs text-slate-500">/ tháng</span>
+                        <span className="text-xs text-slate-500 dark:text-neutral-400">/ tháng</span>
                       )}
                     </div>
                     <div className="text-xs text-slate-600 mt-1 flex items-center gap-1">
                       <span>Bao gồm:</span>
-                      <strong className="font-mono text-slate-800">
+                      <strong className="font-mono text-neutral-800 dark:text-zinc-200">
                         {p.credits_included} AI credits
                       </strong>
                     </div>
                   </div>
 
                   <div className="space-y-2.5 mb-6">
-                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <div className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                       Quyền lợi bao gồm
                     </div>
                     {Array.isArray(p.features) &&
                       p.features.map((feat, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
-                          <Check className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" strokeWidth={2} />
+                        <div key={idx} className="flex items-start gap-2 text-xs text-neutral-700 dark:text-zinc-300">
+                          <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" strokeWidth={2} />
                           <span>{feat}</span>
                         </div>
                       ))}
@@ -234,7 +234,7 @@ export default function LearnerBillingPage() {
                     <button
                       onClick={() => handleOpenUpgrade(p.code)}
                       disabled={Boolean(loadingPlanCode)}
-                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     >
                       {isLoadingThis ? (
                         <>
@@ -251,7 +251,7 @@ export default function LearnerBillingPage() {
                   ) : isCurrent ? (
                     <button
                       disabled
-                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 cursor-default"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 dark:text-neutral-400 cursor-default"
                     >
                       Gói mặc định
                     </button>
@@ -259,7 +259,7 @@ export default function LearnerBillingPage() {
                     <button
                       onClick={() => handleOpenUpgrade(p.code)}
                       disabled={Boolean(loadingPlanCode)}
-                      className="w-full py-2.5 px-4 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     >
                       {isLoadingThis ? (
                         <>

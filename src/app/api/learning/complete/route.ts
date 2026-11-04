@@ -32,15 +32,75 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Fetch learning module
+    // 2. Fetch learning module with governance & prerequisite fields (UC-A34)
     const { data: moduleData, error: modError } = await supabase
       .from('learning_modules')
-      .select('id, title, point_reward, skill_code')
+      .select('id, title, point_reward, skill_code, is_published, path_id, assessment_id, prerequisite_module_id')
       .eq('id', moduleId)
       .single();
 
     if (modError || !moduleData) {
       return NextResponse.json({ error: 'Bài học không tồn tại' }, { status: 404 });
+    }
+
+    // 2.1. Verify published state of module
+    if (moduleData.is_published === false) {
+      return NextResponse.json({ error: 'Bài học này chưa được phát hành' }, { status: 403 });
+    }
+
+    // 2.2. Verify published state of parent learning path if attached
+    if (moduleData.path_id) {
+      const { data: pathData } = await supabase
+        .from('learning_paths')
+        .select('id, is_published')
+        .eq('id', moduleData.path_id)
+        .maybeSingle();
+
+      if (pathData && pathData.is_published === false) {
+        return NextResponse.json({ error: 'Lộ trình học tập của bài học này chưa được mở' }, { status: 403 });
+      }
+    }
+
+    // 2.3. Check prerequisite module completion (anti-spam gate)
+    if (moduleData.prerequisite_module_id) {
+      const { data: prereqProgress } = await supabase
+        .from('user_learning_progress')
+        .select('id, is_completed')
+        .eq('user_id', user.id)
+        .eq('module_id', moduleData.prerequisite_module_id)
+        .maybeSingle();
+
+      if (!prereqProgress?.is_completed) {
+        return NextResponse.json(
+          {
+            error: 'Bạn cần hoàn thành bài học tiên quyết trước khi hoàn thành bài học này',
+            code: 'PREREQUISITE_REQUIRED',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 2.4. Check required assessment completion if attached
+    if (moduleData.assessment_id) {
+      const { data: passingSub } = await supabase
+        .from('assessment_submissions')
+        .select('id, is_passed')
+        .eq('user_id', user.id)
+        .eq('assessment_id', moduleData.assessment_id)
+        .eq('is_passed', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (!passingSub) {
+        return NextResponse.json(
+          {
+            error: 'Bạn cần làm và đạt bài khảo thí của học phần này trước khi nhận điểm hoàn thành',
+            code: 'ASSESSMENT_REQUIRED',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const pointsToAward = moduleData.point_reward ?? 30; // Standard +30 điểm (point)

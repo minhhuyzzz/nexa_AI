@@ -182,21 +182,21 @@ export function CompetencyRadarChart({
         }
       >
         <defs>
-          {/* Depth gradient for score polygon */}
+          {/* Depth gradient for score polygon - Cobalt Blue #2563EB per AGENTS.md */}
           <linearGradient id="radarScoreElevationGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#0284C7" stopOpacity="0.32" />
-            <stop offset="60%" stopColor="#0284C7" stopOpacity="0.16" />
-            <stop offset="100%" stopColor="#0284C7" stopOpacity="0.06" />
+            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.32" />
+            <stop offset="60%" stopColor="#2563EB" stopOpacity="0.16" />
+            <stop offset="100%" stopColor="#2563EB" stopOpacity="0.06" />
           </linearGradient>
 
           {/* Elevated soft drop shadow for data polygon layer */}
           <filter id="radarScoreShadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#0284C7" floodOpacity="0.28" />
+            <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#2563EB" floodOpacity="0.25" />
           </filter>
 
           {/* Depth vignette backdrop for 3D grounding */}
           <radialGradient id="radarAmbientGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#0284C7" stopOpacity="0.05" />
+            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.05" />
             <stop offset="50%" stopColor="#F8FAFC" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </radialGradient>
@@ -269,7 +269,7 @@ export function CompetencyRadarChart({
         {isHero && (
           <g>
             <circle cx={centerX} cy={centerY} r="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" />
-            <circle cx={centerX} cy={centerY} r="2.5" fill="#0284C7" />
+            <circle cx={centerX} cy={centerY} r="2.5" fill="#2563EB" />
           </g>
         )}
 
@@ -283,12 +283,12 @@ export function CompetencyRadarChart({
           opacity={0.7}
         />
 
-        {/* Learner Score Polygon with true visual depth */}
+        {/* Learner Score Polygon with true visual depth - Cobalt Blue #2563EB */}
         {!data.every((d) => d.score === null || d.score === 0) ? (
           <polygon
             points={scorePolygon}
-            fill={isHero ? 'url(#radarScoreElevationGrad)' : 'rgba(2, 132, 199, 0.16)'}
-            stroke="#0284C7"
+            fill={isHero ? 'url(#radarScoreElevationGrad)' : 'rgba(37, 99, 235, 0.16)'}
+            stroke="#2563EB"
             strokeWidth={isHero ? '2.5' : '2'}
             filter={isHero ? 'url(#radarScoreShadow)' : undefined}
           />
@@ -297,21 +297,31 @@ export function CompetencyRadarChart({
             cx={centerX}
             cy={centerY}
             r="3.5"
-            className="fill-sky-600 stroke-white stroke-2"
+            className="fill-blue-600 stroke-white stroke-2"
           />
         )}
 
         {/* Points and Standardized Clean Labels */}
         {data.map((d, i) => {
           const isUnassessed = d.score === null;
-          const isZero = isUnassessed || d.score === 0;
-          const pt = getPoint(i, d.score !== null ? d.score / 100 : 0);
+          const isZero = d.score === 0;
+          const pt = getPoint(i, isUnassessed ? 0.35 : (d.score ?? 0) / 100);
           const cfg = getLabelConfig(i);
 
           return (
             <g key={d.code}>
-              {/* Vertex depth layers */}
-              {!isZero && (
+              {/* Unassessed indicator along axis (dashed hollow circle, avoiding fake 0% pin) */}
+              {isUnassessed ? (
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="3.5"
+                  className="fill-white dark:fill-zinc-900 stroke-slate-300 dark:stroke-zinc-700 stroke-1"
+                  strokeDasharray="2,2"
+                >
+                  <title>{`${d.name}: Chưa đánh giá`}</title>
+                </circle>
+              ) : !isZero ? (
                 <>
                   {/* Outer soft halo for depth */}
                   {isHero && (
@@ -319,16 +329,16 @@ export function CompetencyRadarChart({
                       cx={pt.x}
                       cy={pt.y}
                       r="9"
-                      fill="rgba(2, 132, 199, 0.16)"
+                      fill="rgba(37, 99, 235, 0.16)"
                     />
                   )}
-                  {/* Elevated tactile point */}
+                  {/* Elevated tactile point - Cobalt Blue #2563EB */}
                   <circle
                     cx={pt.x}
                     cy={pt.y}
                     r={isHero ? '5.5' : '4.5'}
-                    className="fill-sky-600 stroke-white dark:stroke-zinc-900 stroke-2"
-                    style={isHero ? { filter: 'drop-shadow(0px 2px 4px rgba(2, 132, 199, 0.45))' } : undefined}
+                    className="fill-blue-600 dark:fill-blue-400 stroke-white dark:stroke-zinc-900 stroke-2"
+                    style={isHero ? { filter: 'drop-shadow(0px 2px 4px rgba(37, 99, 235, 0.45))' } : undefined}
                   >
                     <title>{`${d.name}: ${d.score}%`}</title>
                   </circle>
@@ -342,6 +352,15 @@ export function CompetencyRadarChart({
                     />
                   )}
                 </>
+              ) : (
+                <circle
+                  cx={centerX}
+                  cy={centerY}
+                  r="3.5"
+                  className="fill-rose-500 stroke-white stroke-1"
+                >
+                  <title>{`${d.name}: 0% (Đã đánh giá)`}</title>
+                </circle>
               )}
 
               {/* Domain Name */}
@@ -367,10 +386,10 @@ export function CompetencyRadarChart({
                   textAnchor={cfg.anchor}
                   dominantBaseline="central"
                   className={`text-[11px] font-sans font-bold ${
-                    d.score === null ? 'fill-slate-400 dark:fill-zinc-500' : 'fill-sky-600 dark:fill-sky-400'
+                    d.score === null ? 'fill-slate-400 dark:fill-zinc-500' : 'fill-blue-600 dark:fill-blue-400'
                   }`}
                 >
-                  {d.score !== null ? `${d.score}%` : '—'}
+                  {d.score !== null ? `${d.score}%` : 'Chưa đánh giá'}
                 </text>
               )}
             </g>
@@ -382,7 +401,7 @@ export function CompetencyRadarChart({
       {showLegend && (
         <div className="flex items-center gap-6 mt-3 text-xs text-slate-500 dark:text-zinc-400">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-sky-600 dark:bg-sky-400 rounded-full" />
+            <span className="w-3 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
             <span className="text-slate-700 dark:text-zinc-200 font-medium">Năng lực thực tế</span>
           </div>
           <div className="flex items-center gap-1.5">

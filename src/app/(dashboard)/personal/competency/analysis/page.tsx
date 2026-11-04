@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
@@ -183,9 +183,9 @@ function CompetencyAnalysisContent() {
           {/* Candidate Polygon (Academic Sky Blue) */}
           <polygon
             points={candidatePoints}
-            fill="#0284C7"
+            fill="#2563EB"
             fillOpacity="0.25"
-            stroke="#0284C7"
+            stroke="#2563EB"
             strokeWidth="2"
           />
 
@@ -198,7 +198,7 @@ function CompetencyAnalysisContent() {
                 cx={pt.x}
                 cy={pt.y}
                 r="3.5"
-                fill="#0284C7"
+                fill="#2563EB"
                 stroke="#FFFFFF"
                 strokeWidth="1.5"
               />
@@ -226,12 +226,12 @@ function CompetencyAnalysisContent() {
         {/* Legend */}
         <div className="flex items-center gap-6 mt-4 text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-sm bg-sky-600/30 border border-sky-600 inline-block" />
-            <span className="text-slate-700 font-medium">Bạn đạt được</span>
+            <span className="w-3 h-3 rounded-sm bg-blue-600/30 border border-sky-600 inline-block" />
+            <span className="text-neutral-700 dark:text-zinc-300 font-medium">Bạn đạt được</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-0.5 bg-slate-400 border-t border-dashed border-slate-500 inline-block" />
-            <span className="text-slate-500">Chuẩn NEXA (70.0)</span>
+            <span className="text-slate-500 dark:text-neutral-400">Chuẩn NEXA (70.0)</span>
           </div>
         </div>
       </div>
@@ -240,17 +240,17 @@ function CompetencyAnalysisContent() {
 
   if (!submissionId) {
     return (
-      <div className="p-12 rounded-md bg-white border border-slate-200 text-center max-w-md mx-auto mt-12 space-y-4">
+      <div className="p-12 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-center max-w-md mx-auto mt-12 space-y-4">
         <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" strokeWidth={1.5} />
         <div>
-          <h2 className="text-base font-bold text-slate-900">Thiếu thông tin bài thi</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Thiếu thông tin bài thi</h2>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
             Vui lòng hoàn thành bài đánh giá hoặc chọn bài thi từ lịch sử để xem chẩn đoán năng lực.
           </p>
         </div>
         <Link
           href="/personal/assessments"
-          className="px-4 py-2 bg-sky-600 text-white rounded-md text-xs font-medium hover:bg-sky-700 transition-colors inline-block"
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-sky-700 transition-colors inline-block"
         >
           Đến danh sách bài thi
         </Link>
@@ -261,9 +261,9 @@ function CompetencyAnalysisContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800/80 dark:border-zinc-800">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Chẩn đoán Khoảng trống Năng lực &amp; Lộ trình 4 Bước
           </h1>
         </div>
@@ -271,7 +271,7 @@ function CompetencyAnalysisContent() {
         <div className="flex items-center gap-2">
           <Link
             href="/personal/learning-path"
-            className="px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-xs inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-xs inline-flex items-center gap-1.5"
           >
             <Compass className="w-3.5 h-3.5 text-sky-400" strokeWidth={1.75} />
             Đến Lộ trình học liệu
@@ -280,21 +280,21 @@ function CompetencyAnalysisContent() {
       </div>
 
       {loading ? (
-        <div className="p-12 text-center bg-white rounded-md border border-slate-200">
-          <RefreshCw className="w-6 h-6 text-sky-600 animate-spin mx-auto mb-2" strokeWidth={1.75} />
-          <p className="text-xs text-slate-500">Đang tải hồ sơ năng lực số...</p>
+        <div className="p-12 text-center bg-white dark:bg-[#111114] rounded-xl border border-slate-200/80 dark:border-zinc-800">
+          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-2" strokeWidth={1.75} />
+          <p className="text-xs text-slate-500 dark:text-neutral-400">Đang tải hồ sơ năng lực số...</p>
         </div>
       ) : !analysis ? (
         /* On-Demand Trigger State (Rule 6 compliant) */
-        <div className="p-8 rounded-md bg-white border border-slate-200 shadow-xs text-center max-w-2xl mx-auto space-y-4">
-          <div className="w-12 h-12 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 mx-auto">
+        <div className="p-8 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs text-center max-w-2xl mx-auto space-y-4">
+          <div className="w-12 h-12 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto">
             <Sparkles className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
               Kích hoạt Phân tích Năng lực AI theo Yêu cầu
             </h2>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-neutral-400 mt-2 leading-relaxed">
               Hệ thống tuân thủ nguyên tắc On-Demand AI: Chỉ gọi AI khi bạn bấm nút. AI sẽ đối soát toàn bộ kết quả bài làm của bạn qua 5 Miền năng lực cốt lõi, chỉ rõ các kỹ năng dưới 60% và tạo lập lộ trình học liệu 4 bước.
             </p>
           </div>
@@ -310,7 +310,7 @@ function CompetencyAnalysisContent() {
             <button
               onClick={handleTriggerAnalysis}
               disabled={analyzing}
-              className="px-6 py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-xs disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-xs disabled:opacity-50"
             >
               <Sparkles
                 className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`}
@@ -329,13 +329,13 @@ function CompetencyAnalysisContent() {
           {/* Top Row: Radar Chart + Overall Level */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* App 2: Radar Chart Card */}
-            <div className="lg:col-span-1 p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="lg:col-span-1 p-6 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                     Biểu đồ Radar 5 Miền Năng lực
                   </h3>
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-neutral-700 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-800 font-mono">
                     5 MIỀN NĂNG LỰC
                   </span>
                 </div>
@@ -348,10 +348,10 @@ function CompetencyAnalysisContent() {
                     key={d.domainCode}
                     className="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between"
                   >
-                    <span className="text-slate-500 truncate mr-1">{d.domainName}:</span>
+                    <span className="text-slate-500 dark:text-neutral-400 truncate mr-1">{d.domainName}:</span>
                     <span
                       className={`font-bold ${
-                        d.score >= 70 ? 'text-sky-600' : 'text-amber-600'
+                        d.score >= 70 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600'
                       }`}
                     >
                       {d.score.toFixed(1)}%
@@ -364,13 +364,13 @@ function CompetencyAnalysisContent() {
             {/* Overall Level & Pedagogical Feedback */}
             <div className="lg:col-span-2 space-y-4">
               {/* Level Badge Card */}
-              <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-6 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <div className="text-xs text-slate-500 mb-1 font-mono uppercase">
+                  <div className="text-xs text-slate-500 dark:text-neutral-400 mb-1 font-mono uppercase">
                     PROFICIENCY LEVEL
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
+                    <span className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 font-mono">
                       {analysis.overallLevel === 'FOUNDATION'
                         ? 'Basic'
                         : analysis.overallLevel === 'HIGHLY_SPECIALIZED'
@@ -381,7 +381,7 @@ function CompetencyAnalysisContent() {
                       Chuẩn Năng Lực Số
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-neutral-400 mt-2 leading-relaxed">
                     {analysis.overallSummary}
                   </p>
                 </div>
@@ -389,34 +389,34 @@ function CompetencyAnalysisContent() {
 
               {/* Strengths and Weaknesses */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-900 dark:text-neutral-100">
                     <TrendingUp className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
                     Điểm mạnh vượt trội
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
                     {analysis.strengths}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-900 dark:text-neutral-100">
                     <AlertTriangle className="w-4 h-4 text-amber-600" strokeWidth={1.75} />
                     Điểm cần bồi dưỡng thêm
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
                     {analysis.weaknesses}
                   </p>
                 </div>
               </div>
 
               {/* Pedagogical Advice */}
-              <div className="p-4 rounded-md bg-slate-50 border border-slate-200 shadow-xs space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                  <ShieldCheck className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
                   Lời khuyên Sư phạm từ Chuyên gia Khảo thí AI
                 </div>
-                <p className="text-xs text-slate-700 leading-relaxed">
+                <p className="text-xs text-neutral-700 dark:text-zinc-300 leading-relaxed">
                   {analysis.pedagogicalFeedback}
                 </p>
               </div>
@@ -424,13 +424,13 @@ function CompetencyAnalysisContent() {
           </div>
 
           {/* App 3: Competency Gaps (< 60%) Section */}
-          <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs space-y-4">
+          <div className="p-6 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                   Khoảng trống Năng lực Cần Khắc phục (Tỷ lệ &lt; 60%)
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                   Các kỹ năng thành phần có tỷ lệ điểm dưới chuẩn cần tập trung bổ khuyết ngay.
                 </p>
               </div>
@@ -440,7 +440,7 @@ function CompetencyAnalysisContent() {
             </div>
 
             {analysis.skillGaps.length === 0 ? (
-              <div className="p-6 text-center rounded border border-slate-200 bg-slate-50 text-xs text-slate-500">
+              <div className="p-6 text-center rounded border border-slate-200/80 dark:border-zinc-800 bg-slate-50 text-xs text-slate-500 dark:text-neutral-400">
                 Xuất sắc! Bạn không có kỹ năng nào dưới 60%.
               </div>
             ) : (
@@ -448,11 +448,11 @@ function CompetencyAnalysisContent() {
                 {analysis.skillGaps.map((gap) => (
                   <div
                     key={gap.skillCode}
-                    className="p-4 rounded-md border border-slate-200 bg-white hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                    className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800">
                           Kỹ năng {gap.skillCode}
                         </span>
                         <div className="flex items-center gap-1.5 text-[11px]">
@@ -465,22 +465,22 @@ function CompetencyAnalysisContent() {
                                 : 'bg-slate-400'
                             }`}
                           />
-                          <span className="font-semibold text-slate-700">{gap.priority}</span>
+                          <span className="font-semibold text-neutral-700 dark:text-zinc-300">{gap.priority}</span>
                         </div>
                       </div>
 
-                      <h4 className="text-xs font-bold text-slate-900 mb-1">{gap.skillName}</h4>
+                      <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">{gap.skillName}</h4>
                       <div className="text-xs text-amber-600 font-semibold mb-2">
                         Đạt: {gap.percentage.toFixed(1)}% (&lt; 60%)
                       </div>
 
-                      <div className="space-y-1.5 text-[11px] text-slate-600">
+                      <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-neutral-400">
                         <p>
-                          <span className="font-semibold text-slate-700">Nguyên nhân: </span>
+                          <span className="font-semibold text-neutral-700 dark:text-zinc-300">Nguyên nhân: </span>
                           {gap.rootCause}
                         </p>
                         <p>
-                          <span className="font-semibold text-slate-700">Rủi ro: </span>
+                          <span className="font-semibold text-neutral-700 dark:text-zinc-300">Rủi ro: </span>
                           {gap.riskImpact}
                         </p>
                       </div>
@@ -489,7 +489,7 @@ function CompetencyAnalysisContent() {
                     <div className="pt-2 border-t border-slate-100">
                       <Link
                         href="/personal/learning-path"
-                        className="text-xs font-medium text-sky-600 hover:text-sky-700 inline-flex items-center gap-1"
+                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-sky-700 inline-flex items-center gap-1"
                       >
                         Học module bổ khuyết
                         <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -506,16 +506,16 @@ function CompetencyAnalysisContent() {
             const coursesToDisplay = analysis.recommendedCourses || [];
 
             return (
-              <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs space-y-4">
+              <div className="p-6 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <GraduationCap className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                      <h3 className="text-sm font-bold text-slate-900">
+                      <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                         Khóa Học &amp; Chuyên Đề Bồi Dưỡng Đề Xuất Bởi AI
                       </h3>
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-neutral-400">
                       Được AI chọn lọc trực tiếp từ kho học liệu chuẩn hóa để giải quyết các khoảng trống năng lực số đã phát hiện.
                     </p>
                   </div>
@@ -528,44 +528,44 @@ function CompetencyAnalysisContent() {
                   {coursesToDisplay.map((course) => (
                     <div
                       key={course.id}
-                      className="p-4 rounded-md border border-slate-200 bg-white hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                      className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 font-mono">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 font-mono">
                             Kỹ năng {course.competencyId}
                           </span>
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-neutral-700 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-800">
                             {course.level}
                           </span>
                         </div>
 
-                        <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug line-clamp-2">
+                        <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1 leading-snug line-clamp-2">
                           {course.title}
                         </h4>
 
-                        <div className="text-[11px] text-slate-500 mb-2 flex items-center justify-between">
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400 mb-2 flex items-center justify-between">
                           <span>{course.provider}</span>
                           <span className="font-mono">{course.durationMinutes} phút</span>
                         </div>
 
-                        <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed mb-2">
+                        <p className="text-[11px] text-slate-600 dark:text-neutral-400 line-clamp-2 leading-relaxed mb-2">
                           {course.description}
                         </p>
 
-                        <div className="p-2 rounded bg-slate-50 border border-slate-100 text-[11px] text-slate-700 leading-snug">
+                        <div className="p-2 rounded bg-slate-50 border border-slate-100 text-[11px] text-neutral-700 dark:text-zinc-300 leading-snug">
                           <span className="font-semibold text-sky-700">Lý do đề xuất: </span>
                           {course.recommendationReason}
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-slate-500 font-mono">
+                        <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
                           {course.format}
                         </span>
                         <Link
                           href={course.actionUrl || `/personal/learning-path?courseId=${course.id}`}
-                          className="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
+                          className="px-3 py-1.5 rounded bg-blue-600 hover:bg-sky-700 text-white text-xs font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
                         >
                           Vào học ngay
                           <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -579,15 +579,15 @@ function CompetencyAnalysisContent() {
           })()}
 
           {/* App 5: 4-Step Actionable Learning Pathway */}
-          <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs space-y-4">
+          <div className="p-6 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Compass className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                <h3 className="text-sm font-bold text-slate-900">
+                <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                   Lộ trình 4 Bước Phát triển Năng lực Cá nhân hóa
                 </h3>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-neutral-400">
                 Thực hiện tuần tự 4 bước để bổ khuyết lỗ hổng kỹ năng, nhận điểm thưởng và sẵn sàng chứng chỉ.
               </p>
             </div>
@@ -596,40 +596,40 @@ function CompetencyAnalysisContent() {
               {analysis.learningPathway.map((step) => (
                 <div
                   key={step.stepNumber}
-                  className="p-4 rounded-md border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-3"
+                  className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 flex flex-col justify-between space-y-3"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-900 text-white">
                         BƯỚC {step.stepNumber}
                       </span>
-                      <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                      <span className="text-[11px] text-slate-500 dark:text-neutral-400 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
                         {step.durationHours}h
                       </span>
                     </div>
 
-                    <h4 className="text-xs font-bold text-slate-900 mb-1">{step.title}</h4>
+                    <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">{step.title}</h4>
                     <div className="text-[11px] text-sky-700 mb-2">
                       {step.targetSkill}
                     </div>
 
-                    <p className="text-[11px] text-slate-600 leading-relaxed mb-2">
+                    <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed mb-2">
                       {step.objective}
                     </p>
 
-                    <div className="p-2 rounded bg-white border border-slate-200 text-[11px] text-slate-700 leading-snug">
-                      <span className="font-semibold text-slate-800">Hành động: </span>
+                    <div className="p-2 rounded bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-[11px] text-neutral-700 dark:text-zinc-300 leading-snug">
+                      <span className="font-semibold text-neutral-800 dark:text-zinc-200">Hành động: </span>
                       {step.actionText}
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-200">
+                  <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800">
                     <Link
                       href="/personal/learning-path"
-                      className="w-full py-1.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                      className="w-full py-1.5 rounded bg-white dark:bg-[#111114] hover:bg-slate-100 border border-slate-200/80 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
                     >
-                      <BookOpen className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
+                      <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
                       Bắt đầu học ngay
                     </Link>
                   </div>
@@ -647,9 +647,9 @@ export default function CompetencyAnalysisPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-12 text-center bg-white rounded-md border border-slate-200">
-          <RefreshCw className="w-6 h-6 text-sky-600 animate-spin mx-auto mb-2" strokeWidth={1.75} />
-          <p className="text-xs text-slate-500">Đang chuẩn bị hồ sơ phân tích năng lực số...</p>
+        <div className="p-12 text-center bg-white dark:bg-[#111114] rounded-xl border border-slate-200/80 dark:border-zinc-800">
+          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-2" strokeWidth={1.75} />
+          <p className="text-xs text-slate-500 dark:text-neutral-400">Đang chuẩn bị hồ sơ phân tích năng lực số...</p>
         </div>
       }
     >

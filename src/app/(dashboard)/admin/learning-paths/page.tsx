@@ -515,7 +515,7 @@ export default function AdminLearningPathsPage() {
 
                 {/* Description */}
                 <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 leading-relaxed mb-3 min-h-[32px]">
-                  {path.description || 'Lộ trình phát triển năng lực số chuẩn DigComp 3.0.'}
+                  {path.description || 'Lộ trình phát triển 5 miền năng lực số.'}
                 </p>
 
                 {/* Domain badges */}

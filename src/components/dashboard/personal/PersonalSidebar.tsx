@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -20,11 +20,13 @@ import {
   Radio,
   Share2,
   Trophy,
+  Compass,
   FileCheck,
 } from 'lucide-react';
 
 const learningNavItems = [
   { name: 'Tổng quan', href: '/personal/dashboard', icon: LayoutGrid },
+  { name: 'Hồ sơ năng lực', href: '/personal/competency', icon: Compass },
   { name: 'Bài đánh giá', href: '/personal/assessments', icon: ClipboardCheck },
   { name: 'Lộ trình của tôi', href: '/personal/learning-path', icon: Route },
   { name: 'Bảng xếp hạng', href: '/personal/leaderboard', icon: Trophy },

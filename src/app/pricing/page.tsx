@@ -306,13 +306,13 @@ export default function PricingPage() {
               >
                 {/* Popular Pill */}
                 {isPro && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-                    <Sparkles className="w-3.5 h-3.5 fill-current text-blue-200" />
-                    <span>KHUYÊN DÙNG NHẤT</span>
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-max px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap z-10 select-none">
+                    <Sparkles className="w-3.5 h-3.5 fill-current text-blue-200 shrink-0" />
+                    <span className="whitespace-nowrap">KHUYÊN DÙNG NHẤT</span>
                   </div>
                 )}
 
-                <div className="p-7 sm:p-8">
+                <div className={`p-7 sm:p-8 ${isPro ? 'pt-8 sm:pt-9' : ''}`}>
                   {/* Card Header */}
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                     <span className={`text-[11px] font-extrabold uppercase tracking-wider ${
@@ -502,7 +502,7 @@ export default function PricingPage() {
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="py-3 px-4 font-semibold text-slate-700 w-1/3">Tiêu chí &amp; Quyền lợi</th>
                   <th className="py-3 px-3 font-semibold text-slate-700">Gói FREE</th>
-                  <th className="py-3 px-3 font-semibold text-sky-700 bg-sky-50/50">Gói PRO</th>
+                  <th className="py-3 px-3 font-semibold text-blue-600 bg-blue-50/60">Gói PRO</th>
                   <th className="py-3 px-3 font-semibold text-slate-900">Gói BUSINESS</th>
                 </tr>
               </thead>
@@ -511,7 +511,7 @@ export default function PricingPage() {
                 <tr className="bg-slate-50/30">
                   <td className="py-3 px-4 font-bold text-slate-900">Mức giá đồng nhất</td>
                   <td className="py-3 px-3 font-bold text-slate-800">0 đ</td>
-                  <td className="py-3 px-3 font-bold text-sky-700 bg-sky-50/30">199.000 đ/tháng</td>
+                  <td className="py-3 px-3 font-bold text-blue-600 bg-blue-50/40">199.000 đ/tháng</td>
                   <td className="py-3 px-3 font-bold text-slate-900">Theo hợp đồng</td>
                 </tr>
 
@@ -524,37 +524,43 @@ export default function PricingPage() {
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Kho đề trắc nghiệm chung</td>
                   <td className="py-3 px-3 text-slate-600">Không giới hạn</td>
-                  <td className="py-3 px-3 text-sky-700 font-semibold bg-sky-50/30">Không giới hạn</td>
+                  <td className="py-3 px-3 text-blue-600 font-semibold bg-blue-50/40">Không giới hạn</td>
+                  <td className="py-3 px-3 text-slate-800">Không giới hạn</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-medium text-slate-900">Tạo đề thi cá nhân</td>
+                  <td className="py-3 px-3 text-slate-700 font-medium">Tối đa 15 đề thi</td>
+                  <td className="py-3 px-3 text-blue-600 font-semibold bg-blue-50/40">Không giới hạn</td>
                   <td className="py-3 px-3 text-slate-800">Không giới hạn</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Bài thi tình huống thực tế</td>
                   <td className="py-3 px-3 text-slate-400">Khóa</td>
-                  <td className="py-3 px-3 text-sky-700 font-semibold bg-sky-50/30">Mở khóa</td>
+                  <td className="py-3 px-3 text-blue-600 font-semibold bg-blue-50/40">Mở khóa</td>
                   <td className="py-3 px-3 text-slate-800">Mở khóa</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Đề thi chuyên sâu nâng cao</td>
                   <td className="py-3 px-3 text-slate-400">Khóa</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Mở khóa toàn bộ</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">Mở khóa toàn bộ</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Mở khóa toàn bộ</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Hạn mức AI credits mỗi tháng</td>
                   <td className="py-3 px-3 text-slate-600">10 credits</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">1.000 credits</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">1.000 credits</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Theo hợp đồng</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Đánh giá lại kỹ năng</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
-                  <td className="py-3 px-3 text-sky-700 font-semibold bg-sky-50/30">Có chuyên sâu</td>
+                  <td className="py-3 px-3 text-blue-600 font-semibold bg-blue-50/40">Có chuyên sâu</td>
                   <td className="py-3 px-3 text-slate-800 font-semibold">Có chuyên sâu</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Chứng nhận năng lực số</td>
                   <td className="py-3 px-3 text-slate-600">Chứng nhận hoàn thành (QR)</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Chứng chỉ Pro (SHA-256)</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">Chứng chỉ Pro (SHA-256)</td>
                   <td className="py-3 px-3 text-slate-900 font-bold">Chứng chỉ đồng thương hiệu riêng</td>
                 </tr>
 
@@ -566,32 +572,32 @@ export default function PricingPage() {
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Số lượng nhóm lớp quản lý</td>
-                  <td className="py-3 px-3 text-slate-600">1 lớp tối đa 15 học viên</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Không giới hạn</td>
-                  <td className="py-3 px-3 text-slate-800 font-bold">Không giới hạn</td>
+                  <td className="py-3 px-3 text-slate-700 font-medium">Tối đa 10 nhóm lớp (100 học viên/nhóm)</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">Không giới hạn (tối đa 1.000 học viên/nhóm)</td>
+                  <td className="py-3 px-3 text-slate-800 font-bold">Không giới hạn (Toàn trường)</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Phòng thi trực tiếp mã PIN</td>
-                  <td className="py-3 px-3 text-slate-600">1 phòng</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Không giới hạn</td>
-                  <td className="py-3 px-3 text-slate-800 font-bold">Không giới hạn</td>
+                  <td className="py-3 px-3 text-slate-700 font-medium">3 phòng (50 thí sinh/phòng)</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">Tối đa 20 phòng (500 thí sinh/phòng)</td>
+                  <td className="py-3 px-3 text-slate-800 font-bold">Không giới hạn theo chiến dịch</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Bàn chấm Split-view chuyên nghiệp</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Có</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">Có</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Có</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Hạn mức AI credits chấm bài mỗi tháng</td>
                   <td className="py-3 px-3 text-slate-600">Thủ công (0 credit)</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">1.000 credits</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">1.000 credits</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Theo hợp đồng</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-slate-900">Xuất dữ liệu nghiên cứu</td>
                   <td className="py-3 px-3 text-slate-400">Không</td>
-                  <td className="py-3 px-3 text-sky-700 font-bold bg-sky-50/30">Dữ liệu nghiên cứu 26 biến số</td>
+                  <td className="py-3 px-3 text-blue-600 font-bold bg-blue-50/40">Dữ liệu nghiên cứu 26 biến số</td>
                   <td className="py-3 px-3 text-slate-800 font-bold">Báo cáo kiểm định toàn trường (BI)</td>
                 </tr>
 

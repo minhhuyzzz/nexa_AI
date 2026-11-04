@@ -167,17 +167,19 @@ export function OrgPlanClientView({
             {/* Metadata strip */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 text-xs">
               <div>
-                <span className="text-slate-400 block text-[11px]">Có hiệu lực đến</span>
+                <span className="text-slate-400 block text-[11px]">Kích hoạt từ</span>
+                <strong className="text-white font-mono tabular-nums">
+                  {formattedStartsAt}
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Hạn dùng đến</span>
                 <strong className="text-white font-mono tabular-nums">
                   {formattedExpiresAt}
                 </strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px]">Chu kỳ gói</span>
-                <strong className="text-white">12 tháng</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Quản trị viên chính</span>
+                <span className="text-slate-400 block text-[11px]">Quản trị viên đại diện</span>
                 <strong className="text-white truncate block">
                   {ownerName}
                 </strong>

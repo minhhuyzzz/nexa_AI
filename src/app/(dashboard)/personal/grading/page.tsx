@@ -388,18 +388,18 @@ function EvaluatorGradingContent() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+            <span className="text-xs font-medium text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
               ĐÁNH GIÁ &amp; CHẤM ĐIỂM
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Thẩm Định Bài Làm &amp; Minh Chứng
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
             Xem bài làm thực hành và bản giải trình của học viên kèm Rubric tiêu chí. Thầy cô có thể chủ động tự chấm điểm hoặc nhấn nút để AI gợi ý nhận xét.
           </p>
         </div>
@@ -408,10 +408,10 @@ function EvaluatorGradingContent() {
           <button
             onClick={() => fetchSubmissions()}
             disabled={loading}
-            className="px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+            className="px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-neutral-700 dark:text-zinc-300 transition-colors shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`}
+              className={`w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 ${loading ? 'animate-spin' : ''}`}
               strokeWidth={1.75}
             />
             Làm mới
@@ -421,18 +421,18 @@ function EvaluatorGradingContent() {
 
       {/* Filter and Candidate Selector Row */}
       {submissions.length === 0 && !loading ? (
-        <div className="p-16 text-center bg-white rounded-md border border-slate-200">
+        <div className="p-16 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800">
           <CheckSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
-          <h3 className="text-base font-semibold text-slate-900 mb-1">
+          <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
             Chưa có bài nộp nào cần thẩm định
           </h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-md mx-auto mb-5 leading-relaxed">
             Hiện tại chưa có học viên nào nộp bài thực hành hoặc bài tập tự luận trong các đợt khảo thí của bạn. Khi có bài làm mới gửi về, hệ thống sẽ tự động cập nhật danh sách tại đây để bạn chấm điểm thủ công hoặc hỗ trợ gợi ý từ AI.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/personal/authoring"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
             >
               <span>Xem danh mục đề thi</span>
               <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -443,7 +443,7 @@ function EvaluatorGradingContent() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Left Submissions List Column */}
         <div className="lg:col-span-1 space-y-3">
-          <div className="p-3 bg-white rounded-md border border-slate-200 shadow-xs space-y-2">
+          <div className="p-3 bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
             <div className="relative">
               <Search
                 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -454,7 +454,7 @@ function EvaluatorGradingContent() {
                 placeholder="Tìm thí sinh, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
@@ -467,7 +467,7 @@ function EvaluatorGradingContent() {
                     const newGrp = e.target.value;
                     setSelectedGroupId(newGrp);
                   }}
-                  className="w-full p-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
+                  className="w-full p-1.5 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-md text-neutral-800 dark:text-zinc-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
                 >
                   <option value="">-- Tất cả các nhóm --</option>
                   {classes.map((cls) => (
@@ -480,13 +480,13 @@ function EvaluatorGradingContent() {
             )}
 
             {/* Filter Tabs */}
-            <div className="grid grid-cols-3 gap-1 pt-1 border-t border-slate-100">
+            <div className="grid grid-cols-3 gap-1 pt-1 border-t border-slate-100 dark:border-zinc-800">
               <button
                 onClick={() => setFilterStatus('ALL')}
                 className={`py-1 text-[11px] font-medium rounded text-center transition-colors ${
                   filterStatus === 'ALL'
                     ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100'
                 }`}
               >
                 TẤT CẢ ({submissions.length})
@@ -496,7 +496,7 @@ function EvaluatorGradingContent() {
                 className={`py-1 text-[11px] font-medium rounded text-center transition-colors ${
                   filterStatus === 'SUBMITTED'
                     ? 'bg-amber-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100'
                 }`}
               >
                 CHỜ CHẤM
@@ -506,7 +506,7 @@ function EvaluatorGradingContent() {
                 className={`py-1 text-[11px] font-medium rounded text-center transition-colors ${
                   filterStatus === 'EVALUATED'
                     ? 'bg-emerald-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100'
                 }`}
               >
                 ĐÃ CHẤM
@@ -517,8 +517,8 @@ function EvaluatorGradingContent() {
           {/* Submissions Cards List */}
           <div className="space-y-2 max-h-[620px] overflow-y-auto pr-1">
             {filteredSubmissions.length === 0 ? (
-              <div className="p-6 text-center bg-white rounded-md border border-slate-200">
-                <p className="text-xs text-slate-500">Không có bài làm nào phù hợp bộ lọc.</p>
+              <div className="p-6 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800">
+                <p className="text-xs text-slate-500 dark:text-neutral-400">Không có bài làm nào phù hợp bộ lọc.</p>
               </div>
             ) : (
               filteredSubmissions.map((sub) => {
@@ -534,12 +534,12 @@ function EvaluatorGradingContent() {
                     }}
                     className={`w-full text-left p-3 rounded-md border transition-all text-xs ${
                       isSelected
-                        ? 'bg-sky-50/50 border-sky-300 shadow-xs'
+                        ? 'bg-blue-50 dark:bg-blue-950/60/50 border-sky-300 shadow-xs'
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-slate-900 truncate">
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                         {sub.candidateName}
                       </span>
                       <span
@@ -558,16 +558,16 @@ function EvaluatorGradingContent() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 truncate mb-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400 truncate mb-2">
                       <span className="truncate">{sub.candidateEmail}</span>
                       {sub.groupCode && (
-                        <span className="font-mono text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1 rounded shrink-0 ml-1">
+                        <span className="font-mono text-[10px] font-bold text-slate-600 dark:text-neutral-400 bg-slate-100 border border-slate-200 px-1 rounded shrink-0 ml-1">
                           {sub.groupCode}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 text-slate-600">
+                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 dark:border-zinc-800 text-slate-600 dark:text-neutral-400">
                       <span>Điểm: {sub.totalScore.toFixed(1)} đ</span>
                       <span className="text-slate-400">
                         {new Date(sub.submittedAt).toLocaleTimeString('vi-VN', {
@@ -586,33 +586,33 @@ function EvaluatorGradingContent() {
         {/* Right Split View Main Desk */}
         <div className="lg:col-span-3 space-y-4">
           {!activeSubmission ? (
-            <div className="p-12 text-center bg-white rounded-md border border-slate-200">
+            <div className="p-12 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800">
               <CheckSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" strokeWidth={1.5} />
-              <h3 className="text-sm font-bold text-slate-800">Chưa chọn bài làm nào</h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-zinc-200">Chưa chọn bài làm nào</h3>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
                 Vui lòng chọn bài thi từ danh sách bên trái để mở bàn thẩm định Split-View.
               </p>
             </div>
           ) : (
             <>
               {/* Submission Overview Strip */}
-              <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+              <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
+                  <div className="w-9 h-9 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-neutral-700 dark:text-zinc-300">
                     <User className="w-4 h-4" strokeWidth={1.75} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-sm font-bold text-slate-900">
+                      <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                         {activeSubmission.candidateName}
                       </h2>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 dark:text-neutral-400">
                         ({activeSubmission.candidateEmail})
                       </span>
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
+                    <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                       Đề thi:{' '}
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-neutral-700 dark:text-zinc-300">
                         {activeSubmission.assessmentTitle}
                       </span>
                     </div>
@@ -621,15 +621,15 @@ function EvaluatorGradingContent() {
 
                 <div className="flex items-center gap-4 text-xs flex-wrap">
                   <div className="text-right">
-                    <div className="text-slate-500 text-[11px]">ĐIỂM HIỆN TẠI</div>
-                    <div className="font-bold text-slate-900 text-sm font-mono tabular-nums">
+                    <div className="text-slate-500 dark:text-neutral-400 text-[11px]">ĐIỂM HIỆN TẠI</div>
+                    <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm font-mono tabular-nums">
                       {activeSubmission.totalScore.toFixed(1)} / {activeSubmission.maxScore} đ (
                       {activeSubmission.percentage.toFixed(1)}%)
                     </div>
                   </div>
                   <div className="h-8 w-px bg-slate-200" />
                   <div className="text-right">
-                    <div className="text-slate-500 text-[11px]">GIÁM SÁT THI (INTEGRITY)</div>
+                    <div className="text-slate-500 dark:text-neutral-400 text-[11px]">GIÁM SÁT THI (INTEGRITY)</div>
                     <div className="font-semibold flex items-center gap-1.5 justify-end">
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
@@ -659,14 +659,14 @@ function EvaluatorGradingContent() {
                   </div>
                   <div className="h-8 w-px bg-slate-200" />
                   <div className="text-right">
-                    <div className="text-slate-500 text-[11px]">THẨM ĐỊNH (HITL)</div>
+                    <div className="text-slate-500 dark:text-neutral-400 text-[11px]">THẨM ĐỊNH (HITL)</div>
                     <div className="font-bold flex items-center gap-1.5 justify-end">
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
                           activeSubmission.status === 'EVALUATED'
                             ? 'bg-emerald-600'
                             : activeSubmission.gradingStatus === 'AI_DRAFT'
-                            ? 'bg-sky-500'
+                            ? 'bg-blue-50 dark:bg-blue-950/600'
                             : 'bg-amber-500'
                         }`}
                       />
@@ -675,7 +675,7 @@ function EvaluatorGradingContent() {
                           activeSubmission.status === 'EVALUATED'
                             ? 'text-emerald-700'
                             : activeSubmission.gradingStatus === 'AI_DRAFT'
-                            ? 'text-sky-700'
+                            ? 'text-blue-700 dark:text-blue-300'
                             : 'text-amber-700'
                         }
                       >
@@ -700,7 +700,7 @@ function EvaluatorGradingContent() {
                       className={`px-3 py-1.5 text-xs rounded-md border transition-colors ${
                         idx === selectedItemIndex
                           ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          : 'bg-white text-slate-600 dark:text-neutral-400 border-slate-200 hover:bg-slate-50'
                       }`}
                     >
                       Câu {item.orderIndex || idx + 1}: {item.itemType} ({item.maxPoints} đ)
@@ -716,28 +716,28 @@ function EvaluatorGradingContent() {
                 {/* ============================================================ */}
                 <div className="space-y-4">
                   {/* Item Prompt / Task Description */}
-                  <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-2">
+                  <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-slate-500">
+                      <span className="font-medium text-slate-500 dark:text-neutral-400">
                         CÂU HỎI / NHIỆM VỤ THỰC HÀNH (TỐI ĐA {activeItem?.maxPoints} ĐIỂM)
                       </span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-neutral-700 dark:text-zinc-300 border border-slate-200">
                         {activeItem?.itemType}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-800 whitespace-pre-line leading-relaxed bg-slate-50 p-3 rounded border border-slate-100">
+                    <div className="text-xs text-neutral-800 dark:text-zinc-200 whitespace-pre-line leading-relaxed bg-slate-50 p-3 rounded border border-slate-100 dark:border-zinc-800">
                       {activeItem?.prompt}
                     </div>
                   </div>
 
                   {/* Candidate Written Justification / Text Response */}
-                  <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-2">
+                  <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                        <FileText className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
+                      <div className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-neutral-100">
+                        <FileText className="w-4 h-4 text-slate-600 dark:text-neutral-400" strokeWidth={1.75} />
                         Bản Giải trình / Thuyết minh của Thí sinh
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-neutral-400">
                         <span>Độ dài:</span>
                         <span
                           className={`font-bold ${
@@ -754,7 +754,7 @@ function EvaluatorGradingContent() {
                       </div>
                     </div>
 
-                    <div className="p-3 rounded bg-white border border-slate-200 text-xs text-slate-800 leading-relaxed min-h-[140px] whitespace-pre-wrap">
+                    <div className="p-3 rounded bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-xs text-neutral-800 dark:text-zinc-200 leading-relaxed min-h-[140px] whitespace-pre-wrap">
                       {activeItem?.textResponse || (
                         <span className="italic text-slate-400">
                           Thí sinh không để lại bản giải trình văn bản.
@@ -764,10 +764,10 @@ function EvaluatorGradingContent() {
                   </div>
 
                   {/* Digital Evidence File Attachment */}
-                  <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-2">
+                  <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                        <Paperclip className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
+                      <div className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-neutral-100">
+                        <Paperclip className="w-4 h-4 text-slate-600 dark:text-neutral-400" strokeWidth={1.75} />
                         Tệp Minh chứng Số Đính kèm
                       </div>
                       {activeItem?.evidenceUrl && (
@@ -780,10 +780,10 @@ function EvaluatorGradingContent() {
 
                     {activeItem?.evidenceUrl ? (
                       <div className="space-y-3">
-                        <div className="p-3 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between">
+                        <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
                           <div className="flex items-center gap-2 overflow-hidden">
-                            <ImageIcon className="w-4 h-4 text-sky-600 shrink-0" strokeWidth={1.75} />
-                            <span className="text-xs text-slate-700 truncate max-w-xs">
+                            <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
+                            <span className="text-xs text-neutral-700 dark:text-zinc-300 truncate max-w-xs">
                               {activeItem.evidenceUrl.split('/').pop()}
                             </span>
                           </div>
@@ -791,7 +791,7 @@ function EvaluatorGradingContent() {
                             <button
                               type="button"
                               onClick={() => handleOpenEvidence(activeItem.evidenceUrl!)}
-                              className="px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100 text-[11px] font-medium text-slate-700 inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                              className="px-2.5 py-1 rounded bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 text-[11px] font-medium text-neutral-700 dark:text-zinc-300 inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
                             >
                               <ExternalLink className="w-3 h-3" strokeWidth={1.75} />
                               Mở xem
@@ -799,7 +799,7 @@ function EvaluatorGradingContent() {
                             <button
                               type="button"
                               onClick={() => handleOpenEvidence(activeItem.evidenceUrl!)}
-                              className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-[11px] font-medium text-white inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                              className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-[11px] font-medium text-white inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
                             >
                               <Download className="w-3 h-3" strokeWidth={1.75} />
                               Tải về
@@ -816,7 +816,7 @@ function EvaluatorGradingContent() {
                               alt="Minh chứng số của thí sinh"
                               className="max-h-64 mx-auto rounded object-contain"
                             />
-                            <div className="text-[11px] text-slate-500 mt-1">
+                            <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
                               Bản xem trước minh chứng số thực hành
                             </div>
                           </div>
@@ -835,18 +835,18 @@ function EvaluatorGradingContent() {
                 {/* ============================================================ */}
                 <div className="space-y-4">
                   {/* On-Demand AI Assistance Card */}
-                  <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-3">
+                  <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                        <h3 className="text-xs font-bold text-slate-900">
+                        <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                        <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                           Trợ lý Khảo thí AI (On-Demand)
                         </h3>
                       </div>
                       <button
                         onClick={handleTriggerAI}
                         disabled={aiLoading}
-                        className="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                        className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
                       >
                         <Sparkles
                           className={`w-3.5 h-3.5 ${aiLoading ? 'animate-spin' : ''}`}
@@ -864,7 +864,7 @@ function EvaluatorGradingContent() {
                     )}
 
                     {activeAiEval ? (
-                      <div className="p-3.5 rounded bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                      <div className="p-3.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 space-y-2.5 text-xs">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
@@ -876,10 +876,10 @@ function EvaluatorGradingContent() {
                                   : 'bg-rose-600'
                               }`}
                             />
-                            <span className="font-bold text-slate-900">
+                            <span className="font-bold text-neutral-900 dark:text-neutral-100">
                               Đề xuất điểm AI: {activeAiEval.totalScore.toFixed(1)} / {activeAiEval.maxScore} đ
                             </span>
-                            <span className="text-[11px] font-mono text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                            <span className="text-[11px] font-mono text-slate-600 dark:text-neutral-400 bg-white px-2 py-0.5 rounded border border-slate-200">
                               Cờ tin cậy AI: {activeAiEval.confidenceFlag === 'GREEN' ? 'CAO' : activeAiEval.confidenceFlag === 'AMBER' ? 'TRUNG BÌNH' : 'THẤP'}{' '}
                               ({activeAiEval.confidenceScore > 1 ? Number(activeAiEval.confidenceScore).toFixed(0) : (Number(activeAiEval.confidenceScore) * 100).toFixed(0)}%)
                             </span>
@@ -888,7 +888,7 @@ function EvaluatorGradingContent() {
                           <button
                             type="button"
                             onClick={handleApplyAISuggestions}
-                            className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-sky-700 text-[11px] font-semibold inline-flex items-center gap-1 shadow-xs transition-colors shrink-0"
+                            className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-blue-700 dark:text-blue-300 text-[11px] font-semibold inline-flex items-center gap-1 shadow-xs transition-colors shrink-0"
                           >
                             <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
                             Áp dụng gợi ý AI vào Rubric
@@ -896,43 +896,43 @@ function EvaluatorGradingContent() {
                         </div>
 
                         {/* Educational boundary note separating AI confidence from integrity */}
-                        <div className="p-2 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
-                          <strong className="text-slate-800">Cơ chế thẩm định:</strong> Cờ tin cậy AI thể hiện mức độ xác thực của thuật toán đối với câu từ và rubric trích dẫn, hoàn toàn độc lập với cờ giám sát phòng thi (Integrity). Quyết định điểm cuối cùng luôn thuộc về Chuyên gia khảo thí.
+                        <div className="p-2 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
+                          <strong className="text-neutral-800 dark:text-zinc-200">Cơ chế thẩm định:</strong> Cờ tin cậy AI thể hiện mức độ xác thực của thuật toán đối với câu từ và rubric trích dẫn, hoàn toàn độc lập với cờ giám sát phòng thi (Integrity). Quyết định điểm cuối cùng luôn thuộc về Chuyên gia khảo thí.
                         </div>
 
                         {activeAiEval.evidenceQuote && (
-                          <div className="p-2.5 rounded bg-white border border-slate-200 text-[11px] text-slate-700 italic leading-relaxed">
-                            <span className="font-semibold not-italic text-slate-800 block mb-0.5">Dẫn chứng gốc từ bài làm: </span>
+                          <div className="p-2.5 rounded bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-[11px] text-neutral-700 dark:text-zinc-300 italic leading-relaxed">
+                            <span className="font-semibold not-italic text-neutral-800 dark:text-zinc-200 block mb-0.5">Dẫn chứng gốc từ bài làm: </span>
                             &ldquo;{activeAiEval.evidenceQuote}&rdquo;
                           </div>
                         )}
 
-                        <div className="text-[11px] text-slate-600">
-                          <span className="font-semibold text-slate-700">Nhận xét chuyên môn của AI: </span>
+                        <div className="text-[11px] text-slate-600 dark:text-neutral-400">
+                          <span className="font-semibold text-neutral-700 dark:text-zinc-300">Nhận xét chuyên môn của AI: </span>
                           {activeAiEval.feedback}
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
                         Chuyên gia có toàn quyền tự chấm tay với chi phí 0 token AI. Nếu cần thêm góc nhìn đối soát khách quan, hãy bấm nút &ldquo;Nhờ AI gợi ý chấm Rubric&rdquo;.
                       </p>
                     )}
                   </div>
 
                   {/* Rubric Criteria Selection Form */}
-                  <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
                       <div>
-                        <h3 className="text-xs font-bold text-slate-900">
+                        <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                           {activeItem?.rubric?.title || 'Bảng Rubric Thẩm định Chuyên môn'}
                         </h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
                           {activeItem?.rubric?.description || 'Chọn mức độ hoàn thành cho từng tiêu chí.'}
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-[11px] text-slate-500">ĐIỂM RUBRIC</div>
-                        <div className="text-base font-bold text-sky-600">
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400">ĐIỂM RUBRIC</div>
+                        <div className="text-base font-bold text-blue-600 dark:text-blue-400">
                           {currentTotalRubricScore.toFixed(2)} / {activeItem?.maxPoints || 10} đ
                         </div>
                       </div>
@@ -947,10 +947,10 @@ function EvaluatorGradingContent() {
                           className="p-3 rounded-md bg-slate-50/70 border border-slate-200 space-y-2.5"
                         >
                           <div className="flex items-center justify-between text-xs">
-                            <div className="font-bold text-slate-800">
+                            <div className="font-bold text-neutral-800 dark:text-zinc-200">
                               Tiêu chí {cIdx + 1}: {crit.name}
                             </div>
-                            <span className="text-[11px] px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700">
+                            <span className="text-[11px] px-2 py-0.5 rounded bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300">
                               Tối đa {crit.maxPoints} đ ({crit.weightPercent}%)
                             </span>
                           </div>
@@ -968,8 +968,8 @@ function EvaluatorGradingContent() {
                                   onClick={() => handleSelectLevel(crit, level)}
                                   className={`p-2 rounded border text-left transition-all ${
                                     isSelected
-                                      ? 'bg-sky-50 border-sky-600 ring-1 ring-sky-600 text-slate-900 shadow-xs'
-                                      : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                                      ? 'bg-blue-50 dark:bg-blue-950/60 border-sky-600 ring-1 ring-sky-600 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                                      : 'bg-white border-slate-200 hover:border-slate-300 text-neutral-700 dark:text-zinc-300'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between mb-1">
@@ -978,13 +978,13 @@ function EvaluatorGradingContent() {
                                     </span>
                                     <span
                                       className={`text-[10px] font-semibold ${
-                                        isSelected ? 'text-sky-700' : 'text-slate-500'
+                                        isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-neutral-400'
                                       }`}
                                     >
                                       {points} đ
                                     </span>
                                   </div>
-                                  <p className="text-[10px] text-slate-500 line-clamp-2 leading-tight">
+                                  <p className="text-[10px] text-slate-500 dark:text-neutral-400 line-clamp-2 leading-tight">
                                     {level.description}
                                   </p>
                                 </button>
@@ -997,7 +997,7 @@ function EvaluatorGradingContent() {
 
                     {/* Evaluator Official Qualitative Feedback */}
                     <div className="space-y-1.5 pt-2">
-                      <label className="text-xs font-bold text-slate-800 block">
+                      <label className="text-xs font-bold text-neutral-800 dark:text-zinc-200 block">
                         Nhận xét &amp; Góp ý của Chuyên gia Khảo thí
                       </label>
                       <textarea
@@ -1005,19 +1005,19 @@ function EvaluatorGradingContent() {
                         value={evaluatorFeedback}
                         onChange={(e) => setEvaluatorFeedback(e.target.value)}
                         placeholder="Nhập nhận xét chuyên môn, hướng dẫn khắc phục hoặc lý do cho điểm..."
-                        className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        className="w-full p-2.5 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
 
                     {/* Save and Publish Button */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
                       {saveSuccessMsg ? (
                         <div className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
                           {saveSuccessMsg}
                         </div>
                       ) : (
-                        <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400 flex items-center gap-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
                           Thẩm định chính thức bởi Khảo thí
                         </div>
@@ -1026,7 +1026,7 @@ function EvaluatorGradingContent() {
                       <button
                         onClick={handleSaveGrade}
                         disabled={savingGrade}
-                        className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                        className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
                       >
                         <CheckSquare className="w-4 h-4" strokeWidth={1.75} />
                         {savingGrade ? 'Đang lưu kết quả...' : 'Lưu & Công bố Kết quả'}
@@ -1049,7 +1049,7 @@ export default function EvaluatorGradingPage() {
     <Suspense
       fallback={
         <div className="py-16 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
-          <RefreshCw className="w-5 h-5 animate-spin text-sky-600" />
+          <RefreshCw className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" />
           <span>Đang nạp bàn chấm bài Rubric...</span>
         </div>
       }

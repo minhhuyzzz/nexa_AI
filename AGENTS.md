@@ -32,6 +32,7 @@
 
 ### 2.1. Chỉ đánh giá **5 miền năng lực số**
 
+- **Khung DigComp 2.2 / 3.0 chỉ là cơ sở học thuật và tiêu chuẩn nền tảng bên trong hệ thống.** Tuyệt đối không phô bày các thuật ngữ kỹ thuật, mã khung hay số hiệu phiên bản (`DigComp`, `DigComp 2.2`, `DigComp 3.0`...) ra ngoài giao diện người dùng (UI), tránh làm người dùng bối rối hoặc làm giao diện trở nên nặng tính giáo điều. Trên UI chỉ dùng các cách gọi tự nhiên, dễ hiểu: **"5 miền năng lực số"**, **"Khung năng lực số 5 miền"** hoặc **"Hồ sơ năng lực 5 miền"**.
 - Chỉ có **5 điểm miền** được chấm, tổng hợp, hiển thị Radar, so sánh và dùng xác định lộ trình. Không thiết kế UX đánh giá 21 kỹ năng thành phần.
 - Cấu trúc kỹ năng thành phần nếu vẫn có trong DB chỉ là **phân loại/ánh xạ câu hỏi và tương thích dữ liệu nội bộ**, không biến thành điểm hoặc KPI sản phẩm cho người dùng.
 - `score: null` = **chưa có bằng chứng hợp lệ**; `score: 0` = **đã có đánh giá hợp lệ với kết quả 0**. Không thay `null` bằng `0`, không vẽ Radar 0% giả.

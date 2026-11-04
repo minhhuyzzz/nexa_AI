@@ -208,7 +208,7 @@ export class DomainAssessmentSummaryService {
         assessedScoreSum += score;
         assessedDomainsCount += 1;
 
-        if (score < 60) {
+        if (score < 70) {
           gapDomainCodes.push(domain.code);
         }
 

@@ -176,13 +176,13 @@ export function PricingSection() {
               >
                 {/* Popular Highlight Tag for Pro */}
                 {isPro && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-                    <Sparkles className="w-3.5 h-3.5 fill-current text-blue-200" />
-                    <span>KHUYÊN DÙNG NHẤT</span>
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-max px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap z-10 select-none">
+                    <Sparkles className="w-3.5 h-3.5 fill-current text-blue-200 shrink-0" />
+                    <span className="whitespace-nowrap">KHUYÊN DÙNG NHẤT</span>
                   </div>
                 )}
 
-                <div className="p-7 sm:p-8 flex-1 flex flex-col">
+                <div className={`p-7 sm:p-8 flex-1 flex flex-col ${isPro ? 'pt-8 sm:pt-9' : ''}`}>
                   {/* Top Badge & Target Audience */}
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-zinc-800">
                     <span

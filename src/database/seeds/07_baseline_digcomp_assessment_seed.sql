@@ -47,11 +47,13 @@ BEGIN
         status,
         version,
         is_locked,
-        visibility
+        visibility,
+        is_system_baseline,
+        system_code
     ) VALUES (
         v_assessment_id,
-        'Đánh Giá Năng Lực Số Chuẩn Quốc Gia & EU DigComp (Bài thi Chuẩn 10 Câu MCQ)',
-        'Bài khảo thí chẩn đoán năng lực số đa miền theo khung DigComp 2.2 / QĐ 146/QĐ-BTTTT. Hệ thống tự động chấm điểm khách quan tức thì trong 0.01s và thiết lập hồ sơ radar 5 miền chuẩn xác.',
+        'Đánh Giá Năng Lực Số Chuẩn 5 Miền (Bài Khảo Thí Đầu Vào)',
+        'Bài khảo thí chẩn đoán năng lực số đa miền theo tiêu chuẩn chuẩn hóa 5 miền năng lực số. Hệ thống tự động chấm điểm tức thì và thiết lập hồ sơ năng lực 5 miền chuẩn xác.',
         v_framework_id,
         30,
         70.00,
@@ -60,7 +62,9 @@ BEGIN
         'PUBLISHED',
         1,
         TRUE,
-        'PUBLIC'
+        'PUBLIC',
+        TRUE,
+        'BASELINE_5DOMAINS'
     ) ON CONFLICT (id) DO UPDATE SET
         title = EXCLUDED.title,
         description = EXCLUDED.description,
@@ -68,7 +72,9 @@ BEGIN
         status = 'PUBLISHED',
         version = 1,
         is_locked = TRUE,
-        visibility = 'PUBLIC';
+        visibility = 'PUBLIC',
+        is_system_baseline = TRUE,
+        system_code = 'BASELINE_5DOMAINS';
 
     -- 4. Delete existing items to make re-run idempotent
     DELETE FROM public.assessment_items WHERE assessment_id = v_assessment_id;

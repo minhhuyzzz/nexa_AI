@@ -24,7 +24,7 @@ export function MasterCertificateCard({
   candidateName,
   points,
   isUnlocked,
-  credentialCode = 'NX-2026-MASTER-DEMO',
+  credentialCode,
   issuedAt,
   verificationUrl,
   qrDataUrl,
@@ -45,9 +45,11 @@ export function MasterCertificateCard({
 
   const displayVerifyUrl =
     verificationUrl ||
-    (typeof window !== 'undefined'
+    (credentialCode && typeof window !== 'undefined'
       ? `${window.location.origin}/verify/${credentialCode}`
-      : `/verify/${credentialCode}`);
+      : credentialCode
+      ? `/verify/${credentialCode}`
+      : '');
 
   // Generate real dynamic QR code when unlocked
   useEffect(() => {
@@ -92,14 +94,16 @@ export function MasterCertificateCard({
 
           {/* Nút Tải PDF và Tác vụ */}
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={`/api/credentials/${credentialCode}/pdf`}
-              download={`NEXA-Certificate-${credentialCode}.pdf`}
-              className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Tải chứng chỉ (PDF)
-            </a>
+            {credentialCode && (
+              <a
+                href={`/api/credentials/${credentialCode}/pdf`}
+                download={`NEXA-Certificate-${credentialCode}.pdf`}
+                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Tải chứng chỉ (PDF)
+              </a>
+            )}
 
             <button
               type="button"
@@ -110,15 +114,17 @@ export function MasterCertificateCard({
               In chứng chỉ
             </button>
 
-            <a
-              href={`/verify/${credentialCode}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-2 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-              Tra cứu trực tuyến
-            </a>
+            {credentialCode && (
+              <a
+                href={`/verify/${credentialCode}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                Tra cứu trực tuyến
+              </a>
+            )}
           </div>
         </div>
       )}
