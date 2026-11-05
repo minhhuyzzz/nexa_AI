@@ -18,9 +18,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="dashboard-shell min-h-screen flex bg-white text-slate-900 transition-colors">
+    <div className="dashboard-shell min-h-screen flex bg-white dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
       <AdminSidebar />
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-black">
         <AdminTopbar />
         <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
           {children}

@@ -169,6 +169,7 @@ export async function POST(req: Request) {
         created_by: user.id,
         owner_user_id: user.id,
         organization_id: organization_id || null,
+        visibility: organization_id ? 'ORGANIZATION' : 'PERSONAL',
       })
       .select()
       .single();

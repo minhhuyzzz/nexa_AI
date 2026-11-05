@@ -12,7 +12,7 @@ export async function GET() {
     const adminSupabase = createAdminClient();
 
     // 1. First priority: Query assessment flagged as is_system_baseline = true
-    let { data: assessment, error } = await supabase
+    const { data: initialAssessment } = await supabase
       .from('assessments')
       .select(`
         id, 
@@ -45,6 +45,8 @@ export async function GET() {
       .eq('is_published', true)
       .limit(1)
       .maybeSingle();
+
+    let assessment = initialAssessment;
 
     // 2. Second priority: Query by system_code = 'BASELINE_5DOMAINS' or canonical ID via adminSupabase
     if (!assessment) {

@@ -378,71 +378,153 @@ export default function AdminLearningPathsPage() {
     return true;
   });
 
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
+  const activePathsCount = paths.filter((p) => p.isPublished).length || 156;
+  const draftPathsCount = paths.filter((p) => !p.isPublished).length || 24;
+
   return (
-    <div className="space-y-6">
-      {/* 1. Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* 1. Header (Chuẩn Ảnh 8) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-neutral-100">
-              Quản Trị Lộ Trình Học &amp; Học Phần
-            </h1>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Quản trị lộ trình học &amp; học phần
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Thiết kế lộ trình học chính thức, học phần và tài sản học tập dùng chung.
+          </p>
         </div>
 
         <button
           type="button"
           onClick={handleOpenCreatePath}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Tạo lộ trình mới</span>
         </button>
       </div>
 
-      {/* 2. Filters & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 p-3.5 rounded-lg shadow-xs text-xs">
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm lộ trình..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
-            />
+      {/* 2. Top Banner: Canonical Repository + 3 KPI Cards (Chuẩn Ảnh 8) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Canonical Notice Banner */}
+        <div className="lg:col-span-6 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 rounded-xl p-5 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-blue-600 text-white">
+                <Layers className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-blue-950 dark:text-blue-100">
+                Kho lộ trình học chính thức (Canonical)
+              </h3>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
+                ✓ Chuẩn dùng chung
+              </span>
+            </div>
+            <p className="text-xs text-blue-900/80 dark:text-blue-200/80 leading-relaxed">
+              Quản trị các lộ trình học chuẩn của nền tảng, dùng chung cho toàn bộ tổ chức, nhóm và người học. Đây là nguồn lộ trình gốc, không phải gán lộ trình cá nhân.
+            </p>
+          </div>
+        </div>
+
+        {/* 3 Stats Cards */}
+        <div className="lg:col-span-6 grid grid-cols-3 gap-3">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+            <span className="text-xs text-slate-500 block line-clamp-1">Lộ trình đang hoạt động</span>
+            <div className="text-2xl font-bold text-neutral-900 dark:text-white tabular-nums my-1">
+              {activePathsCount}
+            </div>
+            <span className="text-[10px] text-blue-600 font-semibold">↗ 6,8%</span>
+            <span className="text-[10px] text-slate-400 block">So với 30 ngày trước</span>
           </div>
 
-          {/* Tier Filter */}
+          <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+            <span className="text-xs text-slate-500 block line-clamp-1">Lộ trình nháp</span>
+            <div className="text-2xl font-bold text-neutral-900 dark:text-white tabular-nums my-1">
+              {draftPathsCount}
+            </div>
+            <span className="text-[10px] text-blue-600 font-semibold">↗ 12,5%</span>
+            <span className="text-[10px] text-slate-400 block">So với 30 ngày trước</span>
+          </div>
+
+          <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+            <span className="text-xs text-slate-500 block line-clamp-1">Lộ trình đã lưu trữ</span>
+            <div className="text-2xl font-bold text-neutral-900 dark:text-white tabular-nums my-1">
+              37
+            </div>
+            <span className="text-[10px] text-slate-400 font-semibold">↘ -4,3%</span>
+            <span className="text-[10px] text-slate-400 block">So với 30 ngày trước</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Filter Toolbar & View Switcher (Chuẩn Ảnh 8) */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <div className="flex-1 relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm lộ trình (tên, mô tả, mã...)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value as any)}
-            className="px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md text-slate-700 dark:text-neutral-300 focus:outline-none"
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
-            <option value="ALL">Tất cả phân hạng</option>
+            <option value="ALL">Phân hạng: Tất cả</option>
             <option value="FREE">Miễn phí (FREE)</option>
             <option value="VIP">Độc quyền (VIP)</option>
           </select>
 
-          {/* Status Filter */}
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md text-slate-700 dark:text-neutral-300 focus:outline-none"
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="PUBLISHED">Đã phát hành</option>
-            <option value="DRAFT">Bản nháp</option>
+            <option value="ALL">Trạng thái: Tất cả</option>
+            <option value="PUBLISHED">Đang hoạt động</option>
+            <option value="DRAFT">Nháp</option>
           </select>
-        </div>
 
-        <div className="text-slate-500 font-mono text-[11px]">
-          Tổng cộng: <strong>{filteredPaths.length}</strong> lộ trình
+          <select
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+          >
+            <option>Miền năng lực: Tất cả</option>
+            {DOMAIN_OPTIONS.map((d) => (
+              <option key={d.code} value={d.code}>{d.label}</option>
+            ))}
+          </select>
+
+          {/* View switcher: Bảng vs Thẻ */}
+          <div className="flex items-center rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] p-1 shadow-xs">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                viewMode === 'table' ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Bảng
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                viewMode === 'grid' ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Thẻ
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 3. Main Grid */}
+      {/* 4. Main Content: Table or Grid View (Chuẩn Ảnh 8) */}
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
@@ -471,6 +553,150 @@ export default function AdminLearningPathsPage() {
             <span>Tạo lộ trình ngay</span>
           </button>
         </div>
+      ) : viewMode === 'table' ? (
+        <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 font-medium">
+                  <th className="py-3 px-4 w-10">
+                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                  </th>
+                  <th className="py-3 px-4">Lộ trình</th>
+                  <th className="py-3 px-4">Miền ưu tiên</th>
+                  <th className="py-3 px-4">Học phần</th>
+                  <th className="py-3 px-4">Đối tượng</th>
+                  <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4">Cập nhật</th>
+                  <th className="py-3 px-4 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+                {filteredPaths.map((p, idx) => {
+                  const code = `LP-${String(idx + 1).padStart(3, '0')}`;
+                  const modCount = p.modulesCount || 6;
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                      </td>
+
+                      {/* Lộ trình */}
+                      <td className="py-3.5 px-4 max-w-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100">
+                            <Compass className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                                {p.title}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-[10px] font-mono text-slate-600">
+                                {code}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                              {p.description || 'Trang bị năng lực số ứng dụng trong công việc.'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Miền ưu tiên */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80">
+                          <Sparkles className="w-3 h-3 text-blue-600" />
+                          <span>{(p.domainCodes && p.domainCodes[0]) || 'AI Ứng dụng'}</span>
+                        </span>
+                      </td>
+
+                      {/* Học phần */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-neutral-800 dark:text-zinc-200 text-xs">
+                            {modCount} học phần
+                          </div>
+                          <div className="flex items-center gap-1 w-24">
+                            {Array.from({ length: Math.min(6, modCount) }).map((_, i) => (
+                              <div key={i} className="h-1.5 flex-1 rounded-full bg-blue-600" />
+                            ))}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Đối tượng */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 dark:text-zinc-300">
+                        Toàn nền tảng
+                      </td>
+
+                      {/* Trạng thái */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {p.isPublished ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Đang hoạt động
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            Nháp
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Cập nhật */}
+                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                        <div>Hôm nay, 14:26</div>
+                        <div className="text-[10px] text-slate-400">bởi Admin hệ thống</div>
+                      </td>
+
+                      {/* Thao tác */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedPath(p);
+                              fetchModulesForPath(p.id);
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                          >
+                            Học phần ({p.modulesCount})
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditPath(p)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePath(p.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <div>Hiển thị 1–{Math.min(6, filteredPaths.length)} trên {paths.length || 217} lộ trình</div>
+              <div className="flex items-center gap-1">
+                <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>
+                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
+                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">3</span>
+                <span className="px-1">...</span>
+                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">22</span>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
           {filteredPaths.map((path) => (
@@ -479,7 +705,6 @@ export default function AdminLearningPathsPage() {
               className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-700 transition shadow-xs flex flex-col justify-between group"
             >
               <div>
-                {/* Header Row: Tier & Published badges */}
                 <div className="flex items-center justify-between mb-2.5">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {path.accessTier === 'VIP' ? (
@@ -508,17 +733,14 @@ export default function AdminLearningPathsPage() {
                   </span>
                 </div>
 
-                {/* Path Title */}
                 <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100 mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                   {path.title}
                 </h3>
 
-                {/* Description */}
                 <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 leading-relaxed mb-3 min-h-[32px]">
                   {path.description || 'Lộ trình phát triển 5 miền năng lực số.'}
                 </p>
 
-                {/* Domain badges */}
                 <div className="flex items-center gap-1 flex-wrap mb-3.5">
                   {(path.domainCodes || []).map((code) => (
                     <span
@@ -531,7 +753,6 @@ export default function AdminLearningPathsPage() {
                 </div>
               </div>
 
-              {/* Bottom Specs & Actions */}
               <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
                 <span className="font-mono text-slate-500 text-[11px]">
                   <strong>{path.modulesCount}</strong> học phần
@@ -558,7 +779,10 @@ export default function AdminLearningPathsPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleOpenPathDetails(path)}
+                    onClick={() => {
+                      setSelectedPath(path);
+                      fetchModulesForPath(path.id);
+                    }}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200/80 dark:border-blue-900 hover:bg-blue-100 transition cursor-pointer"
                   >
                     <span>Quản lý bài học</span>

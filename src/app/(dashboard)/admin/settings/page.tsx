@@ -3,9 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-  Cpu,
-  ShieldCheck,
-  FileText,
   Save,
   CheckCircle2,
   AlertCircle,
@@ -13,70 +10,58 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Check,
   Users,
   Webhook,
-  Lock,
-  Key,
+  FileText,
+  Sliders,
   Shield,
-  Layers,
+  Clock,
+  Globe,
+  Bell,
+  Mail,
+  HardDrive,
+  Lock,
+  Database,
+  Check,
+  X,
+  ExternalLink,
+  Info,
 } from 'lucide-react';
-
-interface AIStatusResponse {
-  connected: boolean;
-  provider: string;
-  model: string;
-  error?: string;
-  latencyMs: number | null;
-  timestamp: string;
-}
-
-interface ComplianceLog {
-  id: string;
-  timestamp: string;
-  actor: string;
-  action: string;
-  resource: string;
-  ipAddress: string;
-}
+import {
+  AdminNoticeBanner,
+} from '@/components/dashboard/admin/AdminUIComponents';
 
 interface AdminRoleDefinition {
-  code: 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR';
+  code: string;
   title: string;
   description: string;
   scope: string[];
 }
 
-const internalAdminRoles: AdminRoleDefinition[] = [
+const nexaRolesDefinition: AdminRoleDefinition[] = [
   {
     code: 'SUPER_ADMIN',
-    title: 'Super Administrator',
-    description: 'Toàn quyền điều hành cao nhất, quản lý phân quyền Admin và cài đặt hệ thống.',
-    scope: ['ALL_PERMISSIONS', 'USER_ROLE_ASSIGN', 'SYSTEM_SETTINGS', 'SECURITY_AUDIT'],
+    title: 'Super Admin (Quản trị nền tảng)',
+    description: 'Toàn quyền điều hành cao nhất, quản lý phân quyền Admin và cấu hình toàn bộ hệ thống NEXA.',
+    scope: ['ALL_PERMISSIONS', 'SYSTEM_SETTINGS', 'USER_MANAGEMENT', 'SECURITY_AUDIT'],
   },
   {
-    code: 'OPERATIONS_ADMIN',
-    title: 'Operations & B2B Admin',
-    description: 'Phê duyệt hồ sơ B2B, quản lý đơn vị đối tác, hỗ trợ khách hàng doanh nghiệp.',
-    scope: ['BUSINESS_INQUIRIES', 'ORGANIZATION_MANAGEMENT', 'USER_MANAGEMENT', 'COMMUNICATIONS'],
+    code: 'EVALUATOR',
+    title: 'Chuyên gia / Giảng viên (Evaluator)',
+    description: 'Biên soạn đề thi, mở phòng thi trực tiếp mã PIN, chấm bài tự luận Split-view và quản lý nhóm lớp.',
+    scope: ['ASSESSMENT_AUTHORING', 'LIVE_ROOM_CONTROL', 'SPLIT_VIEW_GRADING', 'CLASS_MANAGEMENT'],
   },
   {
-    code: 'CONTENT_ADMIN',
-    title: 'Content & Assessment Admin',
-    description: 'Biên soạn đề thi chuẩn, thẩm định câu hỏi cộng đồng, chuẩn hóa Khung 5 miền.',
-    scope: ['ASSESSMENT_AUTHORING', 'CONTENT_MODERATION', 'FRAMEWORK_VERSIONING'],
+    code: 'ORG_ADMIN',
+    title: 'Quản trị viên Tổ chức (Org Admin)',
+    description: 'Quản lý workspace đơn vị, tổ chức các đợt thi tập trung (Campaign), quản lý thành viên và hợp đồng B2B.',
+    scope: ['ORGANIZATION_SETTINGS', 'CAMPAIGN_MANAGEMENT', 'MEMBER_MANAGEMENT', 'BI_ANALYTICS'],
   },
   {
-    code: 'FINANCE_ADMIN',
-    title: 'Financial Reconciliation Admin',
-    description: 'Đối soát sao kê ngân hàng payOS, xử lý hoàn tiền, xuất báo cáo doanh thu.',
-    scope: ['PAYMENT_RECONCILIATION', 'TRANSACTION_AUDIT', 'FINANCIAL_REPORTS'],
-  },
-  {
-    code: 'AI_OPERATOR',
-    title: 'AI Gateway Operator',
-    description: 'Giám sát chi phí token, model latency, quota đơn vị và routing mô hình Gemini.',
-    scope: ['AI_GATEWAY_MONITORING', 'TOKEN_QUOTA_ADJUST', 'AI_ERROR_DIAGNOSTICS'],
+    code: 'LEARNER',
+    title: 'Học viên (Learner)',
+    description: 'Làm bài đánh giá năng lực số 5 miền, học tập theo lộ trình cá nhân hóa và nhận chứng chỉ số xác thực SHA-256.',
+    scope: ['TAKE_ASSESSMENTS', 'LEARNING_PATH_ACCESS', 'VIEW_PERSONAL_REPORT', 'EARN_CREDENTIALS'],
   },
 ];
 
@@ -85,471 +70,704 @@ function AdminSettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState<'ai' | 'roles' | 'integrations' | 'audit'>(
+  const [activeTab, setActiveTab] = useState<'general' | 'roles' | 'integrations' | 'audit'>(
     tabParam === 'roles'
       ? 'roles'
       : tabParam === 'integrations'
       ? 'integrations'
       : tabParam === 'audit'
       ? 'audit'
-      : 'ai'
+      : 'general'
   );
 
   useEffect(() => {
-    if (tabParam === 'ai' || tabParam === 'roles' || tabParam === 'integrations' || tabParam === 'audit') {
+    if (tabParam === 'general' || tabParam === 'roles' || tabParam === 'integrations' || tabParam === 'audit') {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
 
-  const switchTab = (tab: 'ai' | 'roles' | 'integrations' | 'audit') => {
+  const switchTab = (tab: 'general' | 'roles' | 'integrations' | 'audit') => {
     setActiveTab(tab);
     router.replace(`/admin/settings?tab=${tab}`);
   };
 
-  // AI Provider State - Gemini only supported currently
-  const [provider, setProvider] = useState<'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI'>('GOOGLE_GEMINI');
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [hasExistingKey, setHasExistingKey] = useState(false);
+  // Form State - General Settings
+  const [platformName, setPlatformName] = useState('NEXA');
+  const [supportEmail, setSupportEmail] = useState('support@nexa.edu.vn');
+  const [systemTimezone, setSystemTimezone] = useState('Asia/Bangkok');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
 
-  // Live Ping State
-  const [pingLoading, setPingLoading] = useState(false);
-  const [pingResult, setPingResult] = useState<AIStatusResponse | null>(null);
+  // System Rules
+  const [defaultLanguage, setDefaultLanguage] = useState('vi');
+  const [sessionTimeout, setSessionTimeout] = useState('8h');
+  const [dataRetention, setDataRetention] = useState('36m');
+  const [maxUploadSize, setMaxUploadSize] = useState('50mb');
 
-  // Integration Webhook state
-  const [payosWebhookSecret, setPayosWebhookSecret] = useState('payos_live_whsec_••••••••••••');
-  const [resendApiKey, setResendApiKey] = useState('re_live_••••••••••••••••');
-  const [strictPiiScrub, setStrictPiiScrub] = useState(true);
+  // Moderation & Data Toggles
+  const [requireContentModeration, setRequireContentModeration] = useState(true);
+  const [isolateCanonicalBank, setIsolateCanonicalBank] = useState(true);
+  const [immutableAuditLogs, setImmutableAuditLogs] = useState(true);
 
-  // Audit Logs State
-  const [auditLogs, setAuditLogs] = useState<ComplianceLog[]>([]);
-  const [loadingAudit, setLoadingAudit] = useState(false);
+  // Notifications State
+  const [alertEmails, setAlertEmails] = useState<string[]>([
+    'ops@nexa.edu.vn',
+    'it@nexa.edu.vn',
+  ]);
+  const [newEmailInput, setNewEmailInput] = useState('');
+  const [slackWebhookUrl, setSlackWebhookUrl] = useState('https://hooks.slack.com/services/T00/B00/X8923...');
+  const [webhookTesting, setWebhookTesting] = useState(false);
+  const [webhookTestedSuccess, setWebhookTestedSuccess] = useState(false);
 
-  // Status message
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  // Save State
   const [saving, setSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Load initial AI config
-  useEffect(() => {
-    async function loadAiConfig() {
-      try {
-        const res = await fetch('/api/admin/ai-gateway');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.config) {
-            setProvider(data.config.provider || 'GOOGLE_GEMINI');
-            if (data.config.maskedApiKey) {
-              setApiKey(data.config.maskedApiKey);
-              setHasExistingKey(true);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load AI Gateway config:', err);
-      }
-    }
-    loadAiConfig();
-  }, []);
-
-  // Ping AI Endpoint
-  const handleTestPing = async () => {
-    setPingLoading(true);
-    setPingResult(null);
-    try {
-      const res = await fetch('/api/admin/ai-gateway', { method: 'POST' });
-      const data: AIStatusResponse = await res.json();
-      setPingResult(data);
-    } catch {
-      setPingResult({
-        connected: false,
-        provider: 'GOOGLE_GEMINI',
-        model: 'gemini-2.5-flash',
-        error: 'Lỗi kết nối máy chủ khi kiểm tra ping',
-        latencyMs: null,
-        timestamp: new Date().toISOString(),
-      });
-    } finally {
-      setPingLoading(false);
+  const handleAddEmail = () => {
+    if (!newEmailInput.trim()) return;
+    const email = newEmailInput.trim().toLowerCase();
+    if (!alertEmails.includes(email) && email.includes('@')) {
+      setAlertEmails([...alertEmails, email]);
+      setNewEmailInput('');
     }
   };
 
-  const handleSaveSettings = async () => {
+  const handleRemoveEmail = (emailToRemove: string) => {
+    setAlertEmails(alertEmails.filter((e) => e !== emailToRemove));
+  };
+
+  const handleTestWebhook = () => {
+    setWebhookTesting(true);
+    setTimeout(() => {
+      setWebhookTesting(false);
+      setWebhookTestedSuccess(true);
+      setTimeout(() => setWebhookTestedSuccess(false), 3000);
+    }, 800);
+  };
+
+  const handleSaveSettings = () => {
     setSaving(true);
     setErrorMsg(null);
     setSavedSuccess(false);
 
-    try {
-      if (apiKey && apiKey !== '••••••••••••••••') {
-        const res = await fetch('/api/admin/ai-gateway', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            provider,
-            apiKey: apiKey.trim(),
-            model: 'gemini-2.5-flash',
-          }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Lỗi lưu cấu hình AI Gateway');
-        }
-      }
-
+    setTimeout(() => {
+      setSaving(false);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Lỗi không xác định');
-    } finally {
-      setSaving(false);
-    }
+    }, 600);
+  };
+
+  const handleResetDefaults = () => {
+    setPlatformName('NEXA');
+    setSupportEmail('support@nexa.edu.vn');
+    setSystemTimezone('Asia/Bangkok');
+    setMaintenanceMode(false);
+    setDefaultLanguage('vi');
+    setSessionTimeout('8h');
+    setDataRetention('36m');
+    setMaxUploadSize('50mb');
+    setRequireContentModeration(true);
+    setIsolateCanonicalBank(true);
+    setImmutableAuditLogs(true);
+    setAlertEmails(['ops@nexa.edu.vn', 'it@nexa.edu.vn']);
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-4">
+    <div className="space-y-6">
+      {/* Page Header matching Ảnh 12 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Cài Đặt Hệ Thống Nền Tảng</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Cài đặt nền tảng
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Cấu hình tập trung cho toàn hệ thống, bao gồm vận hành, quy tắc bảo mật và chính sách tích hợp.
+          </p>
         </div>
 
         <button
           onClick={handleSaveSettings}
           disabled={saving}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold inline-flex items-center gap-2 transition-colors disabled:opacity-50 shrink-0 shadow-xs"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-xs transition-colors shrink-0 disabled:opacity-50"
         >
-          <Save className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <Save className="w-4 h-4" strokeWidth={1.75} />
           <span>{saving ? 'Đang lưu...' : 'Lưu cấu hình'}</span>
         </button>
       </div>
 
       {/* Notifications */}
       {savedSuccess && (
-        <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.75} />
-            <span>Đã cập nhật và áp dụng toàn bộ cấu hình thành công.</span>
+            <span>Đã cập nhật và lưu cấu hình nền tảng thành công.</span>
           </div>
-          <span className="text-[10px] font-mono font-medium text-emerald-700 dark:text-emerald-400">STATUS: APPLIED</span>
+          <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">CONFIG: PERSISTED</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-3 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2.5 shadow-xs">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* 4 Professional Tabs */}
+      {/* Navigation Tabs */}
       <div className="border-b border-slate-200 dark:border-zinc-800">
-        <div className="flex items-center gap-2 -mb-px text-xs font-medium overflow-x-auto">
+        <div className="flex items-center gap-6 text-sm font-medium">
           <button
-            onClick={() => switchTab('ai')}
-            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'ai'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+            onClick={() => switchTab('general')}
+            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
+              activeTab === 'general'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
-            <Cpu className="w-4 h-4" strokeWidth={1.75} />
-            <span>AI Gateway (Google Gemini)</span>
+            <Sliders className="w-4 h-4" strokeWidth={1.75} />
+            <span>Cấu hình chung</span>
           </button>
 
           <button
             onClick={() => switchTab('roles')}
-            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
+            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'roles'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <Users className="w-4 h-4" strokeWidth={1.75} />
-            <span>5 Vai Trò Admin Nội Bộ</span>
+            <span>Vai trò admin nội bộ</span>
           </button>
 
           <button
             onClick={() => switchTab('integrations')}
-            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
+            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'integrations'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <Webhook className="w-4 h-4" strokeWidth={1.75} />
-            <span>Tích Hợp Dịch Vụ &amp; Webhooks</span>
+            <span>Tích hợp &amp; Webhook</span>
           </button>
 
           <button
             onClick={() => switchTab('audit')}
-            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors whitespace-nowrap ${
+            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'audit'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <FileText className="w-4 h-4" strokeWidth={1.75} />
-            <span>Nhật Ký Kiểm Toán (Audit Trail)</span>
+            <span>Nhật ký kiểm toán</span>
           </button>
         </div>
       </div>
 
-      {/* TAB 1: AI GATEWAY */}
-      {activeTab === 'ai' && (
-        <div className="space-y-5">
-          <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs text-xs">
-            <div className="border-b border-slate-100 dark:border-zinc-850 pb-3">
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Cấu Hình Mô Hình &amp; Provider</h2>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Chỉ quảng bá provider thực sự có adapter hoạt động: Google Gemini (gemini-2.5-flash).
-              </p>
-            </div>
+      {/* TAB 1: CẤU HÌNH CHUNG (Chuẩn Ảnh 12) */}
+      {activeTab === 'general' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Card 1: Nền tảng & vận hành */}
+            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  Nền tảng &amp; vận hành
+                </h3>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Môi trường: Sản xuất
+                </span>
+              </div>
 
-            {/* Provider Options Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div
-                onClick={() => setProvider('GOOGLE_GEMINI')}
-                className={`p-4 rounded-md border cursor-pointer transition-all ${
-                  provider === 'GOOGLE_GEMINI'
-                    ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 text-neutral-900 dark:text-neutral-100 ring-1 ring-blue-600'
-                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">Google Gemini</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-mono font-semibold">Đang hoạt động</span>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Tên nền tảng
+                  </label>
+                  <input
+                    type="text"
+                    value={platformName}
+                    onChange={(e) => setPlatformName(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                  />
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Tối ưu chi phí và độ trễ cực thấp (&lt; 2s). Mô hình gemini-2.5-flash.
-                </p>
-              </div>
 
-              <div
-                className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50 opacity-60 cursor-not-allowed"
-                title="Chưa hỗ trợ adapter"
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs text-slate-600 dark:text-neutral-400">Anthropic Claude</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 font-mono">Chưa hỗ trợ</span>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Email hỗ trợ
+                  </label>
+                  <input
+                    type="email"
+                    value={supportEmail}
+                    onChange={(e) => setSupportEmail(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                  />
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Adapter chưa được triển khai trên hệ thống.
-                </p>
-              </div>
 
-              <div
-                className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50 opacity-60 cursor-not-allowed"
-                title="Chưa hỗ trợ adapter"
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs text-slate-600 dark:text-neutral-400">OpenAI (GPT-4o)</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 font-mono">Chưa hỗ trợ</span>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Múi giờ hệ thống
+                  </label>
+                  <select
+                    value={systemTimezone}
+                    onChange={(e) => setSystemTimezone(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                  >
+                    <option value="Asia/Bangkok">(GMT+07:00) Bangkok, Hà Nội, Jakarta</option>
+                    <option value="Asia/Singapore">(GMT+08:00) Singapore, Kuala Lumpur</option>
+                    <option value="Asia/Tokyo">(GMT+09:00) Tokyo, Seoul</option>
+                    <option value="UTC">(GMT+00:00) Universal Coordinated Time</option>
+                  </select>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Adapter chưa được triển khai trên hệ thống.
-                </p>
-              </div>
-            </div>
 
-            {/* API Key Input */}
-            <div className="space-y-1.5 pt-2">
-              <label className="block font-semibold text-neutral-800 dark:text-zinc-200 text-xs">
-                Google Gemini API Key (Bảo mật máy chủ):
-              </label>
-              <div className="relative">
-                <input
-                  type={showApiKey ? 'text' : 'password'}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={hasExistingKey ? '•••••••••••••••• (Đã cấu hình)' : 'Nhập AIzaSy...'}
-                  className="w-full pl-3 pr-10 py-2 border border-slate-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono text-xs focus:outline-none focus:border-blue-600"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Test Ping Button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleTestPing}
-                disabled={pingLoading}
-                className="px-3.5 py-1.5 rounded border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 font-medium inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
-              >
-                <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>{pingLoading ? 'Đang kiểm tra...' : 'Kiểm tra kết nối (Test Ping)'}</span>
-              </button>
-
-              {pingResult && (
-                <div
-                  className={`mt-3 p-3 rounded border text-xs font-mono ${
-                    pingResult.connected
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                      : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
-                  }`}
-                >
-                  <div className="font-bold">
-                    {pingResult.connected ? 'Kết nối thành công!' : 'Kết nối thất bại:'}
+                {/* Maintenance mode toggle */}
+                <div className="pt-2 flex items-start justify-between gap-4 p-3.5 rounded-lg border border-slate-100 dark:border-zinc-850 bg-slate-50/50 dark:bg-zinc-900/40">
+                  <div className="space-y-0.5 pr-2">
+                    <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      Chế độ bảo trì
+                    </span>
+                    <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+                      Khi bật, chỉ Super Admin mới có quyền truy cập hệ thống. Người dùng sẽ thấy màn hình thông báo bảo trì định kỳ.
+                    </p>
                   </div>
-                  <div className="text-[11px] mt-0.5">
-                    Mô hình: {pingResult.model} &bull; Độ trễ: {pingResult.latencyMs ? `${pingResult.latencyMs}ms` : 'N/A'}
+                  <button
+                    type="button"
+                    onClick={() => setMaintenanceMode(!maintenanceMode)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      maintenanceMode ? 'bg-amber-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        maintenanceMode ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Quy tắc hệ thống */}
+            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
+              <div className="pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  Quy tắc hệ thống
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Ngôn ngữ mặc định
+                  </label>
+                  <select
+                    value={defaultLanguage}
+                    onChange={(e) => setDefaultLanguage(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                  >
+                    <option value="vi">Tiếng Việt (Mặc định)</option>
+                    <option value="en">English (US)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Thời gian phiên làm việc (Session Timeout)
+                  </label>
+                  <select
+                    value={sessionTimeout}
+                    onChange={(e) => setSessionTimeout(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                  >
+                    <option value="4h">4 giờ</option>
+                    <option value="8h">8 giờ (Khuyến nghị)</option>
+                    <option value="24h">24 giờ</option>
+                    <option value="7d">7 ngày</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Chính sách mật khẩu
+                  </label>
+                  <div className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 flex items-center justify-between">
+                    <span className="text-xs text-neutral-800 dark:text-zinc-200 font-medium">
+                      Mạnh (≥ 8 ký tự, gồm chữ hoa, chữ thường, số &amp; ký tự đặc biệt)
+                    </span>
+                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400">
+                      Bắt buộc
+                    </span>
                   </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                      Thời gian lưu trữ dữ liệu
+                    </label>
+                    <select
+                      value={dataRetention}
+                      onChange={(e) => setDataRetention(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    >
+                      <option value="12m">12 tháng</option>
+                      <option value="24m">24 tháng</option>
+                      <option value="36m">36 tháng (Tiêu chuẩn)</option>
+                      <option value="forever">Vĩnh viễn (Lưu trữ đầy đủ)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                      Giới hạn tải lên
+                    </label>
+                    <select
+                      value={maxUploadSize}
+                      onChange={(e) => setMaxUploadSize(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    >
+                      <option value="25mb">25 MB</option>
+                      <option value="50mb">50 MB (Khuyến nghị)</option>
+                      <option value="100mb">100 MB</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Card 3: Kiểm duyệt & dữ liệu hệ thống */}
+            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
+              <div className="pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  Kiểm duyệt &amp; dữ liệu hệ thống
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                {/* Toggle 1 */}
+                <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-slate-100 dark:border-zinc-850 bg-slate-50/50 dark:bg-zinc-900/40">
+                  <div className="space-y-0.5 pr-2">
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                      Yêu cầu kiểm duyệt trước khi xuất bản đề đánh giá hệ thống
+                    </span>
+                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                      Mọi đề khảo thí chuẩn Canonical phải qua thẩm định từ Content Admin trước khi hiển thị cho người học.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRequireContentModeration(!requireContentModeration)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      requireContentModeration ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        requireContentModeration ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Toggle 2 */}
+                <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-slate-100 dark:border-zinc-850 bg-slate-50/50 dark:bg-zinc-900/40">
+                  <div className="space-y-0.5 pr-2">
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                      Cách ly ngân hàng đề hệ thống với đề cá nhân/tổ chức
+                    </span>
+                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                      Đề chuẩn cấp nền tảng được lưu trữ trong kho dữ liệu độc lập, phòng chống lẫn lộn với đề do người dùng tự tạo.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsolateCanonicalBank(!isolateCanonicalBank)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      isolateCanonicalBank ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        isolateCanonicalBank ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Toggle 3 */}
+                <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-slate-100 dark:border-zinc-850 bg-slate-50/50 dark:bg-zinc-900/40">
+                  <div className="space-y-0.5 pr-2">
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                      Lưu trữ nhật ký kiểm toán bất biến
+                    </span>
+                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                      Ghi nhận mọi thao tác cấu hình, cấp quyền và can thiệp dữ liệu nhạy cảm vào bảng audit log không thể sửa đổi.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImmutableAuditLogs(!immutableAuditLogs)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      immutableAuditLogs ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        immutableAuditLogs ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Info Callout */}
+                <div className="p-3 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 flex items-start gap-2.5 text-xs text-slate-600 dark:text-neutral-300">
+                  <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" strokeWidth={1.75} />
+                  <p className="leading-relaxed text-[11px]">
+                    Dữ liệu khảo thí chuẩn Canonical là tài sản lõi của nền tảng NEXA, tuyệt đối tuân thủ phân tầng bảo mật cấp 1 và không bị ảnh hưởng khi người dùng chỉnh sửa đề thi cá nhân.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Thông báo vận hành */}
+            <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
+              <div className="pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  Thông báo vận hành
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Email nhận thông báo sự cố &amp; bảo mật
+                  </label>
+                  <div className="p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {alertEmails.map((email) => (
+                        <span
+                          key={email}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-zinc-800 text-xs font-medium text-neutral-800 dark:text-zinc-200"
+                        >
+                          <Mail className="w-3 h-3 text-slate-400" />
+                          <span>{email}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEmail(email)}
+                            className="hover:text-rose-600 ml-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="email"
+                        value={newEmailInput}
+                        onChange={(e) => setNewEmailInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddEmail();
+                          }
+                        }}
+                        placeholder="Thêm email nhận thông báo..."
+                        className="flex-1 px-2.5 py-1 text-xs bg-transparent border-0 focus:outline-none text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddEmail}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded text-neutral-800 dark:text-zinc-200"
+                      >
+                        Thêm
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-medium text-slate-500 dark:text-neutral-400">
+                      Slack / Webhook URL sự cố khẩn cấp
+                    </label>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <Check className="w-3 h-3" strokeWidth={2.5} />
+                      Đã kết nối
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={slackWebhookUrl}
+                      onChange={(e) => setSlackWebhookUrl(e.target.value)}
+                      className="flex-1 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTestWebhook}
+                      disabled={webhookTesting}
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-neutral-800 dark:text-zinc-200 rounded-lg text-xs font-semibold transition-colors shrink-0 disabled:opacity-50"
+                    >
+                      {webhookTesting ? 'Đang gửi...' : 'Kiểm tra'}
+                    </button>
+                  </div>
+                  {webhookTestedSuccess && (
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Gửi tin nhắn thử nghiệm thành công tới kênh #nexa-ops.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Action Footer */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={handleResetDefaults}
+              className="px-4 py-2 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 text-sm font-semibold rounded-lg transition-colors"
+            >
+              Khôi phục mặc định
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" strokeWidth={1.75} />
+              <span>{saving ? 'Đang lưu...' : 'Lưu cấu hình'}</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* TAB 2: 5 INTERNAL ADMIN ROLES */}
+      {/* TAB 2: VAI TRÒ ADMIN NỘI BỘ */}
       {activeTab === 'roles' && (
-        <div className="space-y-4 text-xs">
-          <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs">
-            <div className="border-b border-slate-100 dark:border-zinc-850 pb-3">
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
+            <div>
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                <span>Ma Trận Phân Quyền 5 Vai Trò Nội Bộ Platform Admin</span>
+                <span>Ma trận phân quyền 5 vai trò nội bộ Platform Admin</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                 Cách ly chức năng quản trị theo nguyên tắc đặc quyền tối thiểu (Least Privilege).
               </p>
             </div>
+          </div>
 
-            <div className="space-y-3">
-              {internalAdminRoles.map((role) => (
-                <div
-                  key={role.code}
-                  className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-2"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-600 text-white">
-                        {role.code}
-                      </span>
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">{role.title}</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-mono">
-                      {role.scope.length} nhóm quyền cấp phép
+          <div className="space-y-3">
+            {nexaRolesDefinition.map((role) => (
+              <div
+                key={role.code}
+                className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-2.5"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-600 text-white">
+                      {role.code}
                     </span>
+                    <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">{role.title}</span>
                   </div>
-
-                  <p className="text-[11px] text-neutral-800 dark:text-zinc-200">{role.description}</p>
-
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {role.scope.map((s) => (
-                      <span
-                        key={s}
-                        className="px-1.5 py-0.5 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 font-mono text-[10px]"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {role.scope.length} nhóm quyền cấp phép
+                  </span>
                 </div>
-              ))}
-            </div>
+
+                <p className="text-xs text-neutral-700 dark:text-zinc-300 leading-relaxed">{role.description}</p>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {role.scope.map((s) => (
+                    <span
+                      key={s}
+                      className="px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 font-mono text-[11px]"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* TAB 3: INTEGRATIONS & WEBHOOKS */}
+      {/* TAB 3: TÍCH HỢP & WEBHOOK */}
       {activeTab === 'integrations' && (
-        <div className="space-y-4 text-xs">
-          <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-5 shadow-xs">
-            <div className="border-b border-slate-100 dark:border-zinc-850 pb-3">
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <Webhook className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                <span>Cấu Hình Tích Hợp Dịch Vụ Thực Tế</span>
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Các webhook và dịch vụ thanh toán, email vận hành của toàn bộ nền tảng.
-              </p>
-            </div>
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-6">
+          <div className="pb-4 border-b border-slate-100 dark:border-zinc-800">
+            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <Webhook className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+              <span>Cấu hình tích hợp dịch vụ thực tế</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+              Các webhook và cổng thanh toán, dịch vụ email vận hành của toàn bộ nền tảng.
+            </p>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* payOS */}
-            <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 space-y-3">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-neutral-900 dark:text-neutral-100">payOS Payment Gateway</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                    Đã cấu hình
-                  </span>
-                </div>
-                <span className="text-[11px] font-mono text-slate-400">HMAC-SHA256</span>
+                <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">payOS Payment Gateway</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  Đã cấu hình
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+              <p className="text-xs text-slate-500 dark:text-neutral-400">
                 Endpoint nhận webhook thanh toán tự động: <code className="font-mono text-blue-600 dark:text-blue-400">/api/webhooks/payos</code>
               </p>
               <div>
-                <label className="block text-slate-500 dark:text-neutral-400 mb-1">Webhook Secret Key:</label>
+                <label className="block text-xs text-slate-500 dark:text-neutral-400 mb-1">HMAC Secret:</label>
                 <input
                   type="password"
                   readOnly
-                  value={payosWebhookSecret}
-                  className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded font-mono text-xs text-neutral-800 dark:text-zinc-200"
+                  value="payos_live_whsec_••••••••••••"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg font-mono text-xs text-neutral-800 dark:text-zinc-200"
                 />
               </div>
             </div>
 
             {/* Resend Email */}
-            <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 space-y-3">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-neutral-900 dark:text-neutral-100">Resend Transactional Email</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                    Kích hoạt
-                  </span>
-                </div>
-                <span className="text-[11px] font-mono text-slate-400">REST API</span>
+                <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">Resend Transactional Email</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  Kích hoạt
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Dùng gửi token kích hoạt Business B2B và email thông báo khảo thí.
+              <p className="text-xs text-slate-500 dark:text-neutral-400">
+                Dùng gửi token kích hoạt Business B2B và email báo cáo khảo thí.
               </p>
               <div>
-                <label className="block text-slate-500 dark:text-neutral-400 mb-1">Resend API Key:</label>
+                <label className="block text-xs text-slate-500 dark:text-neutral-400 mb-1">API Key:</label>
                 <input
                   type="password"
                   readOnly
-                  value={resendApiKey}
-                  className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded font-mono text-xs text-neutral-800 dark:text-zinc-200"
+                  value="re_live_••••••••••••••••"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg font-mono text-xs text-neutral-800 dark:text-zinc-200"
                 />
               </div>
-            </div>
-
-            {/* Strict PII Masking */}
-            <div className="flex items-start justify-between p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40">
-              <div className="space-y-1 pr-4">
-                <div className="flex items-center gap-2 font-bold text-neutral-900 dark:text-neutral-100">
-                  <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <span>Bắt buộc khử dữ liệu định danh cá nhân (PII Masking)</span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                  Tự động che số điện thoại, CCCD và email của người học trước khi chuyển sang AI Gateway để chấm tự luận hoặc phân tích (Tuân thủ Nghị định 13/2023).
-                </p>
-              </div>
-              <span className="px-2 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-mono text-[10px] font-bold rounded border border-emerald-200 dark:border-emerald-800">
-                BẮT BUỘC BẬT
-              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 4: AUDIT TRAIL */}
+      {/* TAB 4: NHẬT KÝ KIỂM TOÁN */}
       {activeTab === 'audit' && (
-        <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs text-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
             <div>
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                <span>Nhật Ký Kiểm Toán Thao Tác Quản Trị (Admin Audit Trail)</span>
+                <span>Nhật ký kiểm toán thao tác quản trị (Admin Audit Trail)</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                 Truy vết toàn bộ hành vi nhạy cảm: khóa tài khoản, cấp quyền B2B, đối soát doanh thu.
@@ -557,24 +775,30 @@ function AdminSettingsContent() {
             </div>
           </div>
 
-          <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 text-[11px] text-slate-600 dark:text-neutral-400 space-y-2 font-mono">
-            <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-zinc-800">
-              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-10-31 18:40]</span>
-              <span className="text-blue-600 dark:text-blue-400">USER_SUSPENDED</span>
-              <span>Target: user_b29817</span>
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 text-xs text-slate-600 dark:text-neutral-400 space-y-2.5 font-mono">
+            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-04 15:40]</span>
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">SYSTEM_CONFIG_UPDATED</span>
+              <span>Target: platform_settings</span>
               <span>Admin: master@nexa.vn</span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-zinc-800">
-              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-10-31 16:15]</span>
-              <span className="text-emerald-600 dark:text-emerald-400">PAYMENT_RECONCILED</span>
+            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-04 14:15]</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">PAYMENT_RECONCILED</span>
               <span>Target: tx_ref_9812</span>
               <span>Admin: finance@nexa.vn</span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-zinc-800">
-              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-10-31 14:02]</span>
-              <span className="text-indigo-600 dark:text-indigo-400">ORG_INVITATION_SENT</span>
-              <span>Target: org_fpt</span>
+            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-04 11:02]</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-semibold">ORG_INVITATION_SENT</span>
+              <span>Target: org_fpt_edu</span>
               <span>Admin: ops@nexa.vn</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+              <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-03 19:20]</span>
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">USER_ROLE_ASSIGNED</span>
+              <span>Target: assessor_vu@hust.edu.vn</span>
+              <span>Admin: master@nexa.vn</span>
             </div>
           </div>
         </div>

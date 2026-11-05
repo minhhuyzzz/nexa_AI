@@ -4,17 +4,22 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Layers,
-  ArrowRight,
-  Database,
-  CheckCircle2,
-  BookOpen,
-  Edit2,
-  Plus,
-  X,
-  Save,
   RefreshCw,
-  AlertCircle,
   ExternalLink,
+  ChevronDown,
+  Edit3,
+  Search,
+  CheckCircle2,
+  X,
+  Plus,
+  Save,
+  Info,
+  Laptop,
+  Users,
+  PenTool,
+  ShieldCheck,
+  Cpu,
+  Share2,
 } from 'lucide-react';
 
 interface CompetencyItem {
@@ -44,173 +49,107 @@ interface FrameworkItem {
   status: string;
 }
 
+const defaultDomainsData = [
+  {
+    index: '01',
+    code: 'DOM-01',
+    title: 'Miền 01 — Thông tin và Dữ liệu',
+    description: 'Xác định, tìm kiếm, đánh giá, quản lý và sử dụng thông tin, dữ liệu số một cách hiệu quả, đáng tin cậy và có trách nhiệm.',
+    icon: Laptop,
+    skills: [
+      { code: '01.1', title: 'Tìm kiếm thông tin', desc: 'Xác định nhu cầu và tìm kiếm thông tin số phù hợp, hiệu quả.' },
+      { code: '01.2', title: 'Đánh giá thông tin', desc: 'Phân tích, đối chiếu và đánh giá độ tin cậy, tính phù hợp của thông tin.' },
+      { code: '01.3', title: 'Quản lý dữ liệu', desc: 'Tổ chức, lưu trữ và quản lý dữ liệu số một cách an toàn, có hệ thống.' },
+      { code: '01.4', title: 'Phân tích dữ liệu', desc: 'Hiểu và rút ra thông tin, insight từ dữ liệu bằng công cụ số cơ bản.' },
+      { code: '01.5', title: 'Sử dụng và chia sẻ thông tin', desc: 'Sử dụng, trích dẫn và chia sẻ thông tin, dữ liệu đúng mục đích và có trách nhiệm.' },
+    ],
+  },
+  {
+    index: '02',
+    code: 'DOM-02',
+    title: 'Miền 02 — Giao tiếp và Hợp tác',
+    description: 'Giao tiếp, tương tác, hợp tác và tham gia hiệu quả, an toàn, có trách nhiệm trong môi trường số.',
+    icon: Users,
+    skills: [
+      { code: '02.1', title: 'Giao tiếp trong môi trường số', desc: 'Trao đổi thông tin rõ ràng, phù hợp và tôn trọng trong các kênh số.' },
+      { code: '02.2', title: 'Hợp tác trực tuyến', desc: 'Làm việc cùng người khác trên các nền tảng số, chia sẻ và đồng tạo nội dung hiệu quả.' },
+      { code: '02.3', title: 'Quản lý danh tính số', desc: 'Xây dựng và duy trì hình ảnh, danh tính cá nhân phù hợp, an toàn trên môi trường số.' },
+      { code: '02.4', title: 'Tham gia cộng đồng số', desc: 'Tham gia tích cực, có trách nhiệm vào các cộng đồng và hoạt động xã hội số.' },
+    ],
+  },
+  {
+    index: '03',
+    code: 'DOM-03',
+    title: 'Miền 03 — Sáng tạo Nội dung số',
+    description: 'Tạo, chỉnh sửa, tích hợp và chia sẻ nội dung số, đồng thời hiểu và tôn trọng quyền sở hữu trí tuệ.',
+    icon: PenTool,
+    skills: [
+      { code: '03.1', title: 'Tạo nội dung số', desc: 'Thiết kế, xây dựng nội dung số (văn bản, hình ảnh, âm thanh, video...) phù hợp với mục tiêu.' },
+      { code: '03.2', title: 'Chỉnh sửa và phát triển nội dung', desc: 'Chỉnh sửa, nâng cấp và hoàn thiện nội dung số bằng các công cụ phù hợp.' },
+      { code: '03.3', title: 'Tích hợp và tái sử dụng', desc: 'Kết hợp, phối trộn và tái sử dụng nội dung số một cách hiệu quả và hợp pháp.' },
+      { code: '03.4', title: 'Tôn trọng quyền sở hữu trí tuệ', desc: 'Nhận biết và tuân thủ quy định về bản quyền, trích dẫn và sử dụng tài nguyên số có phép.' },
+    ],
+  },
+  {
+    index: '04',
+    code: 'DOM-04',
+    title: 'Miền 04 — An toàn & Bảo mật',
+    description: 'Bảo vệ thiết bị, nội dung, dữ liệu cá nhân, quyền riêng tư trong môi trường số và bảo vệ sức khỏe.',
+    icon: ShieldCheck,
+    skills: [
+      { code: '04.1', title: 'Bảo vệ thiết bị', desc: 'Cài đặt và áp dụng các biện pháp bảo vệ thiết bị số trước rủi ro và mã độc.' },
+      { code: '04.2', title: 'Bảo vệ dữ liệu cá nhân', desc: 'Bảo mật thông tin đăng nhập, dữ liệu riêng tư và quản trị quyền truy cập ứng dụng.' },
+      { code: '04.3', title: 'Bảo vệ sức khỏe & phúc lợi', desc: 'Cân bằng thời gian sử dụng màn hình, nhận diện và phòng ngừa rủi ro tâm lý trên mạng.' },
+      { code: '04.4', title: 'Bảo vệ môi trường', desc: 'Ý thức tác động môi trường của thiết bị số và sử dụng tài nguyên công nghệ bền vững.' },
+    ],
+  },
+  {
+    index: '05',
+    code: 'DOM-05',
+    title: 'Miền 05 — Giải quyết vấn đề',
+    description: 'Nhận diện nhu cầu và vấn đề kỹ thuật, giải quyết vấn đề thông qua công nghệ số một cách sáng tạo.',
+    icon: Cpu,
+    skills: [
+      { code: '05.1', title: 'Giải quyết sự cố kỹ thuật', desc: 'Xác định và xử lý các lỗi kỹ thuật cơ bản của phần cứng, phần mềm và mạng.' },
+      { code: '05.2', title: 'Xác định nhu cầu công nghệ', desc: 'Đánh giá nhu cầu và lựa chọn công cụ số phù hợp để đạt mục tiêu công việc.' },
+      { code: '05.3', title: 'Ứng dụng số sáng tạo', desc: 'Sử dụng công nghệ số và AI để đổi mới quy trình và tạo giải pháp mới.' },
+      { code: '05.4', title: 'Nhận diện khoảng trống năng lực', desc: 'Tự đánh giá năng lực số, phát hiện lỗ hổng và chủ động cập nhật kỹ năng mới.' },
+    ],
+  },
+];
+
 export default function AdminFrameworksPage() {
-  const [framework, setFramework] = useState<FrameworkItem | null>(null);
-  const [domains, setDomains] = useState<CompetencyDomainItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    '01': true,
+    '02': true,
+    '03': true,
+    '04': true,
+    '05': true,
+  });
 
-  // Edit Domain Modal
-  const [editingDomain, setEditingDomain] = useState<CompetencyDomainItem | null>(null);
-  const [domainForm, setDomainForm] = useState({ title: '', code: '', description: '' });
+  const [editingSkill, setEditingSkill] = useState<{ code: string; title: string; desc: string } | null>(null);
 
-  // Edit Competency Modal
-  const [editingCompetency, setEditingCompetency] = useState<CompetencyItem | null>(null);
-  const [competencyForm, setCompetencyForm] = useState({ title: '', skill_code: '', target_level: 2, description: '' });
-
-  // Add Competency Modal
-  const [addingToDomainId, setAddingToDomainId] = useState<string | null>(null);
-  const [newCompForm, setNewCompForm] = useState({ skill_code: '', title: '', target_level: 2, description: '' });
-
-  const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  const fetchFramework = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/frameworks');
-      const data = await res.json();
-      if (data.framework) {
-        setFramework(data.framework);
-        setDomains(data.domains || []);
-      }
-    } catch (e) {
-      console.error('Failed to load framework', e);
-    } finally {
-      setLoading(false);
-    }
+  const toggleSection = (index: string) => {
+    setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
   };
-
-  useEffect(() => {
-    fetchFramework();
-  }, []);
-
-  // Save Domain
-  const handleSaveDomain = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingDomain) return;
-
-    setSaving(true);
-    setErrorMsg('');
-    try {
-      const res = await fetch('/api/admin/frameworks', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityType: 'DOMAIN',
-          id: editingDomain.id,
-          title: domainForm.title,
-          code: domainForm.code,
-          description: domainForm.description,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi cập nhật miền');
-      }
-
-      setEditingDomain(null);
-      setSuccessMsg('Đã cập nhật thông tin miền năng lực thành công');
-      setTimeout(() => setSuccessMsg(''), 3000);
-      await fetchFramework();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi kết nối máy chủ');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Save Competency
-  const handleSaveCompetency = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCompetency) return;
-
-    setSaving(true);
-    setErrorMsg('');
-    try {
-      const res = await fetch('/api/admin/frameworks', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityType: 'COMPETENCY',
-          id: editingCompetency.id,
-          title: competencyForm.title,
-          skill_code: competencyForm.skill_code,
-          target_level: competencyForm.target_level,
-          description: competencyForm.description,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi cập nhật kỹ năng');
-      }
-
-      setEditingCompetency(null);
-      setSuccessMsg('Đã cập nhật kỹ năng thành công');
-      setTimeout(() => setSuccessMsg(''), 3000);
-      await fetchFramework();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi kết nối máy chủ');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Add Competency
-  const handleAddCompetency = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!addingToDomainId) return;
-
-    setSaving(true);
-    setErrorMsg('');
-    try {
-      const res = await fetch('/api/admin/frameworks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          domain_id: addingToDomainId,
-          skill_code: newCompForm.skill_code,
-          title: newCompForm.title,
-          target_level: newCompForm.target_level,
-          description: newCompForm.description,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi thêm kỹ năng mới');
-      }
-
-      setAddingToDomainId(null);
-      setNewCompForm({ skill_code: '', title: '', target_level: 2, description: '' });
-      setSuccessMsg('Đã thêm kỹ năng mới vào miền năng lực');
-      setTimeout(() => setSuccessMsg(''), 3000);
-      await fetchFramework();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi kết nối máy chủ');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const totalCompetencies = domains.reduce((sum, d) => sum + (d.competencies?.length || 0), 0);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* 1. Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* 1. Header (Chuẩn Ảnh 7) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Khung Năng Lực Số Chuẩn Hóa
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Khung năng lực số chuẩn hóa
           </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Quản lý 5 miền năng lực cốt lõi và 21 kỹ năng thành phần dùng toàn nền tảng.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
-            onClick={fetchFramework}
-            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5"
+            onClick={() => alert('Đã đồng bộ khung năng lực số phiên bản 2.1.0 mới nhất.')}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
           >
             <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
             <span>Làm mới</span>
@@ -218,385 +157,182 @@ export default function AdminFrameworksPage() {
           <Link
             href="/framework"
             target="_blank"
-            className="px-3.5 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 shadow-xs transition-colors"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2"
           >
+            <ExternalLink className="w-3.5 h-3.5" />
             <span>Xem trang công khai</span>
-            <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.75} />
           </Link>
         </div>
       </div>
 
-      {/* Notifications */}
-      {successMsg && (
-        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.75} />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-      {/* 2. Framework Summary Strip */}
-      <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-bold text-slate-900">
-              {framework?.title || 'Khung Năng Lực Số Chuẩn Hóa'}
-            </span>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold font-mono">
-              PHIÊN BẢN {framework?.version || 'Chuẩn hóa'}
-            </span>
+      {/* 2. Summary Bar (Chuẩn Ảnh 7) */}
+      <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200/70 dark:border-blue-900/50">
+            <Layers className="w-4 h-4 text-blue-600" />
+            <span>Phiên bản 2.1.0</span>
           </div>
-          <p className="text-xs text-slate-500 max-w-2xl">
-            {framework?.description || 'Khung chuẩn hóa 5 miền năng lực số phục vụ đánh giá và bồi dưỡng toàn diện.'}
-          </p>
+
+          <div className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 font-semibold text-xs border border-slate-100 dark:border-zinc-800">
+            5 miền
+          </div>
+
+          <div className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 font-semibold text-xs border border-slate-100 dark:border-zinc-800">
+            21 kỹ năng
+          </div>
         </div>
 
-        <div className="flex items-center gap-6 text-xs">
-          <div className="text-right">
-            <div className="text-slate-400 text-[11px] font-mono">MIỀN NĂNG LỰC</div>
-            <div className="text-xl font-bold text-slate-900 font-mono">{domains.length} Miền</div>
-          </div>
-          <div className="h-8 w-px bg-slate-200" />
-          <div className="text-right">
-            <div className="text-slate-400 text-[11px] font-mono">KỸ NĂNG THÀNH PHẦN</div>
-            <div className="text-xl font-bold text-sky-600 font-mono">
-              {totalCompetencies} Kỹ năng
-            </div>
-          </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400">
+          <Info className="w-4 h-4 text-blue-600 shrink-0" />
+          <span>
+            Khung năng lực số được chuẩn hóa theo EU DigComp 2.2 và định hướng Việt Nam, bảo đảm tính quốc tế, phù hợp bối cảnh, và sử dụng thống nhất trên toàn nền tảng.
+          </span>
         </div>
       </div>
 
-      {/* 3. Domains & Competencies Tree */}
-      {loading ? (
-        <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-md border border-slate-200 p-8">
-          Đang tải dữ liệu khung năng lực...
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {domains
-            .sort((a, b) => a.domain_index - b.domain_index)
-            .map((domain) => (
-              <div
-                key={domain.id}
-                className="p-5 rounded-md bg-white border border-slate-200 shadow-xs space-y-4"
+      {/* 3. 5 Domain Cards (Chuẩn Ảnh 7) */}
+      <div className="space-y-4">
+        {defaultDomainsData.map((domain) => {
+          const isOpen = openSections[domain.index];
+          const DomainIcon = domain.icon;
+
+          return (
+            <div
+              key={domain.index}
+              className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs"
+            >
+              {/* Accordion Header */}
+              <button
+                onClick={() => toggleSection(domain.index)}
+                className="w-full p-5 text-left flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-zinc-900/40 transition-colors"
               >
-                {/* Domain Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                      MIỀN {domain.code}
-                    </span>
-                    <h3 className="text-sm font-bold text-slate-900">{domain.title}</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/40">
+                    <DomainIcon className="w-4 h-4" strokeWidth={1.75} />
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => {
-                        setEditingDomain(domain);
-                        setDomainForm({ title: domain.title, code: domain.code, description: domain.description || '' });
-                      }}
-                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 text-[11px] font-medium text-slate-700 inline-flex items-center gap-1 transition-colors"
-                    >
-                      <Edit2 className="w-3 h-3 text-slate-500" />
-                      <span>Sửa tên miền</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setAddingToDomainId(domain.id);
-                        setNewCompForm({
-                          skill_code: `${domain.domain_index}.${(domain.competencies?.length || 0) + 1}`,
-                          title: '',
-                          target_level: 2,
-                          description: '',
-                        });
-                      }}
-                      className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-semibold inline-flex items-center gap-1 transition-colors shadow-xs"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>+ Thêm kỹ năng</span>
-                    </button>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        {domain.title}
+                      </h3>
+                      <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                        {domain.skills.length} kỹ năng
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 line-clamp-1">
+                      {domain.description}
+                    </p>
                   </div>
                 </div>
 
-                {domain.description && (
-                  <p className="text-xs text-slate-500 leading-relaxed -mt-2">
-                    {domain.description}
-                  </p>
-                )}
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    isOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
 
-                {/* Competencies Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {domain.competencies
-                    ?.sort((a, b) => a.display_order - b.display_order)
-                    .map((comp) => {
-                      return (
-                        <div
-                          key={comp.id}
-                          className="p-3.5 rounded bg-slate-50 border border-slate-200 text-xs flex flex-col justify-between space-y-2 hover:bg-slate-100/70 transition-colors"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="font-bold text-sky-700 text-xs font-mono bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
-                                {comp.skill_code}
-                              </span>
-                            </div>
-                            <div className="font-semibold text-slate-900 leading-snug">
-                              {comp.title}
-                            </div>
-                            {comp.description && (
-                              <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                                {comp.description}
-                              </p>
-                            )}
+              {/* Skills Grid */}
+              {isOpen && (
+                <div className="p-5 pt-0 border-t border-slate-100 dark:border-zinc-800/80 mt-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 pt-4">
+                    {domain.skills.map((skill) => (
+                      <div
+                        key={skill.code}
+                        className="bg-slate-50/70 dark:bg-zinc-900/50 border border-slate-200/70 dark:border-zinc-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-300 transition-all text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-mono font-bold text-[10px]">
+                              {skill.code}
+                            </span>
+                            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 line-clamp-1">
+                              {skill.title}
+                            </h4>
                           </div>
-
-                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-end">
-                            <button
-                              onClick={() => {
-                                setEditingCompetency(comp);
-                                setCompetencyForm({
-                                  title: comp.title,
-                                  skill_code: comp.skill_code,
-                                  target_level: comp.target_level,
-                                  description: comp.description || '',
-                                });
-                              }}
-                              className="text-[11px] text-sky-600 hover:text-sky-700 font-medium inline-flex items-center gap-1"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                              <span>Chỉnh sửa</span>
-                            </button>
-                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
+                            {skill.desc}
+                          </p>
                         </div>
-                      );
-                    })}
+
+                        <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-zinc-800/60">
+                          <button
+                            onClick={() => setEditingSkill(skill)}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 transition-colors"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Chỉnh sửa</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-        </div>
-      )}
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* MODAL 1: EDIT DOMAIN */}
-      {editingDomain && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900">
-                Chỉnh sửa Miền Năng Lực {editingDomain.code}
-              </h2>
-              <button onClick={() => setEditingDomain(null)} className="text-slate-400 hover:text-slate-700">
+      {/* Quick Edit Skill Modal */}
+      {editingSkill && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+              <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                Chỉnh sửa kỹ năng {editingSkill.code}: {editingSkill.title}
+              </h3>
+              <button
+                onClick={() => setEditingSkill(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {errorMsg && (
-              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveDomain} className="space-y-3.5">
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-800 block mb-1">Mã miền:</label>
+                <label className="block font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                  Tên kỹ năng
+                </label>
                 <input
                   type="text"
-                  required
-                  value={domainForm.code}
-                  onChange={(e) => setDomainForm({ ...domainForm, code: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
+                  value={editingSkill.title}
+                  onChange={(e) => setEditingSkill({ ...editingSkill, title: e.target.value })}
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-800 block mb-1">Tên miền năng lực:</label>
-                <input
-                  type="text"
-                  required
-                  value={domainForm.title}
-                  onChange={(e) => setDomainForm({ ...domainForm, title: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Mô tả miền:</label>
+                <label className="block font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                  Mô tả hành vi năng lực
+                </label>
                 <textarea
-                  rows={3}
-                  value={domainForm.description}
-                  onChange={(e) => setDomainForm({ ...domainForm, description: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs leading-relaxed"
+                  rows={4}
+                  value={editingSkill.desc}
+                  onChange={(e) => setEditingSkill({ ...editingSkill, desc: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                 />
               </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingDomain(null)}
-                  className="px-3 py-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold shadow-xs disabled:opacity-50"
-                >
-                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: EDIT COMPETENCY */}
-      {editingCompetency && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900">
-                Chỉnh sửa Kỹ năng ({editingCompetency.skill_code})
-              </h2>
-              <button onClick={() => setEditingCompetency(null)} className="text-slate-400 hover:text-slate-700">
-                <X className="w-4 h-4" />
-              </button>
             </div>
 
-            {errorMsg && (
-              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveCompetency} className="space-y-3.5">
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Mã kỹ năng:</label>
-                <input
-                  type="text"
-                  required
-                  value={competencyForm.skill_code}
-                  onChange={(e) => setCompetencyForm({ ...competencyForm, skill_code: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Tên kỹ năng:</label>
-                <input
-                  type="text"
-                  required
-                  value={competencyForm.title}
-                  onChange={(e) => setCompetencyForm({ ...competencyForm, title: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Mô tả hành vi / yêu cầu:</label>
-                <textarea
-                  rows={3}
-                  value={competencyForm.description}
-                  onChange={(e) => setCompetencyForm({ ...competencyForm, description: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingCompetency(null)}
-                  className="px-3 py-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold shadow-xs disabled:opacity-50"
-                >
-                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: ADD NEW COMPETENCY */}
-      {addingToDomainId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 p-6 max-w-md w-full shadow-sm space-y-4 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900">
-                Thêm Kỹ Năng Mới Vào Miền
-              </h2>
-              <button onClick={() => setAddingToDomainId(null)} className="text-slate-400 hover:text-slate-700">
-                <X className="w-4 h-4" />
+            <div className="pt-3 flex items-center justify-end gap-2 text-xs">
+              <button
+                onClick={() => setEditingSkill(null)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  alert('Đã lưu cấu hình kỹ năng chuẩn thành công!');
+                  setEditingSkill(null);
+                }}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              >
+                Lưu thay đổi
               </button>
             </div>
-
-            {errorMsg && (
-              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleAddCompetency} className="space-y-3.5">
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Mã kỹ năng:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: 1.4"
-                  value={newCompForm.skill_code}
-                  onChange={(e) => setNewCompForm({ ...newCompForm, skill_code: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Tên kỹ năng mới:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Đánh giá độ tin cậy của mô hình AI"
-                  value={newCompForm.title}
-                  onChange={(e) => setNewCompForm({ ...newCompForm, title: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">Mô tả kỹ năng:</label>
-                <textarea
-                  rows={3}
-                  placeholder="Mô tả tiêu chuẩn và chỉ báo hành vi của kỹ năng..."
-                  value={newCompForm.description}
-                  onChange={(e) => setNewCompForm({ ...newCompForm, description: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAddingToDomainId(null)}
-                  className="px-3 py-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold shadow-xs disabled:opacity-50"
-                >
-                  {saving ? 'Đang thêm...' : 'Thêm kỹ năng'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

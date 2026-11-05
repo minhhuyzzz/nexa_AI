@@ -134,12 +134,25 @@ export async function GET(request: Request) {
     });
 
     const rawAssessment = Array.isArray(room.assessments) ? room.assessments[0] : room.assessments;
-    const hasStarted = room.status === 'IN_PROGRESS' || !!room.started_at || !!room.scheduled_start;
-    const startedAt = room.started_at || room.scheduled_start;
+    const isLiveActive = Boolean(room.is_active);
+    let effectiveStatus: string = room.status || 'WAITING';
+    
+    if (!isLiveActive) {
+      effectiveStatus = room.results_published ? 'RESULTS_PUBLISHED' : 'ENDED';
+    } else if (room.status === 'IN_PROGRESS' || (Boolean(room.started_at) && !room.ended_at)) {
+      effectiveStatus = 'IN_PROGRESS';
+    } else if (room.status === 'SCHEDULED') {
+      effectiveStatus = 'SCHEDULED';
+    } else {
+      effectiveStatus = 'WAITING';
+    }
+
+    const hasStarted = effectiveStatus === 'IN_PROGRESS';
+    const startedAt = room.started_at || null;
     const durationMinutes = rawAssessment?.duration_minutes || 45;
 
     let elapsedSeconds = 0;
-    if (startedAt && (room.status === 'IN_PROGRESS' || !room.status)) {
+    if (startedAt && hasStarted) {
       elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
     }
 
@@ -157,7 +170,7 @@ export async function GET(request: Request) {
         isActive: room.is_active,
         isLocked: room.is_locked,
         themeId: room.theme_id || 'minimal_white',
-        status: room.status || (room.is_active ? (hasStarted ? 'IN_PROGRESS' : 'WAITING') : 'ENDED'),
+        status: effectiveStatus,
         allowLateJoin: room.allow_late_join ?? false,
         autoSubmitOnTimeout: room.auto_submit_on_timeout ?? true,
         showPin: room.show_pin ?? true,

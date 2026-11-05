@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminContentPage() {
   const supabase = await createClient();
 
-  // 1. Fetch assessments with assessment_items
+  // 1. Fetch official canonical system assessments only (Exclude Org & Personal assessments)
   const { data: rawAssessments } = await supabase
     .from('assessments')
     .select(`
@@ -22,6 +22,8 @@ export default async function AdminContentPage() {
       is_published,
       is_vip,
       access_tier,
+      visibility,
+      organization_id,
       created_at,
       assessment_items (
         id,
@@ -39,7 +41,15 @@ export default async function AdminContentPage() {
         )
       )
     `)
+    .is('organization_id', null)
     .order('created_at', { ascending: false });
+
+  // Strictly isolate: only include system canonical assessments (PUBLIC / SYSTEM_CURATED), never Org or Personal tests
+  const filteredCanonical = (rawAssessments || []).filter((a: any) => {
+    if (a.organization_id) return false;
+    if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+    return true;
+  });
 
   // 2. Fetch competency domains
   const { data: rawDomains } = await supabase
@@ -54,7 +64,7 @@ export default async function AdminContentPage() {
     .order('skill_code', { ascending: true });
 
   // Format assessments
-  const assessments: AssessmentItemRecord[] = (rawAssessments || []).map((a: any) => {
+  const assessments: AssessmentItemRecord[] = filteredCanonical.map((a: any) => {
     const items = Array.isArray(a.assessment_items) ? a.assessment_items : [];
     const questionCount = items.length;
 

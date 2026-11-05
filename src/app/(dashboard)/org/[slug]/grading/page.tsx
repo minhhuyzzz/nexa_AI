@@ -43,7 +43,7 @@ export default async function OrgGradingPage({
   const campaignIds = (orgCampaigns || []).map((c) => c.id);
   const assessmentIds = (orgAssessments || []).map((a) => a.id);
 
-  let assignmentIds: string[] = [];
+  const assignmentIds: string[] = [];
   const classAssignmentMap: Record<string, string> = {}; // assignmentId -> classId
   if (classIds.length > 0) {
     const { data: assignments } = await adminSupabase

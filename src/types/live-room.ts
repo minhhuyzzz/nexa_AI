@@ -96,6 +96,7 @@ export interface RoomThemeConfig {
   name: string;
   tagline: string;
   description: string;
+  imagePath: string;
   previewBgClass: string;
   badgeClass: string;
   isDark: boolean;
@@ -105,8 +106,9 @@ export const ROOM_THEMES: Record<RoomThemeId, RoomThemeConfig> = {
   minimal_white: {
     id: 'minimal_white',
     name: 'Trắng tối giản',
-    tagline: 'Mặc định',
-    description: 'Giao diện sáng, hiện đại, đơn giản và dễ theo dõi.',
+    tagline: 'Minimal White',
+    description: 'Phong cách Swiss Design thanh lịch, nền sáng dịu mắt, tương phản cao.',
+    imagePath: '/images/themes/minimal_white.jpg',
     previewBgClass: 'bg-white border-slate-200',
     badgeClass: 'bg-slate-100 text-slate-800 border-slate-200',
     isDark: false,
@@ -115,7 +117,8 @@ export const ROOM_THEMES: Record<RoomThemeId, RoomThemeConfig> = {
     id: 'space_blue',
     name: 'Space Blue',
     tagline: 'Vũ trụ số',
-    description: 'Phong cách không gian chuyên nghiệp, hiện đại và cuốn hút.',
+    description: 'Xanh vũ trụ sâu thẳm, chòm sao số và mạng lưới kết nối tập trung cao độ.',
+    imagePath: '/images/themes/space_blue.jpg',
     previewBgClass: 'bg-slate-900 border-sky-800',
     badgeClass: 'bg-sky-950 text-sky-300 border-sky-800',
     isDark: true,
@@ -123,8 +126,9 @@ export const ROOM_THEMES: Record<RoomThemeId, RoomThemeConfig> = {
   aurora: {
     id: 'aurora',
     name: 'Aurora',
-    tagline: 'Cực quang',
-    description: 'Giao diện rực rỡ với hiệu ứng cực quang, trẻ trung và sinh động.',
+    tagline: 'Cyber Aurora',
+    description: 'Sóng cực quang chuyển sắc tím - ngọc lục bảo rực rỡ, hiện đại và trẻ trung.',
+    imagePath: '/images/themes/cyber_aurora.jpg',
     previewBgClass: 'bg-indigo-950 border-purple-800',
     badgeClass: 'bg-purple-950 text-purple-300 border-purple-800',
     isDark: true,
@@ -132,8 +136,9 @@ export const ROOM_THEMES: Record<RoomThemeId, RoomThemeConfig> = {
   dark_professional: {
     id: 'dark_professional',
     name: 'Dark Professional',
-    tagline: 'Chuyên nghiệp',
-    description: 'Tông tối sang trọng, tập trung cao độ và chuẩn mực.',
+    tagline: 'Chuyên gia IT',
+    description: 'Nền đen than carbon, lưới dữ liệu kỹ thuật monospace sắc sảo chuẩn mực.',
+    imagePath: '/images/themes/dark_pro.jpg',
     previewBgClass: 'bg-zinc-950 border-zinc-800',
     badgeClass: 'bg-zinc-900 text-zinc-300 border-zinc-800',
     isDark: true,

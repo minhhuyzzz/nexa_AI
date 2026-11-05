@@ -39,6 +39,8 @@ export async function GET() {
         is_published,
         is_vip,
         access_tier,
+        visibility,
+        organization_id,
         created_at,
         updated_at,
         assessment_items (
@@ -57,6 +59,7 @@ export async function GET() {
           )
         )
       `)
+      .is('organization_id', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -64,7 +67,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Không thể tải danh sách bài khảo thí' }, { status: 500 });
     }
 
-    const formatted = (assessments || []).map((a) => {
+    // Exclude any assessments created in Personal or Org workspaces
+    const systemOnly = (assessments || []).filter((a: any) => {
+      if (a.organization_id) return false;
+      if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+      return true;
+    });
+
+    const formatted = systemOnly.map((a) => {
       const items = Array.isArray(a.assessment_items) ? a.assessment_items : [];
       const questionCount = items.length;
 
@@ -154,7 +164,7 @@ export async function POST(req: Request) {
       .from('assessments')
       .insert({
         title: parsed.data.title,
-        description: parsed.data.description || 'Bài khảo thí chuẩn hóa đo lường năng lực số DigComp.',
+        description: parsed.data.description || 'Bài khảo thí chuẩn hóa đo lường 5 miền năng lực số.',
         duration_minutes: parsed.data.duration_minutes,
         passing_score: parsed.data.passing_score,
         point_reward: parsed.data.point_reward,
@@ -162,7 +172,8 @@ export async function POST(req: Request) {
         is_vip: parsed.data.is_vip || parsed.data.access_tier === 'VIP',
         access_tier: parsed.data.access_tier,
         framework_id,
-        organization_id: parsed.data.organization_id || null,
+        organization_id: null,
+        visibility: 'SYSTEM_CURATED',
         owner_user_id: user?.id || null,
         created_by: user?.id || null,
       })

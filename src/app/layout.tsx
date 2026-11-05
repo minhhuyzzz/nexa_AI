@@ -1,23 +1,10 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Alex_Brush, Playfair_Display } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'vietnamese'],
   variable: '--font-sans',
-  display: 'swap',
-});
-
-const alexBrush = Alex_Brush({
-  weight: '400',
-  subsets: ['latin'],
-  variable: '--font-script',
-  display: 'swap',
-});
-
-const playfairDisplay = Playfair_Display({
-  subsets: ['latin', 'vietnamese'],
-  variable: '--font-serif',
   display: 'swap',
 });
 
@@ -35,9 +22,15 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${alexBrush.variable} ${playfairDisplay.variable}`}
+      className={plusJakartaSans.variable}
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap"
+          rel="stylesheet"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

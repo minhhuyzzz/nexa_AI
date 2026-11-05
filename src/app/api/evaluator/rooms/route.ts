@@ -217,7 +217,7 @@ export async function POST(request: Request) {
     }
 
     // Server-side Quota Gate Enforcement
-    const quotaCheck = await QuotaEnforcementService.checkLiveRoomQuota(supabase, user.id);
+    const quotaCheck = await QuotaEnforcementService.checkLiveRoomQuota(supabase, user.id, organizationId);
     if (!quotaCheck.allowed) {
       return NextResponse.json(
         { error: quotaCheck.reason || 'Đã đạt giới hạn số lượng phòng thi Live đang mở', quota: quotaCheck },
@@ -331,6 +331,7 @@ const updateRoomSchema = z.object({
     'UNLOCK',
     'PUBLISH_RESULTS',
     'UPDATE_SETTINGS',
+    'SCHEDULE',
   ]),
   payload: z.record(z.any()).optional(),
 });
@@ -516,6 +517,35 @@ export async function PATCH(request: Request) {
       }
 
       return NextResponse.json({ success: true, action: 'UPDATE_SETTINGS', room: updatedRoom });
+    }
+
+    if (action === 'SCHEDULE') {
+      const scheduledStart = payload?.scheduledStart;
+      const scheduledEnd = payload?.scheduledEnd;
+      const durationMinutes = payload?.durationMinutes;
+      const themeId = payload?.themeId;
+
+      const updateData: Record<string, any> = {
+        status: 'SCHEDULED',
+        scheduled_start: scheduledStart || null,
+        scheduled_end: scheduledEnd || null,
+      };
+      if (durationMinutes) updateData.duration_minutes = Number(durationMinutes);
+      if (themeId) updateData.theme_id = themeId;
+
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update(updateData)
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể lên lịch hẹn giờ ca thi' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'SCHEDULE', room: updatedRoom });
     }
 
     return NextResponse.json({ error: 'Hành động không hỗ trợ' }, { status: 400 });

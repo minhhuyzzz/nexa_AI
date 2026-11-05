@@ -18,6 +18,8 @@ export async function GET() {
         is_published, 
         is_vip,
         access_tier,
+        visibility,
+        organization_id,
         created_at,
         assessment_items (
           id,
@@ -35,6 +37,7 @@ export async function GET() {
         )
       `)
       .eq('is_published', true)
+      .is('organization_id', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -42,7 +45,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Không thể tải danh sách bài khảo thí' }, { status: 500 });
     }
 
-    const formatted = (assessments || []).map((a) => {
+    // Only serve official system assessments to learners (filter out personal and org assessments)
+    const publicSystemAssessments = (assessments || []).filter((a: any) => {
+      if (a.organization_id) return false;
+      if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+      return true;
+    });
+
+    const formatted = publicSystemAssessments.map((a) => {
       const items = Array.isArray(a.assessment_items) ? a.assessment_items : [];
       const questionCount = items.length;
 
@@ -92,6 +102,7 @@ export async function GET() {
         questionCount,
         types: rawTypes,
         typeLabel: typeLabels.length > 0 ? typeLabels.join(', ') : 'Trắc nghiệm',
+        domain: domainName,
         domainName,
         domainCodes,
         isVip: Boolean((a as any).is_vip || (a as any).access_tier === 'VIP'),

@@ -68,7 +68,7 @@ export async function GET(req: Request) {
     }
 
     // 4. Fetch submissions (latest first, strictly isolate personal from organization)
-    let subQuery = supabase
+    const subQuery = supabase
       .from('assessment_submissions')
       .select(`
         id,

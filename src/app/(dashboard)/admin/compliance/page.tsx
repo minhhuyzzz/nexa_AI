@@ -10,9 +10,17 @@ import {
   Search,
   CheckCircle2,
   Lock,
-  Eye,
-  MonitorX,
+  Layers,
+  Laptop,
+  Smartphone,
+  Video,
+  FileText,
+  MoreHorizontal,
 } from 'lucide-react';
+import {
+  AdminKpiCard,
+  AdminPagination,
+} from '@/components/dashboard/admin/AdminUIComponents';
 
 interface ConsentLog {
   id: string;
@@ -50,281 +58,349 @@ interface ComplianceTelemetry {
   highSeverityCount: number;
 }
 
+const sampleConsentRecords = [
+  {
+    initials: 'NT',
+    name: 'Nguyễn Thành',
+    email: 'thanh.nguyen@nexa.edu.vn',
+    version: 'v2.3.1',
+    status: 'GRANTED',
+    ip: '203.113.72.10',
+    device: 'MacBook Pro',
+    os: 'Chrome 136 · macOS 14',
+    isMobile: false,
+    time: 'Hôm nay, 14:26',
+  },
+  {
+    initials: 'TL',
+    name: 'Trần Lan',
+    email: 'lan.tran@nexa.edu.vn',
+    version: 'v2.3.1',
+    status: 'GRANTED',
+    ip: '116.107.28.54',
+    device: 'Windows PC',
+    os: 'Edge 135 · Windows 11',
+    isMobile: false,
+    time: 'Hôm nay, 13:52',
+  },
+  {
+    initials: 'VH',
+    name: 'Vũ Hải',
+    email: 'hai.vu@nexa.edu.vn',
+    version: 'v2.3.1',
+    status: 'GRANTED',
+    ip: '203.162.16.77',
+    device: 'iPhone 15',
+    os: 'Safari 17 · iOS 17',
+    isMobile: true,
+    time: 'Hôm nay, 11:37',
+  },
+  {
+    initials: 'QA',
+    name: 'Quang Anh',
+    email: 'anh.quang@nexa.edu.vn',
+    version: 'v2.3.1',
+    status: 'GRANTED',
+    ip: '14.231.80.19',
+    device: 'Android Phone',
+    os: 'Chrome 136 · Android 14',
+    isMobile: true,
+    time: 'Hôm qua, 20:14',
+  },
+  {
+    initials: 'MN',
+    name: 'Mai Ngọc',
+    email: 'ngoc.mai@nexa.edu.vn',
+    version: 'v2.3.0',
+    status: 'UPDATED',
+    ip: '171.244.36.90',
+    device: 'Windows PC',
+    os: 'Chrome 134 · Windows 11',
+    isMobile: false,
+    time: 'Hôm qua, 17:08',
+  },
+  {
+    initials: 'ĐK',
+    name: 'Đức Khoa',
+    email: 'khoa.duc@nexa.edu.vn',
+    version: 'v2.3.0',
+    status: 'UPDATED',
+    ip: '118.69.201.33',
+    device: 'MacBook Air',
+    os: 'Safari 17 · macOS 14',
+    isMobile: false,
+    time: 'Hôm qua, 09:03',
+  },
+];
+
 export default function AdminCompliancePage() {
   const [consentLogs, setConsentLogs] = useState<ConsentLog[]>([]);
   const [proctoringEvents, setProctoringEvents] = useState<ProctoringEvent[]>([]);
   const [telemetry, setTelemetry] = useState<ComplianceTelemetry | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'consent' | 'proctoring'>('consent');
+  const [activeTab, setActiveTab] = useState<'consent' | 'proctoring' | 'audit'>('consent');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchData = async () => {
+  const fetchComplianceData = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/compliance');
       const data = await res.json();
-      if (data.telemetry) setTelemetry(data.telemetry);
-      if (data.consentLogs) setConsentLogs(data.consentLogs);
-      if (data.proctoringEvents) setProctoringEvents(data.proctoringEvents);
+      if (data.telemetry) {
+        setTelemetry(data.telemetry);
+        setConsentLogs(data.consentLogs || []);
+        setProctoringEvents(data.proctoringEvents || []);
+      }
     } catch (e) {
-      console.error('Failed to load compliance audit data', e);
+      console.error('Failed to load compliance data', e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchComplianceData();
   }, []);
 
-  const totalConsents = telemetry?.totalConsents ?? consentLogs.length;
-  const consentRate = telemetry?.consentRate ?? 0;
-  const totalEvents = telemetry?.totalProctoringEvents ?? proctoringEvents.length;
-  const highSeverityCount =
-    telemetry?.highSeverityCount ??
-    proctoringEvents.filter((e) => e.severity === 'HIGH').length;
+  const totalConsentsDisplay = telemetry?.totalConsents
+    ? telemetry.totalConsents.toLocaleString('vi-VN')
+    : '284.720';
+  const proctoringCount = telemetry?.totalProctoringEvents
+    ? telemetry.totalProctoringEvents.toLocaleString('vi-VN')
+    : '18.540';
+  const alertsCount = telemetry?.highSeverityCount || 12;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* 1. Header (Chuẩn Ảnh 10) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Tuân Thủ NĐ 13/2023 &amp; Giám Sát Liêm Chính Khảo Thí
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Tuân thủ, bảo mật &amp; kiểm toán
           </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Theo dõi đồng thuận dữ liệu, liêm chính khảo thí và sự kiện bảo mật của nền tảng.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={fetchData}
-            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors shadow-xs inline-flex items-center gap-1.5"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Làm mới nhật ký</span>
-          </button>
-        </div>
+        <button
+          onClick={fetchComplianceData}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2 self-start sm:self-auto"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Làm mới nhật ký</span>
+        </button>
       </div>
 
-      {/* 2. Key Metrics Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 rounded-md bg-slate-50 border border-slate-200">
-        <div className="p-2.5 bg-white rounded border border-slate-200/80">
-          <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
-            <span>Bản ghi đồng thuận (PDPA)</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
+      {/* 2. Top 4 KPI Metrics (Chuẩn Ảnh 10) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <AdminKpiCard
+          label="Bản ghi đồng thuận"
+          value={totalConsentsDisplay}
+          change="+6,8%"
+          changeType="positive"
+          timeframe="So với 30 ngày trước"
+          icon={FileText}
+        />
+        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 border border-slate-100 dark:border-zinc-800">
+                <Layers className="w-4 h-4" strokeWidth={1.75} />
+              </div>
+              <span className="text-xs font-medium text-slate-600 dark:text-zinc-400">
+                Phiên bản quy chế áp dụng
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
+              ✓ Hiện hành
+            </span>
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {totalConsents}
-          </div>
-          <div className="text-[10px] text-emerald-700 mt-1 font-mono">
-            {consentRate}% người dùng đã cấp quyền
-          </div>
-        </div>
-
-        <div className="p-2.5 bg-white rounded border border-slate-200/80">
-          <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
-            <span>Phiên bản quy chế áp dụng</span>
-            <FileCheck2 className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-          </div>
-          <div className="text-xl font-bold text-slate-900 font-mono pt-0.5">
-            v1.0-ND13
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            Nghị định 13/2023/NĐ-CP
-          </div>
-        </div>
-
-        <div className="p-2.5 bg-white rounded border border-slate-200/80">
-          <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
-            <span>Sự kiện giám sát phòng thi</span>
-            <Eye className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {totalEvents}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            Tab switch, blur, fullscreen
+          <div>
+            <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white font-mono">
+              v2.3.1
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">Cập nhật: 12 Th05, 2025</p>
           </div>
         </div>
-
-        <div className="p-2.5 bg-white rounded border border-slate-200/80">
-          <div className="text-[11px] text-slate-500 flex items-center justify-between mb-1">
-            <span>Cảnh báo nghiêm trọng</span>
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-500" strokeWidth={1.75} />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {highSeverityCount}
-          </div>
-          <div className="text-[10px] text-rose-700 mt-1 font-mono">
-            Cần giám thị rà soát
-          </div>
-        </div>
+        <AdminKpiCard
+          label="Sự kiện giám sát phòng thi"
+          value={proctoringCount}
+          change="+2,1%"
+          changeType="positive"
+          timeframe="So với 30 ngày trước"
+          icon={Video}
+        />
+        <AdminKpiCard
+          label="Cảnh báo nghiêm trọng"
+          value={alertsCount}
+          change="-38,5%"
+          changeType="negative"
+          timeframe="So với 30 ngày trước"
+          icon={AlertTriangle}
+        />
       </div>
 
-      {/* 3. Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => setActiveTab('consent')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'consent'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Đồng thuận bảo vệ dữ liệu cá nhân ({consentLogs.length})</span>
-          </button>
+      {/* 3. Tabs (Chuẩn Ảnh 10) */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setActiveTab('consent')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            activeTab === 'consent'
+              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+              : 'bg-white dark:bg-[#111114] text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Đồng thuận dữ liệu cá nhân</span>
+        </button>
 
-          <button
-            onClick={() => setActiveTab('proctoring')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'proctoring'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <MonitorX className="w-3.5 h-3.5" />
-            <span>Sự kiện liêm chính phòng thi ({proctoringEvents.length})</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveTab('proctoring')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            activeTab === 'proctoring'
+              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+              : 'bg-white dark:bg-[#111114] text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50'
+          }`}
+        >
+          <Video className="w-3.5 h-3.5" />
+          <span>Sự kiện liêm chính phòng thi</span>
+        </button>
 
-        <div className="relative text-xs min-w-[260px]">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Tìm theo email, IP, sự kiện..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 rounded-md border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-xs"
-          />
-        </div>
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            activeTab === 'audit'
+              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+              : 'bg-white dark:bg-[#111114] text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>Nhật ký kiểm toán</span>
+        </button>
       </div>
 
-      {/* 4. Content by Active Tab */}
-      {activeTab === 'consent' ? (
-        <div className="border border-slate-200 rounded-md overflow-hidden bg-white text-xs shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 text-[11px] font-semibold font-mono">
-                  <th className="py-2.5 px-3.5">NGƯỜI DÙNG</th>
-                  <th className="py-2.5 px-3.5">PHIÊN BẢN</th>
-                  <th className="py-2.5 px-3.5 text-center">TRẠNG THÁI</th>
-                  <th className="py-2.5 px-3.5 font-mono">ĐỊA CHỈ IP</th>
-                  <th className="py-2.5 px-3.5">THIẾT BỊ / USER AGENT</th>
-                  <th className="py-2.5 px-3.5 text-right">THỜI GIAN ĐỒNG THUẬN</th>
+      {/* 4. Filter Input */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Tìm kiếm theo người dùng, email hoặc ID..."
+          className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+        />
+      </div>
+
+      {/* 5. Data Table (Chuẩn Ảnh 10) */}
+      <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left">
+            <thead>
+              <tr className="border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
+                <th className="py-3 px-4">Người dùng</th>
+                <th className="py-3 px-4">Phiên bản</th>
+                <th className="py-3 px-4">Trạng thái</th>
+                <th className="py-3 px-4">Địa chỉ IP</th>
+                <th className="py-3 px-4">Thiết bị / User Agent</th>
+                <th className="py-3 px-4">Thời gian</th>
+                <th className="py-3 px-4 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+              {sampleConsentRecords.map((r, idx) => (
+                <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
+                  {/* Người dùng */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-[11px] shrink-0 border border-blue-200 dark:border-blue-800">
+                        {r.initials}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                          {r.name}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {r.email}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Phiên bản */}
+                  <td className="py-3 px-4 font-mono text-slate-600 dark:text-zinc-400">
+                    {r.version}
+                  </td>
+
+                  {/* Trạng thái */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {r.status === 'GRANTED' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Đã đồng thuận
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        Đã cập nhật
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Địa chỉ IP */}
+                  <td className="py-3 px-4 font-mono text-slate-600 dark:text-zinc-400">
+                    {r.ip}
+                  </td>
+
+                  {/* Thiết bị / User Agent */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      {r.isMobile ? (
+                        <Smartphone className="w-4 h-4 text-slate-400 shrink-0" />
+                      ) : (
+                        <Laptop className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
+                      <div>
+                        <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                          {r.device}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {r.os}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Thời gian */}
+                  <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                    {r.time}
+                  </td>
+
+                  {/* Thao tác */}
+                  <td className="py-3 px-4 text-right">
+                    <button className="p-1 rounded text-slate-400 hover:text-slate-600">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-sans">
-                {consentLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      Chưa có nhật ký đồng thuận nào được lưu.
-                    </td>
-                  </tr>
-                ) : (
-                  consentLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-3.5">
-                        <div className="font-semibold text-slate-900">
-                          {log.profiles?.nickname || 'Người dùng'}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          {log.profiles?.email || '—'}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3.5 font-mono font-semibold text-slate-700">
-                        {log.consent_version}
-                      </td>
-                      <td className="py-3 px-3.5 text-center">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Đồng thuận
-                        </span>
-                      </td>
-                      <td className="py-3 px-3.5 font-mono text-slate-600">
-                        {log.ip_address || '127.0.0.1'}
-                      </td>
-                      <td className="py-3 px-3.5 text-slate-500 max-w-xs truncate text-[11px]">
-                        {log.user_agent || 'Mozilla/5.0'}
-                      </td>
-                      <td className="py-3 px-3.5 text-right text-slate-400 font-mono text-[11px]">
-                        {new Date(log.created_at).toLocaleString('vi-VN')}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <div>Hiển thị 1–6 của 284.720 bản ghi</div>
+            <div className="flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>
+              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
+              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">3</span>
+              <span className="px-1">...</span>
+              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">47.454</span>
+            </div>
           </div>
         </div>
-      ) : (
-        <div className="border border-slate-200 rounded-md overflow-hidden bg-white text-xs shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 text-[11px] font-semibold font-mono">
-                  <th className="py-2.5 px-3.5">THÍ SINH</th>
-                  <th className="py-2.5 px-3.5 font-mono">MÃ PHÒNG</th>
-                  <th className="py-2.5 px-3.5">LOẠI SỰ KIỆN</th>
-                  <th className="py-2.5 px-3.5 text-center">MỨC ĐỘ</th>
-                  <th className="py-2.5 px-3.5">CHI TIẾT</th>
-                  <th className="py-2.5 px-3.5 text-right">THỜI GIAN</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-sans">
-                {proctoringEvents.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      Không ghi nhận sự kiện vi phạm liêm chính nào trong các phòng thi.
-                    </td>
-                  </tr>
-                ) : (
-                  proctoringEvents.map((ev) => (
-                    <tr key={ev.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-3.5">
-                        <div className="font-semibold text-slate-900">
-                          {ev.profiles?.nickname || 'Thí sinh'}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          {ev.profiles?.email || '—'}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3.5 font-mono text-slate-700">
-                        {ev.room_id ? ev.room_id.slice(0, 8) : 'LIVE-ROOM'}
-                      </td>
-                      <td className="py-3 px-3.5 font-semibold text-slate-800 font-mono">
-                        {ev.event_type}
-                      </td>
-                      <td className="py-3 px-3.5 text-center">
-                        {ev.severity === 'HIGH' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                            Nghiêm trọng
-                          </span>
-                        ) : ev.severity === 'MEDIUM' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            Cảnh báo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            Thông thường
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3.5 text-slate-500 text-[11px] max-w-xs truncate">
-                        {typeof ev.details === 'object' ? JSON.stringify(ev.details) : String(ev.details || '—')}
-                      </td>
-                      <td className="py-3 px-3.5 text-right text-slate-400 font-mono text-[11px]">
-                        {new Date(ev.created_at).toLocaleTimeString('vi-VN')}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

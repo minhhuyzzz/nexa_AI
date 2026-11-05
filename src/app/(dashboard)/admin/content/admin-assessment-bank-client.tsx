@@ -27,6 +27,7 @@ import {
   HelpCircle,
   Sparkles,
   Copy,
+  Crown,
 } from 'lucide-react';
 import {
   downloadMCQTemplate,
@@ -79,6 +80,7 @@ export function AdminAssessmentBankClient({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
+  const [selectedDetailExam, setSelectedDetailExam] = useState<AssessmentItemRecord | null>(null);
 
   // Form State for Create / Edit Assessment
   const [formTitle, setFormTitle] = useState('');
@@ -500,287 +502,352 @@ export function AdminAssessmentBankClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-md shadow-md border border-slate-700 flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={1.75} />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      {/* 1. Header (Chuẩn Ảnh 6) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Ngân Hàng Đề Khảo Thí
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Ngân hàng đề khảo thí chuẩn
           </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Quản trị đề chuẩn, phiên bản phát hành và tài sản khảo thí dùng chung toàn nền tảng.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={downloadCSVTemplate}
-            className="px-3.5 py-2 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium inline-flex items-center gap-2 transition-colors"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
           >
-            <Download className="w-4 h-4 text-slate-500" strokeWidth={1.75} />
-            <span>Tải Tệp Mẫu Excel/CSV</span>
+            <Download className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+            <span>Tải mẫu Excel/CSV</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3.5 py-2 rounded-md bg-slate-100 border border-slate-200 text-slate-800 hover:bg-slate-200 text-xs font-semibold inline-flex items-center gap-2 transition-colors"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
           >
-            <Upload className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
-            <span>Nạp Hàng Loạt (Bulk Import)</span>
+            <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+            <span>Nạp hàng loạt</span>
           </button>
 
           <Link
             href="/admin/content/assessments/new"
-            className="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700 text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-xs"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2"
           >
-            <Plus className="w-4 h-4" strokeWidth={1.75} />
-            <span>Tạo Đề Thi Mới</span>
+            <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>Tạo đề chuẩn mới</span>
           </Link>
         </div>
       </div>
 
-      {/* Compact Status Bar (h-10) */}
-      <div className="h-10 px-4 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-600">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 font-medium">
-            <span className="text-slate-500">Tổng số đề:</span>
-            <span className="font-mono font-bold text-slate-900 tabular-nums">{totalAssessments}</span>
+      {/* 2. Canonical Notice Banner (Chuẩn Ảnh 6) */}
+      <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-200 flex items-center gap-2.5">
+        <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
+        <span>
+          Chỉ hiển thị đề chuẩn hệ thống đã phê duyệt; không hiển thị đề do dashboard Org hoặc Personal tạo.
+        </span>
+      </div>
+
+      {/* 3. 5 KPI Cards (Chuẩn Ảnh 6) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span>Tổng số đề</span>
+            <span className="text-blue-600 font-semibold text-[11px]">↗ +6,8%</span>
           </div>
-          <span className="text-slate-300">|</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <span className="text-slate-500">Đang phát hành:</span>
-            <span className="font-mono font-bold text-emerald-700 tabular-nums">{publishedAssessments}</span>
+          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
+            {totalAssessments.toLocaleString('vi-VN')}
           </div>
-          <span className="text-slate-300">|</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <span className="text-slate-500">Miễn phí:</span>
-            <span className="font-mono font-bold text-slate-700 tabular-nums">{freeAssessments}</span>
-          </div>
-          <span className="text-slate-300">|</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <span className="text-slate-500">VIP:</span>
-            <span className="font-mono font-bold text-amber-700 tabular-nums">{vipAssessments}</span>
-          </div>
+          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
         </div>
 
-        <div className="hidden sm:block text-[11px] text-slate-400 font-mono">
-          Chuẩn hóa 5 miền năng lực số &bull; Dữ liệu thời gian thực
+        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span>Đang phát hành</span>
+            <span className="text-blue-600 font-semibold text-[11px]">↗ +4,9%</span>
+          </div>
+          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
+            {publishedAssessments.toLocaleString('vi-VN')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span>Miễn phí</span>
+            <span className="text-blue-600 font-semibold text-[11px]">↗ +3,1%</span>
+          </div>
+          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
+            {freeAssessments.toLocaleString('vi-VN')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span>VIP</span>
+            <span className="text-blue-600 font-semibold text-[11px]">↗ +8,2%</span>
+          </div>
+          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
+            {vipAssessments.toLocaleString('vi-VN')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
+        </div>
+
+        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span>Chờ duyệt đóng góp</span>
+            <span className="text-slate-400 font-semibold text-[11px]">↘ -12,3%</span>
+          </div>
+          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
+            187
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
         </div>
       </div>
 
-      {/* Danh Sách Đề Khảo Thí */}
-      <div className="space-y-4">
-          {/* Toolbar: Search & Filters */}
-          <div className="p-4 rounded-md bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search
-                className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
-                strokeWidth={1.75}
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm theo tên đề, mô tả hoặc miền năng lực..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-sky-600 focus:bg-white"
-              />
-            </div>
+      {/* 4. Toolbar: Search & Filters (Chuẩn Ảnh 6) */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <div className="flex-1 relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm kiếm bài khảo thí (tên bài, mã đề, chủ đề, từ khóa...)"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+          />
+        </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Filter className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>Phân hạng:</span>
-                <select
-                  value={tierFilter}
-                  onChange={(e) => setTierFilter(e.target.value as any)}
-                  className="text-xs rounded border border-slate-200 bg-white px-2 py-1 text-slate-800 focus:outline-hidden focus:border-sky-600"
-                >
-                  <option value="ALL">Tất cả hạng</option>
-                  <option value="FREE">Chỉ đề Miễn phí</option>
-                  <option value="VIP">Chỉ đề VIP (Khóa)</option>
-                </select>
-              </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs">
+            <option>Miền năng lực: Tất cả</option>
+            {domains.map((d) => (
+              <option key={d.id} value={d.code}>{d.title}</option>
+            ))}
+          </select>
 
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span>Trạng thái:</span>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="text-xs rounded border border-slate-200 bg-white px-2 py-1 text-slate-800 focus:outline-hidden focus:border-sky-600"
-                >
-                  <option value="ALL">Tất cả trạng thái</option>
-                  <option value="PUBLISHED">Đang phát hành</option>
-                  <option value="DRAFT">Bản nháp (Ẩn)</option>
-                </select>
-              </div>
-            </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+          >
+            <option value="ALL">Trạng thái: Tất cả</option>
+            <option value="PUBLISHED">Đang phát hành</option>
+            <option value="DRAFT">Bản nháp / Sắp phát hành</option>
+          </select>
+
+          <select
+            value={tierFilter}
+            onChange={(e) => setTierFilter(e.target.value as any)}
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+          >
+            <option value="ALL">Phân hạng: Tất cả</option>
+            <option value="VIP">VIP</option>
+            <option value="FREE">Miễn phí</option>
+          </select>
+        </div>
+      </div>
+
+      {/* 5. Assessments Table (Chuẩn Ảnh 6) */}
+      <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
+        {filteredAssessments.length === 0 ? (
+          <div className="py-16 px-4 text-center space-y-3">
+            <FileCheck className="w-8 h-8 text-slate-300 mx-auto" strokeWidth={1.75} />
+            <p className="text-xs text-slate-500 font-medium">
+              Không tìm thấy bài khảo thí nào phù hợp với bộ lọc.
+            </p>
+            <Link
+              href="/admin/content/assessments/new"
+              className="text-xs text-blue-600 hover:text-blue-700 font-semibold inline-block"
+            >
+              + Tạo bài khảo thí mới ngay
+            </Link>
           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 text-xs font-medium">
+                  <th className="py-3 px-4">Bài khảo thí</th>
+                  <th className="py-3 px-4">Miền năng lực</th>
+                  <th className="py-3 px-4">Dạng câu hỏi</th>
+                  <th className="py-3 px-4 text-center">Số câu</th>
+                  <th className="py-3 px-4">Thời gian &amp; ngưỡng đạt</th>
+                  <th className="py-3 px-4 text-center">Phân hạng</th>
+                  <th className="py-3 px-4">Trạng thái phát hành</th>
+                  <th className="py-3 px-4">Nguồn</th>
+                  <th className="py-3 px-4 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+                {filteredAssessments.map((exam, index) => {
+                  const examCode = `NEXA-${(exam.domainCodes?.[0] || 'GEN').toUpperCase()}-${String(index + 1).padStart(4, '0')}`;
+                  return (
+                    <tr key={exam.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
+                      {/* Bài khảo thí */}
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="flex items-center gap-2.5">
+                          <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDetailExam(exam)}
+                              className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block line-clamp-1 text-left cursor-pointer transition-colors"
+                            >
+                              {exam.title}
+                            </button>
+                            <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                              Mã: {examCode}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-          {/* Assessments Table */}
-          <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
-            {filteredAssessments.length === 0 ? (
-              <div className="py-16 px-4 text-center space-y-3">
-                <FileCheck className="w-8 h-8 text-slate-300 mx-auto" strokeWidth={1.75} />
-                <p className="text-xs text-slate-500 font-medium">
-                  Không tìm thấy bài khảo thí nào phù hợp với bộ lọc.
-                </p>
-                <Link
-                  href="/admin/content/assessments/new"
-                  className="text-xs text-sky-600 hover:text-sky-700 font-semibold inline-block"
-                >
-                  + Tạo bài khảo thí mới ngay
-                </Link>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[11px] font-semibold">
-                      <th className="py-3 px-4">Bài Khảo Thí</th>
-                      <th className="py-3 px-4">Miền Năng Lực</th>
-                      <th className="py-3 px-4">Dạng Câu Hỏi</th>
-                      <th className="py-3 px-4 text-center">Số Câu</th>
-                      <th className="py-3 px-4 text-center">Thời Gian &amp; Đạt</th>
-                      <th className="py-3 px-4 text-center">Phân Hạng</th>
-                      <th className="py-3 px-4 text-center">Phát Hành</th>
-                      <th className="py-3 px-4 text-right">Thao Tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredAssessments.map((exam) => (
-                      <tr key={exam.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3.5 px-4 max-w-xs">
+                      {/* Miền năng lực */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium">
+                          {exam.domainName}
+                        </span>
+                      </td>
+
+                      {/* Dạng câu hỏi */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="text-slate-600 dark:text-zinc-400">
+                          {exam.typeLabel || 'Trắc nghiệm (MCQ)'}
+                        </span>
+                      </td>
+
+                      {/* Số câu */}
+                      <td className="py-3.5 px-4 text-center font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                        {exam.questionCount}
+                      </td>
+
+                      {/* Thời gian & ngưỡng đạt */}
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-zinc-400 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{exam.duration_minutes} phút</span>
+                          <span>|</span>
+                          <span>≥ {exam.passing_score}%</span>
+                        </div>
+                      </td>
+
+                      {/* Phân hạng */}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleVip(exam)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                            exam.is_vip
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}
+                        >
+                          {exam.is_vip ? (
+                            <>
+                              <Crown className="w-3 h-3 text-amber-600" />
+                              <span>VIP</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Miễn phí</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+
+                      {/* Trạng thái phát hành */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePublish(exam)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors"
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              exam.is_published ? 'bg-emerald-500' : 'bg-blue-500'
+                            }`}
+                          />
+                          <span className={exam.is_published ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-blue-700 dark:text-blue-400 font-semibold'}>
+                            {exam.is_published ? 'Đang phát hành' : 'Sắp phát hành'}
+                          </span>
+                        </button>
+                      </td>
+
+                      {/* Nguồn: System Canonical badge */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800">
+                          <Layers className="w-3 h-3 text-blue-600" />
+                          <span>System Canonical</span>
+                        </span>
+                      </td>
+
+                      {/* Thao tác */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailExam(exam)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                            title="Xem chi tiết đề khảo thí"
+                          >
+                            <Eye className="w-3.5 h-3.5" strokeWidth={1.75} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCloneAssessment(exam)}
+                            disabled={cloningId === exam.id}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                            title="Nhân bản đề chuẩn"
+                          >
+                            <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
+                          </button>
+
                           <Link
                             href={`/admin/content/assessments/${exam.id}`}
-                            className="font-bold text-slate-900 hover:text-sky-600 block line-clamp-1"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            title="Sửa trong Studio"
                           >
-                            {exam.title}
+                            <Edit3 className="w-3.5 h-3.5" strokeWidth={1.75} />
                           </Link>
-                          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                            {exam.description || 'Chưa có mô tả'}
-                          </p>
-                        </td>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 font-medium">
-                            {exam.domainName}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="text-[11px] text-slate-600">
-                            {exam.typeLabel}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center font-mono tabular-nums font-semibold text-slate-900">
-                          {exam.questionCount} câu
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center font-mono tabular-nums text-slate-600">
-                          <span>{exam.duration_minutes}p</span> / <span>{exam.passing_score}%</span>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleVip(exam)}
-                            title="Bấm để chuyển đổi giữa Free và VIP"
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase border transition-colors ${
-                              exam.is_vip
-                                ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                            }`}
-                          >
-                            {exam.is_vip ? (
-                              <>
-                                <Lock className="w-3 h-3 text-amber-700" strokeWidth={1.75} />
-                                <span>VIP</span>
-                              </>
-                            ) : (
-                              <>
-                                <Unlock className="w-3 h-3 text-slate-500" strokeWidth={1.75} />
-                                <span>FREE</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleTogglePublish(exam)}
-                            title="Bấm để bật/tắt phát hành"
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-semibold border transition-colors ${
-                              exam.is_published
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                exam.is_published ? 'bg-emerald-600' : 'bg-slate-400'
-                              }`}
-                            />
-                            <span>{exam.is_published ? 'Phát hành' : 'Bản nháp'}</span>
-                          </button>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Link
-                              href={`/admin/content/assessments/${exam.id}`}
-                              className="px-2.5 py-1 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 font-semibold text-[11px] inline-flex items-center gap-1 transition-colors"
-                              title="Mở trình soạn thảo 3-Pane Studio"
-                            >
-                              <Edit3 className="w-3 h-3" strokeWidth={1.75} />
-                              <span>Sửa trong Studio</span>
-                            </Link>
-
-                            <Link
-                              href={`/personal/take/${exam.id}`}
-                              target="_blank"
-                              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                              title="Xem thử giao diện làm bài"
-                            >
-                              <Eye className="w-3.5 h-3.5" strokeWidth={1.75} />
-                            </Link>
-
-                            <button
-                              type="button"
-                              onClick={() => handleCloneAssessment(exam)}
-                              disabled={cloningId === exam.id}
-                              className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors disabled:opacity-50"
-                              title="Nhân bản sang phiên bản mới (Clone to v2 / DRAFT)"
-                            >
-                              <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setDeletingId(exam.id)}
-                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Xóa bài thi"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <div>
+              Hiển thị 1–{Math.min(8, filteredAssessments.length)} trên {totalAssessments.toLocaleString('vi-VN')} đề chuẩn
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>
+              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
+              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">3</span>
+              <span className="px-1">...</span>
+              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">1.560</span>
+            </div>
           </div>
         </div>
+      </div>
 
       {/* Modal: Tạo / Chỉnh Sửa Bài Khảo Thí */}
       {isCreateModalOpen && (
@@ -1177,6 +1244,206 @@ export function AdminAssessmentBankClient({
               >
                 Xác Nhận Xóa
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Chi Tiết Đề Khảo Thí Chuẩn Hóa */}
+      {selectedDetailExam && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-zinc-800 flex items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800">
+                    <Layers className="w-3 h-3 text-blue-600" />
+                    <span>SYSTEM CANONICAL &bull; ĐỀ CHUẨN NỀN TẢNG</span>
+                  </span>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    selectedDetailExam.is_vip
+                      ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  }`}>
+                    {selectedDetailExam.is_vip ? <Crown className="w-3 h-3" /> : null}
+                    <span>{selectedDetailExam.is_vip ? 'Gói Chuyên Sâu (PRO)' : 'Miễn Phí (FREE)'}</span>
+                  </span>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    selectedDetailExam.is_published
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200'
+                      : 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedDetailExam.is_published ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                    <span>{selectedDetailExam.is_published ? 'Đang phát hành' : 'Bản nháp (Ẩn)'}</span>
+                  </span>
+                </div>
+
+                <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                  {selectedDetailExam.title}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+                  {selectedDetailExam.description || 'Bài khảo thí chuẩn hóa đánh giá 5 miền năng lực số toàn diện.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDetailExam(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+              >
+                <X className="w-4 h-4" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
+              {/* 4 Metric Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
+                    <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Thời lượng</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-neutral-100">
+                    {selectedDetailExam.duration_minutes} <span className="text-xs font-normal text-slate-500">phút</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">Đồng hồ đếm ngược, tự động thu bài</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Ngưỡng đạt</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-neutral-100">
+                    ≥ {selectedDetailExam.passing_score}%
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">Chuẩn xét cấp chứng chỉ số</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
+                    <Award className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Điểm thưởng</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-amber-600 dark:text-amber-400">
+                    +{selectedDetailExam.point_reward} <span className="text-xs font-normal text-slate-500">PTS</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">Cộng bảng vàng thành tích</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
+                    <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Quy mô</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-neutral-100">
+                    {selectedDetailExam.questionCount} <span className="text-xs font-normal text-slate-500">câu</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">{selectedDetailExam.typeLabel || 'Trắc nghiệm'}</p>
+                </div>
+              </div>
+
+              {/* Assessment Architecture & 5-Domain Alignment */}
+              <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-blue-600" />
+                    <span>Cấu trúc Khảo Thí &bull; 5 Miền Năng Lực Số</span>
+                  </h3>
+                  <span className="font-mono text-slate-500 text-[11px]">
+                    {selectedDetailExam.domainName}
+                  </span>
+                </div>
+
+                <p className="text-slate-600 dark:text-neutral-400 leading-relaxed text-[11px]">
+                  Bài thi được đối soát theo chuẩn 5 miền năng lực số. Khi thí sinh nộp bài, hệ thống tự động bóc tách kết quả thành 5 điểm thành phần để dựng biểu đồ Radar, chẩn đoán khoảng trống và đề xuất lộ trình bồi dưỡng cá nhân hóa.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800">
+                    <span className="text-slate-600 dark:text-neutral-400">Phân quyền gói học viên:</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await handleToggleVip(selectedDetailExam);
+                        setSelectedDetailExam((prev) => prev ? { ...prev, is_vip: !prev.is_vip } : null);
+                      }}
+                      className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      {selectedDetailExam.is_vip ? 'Chuyên sâu (PRO) ⇄ Đổi Free' : 'Miễn phí (FREE) ⇄ Đổi PRO'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800">
+                    <span className="text-slate-600 dark:text-neutral-400">Trạng thái phát hành:</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await handleTogglePublish(selectedDetailExam);
+                        setSelectedDetailExam((prev) => prev ? { ...prev, is_published: !prev.is_published } : null);
+                      }}
+                      className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      {selectedDetailExam.is_published ? 'Đang phát hành ⇄ Tắt (Ẩn)' : 'Bản nháp ⇄ Phát hành ngay'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notice Box about Publishing to Personal Dashboard */}
+              <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900 text-blue-900 dark:text-blue-200 space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Luồng kết nối với Kho Khảo Thí Personal</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-blue-800 dark:text-blue-300">
+                  Khi trạng thái là <strong>Đang phát hành</strong>, bài thi sẽ hiển thị ngay lập tức trên trang Khảo thí cá nhân (<code>/personal/assessments</code>). Nếu đề được gắn nhãn <strong>FREE</strong>, mọi học viên đều làm bài được; nếu gắn nhãn <strong>PRO</strong>, chỉ tài khoản đã nâng cấp gói mới được mở khóa.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCloneAssessment(selectedDetailExam);
+                    setSelectedDetailExam(null);
+                  }}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Nhân bản đề</span>
+                </button>
+                <Link
+                  href={`/personal/take/${selectedDetailExam.id}`}
+                  target="_blank"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Xem trước bài thi</span>
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDetailExam(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <Link
+                  href={`/admin/content/assessments/${selectedDetailExam.id}`}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Mở Trình Soạn Đề (Studio)</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

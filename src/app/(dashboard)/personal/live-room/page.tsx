@@ -1,12 +1,18 @@
 import { Suspense } from 'react';
-import { LiveRoomDashboardView } from '@/components/dashboard/live-room/LiveRoomDashboardView';
+import { PersonalLiveRoomDashboardView } from '@/components/dashboard/personal/live-room/PersonalLiveRoomDashboardView';
 
 export const dynamic = 'force-dynamic';
 
-export default function EvaluatorLiveRoomPage() {
+export default function PersonalLiveRoomPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Đang tải phòng thi...</div>}>
-      <LiveRoomDashboardView />
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs text-slate-400">
+          Đang nạp danh sách phòng thi...
+        </div>
+      }
+    >
+      <PersonalLiveRoomDashboardView />
     </Suspense>
   );
 }

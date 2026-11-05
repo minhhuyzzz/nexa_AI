@@ -320,51 +320,69 @@ export default function LiveRoomResultsPage() {
         </div>
       </div>
 
-      {/* 3. Five Aggregate KPI Metric Cards (Screen 09) */}
+      {/* 3. Five Aggregate KPI Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {/* KPI 1: Đã tham gia */}
-        <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Đã tham gia</span>
           <div className="text-2xl font-bold text-neutral-900">{stats.totalJoined}</div>
-          <div className="text-[11px] text-slate-400">100% thí sinh đã vào</div>
+          <div className="text-[11px] text-slate-400">
+            {stats.totalJoined > 0 ? `${stats.totalJoined} thí sinh kết nối` : 'Chưa có thí sinh'}
+          </div>
         </div>
 
         {/* KPI 2: Đã nộp */}
-        <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Đã nộp bài</span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold text-neutral-900">{stats.totalSubmitted}</span>
-            <span className="text-xs font-semibold text-blue-600">({stats.submitPercent}%)</span>
+            {stats.totalJoined > 0 && (
+              <span className="text-xs font-semibold text-blue-600">({stats.submitPercent}%)</span>
+            )}
           </div>
-          <div className="text-[11px] text-slate-400">Bài làm hoàn tất</div>
+          <div className="text-[11px] text-slate-400">
+            {stats.totalSubmitted > 0 ? 'Bài làm hoàn tất' : 'Chưa có bài nộp'}
+          </div>
         </div>
 
         {/* KPI 3: Nộp đúng hạn */}
-        <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Nộp đúng hạn</span>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-emerald-700">{stats.onTimeSubmitted}</span>
-            <span className="text-xs font-semibold text-emerald-600">({stats.onTimePercent}%)</span>
+            <span className="text-2xl font-bold text-emerald-700">
+              {stats.totalSubmitted > 0 ? stats.onTimeSubmitted : '--'}
+            </span>
+            {stats.totalSubmitted > 0 && (
+              <span className="text-xs font-semibold text-emerald-600">({stats.onTimePercent}%)</span>
+            )}
           </div>
-          <div className="text-[11px] text-slate-400">Không quá giờ</div>
+          <div className="text-[11px] text-slate-400">
+            {stats.totalSubmitted > 0 ? 'Không quá giờ' : 'Chưa có dữ liệu'}
+          </div>
         </div>
 
         {/* KPI 4: Điểm trung bình */}
-        <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Điểm trung bình</span>
           <div className="text-2xl font-bold text-neutral-900">
-            {stats.averageScore} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+            {stats.totalSubmitted > 0 ? stats.averageScore : '--'}{' '}
+            {stats.totalSubmitted > 0 && <span className="text-xs text-slate-400 font-normal">/ 100</span>}
           </div>
-          <div className="text-[11px] text-slate-400">Toàn bộ phòng thi</div>
+          <div className="text-[11px] text-slate-400">
+            {stats.totalSubmitted > 0 ? 'Toàn bộ bài thi' : 'Chưa có điểm'}
+          </div>
         </div>
 
         {/* KPI 5: Điểm cao nhất */}
-        <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs font-medium text-slate-500">Điểm cao nhất</span>
           <div className="text-2xl font-bold text-amber-600">
-            {stats.highestScore} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+            {stats.totalSubmitted > 0 ? stats.highestScore : '--'}{' '}
+            {stats.totalSubmitted > 0 && <span className="text-xs text-slate-400 font-normal">/ 100</span>}
           </div>
-          <div className="text-[11px] text-amber-600 font-semibold">Thủ khoa phòng</div>
+          <div className="text-[11px] text-amber-600 font-semibold">
+            {stats.totalSubmitted > 0 ? 'Thủ khoa phòng' : 'Chưa có bài thi'}
+          </div>
         </div>
       </div>
 
@@ -400,8 +418,18 @@ export default function LiveRoomResultsPage() {
           </div>
 
           {filteredResults.length === 0 ? (
-            <div className="p-12 text-center text-xs text-slate-400">
-              Không có dữ liệu kết quả nào.
+            <div className="py-16 px-4 text-center space-y-3 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+              <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="font-semibold text-xs text-neutral-900">
+                  Chưa có bài nộp nào được ghi nhận
+                </div>
+                <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed">
+                  Phiên thi đã kết thúc. Nếu thí sinh chưa nộp bài hoặc chưa tham gia thi, bảng kết quả sẽ chưa có dữ liệu để xếp hạng.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
