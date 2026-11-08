@@ -261,7 +261,7 @@ function CompetencyAnalysisContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800/80 dark:border-zinc-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Chẩn đoán Khoảng trống Năng lực &amp; Lộ trình 4 Bước
@@ -342,7 +342,7 @@ function CompetencyAnalysisContent() {
                 {renderRadarChart(analysis.radarData)}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+              <div className="mt-6 pt-4 grid grid-cols-2 gap-2 text-xs">
                 {analysis.radarData.map((d) => (
                   <div
                     key={d.domainCode}
@@ -486,7 +486,7 @@ function CompetencyAnalysisContent() {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100">
+                    <div className="pt-2">
                       <Link
                         href="/personal/learning-path"
                         className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-sky-700 inline-flex items-center gap-1"
@@ -559,7 +559,7 @@ function CompetencyAnalysisContent() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="pt-2 flex items-center justify-between gap-2">
                         <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
                           {course.format}
                         </span>
@@ -624,7 +624,7 @@ function CompetencyAnalysisContent() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800">
+                  <div className="pt-2">
                     <Link
                       href="/personal/learning-path"
                       className="w-full py-1.5 rounded bg-white dark:bg-[#111114] hover:bg-slate-100 border border-slate-200/80 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"

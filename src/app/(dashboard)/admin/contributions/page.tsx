@@ -178,7 +178,7 @@ export default function AdminContributionsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -202,7 +202,7 @@ export default function AdminContributionsPage() {
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
         <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => setActiveTab('pending')}
@@ -360,7 +360,7 @@ export default function AdminContributionsPage() {
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-md border border-slate-200 p-6 max-w-2xl w-full shadow-sm space-y-5 text-slate-900 text-xs max-h-[90vh] overflow-y-auto">
             {/* Top Bar */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3">
               <button
                 onClick={() => setSelectedItem(null)}
                 className="text-slate-500 hover:text-slate-800 font-semibold inline-flex items-center gap-1 text-xs"
@@ -452,7 +452,7 @@ export default function AdminContributionsPage() {
             )}
 
             {/* Admin Decision Feedback Input */}
-            <div className="space-y-1.5 pt-2 border-t border-slate-100">
+            <div className="space-y-1.5 pt-2">
               <label className="font-bold text-slate-800 block text-xs">
                 Ý kiến thẩm định &amp; Phản hồi cho người học:
               </label>
@@ -466,7 +466,7 @@ export default function AdminContributionsPage() {
             </div>
 
             {/* Actions */}
-            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="pt-3 flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={() => setSelectedItem(null)}
                 className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"

@@ -8,26 +8,17 @@ import {
   RawClassInfo,
   RawCampaignInfo,
 } from '../types/org-analytics.types';
-import { DomainCompetencyTable } from './DomainCompetencyTable';
+import { DateRangeSelection } from './NexaDateRangePicker';
+import { OrgAnalyticsHeader } from './OrgAnalyticsHeader';
+import { OrgAnalyticsKpiRow } from './OrgAnalyticsKpiRow';
+import { DomainBarChartSection } from './DomainBarChartSection';
+import { PeriodTrendSection } from './PeriodTrendSection';
+import { AnalyticsInsightPanel } from './AnalyticsInsightPanel';
+import { DataSourceRulesBox } from './DataSourceRulesBox';
+import { UnitHeatmapTable } from './UnitHeatmapTable';
 import { DomainDetailDrawer } from './DomainDetailDrawer';
-import { UnitComparisonTable } from './UnitComparisonTable';
-import { CampaignAnalyticsView } from './CampaignAnalyticsView';
-import { TrendAnalysisView } from './TrendAnalysisView';
 import { ExportReportModal } from './ExportReportModal';
-import { OrgAnalyticsFilterDrawer } from './OrgAnalyticsFilterDrawer';
-import { CohortLearningRecommendations } from '@/components/dashboard/org/CohortLearningRecommendations';
-import {
-  Filter,
-  Download,
-  BarChart2,
-  Users,
-  Calendar,
-  TrendingUp,
-  AlertCircle,
-  PlusCircle,
-  CheckCircle2,
-  FileCheck,
-} from 'lucide-react';
+import { Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 
 interface Props {
@@ -39,6 +30,10 @@ interface Props {
   initialTab?: string;
   initialCampaignId?: string;
   initialClassId?: string;
+  initialTimeRange?: string;
+  initialStartDate?: string;
+  initialEndDate?: string;
+  initialDataSource?: string;
 }
 
 export function OrgAnalyticsDashboard({
@@ -47,131 +42,119 @@ export function OrgAnalyticsDashboard({
   summary,
   classes,
   campaigns,
-  initialTab = 'overview',
   initialCampaignId,
   initialClassId,
+  initialTimeRange = 'all',
+  initialStartDate,
+  initialEndDate,
+  initialDataSource = 'all',
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Active Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'campaigns' | 'trend'>(
-    (initialTab as any) || 'overview'
-  );
-
   // Selected Domain for Drawer
   const [selectedDomain, setSelectedDomain] = useState<DomainMetric | null>(null);
 
-  // Modal / Drawer visibility
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // Export Modal visibility
   const [isExportOpen, setIsExportOpen] = useState(false);
 
-  // Current filters
-  const selectedCampaignId = initialCampaignId || searchParams.get('campaignId') || undefined;
-  const selectedClassId = initialClassId || searchParams.get('classId') || undefined;
+  // Active Filter state
+  const selectedTimeRange = searchParams.get('timeRange') || initialTimeRange || 'all';
+  const selectedStartDate = searchParams.get('startDate') || initialStartDate || '';
+  const selectedEndDate = searchParams.get('endDate') || initialEndDate || '';
+  const selectedClassId = searchParams.get('classId') || initialClassId || 'all';
+  const selectedCampaignId = searchParams.get('campaignId') || initialCampaignId || 'all';
 
-  const currentCampaign = campaigns.find((c) => c.id === selectedCampaignId);
-  const currentClass = classes.find((c) => c.id === selectedClassId);
-
-  const hasActiveFilters = Boolean(selectedCampaignId || selectedClassId);
-
-  // Helper to update query params cleanly
   const updateParams = (newParams: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newParams).forEach(([k, v]) => {
-      if (v) params.set(k, v);
-      else params.delete(k);
+      if (v && v !== 'all') {
+        params.set(k, v);
+      } else {
+        params.delete(k);
+      }
     });
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const handleTabChange = (tab: 'overview' | 'units' | 'campaigns' | 'trend') => {
-    setActiveTab(tab);
-    updateParams({ tab });
+  const handleApplyDateRange = (range: DateRangeSelection) => {
+    updateParams({
+      timeRange: range.timeRange,
+      startDate: range.startDate,
+      endDate: range.endDate,
+    });
   };
 
-  const handleApplyFilters = (campaignId?: string, classId?: string) => {
-    updateParams({ campaignId, classId });
+  const handleClassChange = (classId: string) => {
+    updateParams({ classId });
   };
 
   const handleClearFilters = () => {
-    updateParams({ campaignId: undefined, classId: undefined });
-  };
-
-  const handleFilterClass = (classId: string) => {
-    if (selectedClassId === classId) {
-      updateParams({ classId: undefined });
-    } else {
-      updateParams({ classId, tab: 'overview' });
-      setActiveTab('overview');
-    }
-  };
-
-  const handleFilterCampaign = (campaignId: string) => {
-    if (selectedCampaignId === campaignId) {
-      updateParams({ campaignId: undefined });
-    } else {
-      updateParams({ campaignId, tab: 'overview' });
-      setActiveTab('overview');
-    }
+    updateParams({
+      timeRange: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      classId: undefined,
+      campaignId: undefined,
+    });
   };
 
   const hasEvaluatedData = summary.evaluatedSubmissions > 0;
+  const hasActiveFilters = Boolean(
+    (selectedTimeRange && selectedTimeRange !== 'all') ||
+      (selectedClassId && selectedClassId !== 'all') ||
+      (selectedCampaignId && selectedCampaignId !== 'all')
+  );
+
+  const currentClass = classes.find((c) => c.id === selectedClassId);
 
   return (
-    <div className="space-y-6">
-      {/* Page Header with Action Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-neutral-100 tracking-tight">
-            Báo Cáo & Phân Tích Năng Lực Số
-          </h1>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* 1. Header & Global Toolbar */}
+      <OrgAnalyticsHeader
+        orgName={orgName}
+        classes={classes}
+        selectedTimeRange={selectedTimeRange}
+        selectedStartDate={selectedStartDate}
+        selectedEndDate={selectedEndDate}
+        selectedClassId={selectedClassId}
+        onApplyDateRange={handleApplyDateRange}
+        onClassChange={handleClassChange}
+        onExportClick={() => setIsExportOpen(true)}
+        hasEvaluatedData={hasEvaluatedData}
+      />
 
-        {/* Toolbar Buttons */}
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setIsFilterOpen(true)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
-              hasActiveFilters
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-                : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-neutral-200 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700'
-            }`}
-          >
-            <Filter className="w-3.5 h-3.5" />
-            <span>Bộ lọc</span>
-            {hasActiveFilters && (
-              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            disabled={!hasEvaluatedData}
-            onClick={() => setIsExportOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-zinc-700 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Xuất báo cáo</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Active Filter Pills Bar (if filters applied) */}
+      {/* Active Filter Pills Bar (nếu đang lọc) */}
       {hasActiveFilters && (
-        <div className="p-3 rounded-md bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-slate-500 dark:text-neutral-400 font-medium">Đang lọc theo:</span>
-            {currentCampaign && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-semibold text-[11px]">
+            {selectedTimeRange !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-semibold text-[11px]">
                 <Calendar className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                {currentCampaign.title}
+                Thời gian:{' '}
+                {selectedTimeRange === 'custom'
+                  ? selectedStartDate || selectedEndDate
+                    ? `${selectedStartDate || '...'} ~ ${selectedEndDate || '...'}`
+                    : 'Khoảng ngày tùy chọn'
+                  : selectedTimeRange === 'yesterday'
+                  ? 'Hôm qua'
+                  : selectedTimeRange === 'last_7_days'
+                  ? '7 ngày gần nhất'
+                  : selectedTimeRange === 'last_month'
+                  ? '30 ngày gần nhất'
+                  : selectedTimeRange === '2026'
+                  ? 'Năm 2026'
+                  : selectedTimeRange === '2025'
+                  ? 'Năm 2025'
+                  : selectedTimeRange === 'last_quarter'
+                  ? 'Quý gần nhất'
+                  : 'Thời gian đã chọn'}
               </span>
             )}
             {currentClass && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-semibold text-[11px]">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-semibold text-[11px]">
                 <Users className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                 {currentClass.name}
               </span>
@@ -180,214 +163,94 @@ export function OrgAnalyticsDashboard({
           <button
             type="button"
             onClick={handleClearFilters}
-            className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
           >
-            Xóa bộ lọc
+            Xóa tất cả bộ lọc
           </button>
         </div>
       )}
 
-      {/* Key Metrics Row (3 Standard KPIs) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* KPI 1: Lượt đánh giá hợp lệ */}
-        <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium uppercase tracking-wider">
-            Lượt đánh giá hợp lệ
-          </div>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-neutral-100 mt-1 tabular-nums">
-            {hasEvaluatedData ? summary.evaluatedSubmissions : '—'}
-          </div>
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5">
-            {hasEvaluatedData
-              ? `Trên tổng số ${summary.totalSubmissions} lượt làm bài`
-              : 'Sẵn sàng ghi nhận khi có bài thi'}
-          </div>
-        </div>
+      {/* 2. Hàng 5 Thẻ KPI Cốt Lõi */}
+      <OrgAnalyticsKpiRow summary={summary} orgSlug={orgSlug} />
 
-        {/* KPI 2: Điểm năng lực trung bình */}
-        <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium uppercase tracking-wider">
-            Điểm năng lực trung bình
-          </div>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-neutral-100 mt-1 tabular-nums">
-            {summary.overallAverageScore !== null ? `${summary.overallAverageScore}đ` : '—'}
-          </div>
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5">
-            Thang điểm 100 từ các bài thi đã duyệt
-          </div>
-        </div>
-
-        {/* KPI 3: Miền cần ưu tiên bồi dưỡng (Phương án B) */}
-        <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium uppercase tracking-wider">
-            Miền cần ưu tiên bồi dưỡng
-          </div>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-neutral-100 mt-1 tabular-nums">
-            {hasEvaluatedData && summary.priorityGapDomain ? (
-              <span className={summary.priorityGapDomain.score < 60 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-neutral-100'}>
-                {summary.priorityGapDomain.domainCode} ({summary.priorityGapDomain.score}đ)
-              </span>
-            ) : hasEvaluatedData ? (
-              <span className="text-emerald-600 dark:text-emerald-400 text-lg">Đồng đều</span>
-            ) : (
-              '—'
-            )}
-          </div>
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5 truncate">
-            {hasEvaluatedData && summary.priorityGapDomain
-              ? summary.priorityGapDomain.name
-              : hasEvaluatedData
-              ? 'Tất cả 5 miền đều đạt mức tốt'
-              : 'Khoảng trống năng lực cần tập trung'}
-          </div>
-        </div>
-      </div>
-
-      {/* 4 Tabs Navigation Bar */}
-      <div className="border-b border-slate-200 dark:border-zinc-800">
-        <nav className="flex space-x-6 text-xs font-semibold" aria-label="Báo cáo tabs">
-          <button
-            type="button"
-            onClick={() => handleTabChange('overview')}
-            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'overview'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-neutral-200'
-            }`}
-          >
-            <BarChart2 className="w-4 h-4" />
-            <span>Tổng quan 5 miền</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange('units')}
-            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'units'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-neutral-200'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Theo đơn vị / Lớp</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange('campaigns')}
-            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'campaigns'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-neutral-200'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>Theo đợt đánh giá</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange('trend')}
-            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'trend'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-neutral-200'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>Xu hướng biến thiên</span>
-          </button>
-        </nav>
-      </div>
-
-      {/* Tab Contents */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {!hasEvaluatedData && (
-            <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-start gap-3">
-                <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-neutral-100">
-                    Sẵn sàng ghi nhận dữ liệu khảo thí 5 miền
-                  </h3>
-                  <p className="text-slate-500 dark:text-neutral-400 text-[11px] mt-0.5">
-                    Điểm số sẽ tự động tổng hợp khi các thành viên hoàn thành và bài thi được phê duyệt.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <Link
-                  href={`/org/${orgSlug}/campaigns/new`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-2xs"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Giao bài đánh giá</span>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Data Table 5 Domains (Luôn hiển thị cấu trúc chuẩn 5 miền DigComp) */}
-          <DomainCompetencyTable
+      {/* 3. Khối Phân Tích Năng Lực & Trợ Lý Nhận Định NEXA AI (Hàng 1) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        {/* Cột 1: Kết quả 5 miền năng lực số (7 cols - thoáng đãng cho tên miền, điểm số, tỷ lệ bao phủ) */}
+        <div className="lg:col-span-7 flex flex-col">
+          <DomainBarChartSection
             domains={summary.domains}
-            onSelectDomain={(domain) => setSelectedDomain(domain)}
+            onDomainClick={(d) => setSelectedDomain(d)}
           />
-
-          {/* Collective Learning Interventions */}
-          <CohortLearningRecommendations gapDomainCodes={summary.gapDomainCodes} />
         </div>
-      )}
 
-          {activeTab === 'units' && (
-            <UnitComparisonTable
-              units={summary.units}
-              selectedClassId={selectedClassId}
-              onFilterClass={handleFilterClass}
-            />
-          )}
+        {/* Cột 2: Nhận định & Ưu tiên hành động NEXA AI (5 cols - rộng rãi cho card phân tích và đề xuất) */}
+        <div className="lg:col-span-5 flex flex-col">
+          <AnalyticsInsightPanel
+            bestDomain={summary.bestDomain}
+            priorityGapDomain={summary.priorityGapDomain}
+            coverageWarningDomain={summary.coverageWarningDomain}
+            suggestedActions={summary.suggestedActions}
+            orgSlug={orgSlug}
+            orgName={orgName}
+            summary={summary}
+            hasEvaluatedData={hasEvaluatedData}
+            timeRangeLabel={
+              selectedTimeRange === 'custom'
+                ? selectedStartDate && selectedEndDate
+                  ? `${selectedStartDate} đến ${selectedEndDate}`
+                  : 'Khoảng thời gian tùy chọn'
+                : selectedTimeRange === 'yesterday'
+                ? 'Hôm qua'
+                : selectedTimeRange === 'last_7_days'
+                ? '7 ngày gần nhất'
+                : selectedTimeRange === 'last_month'
+                ? '30 ngày gần nhất'
+                : selectedTimeRange === '2026'
+                ? 'Năm 2026'
+                : selectedTimeRange === '2025'
+                ? 'Năm 2025'
+                : selectedTimeRange === 'last_quarter'
+                ? 'Quý gần nhất'
+                : 'Toàn bộ thời gian'
+            }
+          />
+        </div>
+      </div>
 
-          {activeTab === 'campaigns' && (
-            <CampaignAnalyticsView
-              campaigns={summary.campaigns}
-              selectedCampaignId={selectedCampaignId}
-              onFilterCampaign={handleFilterCampaign}
-            />
-          )}
+      {/* 4. Khối Tiến Bộ Theo Thời Gian (Hàng 2 - 12 cols Full Width rộng rãi, thoáng mắt) */}
+      <div className="w-full">
+        <PeriodTrendSection
+          trend={summary.trend}
+          hasEnoughTrendData={summary.hasEnoughTrendData}
+        />
+      </div>
 
-          {activeTab === 'trend' && (
-            <TrendAnalysisView trend={summary.trend} />
-          )}
+      {/* 4. Box Quy Tắc Nguồn Dữ Liệu */}
+      <DataSourceRulesBox />
 
-      {/* Slide-out Domain Detail Drawer */}
+      {/* 5. Bảng So Sánh Lớp/Đơn Vị Dạng Heatmap D1..D5 */}
+      <UnitHeatmapTable
+        units={summary.units}
+        selectedClassId={selectedClassId}
+        onSelectClass={(clsId) => handleClassChange(clsId)}
+      />
+
+      {/* Drawer Chi Tiết Từng Miền (Mở khi nhấp vào D1..D5) */}
       <DomainDetailDrawer
         domain={selectedDomain}
         onClose={() => setSelectedDomain(null)}
       />
 
-      {/* Filter Drawer */}
-      <OrgAnalyticsFilterDrawer
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        classes={classes}
-        campaigns={campaigns}
-        selectedCampaignId={selectedCampaignId}
-        selectedClassId={selectedClassId}
-        onApplyFilters={handleApplyFilters}
-      />
-
-      {/* Export Report Modal */}
+      {/* Modal Xuất Báo Cáo */}
       <ExportReportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
-        orgName={orgName}
         orgSlug={orgSlug}
+        orgName={orgName}
         evaluatedCount={summary.evaluatedSubmissions}
-        selectedCampaignTitle={currentCampaign?.title}
+        selectedCampaignTitle={undefined}
         selectedClassName={currentClass?.name}
-        campaignId={selectedCampaignId}
-        classId={selectedClassId}
+        classId={selectedClassId !== 'all' ? selectedClassId : undefined}
       />
     </div>
   );

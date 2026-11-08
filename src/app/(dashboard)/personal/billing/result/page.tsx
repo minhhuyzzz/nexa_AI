@@ -132,7 +132,7 @@ function BillingResultContent() {
                   </span>
                 </div>
               )}
-              <div className="flex justify-between pt-2 border-t border-slate-200/80">
+              <div className="flex justify-between pt-2">
                 <span className="text-slate-500">Cổng thanh toán:</span>
                 <span className="font-medium text-slate-700">payOS (VietQR NAPAS 24/7)</span>
               </div>

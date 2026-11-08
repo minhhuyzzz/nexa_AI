@@ -30,7 +30,7 @@ export function ActivateBusinessModal({
   const [orgCode, setOrgCode] = useState(
     (inquiry?.org_name || '').slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'ORG'
   );
-  const [planName, setPlanName] = useState('Business Plus');
+  const [planName, setPlanName] = useState('Business');
   const [cycleMonths, setCycleMonths] = useState<number>(12);
   const [maxSeats, setMaxSeats] = useState<number>(inquiry?.expected_learners || 250);
   const [aiCredits, setAiCredits] = useState<number>(5000);
@@ -99,7 +99,7 @@ export function ActivateBusinessModal({
         aria-labelledby="activate-modal-title"
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-start justify-between p-5">
           <div>
             <h2 id="activate-modal-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               Kích hoạt Business
@@ -226,8 +226,7 @@ export function ActivateBusinessModal({
                   onChange={(e) => setPlanName(e.target.value)}
                   className="w-full h-8.5 px-2.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100"
                 >
-                  <option value="Business Plus">Business Plus (Khuyên dùng)</option>
-                  <option value="Business Core">Business Core</option>
+                  <option value="Business">Gói Business (Tổ chức / B2B)</option>
                 </select>
               </div>
               <div>

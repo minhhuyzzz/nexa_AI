@@ -105,7 +105,7 @@ export function AuthoringCard({ item, onDuplicate, onDelete }: AuthoringCardProp
       </div>
 
       {/* Right: Status badge & Actions */}
-      <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-zinc-850">
+      <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0">
         {/* Status Badge */}
         <div>
           {item.status === 'READY' && (

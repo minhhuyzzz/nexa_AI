@@ -173,7 +173,7 @@ export function CampaignWizardClient({
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16">
       {/* 1. Header Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link
@@ -210,7 +210,7 @@ export function CampaignWizardClient({
         <div className="lg:col-span-8 space-y-5">
           {/* Block 1: Thông tin đợt */}
           <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+            <div className="flex items-center gap-2 pb-2">
               <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
                 1
               </span>
@@ -265,7 +265,7 @@ export function CampaignWizardClient({
 
           {/* Block 2: Chọn đề đánh giá */}
           <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+            <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
                   2
@@ -349,7 +349,7 @@ export function CampaignWizardClient({
 
           {/* Block 3: Chọn lớp / nhóm tham gia */}
           <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+            <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
                   3
@@ -420,7 +420,7 @@ export function CampaignWizardClient({
 
           {/* Block 4: Thời gian & Chuẩn đạt */}
           <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+            <div className="flex items-center gap-2 pb-2">
               <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
                 4
               </span>
@@ -477,7 +477,7 @@ export function CampaignWizardClient({
         {/* Right Column: Sticky Summary & Publish Action (4 cols) */}
         <div className="lg:col-span-4 sticky top-6 space-y-4">
           <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 pb-2 border-b border-slate-100 dark:border-zinc-800">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 pb-2">
               Tóm tắt đợt khảo thí
             </h3>
 
@@ -531,7 +531,7 @@ export function CampaignWizardClient({
                 </span>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500">Trạng thái khởi tạo:</span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                   {new Date(startsAt) > new Date() ? 'SCHEDULED (Sắp diễn ra)' : 'ACTIVE (Đang diễn ra)'}

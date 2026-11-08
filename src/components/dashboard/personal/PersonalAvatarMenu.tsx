@@ -137,7 +137,7 @@ export function PersonalAvatarMenu() {
 
             <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-850">
+              <div className="px-4 py-3 bg-slate-50/60 dark:bg-zinc-900/60 rounded-t-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-zinc-800 text-white font-bold text-xs flex items-center justify-center font-mono overflow-hidden shrink-0">
                     {avatarUrl ? (
@@ -231,7 +231,7 @@ export function PersonalAvatarMenu() {
               </div>
 
               {/* Sign out */}
-              <div className="pt-1 mt-1 border-t border-slate-100 dark:border-zinc-850">
+              <div className="pt-1 mt-1">
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium cursor-pointer"

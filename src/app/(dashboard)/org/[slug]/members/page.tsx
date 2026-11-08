@@ -107,6 +107,7 @@ export default async function OrgMembersPage({
     memberCount: Array.isArray(c.class_members) ? c.class_members.length : 0,
   }));
 
+  const isOwner = Boolean(isSuperadmin || role === 'ORG_OWNER');
   const isManager = isSuperadmin || role === 'ORG_OWNER' || role === 'ORG_ADMIN';
 
   return (
@@ -121,6 +122,8 @@ export default async function OrgMembersPage({
         maxMembers={org.max_members || 500}
         pendingInvitationsCount={pendingInvitationsResult.count || 0}
         isManager={Boolean(isManager)}
+        isOwner={isOwner}
+        currentUserRole={role}
       />
     </div>
   );

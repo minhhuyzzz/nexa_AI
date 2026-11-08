@@ -34,7 +34,7 @@ export function MemberRoleDistributionCard({
     <div className="space-y-4">
       {/* 1. Hôm nay cần xử lý */}
       <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between pb-3">
           <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
             Hôm nay cần xử lý
           </h3>
@@ -43,7 +43,7 @@ export function MemberRoleDistributionCard({
           </span>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-zinc-850 mt-1">
+        <div className="mt-1">
           <button
             onClick={() => onSelectTab('requests')}
             className="w-full py-2.5 flex items-center justify-between text-left text-xs text-neutral-800 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
@@ -146,7 +146,7 @@ export function MemberRoleDistributionCard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-slate-600 dark:text-neutral-400">Giảng viên</span>
+                <span className="text-slate-600 dark:text-neutral-400">Khảo thí viên</span>
               </div>
               <span className="font-mono text-[11px] tabular-nums text-neutral-800 dark:text-zinc-200">
                 {teacherCount} ({teacherPct}%)
@@ -156,7 +156,7 @@ export function MemberRoleDistributionCard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-600" />
-                <span className="text-slate-600 dark:text-neutral-400">Học viên</span>
+                <span className="text-slate-600 dark:text-neutral-400">Thành viên</span>
               </div>
               <span className="font-mono text-[11px] tabular-nums text-neutral-800 dark:text-zinc-200">
                 {studentCount} ({studentPct}%)

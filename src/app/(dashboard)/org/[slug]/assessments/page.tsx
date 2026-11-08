@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireOrgPagePermission } from '@/lib/auth/org-guard';
 import { OrgAssessmentsListView } from '@/components/dashboard/org/assessments/OrgAssessmentsListView';
@@ -20,27 +21,34 @@ export default async function OrgAssessmentsPage({
     slug,
     'VIEW_WORKSPACE'
   );
-  const adminSupabase = createAdminClient();
+  
+  // Dùng createClient() với session cookies của người dùng để RLS cấp quyền xem đề của tổ chức
+  const supabase = await createClient();
   const isManager = isSuperadmin || role === 'ORG_OWNER' || role === 'ORG_ADMIN';
 
-  // 1. Fetch organization assessments + global published assessments
-  const [orgAssessmentsResult, globalAssessmentsResult] = await Promise.all([
-    adminSupabase
+  // Fetch organization assessments (cả đề đã sẵn sàng và bản nháp nội bộ của tổ chức)
+  const orgAssessmentsResult = await supabase
+    .from('assessments')
+    .select('id, title, description, duration_minutes, passing_score, is_published, organization_id, created_at, updated_at, assessment_items(id)')
+    .eq('organization_id', org.id)
+    .order('created_at', { ascending: false });
+
+  let orgAssessments = (orgAssessmentsResult.data as any[]) || [];
+
+  // Fallback nếu client có service role key
+  if (orgAssessments.length === 0 && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const adminSupabase = createAdminClient();
+    const { data: adminOrgData } = await adminSupabase
       .from('assessments')
       .select('id, title, description, duration_minutes, passing_score, is_published, organization_id, created_at, updated_at, assessment_items(id)')
       .eq('organization_id', org.id)
-      .order('created_at', { ascending: false }),
-    adminSupabase
-      .from('assessments')
-      .select('id, title, description, duration_minutes, passing_score, is_published, organization_id, created_at, updated_at, assessment_items(id)')
-      .is('organization_id', null)
-      .eq('is_published', true)
-      .order('created_at', { ascending: false }),
-  ]);
+      .order('created_at', { ascending: false });
+    if (adminOrgData && adminOrgData.length > 0) {
+      orgAssessments = adminOrgData;
+    }
+  }
 
-  const orgAssessments = (orgAssessmentsResult.data as any[]) || [];
-  const globalAssessments = (globalAssessmentsResult.data as any[]) || [];
-  const allAssessments = [...orgAssessments, ...globalAssessments];
+  const allAssessments = orgAssessments;
 
   return (
     <OrgAssessmentsListView

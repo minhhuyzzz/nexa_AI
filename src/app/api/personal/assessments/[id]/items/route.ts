@@ -65,14 +65,30 @@ export async function POST(
     let hasAccess = assessment.created_by === user.id || assessment.owner_user_id === user.id;
 
     if (!hasAccess && assessment.organization_id) {
-      const { data: member } = await db
-        .from('organization_members')
-        .select('role')
+      const { data: membership } = await db
+        .from('user_organizations')
+        .select('org_role, status')
         .eq('organization_id', assessment.organization_id)
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (member && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(member.role)) {
+      if (
+        membership &&
+        membership.status === 'ACTIVE' &&
+        ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(membership.org_role)
+      ) {
+        hasAccess = true;
+      }
+    }
+
+    // Platform Admin has global access to system canonical assessments
+    if (!hasAccess && assessment.organization_id === null) {
+      const { data: profile } = await db
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (profile?.role === 'ADMIN') {
         hasAccess = true;
       }
     }

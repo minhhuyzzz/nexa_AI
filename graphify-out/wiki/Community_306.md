@@ -1,0 +1,31 @@
+# Community 306
+
+> 7 nodes
+
+## Key Concepts
+
+- **13. COLOR & MATERIAL RULES** (7 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+- **Background Confidence Rule** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+- **Background-image harmony** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+- **Gradient Discipline** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+- **Materiality** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+- **Palette Discipline** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+- **Strong guidance** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+
+## Relationships
+
+- [Community 189](Community_189.md) (1 shared connections)
+
+## Source Files
+
+- `.agents/skills/taste-skill/skills/imagegen-frontend-web/SKILL.md`
+
+## Audit Trail
+
+- EXTRACTED: 7 (100%)
+- INFERRED: 0 (0%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*

@@ -144,7 +144,7 @@ export default function NewContributionPage() {
       </div>
 
       {/* Header */}
-      <div className="pb-4 border-b border-slate-200/80 dark:border-zinc-800">
+      <div className="pb-4">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           Đóng góp đề bài mới
         </h1>
@@ -415,7 +415,7 @@ export default function NewContributionPage() {
           </div>
 
           {/* Action Row */}
-          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <Link
               href="/personal/contribute"
               className="text-slate-500 hover:text-slate-800 font-medium self-center sm:self-auto"

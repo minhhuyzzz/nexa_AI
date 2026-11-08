@@ -121,7 +121,7 @@ export function ClassChatDrawer({
   return (
     <div className="fixed inset-y-0 right-0 z-40 w-full max-w-sm bg-white border-l border-slate-200 shadow-sm flex flex-col">
       {/* Drawer Header */}
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+      <div className="p-4 flex items-center justify-between bg-slate-50">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
           <div>
@@ -185,7 +185,7 @@ export function ClassChatDrawer({
       </div>
 
       {/* Message Input Footer */}
-      <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-200 bg-white">
+      <form onSubmit={handleSendMessage} className="p-3 bg-white">
         <div className="flex items-center gap-2">
           <input
             type="text"

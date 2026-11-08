@@ -258,7 +258,7 @@ export function ClassMaterialsTab({ classId, role, currentUserId }: ClassMateria
             onSubmit={handleUploadFile}
             className="bg-white border border-slate-200 rounded-md shadow-md max-w-md w-full p-6 space-y-4"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Paperclip className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
                 <span>Thêm Tài Liệu Vào Nhóm</span>
@@ -338,7 +338,7 @@ export function ClassMaterialsTab({ classId, role, currentUserId }: ClassMateria
               </div>
             )}
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 text-xs">
+            <div className="pt-3 flex items-center justify-end gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}

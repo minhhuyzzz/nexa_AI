@@ -122,7 +122,7 @@ export default function JoinPersonalGroupPage() {
       </div>
 
       {/* 2. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
@@ -212,7 +212,7 @@ export default function JoinPersonalGroupPage() {
           )}
 
           {/* Divider */}
-          <div className="border-t border-slate-100 dark:border-zinc-850 pt-4">
+          <div className="pt-4">
             <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider font-mono">
               KẾT QUẢ TRA CỨU · THÔNG TIN KHÔNG GIAN
             </span>
@@ -259,7 +259,7 @@ export default function JoinPersonalGroupPage() {
                   </p>
                 )}
 
-                <div className="pt-3 border-t border-slate-200/60 dark:border-zinc-800 flex items-center justify-between">
+                <div className="pt-3 flex items-center justify-between">
                   <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
                     Mã xác nhận: {previewData.code}
                   </span>
@@ -352,7 +352,7 @@ export default function JoinPersonalGroupPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-start gap-2 text-[11px] text-slate-400 dark:text-neutral-500 leading-relaxed">
+            <div className="pt-3 flex items-start gap-2 text-[11px] text-slate-400 dark:text-neutral-500 leading-relaxed">
               <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <span>
                 Mã tham gia được bảo mật; quyền truy cập tài liệu và bài khảo thí tuân thủ chính sách của lớp học.

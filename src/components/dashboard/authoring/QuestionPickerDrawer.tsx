@@ -197,7 +197,10 @@ export function QuestionPickerDrawer({
   // Filter items
   const filtered = bankQuestions.filter((q) => {
     if (selectedDomain !== 'all' && q.domainCode !== selectedDomain) return false;
-    if (selectedType !== 'all' && q.type !== selectedType) return false;
+    if (selectedType !== 'all') {
+      if (selectedType === 'MCQ' && q.type !== 'MCQ') return false;
+      if (selectedType === 'PRACTICAL' && q.type === 'MCQ') return false;
+    }
     if (searchQuery.trim()) {
       const match = q.prompt.toLowerCase().includes(searchQuery.toLowerCase().trim());
       if (!match) return false;
@@ -209,7 +212,7 @@ export function QuestionPickerDrawer({
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="w-full max-w-xl h-full bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-zinc-850 flex items-center justify-between">
+        <div className="p-5 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
@@ -231,7 +234,7 @@ export function QuestionPickerDrawer({
         </div>
 
         {/* Search & Filter */}
-        <div className="p-4 border-b border-slate-100 dark:border-zinc-850 space-y-2.5 bg-slate-50/50 dark:bg-zinc-900/30">
+        <div className="p-4 space-y-2.5 bg-slate-50/50 dark:bg-zinc-900/30">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -266,8 +269,7 @@ export function QuestionPickerDrawer({
             >
               <option value="all">Tất cả loại câu</option>
               <option value="MCQ">Trắc nghiệm</option>
-              <option value="SCENARIO">Tình huống</option>
-              <option value="PRACTICAL">Thực hành</option>
+              <option value="PRACTICAL">Tự luận / Thực hành</option>
             </select>
           </div>
         </div>
@@ -304,9 +306,7 @@ export function QuestionPickerDrawer({
                         </span>
                         <span>•</span>
                         <span className="font-semibold text-neutral-700 dark:text-zinc-300">
-                          {q.type === 'MCQ' && 'Trắc nghiệm'}
-                          {q.type === 'SCENARIO' && 'Tình huống'}
-                          {q.type === 'PRACTICAL' && 'Thực hành'}
+                          {q.type === 'MCQ' ? 'Trắc nghiệm' : 'Tự luận / Thực hành'}
                         </span>
                         <span>•</span>
                         <span>{q.points} điểm</span>
@@ -333,7 +333,7 @@ export function QuestionPickerDrawer({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between bg-white dark:bg-[#111114]">
+        <div className="p-4 flex items-center justify-between bg-white dark:bg-[#111114]">
           <span className="text-xs text-slate-500">
             Đã chọn <strong>{selectedIds.size}</strong> câu hỏi
           </span>

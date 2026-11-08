@@ -12,13 +12,13 @@ interface ClassInstructorCardProps {
 }
 
 export function ClassInstructorCard({
-  name = 'TS. Trần Thị Mai',
-  title = 'Giảng viên – Khoa CNTT',
-  email = 'mai.tt@fpt.edu.vn',
-  phone = '024 7300 5588 (máy lẻ 221)',
+  name,
+  title = 'Cán bộ phụ trách',
+  email = '',
+  phone = '',
   onSendMessage,
 }: ClassInstructorCardProps) {
-  const displayName = name || 'Chưa phân công giảng viên';
+  const displayName = name || 'Chưa phân công người phụ trách';
   const initials = displayName
     .split(' ')
     .slice(-2)
@@ -28,10 +28,10 @@ export function ClassInstructorCard({
 
   return (
     <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-xs">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-zinc-800">
+      <div className="flex items-center gap-2 mb-3 pb-2">
         <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
-          Giảng viên phụ trách
+          Người phụ trách
         </h3>
       </div>
 
@@ -60,7 +60,7 @@ export function ClassInstructorCard({
         )}
       </div>
 
-      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-1.5 text-xs text-slate-600 dark:text-neutral-300">
+      <div className="mt-3.5 pt-3 space-y-1.5 text-xs text-slate-600 dark:text-neutral-300">
         <div className="flex items-center gap-2">
           <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <span className="font-mono text-[11px] truncate">{email}</span>

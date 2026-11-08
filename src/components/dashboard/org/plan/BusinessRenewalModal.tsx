@@ -19,7 +19,7 @@ export function BusinessRenewalModal({
   onClose,
   organizationId,
   organizationName,
-  planName = 'NEXA Business Plus',
+  planName = 'Gói Business',
   currentExpiresAt,
   currentSeats = 250,
   onSuccess,
@@ -83,7 +83,7 @@ export function BusinessRenewalModal({
         aria-labelledby="renewal-modal-title"
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-start justify-between p-5">
           <div>
             <h2 id="renewal-modal-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               Gia hạn gói Business

@@ -28,8 +28,8 @@ export function OrgTopbar({ orgName, orgSlug }: OrgTopbarProps) {
     <header
       className={`h-16 px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800 shadow-xs'
-          : 'bg-transparent border-b border-transparent'
+          ? 'bg-white/95 dark:bg-black/95 backdrop-blur-md shadow-xs'
+          : 'bg-transparent'
       }`}
     >
       {/* Left: Workspace breadcrumb */}

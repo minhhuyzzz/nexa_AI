@@ -9,7 +9,6 @@ import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -48,13 +47,6 @@ export default function RegisterPage() {
       return;
     }
 
-    const cleanNickname = nickname.trim().replace(/\s+/g, ' ');
-
-    if (cleanNickname.length < 2 || cleanNickname.length > 30) {
-      setError('Biệt danh phải từ 2 đến 30 ký tự.');
-      return;
-    }
-
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
       return;
@@ -73,7 +65,6 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nickname: cleanNickname,
           email: cleanEmail,
           password,
           confirmPassword,
@@ -121,14 +112,15 @@ export default function RegisterPage() {
               </div>
             </div>
           </div>
-          <p className="text-[11px] text-emerald-700 border-t border-emerald-200/60 pt-2">
+          <p className="text-[11px] text-emerald-700 pt-2">
             Không thấy email? Hãy kiểm tra thư mục Spam hoặc Thư rác.
           </p>
         </div>
 
-        <div className="text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
+        {/* Login Link (Không viền ngang) */}
+      <div className="text-center text-xs text-slate-500 pt-3">
           Đã xác thực xong?{' '}
-          <Link href="/login" className="font-semibold text-sky-600 hover:text-sky-700">
+          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
             Đăng nhập ngay
           </Link>
         </div>
@@ -154,23 +146,6 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="register-nickname" className="block text-xs font-semibold text-slate-700 mb-1">
-            Biệt danh hiển thị <span className="text-rose-600">*</span>
-          </label>
-          <input
-            id="register-nickname"
-            type="text"
-            required
-            minLength={2}
-            maxLength={30}
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="Ví dụ: Trần Minh Huy"
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
-          />
-        </div>
-
-        <div>
           <label htmlFor="register-email" className="block text-xs font-semibold text-slate-700 mb-1">
             Địa chỉ email <span className="text-rose-600">*</span>
           </label>
@@ -181,7 +156,7 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
           />
         </div>
 
@@ -199,7 +174,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
               />
               <button
                 type="button"
@@ -230,7 +205,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu"
-                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
               />
               <button
                 type="button"
@@ -260,7 +235,7 @@ export default function RegisterPage() {
               required
               checked={acceptTerms}
               onChange={(e) => setAcceptTerms(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600 cursor-pointer"
+              className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-600 cursor-pointer"
             />
             <span className="text-xs text-slate-600 leading-relaxed">
               Tôi đồng ý với <span className="text-slate-900 font-semibold">Điều khoản dịch vụ</span>{' '}
@@ -273,7 +248,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-xs flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-xs flex items-center justify-center gap-2"
           >
             <span>{loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}</span>
             <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -311,9 +286,10 @@ export default function RegisterPage() {
         </button>
       </div>
 
-      <div className="text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
+      {/* Login Link (Không viền ngang) */}
+      <div className="text-center text-xs text-slate-500 pt-3">
         Đã có tài khoản?{' '}
-        <Link href="/login" className="font-semibold text-sky-600 hover:text-sky-700">
+        <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
           Đăng nhập ngay
         </Link>
       </div>

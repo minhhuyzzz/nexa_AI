@@ -209,5 +209,40 @@ describe('Auth Flow Inspection & Verification', () => {
       expect(data.requiresEmailConfirmation).toBe(true);
       expect(data.message).toContain('Đã gửi liên kết xác thực');
     });
+
+    it('tự động trích xuất tên từ email khi không nhập biệt danh', async () => {
+      mockSignUp.mockResolvedValueOnce({
+        data: {
+          user: { id: 'new-user-2', email: 'huy868762@gmail.com', identities: [{ id: 'ident-2' }] },
+          session: null,
+        },
+        error: null,
+      });
+
+      const req = new Request('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'huy868762@gmail.com',
+          password: 'password123',
+          confirmPassword: 'password123',
+        }),
+      });
+
+      const res = await registerPOST(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(mockSignUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            data: expect.objectContaining({
+              nickname: 'huy868762',
+              full_name: 'huy868762',
+            }),
+          }),
+        })
+      );
+    });
   });
 });

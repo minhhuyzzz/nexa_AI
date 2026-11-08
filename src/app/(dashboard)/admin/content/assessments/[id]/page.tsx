@@ -1,10 +1,11 @@
-import { AssessmentStudio } from '@/features/assessments/components/AssessmentStudio';
+import React from 'react';
+import { AuthoringEditorTwoPane } from '@/components/dashboard/authoring/AuthoringEditorTwoPane';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Chỉnh Sửa Đề Khảo Thí | NEXA Admin',
-  description: 'Trình biên soạn ma trận câu hỏi và tiêu chuẩn đánh giá năng lực số',
+  title: 'Biên Soạn Đề Khảo Thí Chuẩn | NEXA Admin',
+  description: 'Trình biên soạn câu hỏi 2 vùng chuẩn hóa 5 miền năng lực số',
 };
 
 export default async function AdminAssessmentDetailPage({
@@ -13,5 +14,12 @@ export default async function AdminAssessmentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <AssessmentStudio role="ADMIN" assessmentId={id} />;
+  return (
+    <AuthoringEditorTwoPane
+      assessmentId={id}
+      workspaceMode="ADMIN"
+      returnUrl="/admin/content"
+      previewUrl={`/admin/content/assessments/${id}/preview`}
+    />
+  );
 }

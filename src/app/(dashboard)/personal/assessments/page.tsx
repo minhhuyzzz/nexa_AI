@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,6 +18,7 @@ import {
   Tag,
   Sparkles,
 } from 'lucide-react';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
 interface AssessmentItem {
   id: string;
@@ -51,8 +52,8 @@ const formatFilterOptions = [
 
 const tierFilterOptions = [
   { id: 'ALL' as const, label: 'Tất cả phân hạng' },
-  { id: 'FREE' as const, label: 'Miễn phí (FREE)' },
-  { id: 'PRO' as const, label: 'Nâng cao (PRO)' },
+  { id: 'FREE' as const, label: 'Miễn phí' },
+  { id: 'PRO' as const, label: 'Gói Chuyên sâu' },
 ];
 
 export default function LearnerAssessmentsPage() {
@@ -73,7 +74,12 @@ export default function LearnerAssessmentsPage() {
       const res = await fetch('/api/assessments');
       if (res.ok) {
         const json = await res.json();
-        const data = json.assessments || [];
+        const data = (json.assessments || []).filter(
+          (a: any) =>
+            a.id !== 'a0000000-0000-0000-0000-000000000001' &&
+            !a.is_system_baseline &&
+            !a.title?.toLowerCase().includes('đầu vào')
+        );
         const mapped: AssessmentItem[] = data.map((a: any) => ({
           id: a.id,
           title: a.title,
@@ -150,7 +156,7 @@ export default function LearnerAssessmentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Bài đánh giá
@@ -222,7 +228,7 @@ export default function LearnerAssessmentsPage() {
                   onClick={() => setIsDomainMenuOpen(false)}
                 />
                 <div className="absolute left-0 top-full mt-1.5 w-64 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
-                  <div className="px-3 py-1.5 flex items-center justify-between border-b border-slate-100">
+                  <div className="px-3 py-1.5 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Tích chọn miền
                     </span>
@@ -266,7 +272,7 @@ export default function LearnerAssessmentsPage() {
                     })}
                   </div>
 
-                  <div className="px-3 pt-2 pb-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                  <div className="px-3 pt-2 pb-1 flex items-center justify-between text-[11px]">
                     <span className="text-slate-500">
                       {selectedDomains.length === 0
                         ? 'Đang hiển thị tất cả'
@@ -322,7 +328,7 @@ export default function LearnerAssessmentsPage() {
                   onClick={() => setIsFormatMenuOpen(false)}
                 />
                 <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-48 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
-                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                  <div className="px-3 py-1.5 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Dạng bài
                     </span>
@@ -413,7 +419,7 @@ export default function LearnerAssessmentsPage() {
                   onClick={() => setIsTierMenuOpen(false)}
                 />
                 <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
-                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                  <div className="px-3 py-1.5 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Phân hạng
                     </span>
@@ -496,9 +502,10 @@ export default function LearnerAssessmentsPage() {
 
       {/* Grid of Assessments */}
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400 mb-2" strokeWidth={1.75} />
-          <p className="text-xs">Đang tải danh mục bài khảo thí...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} lines={3} />
+          ))}
         </div>
       ) : filteredTests.length === 0 ? (
         <div className="p-12 text-center rounded-md border border-slate-200 bg-white">
@@ -523,9 +530,14 @@ export default function LearnerAssessmentsPage() {
               <div>
                 {/* 1:1 Aspect ratio square badge / icon header */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 truncate max-w-[140px]">
-                    {test.domainName}
-                  </span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 truncate max-w-[120px]">
+                      {test.domainName}
+                    </span>
+                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/40 shrink-0">
+                      Đề chuẩn NEXA
+                    </span>
+                  </div>
                   {test.isVip || test.accessTier === 'VIP' || test.accessTier === 'PRO' ? (
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs">
                       <Lock className="w-2.5 h-2.5" />
@@ -549,7 +561,7 @@ export default function LearnerAssessmentsPage() {
               </div>
 
               {/* Bottom Specs */}
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-400">
+              <div className="pt-3 flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-400">
                 <span className="font-mono">{test.questionCount} câu &bull; {test.duration_minutes}p</span>
                 <span className="font-semibold text-blue-600 dark:text-blue-400">Chi tiết &rarr;</span>
               </div>

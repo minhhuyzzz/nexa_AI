@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Search, Download, Upload, MoreHorizontal, User, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Download, Upload, MoreHorizontal, User, Shield, ChevronLeft, ChevronRight, Trash2, Crown } from 'lucide-react';
 import type { OrgMemberItem, OrgRoleType } from './types';
 
 interface MemberDirectoryTableProps {
   members: OrgMemberItem[];
   onSelectMember: (member: OrgMemberItem) => void;
   isManager: boolean;
+  isOwner?: boolean;
+  currentUserRole?: string;
+  onRequestDelete?: (member: OrgMemberItem) => void;
   onOpenBulkImport?: () => void;
 }
 
@@ -23,19 +26,19 @@ const ROLE_BADGES: Record<string, { label: string; badgeClass: string; dotClass:
     dotClass: 'bg-blue-600',
   },
   ASSESSOR: {
-    label: 'Thành viên',
-    badgeClass: 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border-slate-200 dark:border-zinc-700',
-    dotClass: 'bg-slate-500',
+    label: 'Khảo thí viên',
+    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    dotClass: 'bg-emerald-600',
   },
   EVALUATOR: {
-    label: 'Thành viên',
-    badgeClass: 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border-slate-200 dark:border-zinc-700',
-    dotClass: 'bg-slate-500',
+    label: 'Khảo thí viên',
+    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    dotClass: 'bg-emerald-600',
   },
   REPORT_VIEWER: {
-    label: 'Thành viên',
-    badgeClass: 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border-slate-200 dark:border-zinc-700',
-    dotClass: 'bg-slate-500',
+    label: 'Khảo thí viên',
+    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    dotClass: 'bg-emerald-600',
   },
   MEMBER: {
     label: 'Thành viên',
@@ -48,6 +51,9 @@ export function MemberDirectoryTable({
   members,
   onSelectMember,
   isManager,
+  isOwner = false,
+  currentUserRole,
+  onRequestDelete,
   onOpenBulkImport,
 }: MemberDirectoryTableProps) {
   const [search, setSearch] = useState('');
@@ -56,6 +62,48 @@ export function MemberDirectoryTable({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // 3-dots Dropdown State
+  const [dropdownMenu, setDropdownMenu] = useState<{
+    id: string;
+    top: number;
+    right: number;
+    placement: 'top' | 'bottom';
+    member: OrgMemberItem;
+  } | null>(null);
+
+  // Đóng dropdown khi click ngoài hoặc cuộn trang
+  useEffect(() => {
+    const handleClose = () => setDropdownMenu(null);
+    if (dropdownMenu) {
+      window.addEventListener('click', handleClose);
+      window.addEventListener('scroll', handleClose, true);
+      return () => {
+        window.removeEventListener('click', handleClose);
+        window.removeEventListener('scroll', handleClose, true);
+      };
+    }
+  }, [dropdownMenu]);
+
+  const handleOpenDropdown = (e: React.MouseEvent, member: OrgMemberItem) => {
+    e.stopPropagation();
+    if (dropdownMenu?.id === member.membershipId) {
+      setDropdownMenu(null);
+      return;
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const menuHeight = 110;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placement: 'top' | 'bottom' = spaceBelow < menuHeight && rect.top > menuHeight ? 'top' : 'bottom';
+
+    setDropdownMenu({
+      id: member.membershipId,
+      top: placement === 'bottom' ? rect.bottom + 4 : rect.top - 4,
+      right: window.innerWidth - rect.right,
+      placement,
+      member,
+    });
+  };
 
   // Filter members
   const filtered = useMemo(() => {
@@ -68,7 +116,9 @@ export function MemberDirectoryTable({
           ? true
           : roleFilter === 'ADMIN'
           ? m.role === 'ORG_ADMIN' || m.role === 'ORG_OWNER'
-          : m.role !== 'ORG_ADMIN' && m.role !== 'ORG_OWNER';
+          : roleFilter === 'ASSESSOR'
+          ? m.role === 'ASSESSOR' || m.role === 'EVALUATOR'
+          : m.role === 'MEMBER';
       const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
       return matchSearch && matchRole && matchStatus;
     });
@@ -101,7 +151,7 @@ export function MemberDirectoryTable({
       m.nickname,
       m.email,
       ROLE_BADGES[m.role]?.label || m.role,
-      m.className || '—',
+      m.className || 'Chưa phân lớp',
       m.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngưng',
       new Date(m.createdAt).toLocaleDateString('vi-VN'),
     ]);
@@ -152,6 +202,7 @@ export function MemberDirectoryTable({
           >
             <option value="ALL">Tất cả vai trò</option>
             <option value="ADMIN">Quản trị viên</option>
+            <option value="ASSESSOR">Khảo thí viên</option>
             <option value="MEMBER">Thành viên</option>
           </select>
 
@@ -195,9 +246,9 @@ export function MemberDirectoryTable({
       {/* Main Table */}
       <div className="rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/75 dark:bg-zinc-900/60 border-b border-slate-200/80 dark:border-zinc-800 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+              <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                 <th className="py-2.5 px-4 w-10">
                   <input
                     type="checkbox"
@@ -206,7 +257,7 @@ export function MemberDirectoryTable({
                       selectedIds.length === paginatedMembers.length
                     }
                     onChange={toggleSelectAll}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded text-blue-600 focus:ring-blue-500"
                   />
                 </th>
                 <th className="py-2.5 px-4">Thành viên</th>
@@ -217,7 +268,7 @@ export function MemberDirectoryTable({
                 <th className="py-2.5 px-4 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-850 text-xs">
+            <tbody className="text-xs">
               {paginatedMembers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-slate-400 dark:text-neutral-500 text-xs">
@@ -252,7 +303,7 @@ export function MemberDirectoryTable({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {}}
-                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded text-blue-600 focus:ring-blue-500"
                         />
                       </td>
 
@@ -278,16 +329,24 @@ export function MemberDirectoryTable({
                       </td>
 
                       <td className="py-3 px-4 text-slate-600 dark:text-neutral-300">
-                        {m.className || '—'}
+                        {m.className || 'Chưa phân lớp'}
                       </td>
 
                       <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${roleConfig.badgeClass}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${roleConfig.dotClass}`} />
-                          <span>{roleConfig.label}</span>
-                        </span>
+                        <div className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${roleConfig.badgeClass}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${roleConfig.dotClass}`} />
+                            <span>{roleConfig.label}</span>
+                          </span>
+                          {m.role === 'ORG_OWNER' && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800 tracking-tight">
+                              <Crown className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                              <span>Chủ sở hữu</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3 px-4">
@@ -307,14 +366,12 @@ export function MemberDirectoryTable({
 
                       <td
                         className="py-3 px-4 text-right"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectMember(m);
-                        }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <button
-                          className="p-1 rounded hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
-                          title="Hồ sơ & phân quyền"
+                          onClick={(e) => handleOpenDropdown(e, m)}
+                          className="p-1 rounded hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                          title="Tùy chọn thao tác"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -328,7 +385,7 @@ export function MemberDirectoryTable({
         </div>
 
         {/* Pagination Footer */}
-        <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
+        <div className="p-3 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
           <div className="flex items-center gap-2">
             <span>Hiển thị</span>
             <select
@@ -367,6 +424,73 @@ export function MemberDirectoryTable({
           </div>
         </div>
       </div>
+
+      {/* 3-dots Dropdown Menu (Fixed position to avoid table overflow clipping) */}
+      {dropdownMenu && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: dropdownMenu.placement === 'bottom' ? dropdownMenu.top : undefined,
+            bottom: dropdownMenu.placement === 'top' ? window.innerHeight - dropdownMenu.top : undefined,
+            right: dropdownMenu.right,
+            zIndex: 9999,
+          }}
+          className="w-52 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100"
+        >
+          {/* Xem hồ sơ & phân quyền */}
+          <button
+            type="button"
+            onClick={() => {
+              const mem = dropdownMenu.member;
+              setDropdownMenu(null);
+              onSelectMember(mem);
+            }}
+            className="w-full flex items-center gap-2 px-3.5 py-2 text-neutral-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 transition text-left cursor-pointer"
+          >
+            <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>Xem hồ sơ &amp; phân quyền</span>
+          </button>
+
+          {/* Xóa khỏi tổ chức */}
+          {(() => {
+            const mem = dropdownMenu.member;
+            const isTargetOwner = mem.role === 'ORG_OWNER';
+            const isTargetSelf = mem.isCurrentUser;
+            const isTargetAdmin = mem.role === 'ORG_ADMIN';
+            const cannotDelete = isTargetOwner || isTargetSelf || (!isOwner && isTargetAdmin);
+
+            let reason = '';
+            if (isTargetOwner) reason = 'Chủ sở hữu tổ chức không thể bị xóa';
+            else if (isTargetSelf) reason = 'Bạn không thể tự xóa chính mình';
+            else if (!isOwner && isTargetAdmin) reason = 'Quản trị viên không thể xóa Quản trị viên khác';
+
+            return (
+              <>
+                <div className="my-1" />
+                <button
+                  type="button"
+                  disabled={cannotDelete}
+                  title={reason || 'Xóa thành viên khỏi tổ chức'}
+                  onClick={() => {
+                    if (cannotDelete) return;
+                    setDropdownMenu(null);
+                    onRequestDelete?.(mem);
+                  }}
+                  className={`w-full flex items-center gap-2 px-3.5 py-2 text-left transition ${
+                    cannotDelete
+                      ? 'text-slate-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
+                      : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer font-medium'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{cannotDelete && reason ? reason : 'Xóa khỏi tổ chức'}</span>
+                </button>
+              </>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }

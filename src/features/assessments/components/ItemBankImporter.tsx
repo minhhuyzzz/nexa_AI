@@ -194,7 +194,7 @@ Miền: D2
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white dark:bg-zinc-950 rounded-md border border-slate-200 dark:border-zinc-800 shadow-md max-w-3xl w-full max-h-[90vh] flex flex-col text-slate-900 dark:text-zinc-100 font-sans">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-850">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
               <FileSpreadsheet className="w-5 h-5" strokeWidth={1.75} />
@@ -244,7 +244,7 @@ Miền: D2
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-100 dark:border-zinc-850">
+              <div className="flex items-center justify-between text-xs pb-2">
                 <span className="font-semibold">
                   Tổng số câu hỏi phân tích:{' '}
                   <span className="text-blue-600 font-mono">{parsedItems.length}</span>
@@ -317,7 +317,7 @@ Miền: D2
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 dark:border-zinc-850 bg-slate-50/50 dark:bg-zinc-900/40">
+        <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50/50 dark:bg-zinc-900/40">
           {step === 1 ? (
             <>
               <button

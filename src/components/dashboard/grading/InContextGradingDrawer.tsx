@@ -195,7 +195,7 @@ export function InContextGradingDrawer({
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
       <div className="w-full max-w-5xl bg-white h-full shadow-sm flex flex-col justify-between border-l border-slate-200">
         {/* Drawer Header with Full Context */}
-        <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+        <div className="px-5 py-3.5 bg-slate-50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-bold">
               {submission.groupCode}
@@ -454,7 +454,7 @@ export function InContextGradingDrawer({
         </div>
 
         {/* Drawer Footer with Actions */}
-        <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+        <div className="px-5 py-3 bg-slate-50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500">Tổng điểm quy đổi:</span>
             <span className="text-base font-bold font-mono text-slate-900 tabular-nums">

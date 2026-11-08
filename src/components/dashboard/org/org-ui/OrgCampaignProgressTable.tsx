@@ -44,7 +44,7 @@ export function OrgCampaignProgressTable({
 }: OrgCampaignProgressTableProps) {
   return (
     <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between h-full">
-      <div className="p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
+      <div className="p-4 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
             Đợt đánh giá đang theo dõi
@@ -86,16 +86,16 @@ export function OrgCampaignProgressTable({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50/75 dark:bg-zinc-900/60 border-b border-slate-200/80 dark:border-zinc-800 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+                <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                   <th className="py-2.5 px-4">Tên đợt</th>
                   <th className="py-2.5 px-4">Tiến độ</th>
                   <th className="py-2.5 px-4">Trạng thái</th>
                   <th className="py-2.5 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850 text-xs">
+              <tbody className="text-xs">
                 {campaigns.slice(0, 5).map((c) => {
                   const percent = c.totalAssigned > 0
                     ? Math.min(100, Math.round((c.submittedCount / c.totalAssigned) * 100))

@@ -112,7 +112,7 @@ export function CreateClassModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl max-w-xl w-full flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800/80">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
               <Users className="w-4 h-4" strokeWidth={2} />
@@ -312,13 +312,13 @@ export function CreateClassModal({
           </div>
 
           {/* 5. Cài đặt thành viên */}
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
+          <div className="pt-2">
             <label className="flex items-start gap-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-850/50 cursor-pointer transition">
               <input
                 type="checkbox"
                 checked={allowJoinCode}
                 onChange={(e) => setAllowJoinCode(e.target.checked)}
-                className="mt-0.5 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               <div>
                 <span className="font-semibold text-slate-900 dark:text-neutral-100 block">
@@ -332,7 +332,7 @@ export function CreateClassModal({
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-4 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2.5">
+          <div className="pt-4 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}

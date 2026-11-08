@@ -312,14 +312,14 @@ export default function AdminAiGatewayPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-zinc-800 text-slate-400 text-[11px] font-medium">
+                <tr className="text-slate-400 text-[11px] font-medium">
                   <th className="py-2.5 pr-2">Mô hình</th>
                   <th className="py-2.5 px-2">Lượt gọi</th>
                   <th className="py-2.5 px-2">Tỷ lệ</th>
                   <th className="py-2.5 pl-2 text-right">Chi phí (triệu đ)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <tbody className="">
                 {defaultModelsList.map((m, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40">
                     <td className="py-2.5 pr-2 font-mono font-medium text-neutral-800 dark:text-zinc-200">
@@ -359,7 +359,7 @@ export default function AdminAiGatewayPage() {
 
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
             {/* Donut graphic */}
-            <div className="w-28 h-28 rounded-full border-8 border-blue-600 flex flex-col items-center justify-center shrink-0">
+            <div className="w-28 h-28 rounded-full flex flex-col items-center justify-center shrink-0">
               <span className="text-base font-bold text-neutral-900 dark:text-white tabular-nums">284.720</span>
               <span className="text-[10px] text-slate-400">lượt gọi</span>
             </div>
@@ -451,7 +451,7 @@ export default function AdminAiGatewayPage() {
               <div className="h-full bg-blue-600 rounded-full" style={{ width: '61.4%' }} />
             </div>
           </div>
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-850 text-[11px] text-slate-500">
+          <div className="pt-2 text-[11px] text-slate-500">
             Ngưỡng cảnh báo: <strong className="text-neutral-800 dark:text-neutral-200">80% (160,00 USD)</strong>
           </div>
         </div>
@@ -484,7 +484,7 @@ export default function AdminAiGatewayPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-zinc-800 text-slate-400 font-medium">
+              <tr className="text-slate-400 font-medium">
                 <th className="py-2.5 pr-4">Nghiệp vụ</th>
                 <th className="py-2.5 px-4">Mô hình</th>
                 <th className="py-2.5 px-4">Prompt / Completion (token)</th>
@@ -493,7 +493,7 @@ export default function AdminAiGatewayPage() {
                 <th className="py-2.5 pl-4 text-right">Thời gian</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+            <tbody className="">
               {sampleLogs.map((log, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40">
                   <td className="py-3 pr-4 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -520,7 +520,7 @@ export default function AdminAiGatewayPage() {
           </table>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs text-slate-400">
+        <div className="pt-3 flex items-center justify-between text-xs text-slate-400">
           <div>Hiển thị 1–6 trong 284.720 bản ghi</div>
           <div className="flex items-center gap-1">
             <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>

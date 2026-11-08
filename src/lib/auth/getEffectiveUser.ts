@@ -9,8 +9,7 @@ export type OrgRole =
   | 'ORG_ADMIN'
   | 'ASSESSOR'
   | 'EVALUATOR'
-  | 'REPORT_VIEWER'
-  | 'MEMBER';
+    | 'MEMBER';
 
 export interface UserOrganizationMembership {
   organization_id: string;

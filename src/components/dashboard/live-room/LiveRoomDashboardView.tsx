@@ -254,7 +254,7 @@ export function LiveRoomDashboardView({
       {/* ============================================================ */}
       {/* 1. TOP BREADCRUMB & HEADER BLOCK                            */}
       {/* ============================================================ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-neutral-500 mb-1">
             <span>{orgSlug ? 'Tổ chức' : 'Cá nhân'}</span>
@@ -387,7 +387,7 @@ export function LiveRoomDashboardView({
       {/* ============================================================ */}
       <div className="space-y-3">
         {/* Filter Pills with Counts */}
-        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-800 pb-3 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2 pb-3 overflow-x-auto no-scrollbar">
           <button
             onClick={() => {
               setActiveTab('ALL');
@@ -562,9 +562,9 @@ export function LiveRoomDashboardView({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/60 text-[11px] font-semibold text-slate-500 dark:text-neutral-400">
+                    <tr className="bg-slate-50/70 dark:bg-zinc-900/60 text-[11px] font-semibold text-slate-500 dark:text-neutral-400">
                       <th className="py-3 px-4">Tên phòng thi</th>
                       <th className="py-3 px-3">Loại</th>
                       <th className="py-3 px-3">Trạng thái</th>
@@ -573,7 +573,7 @@ export function LiveRoomDashboardView({
                       <th className="py-3 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 text-slate-700 dark:text-zinc-300">
+                  <tbody className="text-slate-700 dark:text-zinc-300">
                     {paginatedRooms.map((room) => {
                       const participantPercent = Math.min(
                         100,
@@ -720,7 +720,7 @@ export function LiveRoomDashboardView({
 
             {/* Pagination Footer */}
             {filteredRooms.length > 0 && (
-              <div className="p-3.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
+              <div className="p-3.5 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
                 <div>
                   Hiển thị {(currentPage - 1) * pageSize + 1} &ndash;{' '}
                   {Math.min(currentPage * pageSize, filteredRooms.length)} trên {filteredRooms.length} phòng thi
@@ -831,7 +831,7 @@ export function LiveRoomDashboardView({
 
           {/* Card 2: Tính năng nổi bật (Matching Image 5) */}
           <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
+            <div className="flex items-center gap-2 pb-3">
               <Sparkles className="w-4 h-4 text-amber-500" />
               <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-neutral-900 dark:text-neutral-100">
                 Tính năng nổi bật
@@ -905,7 +905,7 @@ export function LiveRoomDashboardView({
       {qrModalRoom && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-sm w-full text-center space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-2">
               <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
                 Mã QR Tham Gia Phòng Thi
               </span>

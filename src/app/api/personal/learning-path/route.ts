@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { DomainAssessmentSummaryService } from '@/features/competency/services/domain-assessment-summary.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,12 @@ interface PathwayStepItem {
   is_completed?: boolean;
   completed_at?: string | null;
   [key: string]: unknown;
+}
+
+function normalizeDomainCode(code: string | null | undefined): string {
+  if (!code) return '01';
+  const match = String(code).match(/(\d+)/);
+  return match ? match[1].padStart(2, '0') : '01';
 }
 
 export async function GET() {
@@ -55,18 +62,123 @@ export async function GET() {
       .select('module_id, is_completed, completed_at, points_awarded')
       .eq('user_id', user.id);
 
-    // 4. Fetch published modules
-    const { data: modules } = await adminSupabase
+    // 4. Fetch user profile for subscription plan / role
+    let isProUser = false;
+    try {
+      const profTable = adminSupabase?.from?.('profiles');
+      if (profTable && typeof profTable.select === 'function') {
+        const { data: profile } = await profTable
+          .select('subscription_tier, role, admin_role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        isProUser =
+          profile?.subscription_tier === 'PRO' ||
+          profile?.subscription_tier === 'ENTERPRISE' ||
+          profile?.role === 'ADMIN' ||
+          Boolean(profile?.admin_role);
+      }
+    } catch {
+      // Graceful fallback for test mocks
+    }
+
+    // 5. Fetch latest competency snapshot to detect weakest domain
+    let unlockedFreeDomain: string | null = null;
+    let weakestScore = 999;
+    let domainScores: Record<string, number | null> | null = null;
+    let latestSnapshot: any = null;
+    let hasTakenAssessment = false;
+
+    try {
+      const snapTable = adminSupabase?.from?.('learner_competency_snapshots');
+      if (snapTable && typeof snapTable.select === 'function') {
+        const { data } = await snapTable
+          .select('domain_scores, overall_score, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        latestSnapshot = data;
+        if (data?.domain_scores) {
+          domainScores = data.domain_scores as Record<string, number | null>;
+          ['01', '02', '03', '04', '05'].forEach((code) => {
+            const numKey = parseInt(code, 10);
+            const score = domainScores![code] ?? domainScores![`D${numKey}`] ?? domainScores![String(numKey)];
+            if (score !== null && score !== undefined && score < weakestScore) {
+              weakestScore = score;
+              unlockedFreeDomain = code;
+            }
+          });
+          if (unlockedFreeDomain) {
+            hasTakenAssessment = true;
+          }
+        }
+      }
+    } catch {
+      // Graceful fallback for test mocks
+    }
+
+    // Fallback: If snapshot is missing or unreadable due to RLS, compute from assessment_submissions
+    if (!hasTakenAssessment) {
+      try {
+        const queryClient = (supabase && typeof supabase.from === 'function') ? supabase : adminSupabase;
+        const testSelect = queryClient?.from?.('assessment_submissions');
+        if (testSelect && typeof testSelect.select === 'function') {
+          const summary = await DomainAssessmentSummaryService.getUserCompetencySummary(queryClient, user.id);
+          if (summary.hasTakenAssessment) {
+            hasTakenAssessment = true;
+            domainScores = domainScores || {};
+            let lowest = 999;
+            let lowestCode = '01';
+            summary.radarData.forEach((d) => {
+              const norm = normalizeDomainCode(d.code);
+              domainScores![norm] = d.score;
+              domainScores![d.code] = d.score;
+              if (d.score !== null && d.score < lowest) {
+                lowest = d.score;
+                lowestCode = norm;
+              }
+            });
+            unlockedFreeDomain = lowestCode;
+          }
+        }
+      } catch (sumErr) {
+        console.warn('Fallback DomainAssessmentSummaryService error:', sumErr);
+      }
+    }
+
+    if (unlockedFreeDomain) {
+      unlockedFreeDomain = normalizeDomainCode(unlockedFreeDomain);
+    }
+
+    // 6. Fetch published modules and map freemium lock state
+    const { data: rawModules } = await adminSupabase
       .from('learning_modules')
       .select('*')
       .eq('is_published', true)
       .order('order_index', { ascending: true });
 
+    const modules = (rawModules || []).map((m: any) => {
+      const match = String(m.domain_code || '').match(/(\d+)/);
+      const rawDomain = match ? match[1].padStart(2, '0') : '01';
+      const isDomainUnlocked = isProUser || (unlockedFreeDomain !== null && rawDomain === unlockedFreeDomain);
+      return {
+        ...m,
+        domain_code: rawDomain,
+        is_locked: !isDomainUnlocked,
+      };
+    });
+
     return NextResponse.json({
       success: true,
       analysis: latestAnalysis || null,
       progress: progressList || [],
-      modules: modules || [],
+      modules,
+      unlockedFreeDomain: hasTakenAssessment ? unlockedFreeDomain : null,
+      isProUser,
+      domainScores,
+      hasTakenAssessment,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

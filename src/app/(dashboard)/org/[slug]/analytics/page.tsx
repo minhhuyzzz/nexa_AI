@@ -15,10 +15,19 @@ export default async function OrgAnalyticsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ tab?: string; campaignId?: string; classId?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    campaignId?: string;
+    classId?: string;
+    timeRange?: string;
+    startDate?: string;
+    endDate?: string;
+    dataSource?: string;
+  }>;
 }) {
   const { slug } = await params;
-  const { tab, campaignId, classId } = (await searchParams) || {};
+  const { tab, campaignId, classId, timeRange, startDate, endDate, dataSource } =
+    (await searchParams) || {};
   const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_ANALYTICS');
   const adminSupabase = createAdminClient();
 
@@ -66,21 +75,35 @@ export default async function OrgAnalyticsPage({
 
   const subsMap = new Map<string, RawAnalyticsSubmission>();
 
-  // Query submissions by campaign_id
+  // P0 Security: Isolate organization analytics from external/personal submissions
+  const allClassMemberUserIds = Array.from(new Set(classesInfo.flatMap((c) => c.member_user_ids)));
+  const { data: orgActiveMembers } = await adminSupabase
+    .from('user_organizations')
+    .select('user_id')
+    .eq('organization_id', org.id)
+    .eq('status', 'ACTIVE');
+
+  const orgMemberUserIds = new Set([
+    ...allClassMemberUserIds,
+    ...(orgActiveMembers || []).map((m: any) => m.user_id),
+  ]);
+
+  // Query submissions by campaign_id (official organization campaigns)
   if (campaignIds.length > 0) {
     const { data: cSubs } = await adminSupabase
       .from('assessment_submissions')
-      .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at')
+      .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at, results_published')
       .in('campaign_id', campaignIds);
     (cSubs || []).forEach((s) => subsMap.set(s.id, s as RawAnalyticsSubmission));
   }
 
-  // Query submissions by assessment_id
-  if (assessmentIds.length > 0) {
+  // Query submissions by assessment_id ONLY for verified organization members
+  if (assessmentIds.length > 0 && orgMemberUserIds.size > 0) {
     const { data: aSubs } = await adminSupabase
       .from('assessment_submissions')
-      .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at')
-      .in('assessment_id', assessmentIds);
+      .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at, results_published')
+      .in('assessment_id', assessmentIds)
+      .in('user_id', Array.from(orgMemberUserIds));
     (aSubs || []).forEach((s) => subsMap.set(s.id, s as RawAnalyticsSubmission));
   }
 
@@ -91,7 +114,7 @@ export default async function OrgAnalyticsPage({
     rawSubmissions,
     classesInfo,
     campaignsInfo,
-    { campaignId, classId }
+    { campaignId, classId, timeRange, startDate, endDate, dataSource }
   );
 
   return (
@@ -104,6 +127,10 @@ export default async function OrgAnalyticsPage({
       initialTab={tab}
       initialCampaignId={campaignId}
       initialClassId={classId}
+      initialTimeRange={timeRange}
+      initialStartDate={startDate}
+      initialEndDate={endDate}
+      initialDataSource={dataSource}
     />
   );
 }

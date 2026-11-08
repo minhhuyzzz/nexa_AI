@@ -36,7 +36,7 @@ export function ClassOperationalNotes() {
 
   return (
     <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-xs">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-zinc-800">
+      <div className="flex items-center gap-2 mb-3 pb-2">
         <StickyNote className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
           Ghi chú vận hành

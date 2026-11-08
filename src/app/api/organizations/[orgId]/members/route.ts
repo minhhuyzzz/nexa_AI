@@ -3,11 +3,12 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
 const updateMemberSchema = z.object({
   targetUserId: z.string().uuid('ID người dùng không hợp lệ'),
   orgRole: z
-    .enum(['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'])
+    .enum(['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])
     .optional(),
   status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
 });
@@ -168,10 +169,17 @@ export async function PATCH(
           { status: 403 }
         );
       }
-      // ORG_ADMIN cannot promote someone to ORG_OWNER
-      if (orgRole === 'ORG_OWNER') {
+      // ORG_ADMIN cannot edit another ORG_ADMIN
+      if (targetMembership.org_role === 'ORG_ADMIN' && targetMembership.user_id !== user.id) {
         return NextResponse.json(
-          { error: 'Chỉ Chủ sở hữu hoặc Superadmin mới có thể chỉ định Chủ sở hữu mới' },
+          { error: 'Quản trị viên không có quyền thay đổi thông tin của Quản trị viên khác' },
+          { status: 403 }
+        );
+      }
+      // ORG_ADMIN cannot promote someone to ORG_OWNER or ORG_ADMIN
+      if (orgRole === 'ORG_OWNER' || orgRole === 'ORG_ADMIN') {
+        return NextResponse.json(
+          { error: 'Chỉ Chủ sở hữu hoặc Superadmin mới có thể chỉ định vai trò Quản trị viên hoặc Chủ sở hữu' },
           { status: 403 }
         );
       }
@@ -250,6 +258,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Thiếu userId cần xóa' }, { status: 400 });
     }
 
+    if (targetUserId === user.id) {
+      return NextResponse.json(
+        { error: 'Bạn không thể tự xóa tài khoản của chính mình khỏi tổ chức' },
+        { status: 400 }
+      );
+    }
+
     const adminSupabase = createAdminClient();
     const isSuperadmin = isSuperadminEmail(user.email);
 
@@ -286,11 +301,19 @@ export async function DELETE(
     }
 
     // 3. Protection checks
-    if (!isSuperadmin && callerRole === 'ORG_ADMIN' && targetMembership.org_role === 'ORG_OWNER') {
-      return NextResponse.json(
-        { error: 'Quản trị viên không có quyền xóa Chủ sở hữu khỏi tổ chức' },
-        { status: 403 }
-      );
+    if (!isSuperadmin && callerRole === 'ORG_ADMIN') {
+      if (targetMembership.org_role === 'ORG_OWNER') {
+        return NextResponse.json(
+          { error: 'Quản trị viên không có quyền xóa Chủ sở hữu khỏi tổ chức' },
+          { status: 403 }
+        );
+      }
+      if (targetMembership.org_role === 'ORG_ADMIN') {
+        return NextResponse.json(
+          { error: 'Quản trị viên không có quyền xóa Quản trị viên khác. Thao tác này chỉ dành cho Chủ sở hữu tổ chức.' },
+          { status: 403 }
+        );
+      }
     }
 
     if (targetMembership.org_role === 'ORG_OWNER') {
@@ -309,7 +332,22 @@ export async function DELETE(
       }
     }
 
-    // 4. Delete membership
+    // 4. Clean up class memberships for this user in this organization's classes
+    const { data: orgClasses } = await adminSupabase
+      .from('evaluator_classes')
+      .select('id')
+      .eq('organization_id', orgId);
+
+    if (orgClasses && orgClasses.length > 0) {
+      const classIds = orgClasses.map((c) => c.id);
+      await adminSupabase
+        .from('class_members')
+        .delete()
+        .eq('user_id', targetUserId)
+        .in('class_id', classIds);
+    }
+
+    // 5. Delete membership from user_organizations (Preserves user's historical submissions in assessment_submissions)
     const { error: deleteError } = await adminSupabase
       .from('user_organizations')
       .delete()
@@ -322,9 +360,23 @@ export async function DELETE(
       );
     }
 
+    // 6. Record immutable admin audit log
+    recordAdminAudit({
+      actorId: user.id,
+      adminEmail: user.email || undefined,
+      action: 'ORG_MEMBER_REMOVED',
+      targetType: 'user_organization',
+      targetId: targetMembership.id,
+      details: {
+        organization_id: orgId,
+        target_user_id: targetUserId,
+        target_role: targetMembership.org_role,
+      },
+    }).catch(() => {});
+
     return NextResponse.json({
       success: true,
-      message: 'Đã xóa thành viên khỏi tổ chức thành công',
+      message: 'Đã xóa thành viên khỏi tổ chức thành công. Lịch sử bài thi được lưu trữ an toàn.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';

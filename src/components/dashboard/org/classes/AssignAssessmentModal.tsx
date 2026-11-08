@@ -19,6 +19,11 @@ import {
   Send,
   Info,
 } from 'lucide-react';
+import { SecuritySettingsCard } from '@/features/assessments/components/SecuritySettingsCard';
+import {
+  AssessmentSecuritySettings,
+  SECURITY_PRESETS,
+} from '@/features/assessments/types/security.types';
 
 interface AvailableAssessment {
   id: string;
@@ -83,6 +88,9 @@ export function AssignAssessmentModal({
   const [allowedVideo, setAllowedVideo] = useState(true);
   const [allowedUrl, setAllowedUrl] = useState(true);
   const [maxEvidenceMb, setMaxEvidenceMb] = useState(50);
+  const [securitySettings, setSecuritySettings] = useState<AssessmentSecuritySettings>(
+    SECURITY_PRESETS.STANDARD.settings
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,6 +140,7 @@ export function AssignAssessmentModal({
         allowedEvidenceTypes: allowedTypes,
         maxEvidenceMb,
         estimatedAiCredits,
+        securitySettings,
       };
 
       const res = await fetch(
@@ -161,7 +170,7 @@ export function AssignAssessmentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md shadow-2xl max-w-4xl w-full flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
               <FileSpreadsheet className="w-4 h-4" />
@@ -185,7 +194,7 @@ export function AssignAssessmentModal({
         </div>
 
         {/* 4 Steps Progress */}
-        <div className="grid grid-cols-4 border-b border-slate-100 dark:border-zinc-800 text-xs bg-slate-50/50 dark:bg-zinc-900/50">
+        <div className="grid grid-cols-4 text-xs bg-slate-50/50 dark:bg-zinc-900/50">
           {[
             { num: 1, label: 'Chọn đề' },
             { num: 2, label: 'Thiết lập thời gian' },
@@ -195,12 +204,12 @@ export function AssignAssessmentModal({
             <button
               key={s.num}
               onClick={() => setStep(s.num as any)}
-              className={`py-2 px-3 text-center border-b-2 font-medium flex items-center justify-center gap-1.5 transition ${
+              className={`py-1.5 px-3 rounded-lg text-center font-semibold flex items-center justify-center gap-1.5 transition-all ${
                 step === s.num
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-white dark:bg-[#111114]'
+                  ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 shadow-2xs'
                   : step > s.num
-                    ? 'border-transparent text-emerald-600 dark:text-emerald-400'
-                    : 'border-transparent text-slate-400 dark:text-zinc-600'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-slate-400 dark:text-zinc-600'
               }`}
             >
               <span
@@ -360,7 +369,7 @@ export function AssignAssessmentModal({
                     type="checkbox"
                     checked={allowLateSubmission}
                     onChange={(e) => setAllowLateSubmission(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded text-blue-600 focus:ring-blue-500"
                   />
                   <span>Cho phép nộp muộn (gắn nhãn &quot;Nộp muộn&quot;)</span>
                 </label>
@@ -407,7 +416,7 @@ export function AssignAssessmentModal({
                     type="checkbox"
                     checked={aiGradingEnabled}
                     onChange={(e) => setAiGradingEnabled(e.target.checked)}
-                    className="toggle rounded border-slate-300 text-blue-600 h-5 w-5"
+                    className="toggle rounded text-blue-600 h-5 w-5"
                   />
                 </div>
 
@@ -428,7 +437,7 @@ export function AssignAssessmentModal({
                     type="checkbox"
                     checked={shuffleQuestions}
                     onChange={(e) => setShuffleQuestions(e.target.checked)}
-                    className="toggle rounded border-slate-300 text-blue-600 h-5 w-5"
+                    className="toggle rounded text-blue-600 h-5 w-5"
                   />
                 </div>
 
@@ -449,7 +458,7 @@ export function AssignAssessmentModal({
                     type="checkbox"
                     checked={immediateResults}
                     onChange={(e) => setImmediateResults(e.target.checked)}
-                    className="toggle rounded border-slate-300 text-blue-600 h-5 w-5"
+                    className="toggle rounded text-blue-600 h-5 w-5"
                   />
                 </div>
 
@@ -471,19 +480,19 @@ export function AssignAssessmentModal({
                       type="checkbox"
                       checked={requireEvidence}
                       onChange={(e) => setRequireEvidence(e.target.checked)}
-                      className="toggle rounded border-slate-300 text-blue-600 h-5 w-5"
+                      className="toggle rounded text-blue-600 h-5 w-5"
                     />
                   </div>
 
                   {requireEvidence && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between flex-wrap gap-2 text-[11px]">
+                    <div className="pt-2 flex items-center justify-between flex-wrap gap-2 text-[11px]">
                       <div className="flex items-center gap-3">
                         <label className="flex items-center gap-1 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={allowedPdf}
                             onChange={(e) => setAllowedPdf(e.target.checked)}
-                            className="rounded border-slate-300 text-blue-600"
+                            className="rounded text-blue-600"
                           />
                           <span>Tệp (PDF/DOC)</span>
                         </label>
@@ -492,7 +501,7 @@ export function AssignAssessmentModal({
                             type="checkbox"
                             checked={allowedImg}
                             onChange={(e) => setAllowedImg(e.target.checked)}
-                            className="rounded border-slate-300 text-blue-600"
+                            className="rounded text-blue-600"
                           />
                           <span>Ảnh (JPG/PNG)</span>
                         </label>
@@ -501,7 +510,7 @@ export function AssignAssessmentModal({
                             type="checkbox"
                             checked={allowedVideo}
                             onChange={(e) => setAllowedVideo(e.target.checked)}
-                            className="rounded border-slate-300 text-blue-600"
+                            className="rounded text-blue-600"
                           />
                           <span>Video</span>
                         </label>
@@ -524,40 +533,55 @@ export function AssignAssessmentModal({
                 </div>
               </div>
             </div>
+
+            {/* 4. Cấu hình giám sát & Bảo mật phòng thi */}
+            <div className="space-y-3 pt-2">
+              <h3 className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-700 text-[10px] flex items-center justify-center font-mono">
+                  4
+                </span>
+                Giám sát &amp; Bảo mật phòng thi
+              </h3>
+              <SecuritySettingsCard
+                value={securitySettings}
+                onChange={setSecuritySettings}
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* Right Summary Panel (4 cols) */}
           <div className="lg:col-span-4 bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3.5">
-            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 border-b border-slate-200 dark:border-zinc-800 pb-2">
+            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 pb-1">
               Tóm tắt giao đề
             </h4>
 
-            <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 dark:border-zinc-800">
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1">
                 <span className="text-slate-500">Lớp nhận đề:</span>
                 <span className="font-bold text-neutral-900 dark:text-neutral-100">{className}</span>
               </div>
 
-              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 dark:border-zinc-800 font-mono">
+              <div className="flex items-center justify-between py-1 font-mono">
                 <span className="text-slate-500 font-sans">Số thành viên:</span>
                 <span className="font-bold tabular-nums text-blue-600">{memberCount} sinh viên</span>
               </div>
 
-              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 dark:border-zinc-800 font-mono">
+              <div className="flex items-center justify-between py-1 font-mono">
                 <span className="text-slate-500 font-sans">Lịch mở:</span>
                 <span className="text-neutral-800 dark:text-neutral-200">
                   {startDate} {startTime}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 dark:border-zinc-800 font-mono">
+              <div className="flex items-center justify-between py-1 font-mono">
                 <span className="text-slate-500 font-sans">Hạn nộp:</span>
                 <span className="text-neutral-800 dark:text-neutral-200">
                   {deadlineDate} {deadlineTime}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 dark:border-zinc-800 font-mono">
+              <div className="flex items-center justify-between py-1 font-mono">
                 <span className="text-slate-500 font-sans">Thời lượng:</span>
                 <span className="text-neutral-800 dark:text-neutral-200">
                   {currentAssessment?.durationMinutes} phút
@@ -588,7 +612,7 @@ export function AssignAssessmentModal({
         )}
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
+        <div className="px-6 py-3 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
           <button
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-zinc-400 hover:text-neutral-900 rounded-md border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 font-medium transition"

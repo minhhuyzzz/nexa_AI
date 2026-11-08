@@ -106,3 +106,9 @@
 - Mỗi trang cần **một hành động chính rõ ràng** và trạng thái loading/empty/error/permission denied/success tương ứng. Không tạo dashboard có nhiều thẻ đẹp nhưng thiếu việc để làm.
 - Hỗ trợ responsive, focus rõ, điều hướng bàn phím, nhãn input, kích thước vùng bấm và độ tương phản đủ tốt. Không dùng màu nhạt để che nội dung quan trọng.
 - **Không dựng số liệu giả** (`0`, `100%`, “đã kích hoạt”, “đã duyệt”, v.v.) khi query lỗi; phân biệt rõ không có dữ liệu, chưa được đánh giá và lỗi tải dữ liệu.
+
+### 3.5. Quy tắc sửa code
+
+sửa đúng chỗ, không đụng code không liên quan
+
+không sử dụng đường viền ngang

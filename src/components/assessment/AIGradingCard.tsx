@@ -81,7 +81,7 @@ export function AIGradingCard({
   }
 
   return (
-    <div className="mt-4 pt-4 border-t border-slate-100">
+    <div className="mt-4 pt-4">
       {!evaluation ? (
         <div className="p-4 rounded-md bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -115,7 +115,7 @@ export function AIGradingCard({
       ) : (
         <div className="p-5 rounded-md bg-slate-50 border border-slate-200 space-y-4">
           {/* Header & Confidence Flag */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
             <div className="flex items-center gap-2">
               <span
                 className={`w-2 h-2 rounded-full ${

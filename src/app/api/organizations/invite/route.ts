@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { sendOrgInvitationEmail } from '@/lib/email/email-service';
 
 const inviteSchema = z.object({
   organizationId: z.string().uuid('ID tổ chức không hợp lệ'),
   email: z.string().email('Email không đúng định dạng'),
   orgRole: z
-    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'])
+    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])
     .default('MEMBER'),
 });
 
@@ -60,6 +61,14 @@ export async function POST(request: NextRequest) {
       if (!membership || !['ORG_OWNER', 'ORG_ADMIN'].includes(membership.org_role)) {
         return NextResponse.json(
           { error: 'Bạn không có quyền quản trị để mời thành viên vào tổ chức này' },
+          { status: 403 }
+        );
+      }
+
+      // Strict User Rule: Only ORG_OWNER can invite an ORG_ADMIN
+      if (membership.org_role !== 'ORG_OWNER' && orgRole === 'ORG_ADMIN') {
+        return NextResponse.json(
+          { error: 'Chỉ Chủ sở hữu tổ chức mới có quyền mời Quản trị viên mới' },
           { status: 403 }
         );
       }
@@ -170,7 +179,42 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.nextUrl.origin || 'http://localhost:3000';
-    const inviteUrl = `${origin}/personal/accept-invite?token=${token}`;
+    const inviteUrl = `${origin}/accept-invite?token=${token}`;
+
+    // In-app notification for existing users on the platform
+    if (existingUser?.id) {
+      const roleLabelMap: Record<string, string> = {
+        ORG_OWNER: 'Chủ sở hữu',
+        ORG_ADMIN: 'Quản trị viên',
+        ASSESSOR: 'Khảo thí viên',
+        EVALUATOR: 'Khảo thí viên',
+        MEMBER: 'Thành viên',
+      };
+      const roleLabel = roleLabelMap[orgRole] || 'Thành viên';
+      try {
+        const notifTable = adminSupabase.from('user_notifications');
+        if (typeof notifTable?.insert === 'function') {
+          await notifTable.insert({
+            user_id: existingUser.id,
+            title: `Lời mời tham gia ${organization.name}`,
+            message: `Bạn được mời gia nhập tổ chức với vai trò ${roleLabel}. Bấm để xác nhận tham gia.`,
+            category: 'CAMPAIGN',
+            link_url: `/accept-invite?token=${token}`,
+            is_read: false,
+          });
+        }
+      } catch (notifErr) {
+        console.warn('[INVITE_NOTIFICATION_WARN]', notifErr);
+      }
+    }
+
+    const mailRes = await sendOrgInvitationEmail({
+      toEmail: email.toLowerCase(),
+      orgName: organization.name,
+      orgRole,
+      inviteUrl,
+      expiresAt: expiresAt.toISOString(),
+    });
 
     return NextResponse.json({
       success: true,
@@ -179,6 +223,7 @@ export async function POST(request: NextRequest) {
         ...invitation,
         organizationName: organization.name,
         inviteUrl,
+        emailSent: mailRes.success,
       },
     });
   } catch (err) {

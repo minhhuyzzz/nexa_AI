@@ -314,7 +314,7 @@ export default function PricingPage() {
 
                 <div className={`p-7 sm:p-8 ${isPro ? 'pt-8 sm:pt-9' : ''}`}>
                   {/* Card Header */}
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                  <div className="flex items-center justify-between pb-3 mb-4">
                     <span className={`text-[11px] font-extrabold uppercase tracking-wider ${
                       isPro ? 'text-blue-600' : 'text-slate-500'
                     }`}>
@@ -334,7 +334,7 @@ export default function PricingPage() {
                   </p>
 
                   {/* Pricing Display */}
-                  <div className="pb-5 mb-5 border-b border-slate-100">
+                  <div className="pb-5 mb-5">
                     {isBusiness ? (
                       <div className="space-y-1">
                         <div className="text-3xl font-black text-slate-900 tracking-tight">
@@ -376,7 +376,7 @@ export default function PricingPage() {
 
                   {/* Feature Group 1: CHO NGƯỜI HỌC */}
                   <div className="mb-6 space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 pb-1 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 pb-1">
                       <GraduationCap className="w-3.5 h-3.5 text-sky-600" />
                       <span>Cho Người Học</span>
                     </div>
@@ -417,7 +417,7 @@ export default function PricingPage() {
 
                   {/* Feature Group 2: CHO NGƯỜI ĐÁNH GIÁ */}
                   <div className="space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 pb-1 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 pb-1">
                       <Users className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Cho Người Đánh Giá</span>
                     </div>
@@ -497,16 +497,16 @@ export default function PricingPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
+                <tr className="bg-slate-50">
                   <th className="py-3 px-4 font-semibold text-slate-700 w-1/3">Tiêu chí &amp; Quyền lợi</th>
                   <th className="py-3 px-3 font-semibold text-slate-700">Gói FREE</th>
                   <th className="py-3 px-3 font-semibold text-blue-600 bg-blue-50/60">Gói PRO</th>
                   <th className="py-3 px-3 font-semibold text-slate-900">Gói BUSINESS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="">
                 {/* General Pricing Row */}
                 <tr className="bg-slate-50/30">
                   <td className="py-3 px-4 font-bold text-slate-900">Mức giá đồng nhất</td>

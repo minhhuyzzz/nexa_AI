@@ -71,7 +71,7 @@ export function CohortLearningRecommendations({ gapDomainCodes }: Props) {
                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{c.short_description}</p>
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
+              <div className="mt-3 pt-2.5 flex items-center justify-between">
                 <span className="text-[10px] font-mono text-slate-500">{c.duration}</span>
                 <a
                   href={c.official_url}

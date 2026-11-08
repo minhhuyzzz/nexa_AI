@@ -117,7 +117,7 @@ function AdminAnalyticsContent() {
   if (loading) {
     return (
       <div className="p-6 space-y-4 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4">
+        <div className="flex items-center justify-between pb-4">
           <div className="h-6 w-64 bg-slate-100 dark:bg-zinc-800 rounded animate-pulse" />
           <div className="h-8 w-28 bg-slate-100 dark:bg-zinc-800 rounded animate-pulse" />
         </div>
@@ -152,7 +152,7 @@ function AdminAnalyticsContent() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
         <div>
           <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Báo Cáo &amp; Phân Tích Vận Hành BI
@@ -227,7 +227,7 @@ function AdminAnalyticsContent() {
 
       {/* Progression Funnel */}
       <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
+        <div className="flex items-center justify-between pb-3">
           <div>
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
@@ -270,7 +270,7 @@ function AdminAnalyticsContent() {
 
       {/* 5 DigComp Domains Distribution Section */}
       <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-850 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3">
           <div>
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
               Chỉ số Năng lực theo 5 Miền năng lực số cốt lõi
@@ -347,7 +347,7 @@ function AdminAnalyticsContent() {
 
       {/* CSV Export & Filter Section */}
       <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-zinc-850 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3">
           <div>
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />

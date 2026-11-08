@@ -433,7 +433,7 @@ export function AdminAssessmentDetailClient({
 
   const renderInlineQuestionForm = (isNew: boolean, itemIndex?: number) => (
     <div className="p-5 rounded-md border-2 border-sky-500 bg-white shadow-xs space-y-4 animate-in fade-in slide-in-from-top-1">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-sky-600 text-white">
             {isNew ? '+ THÊM CÂU HỎI MỚI (INLINE)' : `CHỈNH SỬA CÂU HỎI #${(itemIndex ?? 0) + 1}`}
@@ -629,7 +629,7 @@ export function AdminAssessmentDetailClient({
 
         {/* MCQ / Scenario Options */}
         {(qType === 'MCQ' || qType === 'SCENARIO') && (
-          <div className="space-y-3 pt-2 border-t border-slate-100">
+          <div className="space-y-3 pt-2">
             <span className="font-semibold text-slate-800 block">
               Các Lựa Chọn Đáp Án (Chọn nút tròn cho đáp án đúng) *
             </span>
@@ -692,7 +692,7 @@ export function AdminAssessmentDetailClient({
 
         {/* Practical Rubric Guide */}
         {qType === 'PRACTICAL_TASK' && (
-          <div className="space-y-2 pt-2 border-t border-slate-100">
+          <div className="space-y-2 pt-2">
             <label className="block font-semibold text-slate-800">
               Hướng Dẫn Chấm &amp; Tiêu Chí Rubric (Dành cho AI &amp; Giảng viên) *
             </label>
@@ -706,7 +706,7 @@ export function AdminAssessmentDetailClient({
           </div>
         )}
 
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+        <div className="pt-3 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={handleCloseInline}
@@ -844,7 +844,7 @@ export function AdminAssessmentDetailClient({
         </div>
 
         {/* Quick parameters pill list */}
-        <div className="pt-3 border-t border-slate-100 flex items-center gap-6 text-xs text-slate-600 flex-wrap">
+        <div className="pt-3 flex items-center gap-6 text-xs text-slate-600 flex-wrap">
           <div className="flex items-center gap-1.5 font-mono">
             <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
             <span>Thời lượng: <strong className="text-slate-900">{assessment.duration_minutes} phút</strong></span>
@@ -999,7 +999,7 @@ export function AdminAssessmentDetailClient({
                   {(item.type === 'MCQ' || item.type === 'SCENARIO') &&
                     item.item_options &&
                     item.item_options.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                         {item.item_options.map((opt, optIdx) => {
                           const optionLetter = String.fromCharCode(65 + optIdx);
                           return (
@@ -1072,7 +1072,7 @@ export function AdminAssessmentDetailClient({
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-md border border-slate-200 w-full max-w-xl p-6 space-y-4 shadow-sm animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
                   Nạp Câu Hỏi Từ Tệp Vào Đề: {assessment.title}
@@ -1117,7 +1117,7 @@ export function AdminAssessmentDetailClient({
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}

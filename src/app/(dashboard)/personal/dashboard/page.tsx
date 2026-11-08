@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   CheckSquare,
@@ -28,10 +29,11 @@ import {
   Info,
   Circle,
   CheckCircle2,
+  Compass,
+  Sparkles,
 } from 'lucide-react';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { DashboardHeroIllustration } from '@/components/dashboard/personal/DashboardHeroIllustration';
-import { OrgAssignmentsWidget, OrgTaskItem } from '@/components/dashboard/personal/OrgAssignmentsWidget';
 
 interface RealAssessment {
   id: string;
@@ -81,7 +83,7 @@ export default function LearnerDashboardPage() {
     points: 0,
     totalLoginDays: 0,
     loginStreak: 0,
-    levelCode: 'Level 1: Basic',
+    levelCode: 'Cấp độ 1: Cơ bản',
     levelNextTarget: 150,
     isCertUnlocked: false,
     newLoginToday: false,
@@ -103,11 +105,7 @@ export default function LearnerDashboardPage() {
   const [assessments, setAssessments] = useState<RealAssessment[]>([]);
   const [baselineTest, setBaselineTest] = useState<{ id: string; title: string; duration_minutes?: number } | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
-  const [orgWork, setOrgWork] = useState<{
-    hasOrganization: boolean;
-    organization: { name: string; slug: string } | null;
-    tasks: OrgTaskItem[];
-  }>({ hasOrganization: false, organization: null, tasks: [] });
+  const router = useRouter();
 
   const loadLeaderboard = useCallback(async (period: 'week' | 'month' | 'all' = leaderboardTab) => {
     setLoadingLeaderboard(true);
@@ -211,30 +209,13 @@ export default function LearnerDashboardPage() {
         const res = await fetch('/api/personal/competency-profile', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
-          if (json.success && json.profile) {
-            setCompetencyProfile(json.profile);
+          const profileData = json.profile || json;
+          if (json.success && (profileData.hasTakenAssessment !== undefined || profileData.totalAssessmentsCompleted !== undefined)) {
+            setCompetencyProfile(profileData);
           }
         }
       } catch (e) {
         console.error('Failed to load competency profile:', e);
-      }
-    }
-
-    async function loadOrgWork() {
-      try {
-        const res = await fetch('/api/personal/organization-work', { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.hasOrganization) {
-            setOrgWork({
-              hasOrganization: true,
-              organization: json.organization,
-              tasks: json.tasks || [],
-            });
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to load organization work:', e);
       }
     }
 
@@ -243,7 +224,6 @@ export default function LearnerDashboardPage() {
     loadBaselineAssessment();
     loadLeaderboard();
     loadCompetencyProfile();
-    loadOrgWork();
 
     const handleProfileUpdate = () => {
       loadStats();
@@ -251,7 +231,6 @@ export default function LearnerDashboardPage() {
       loadAssessments();
       loadBaselineAssessment();
       loadLeaderboard();
-      loadOrgWork();
     };
 
     window.addEventListener('profile-updated', handleProfileUpdate);
@@ -259,7 +238,7 @@ export default function LearnerDashboardPage() {
   }, []);
 
   const progressRatio = Math.min(100, Math.round((stats.points / (stats.levelNextTarget || 150)) * 100));
-  const baselineTestId = baselineTest?.id || null;
+  const baselineTestId = baselineTest?.id || 'a0000000-0000-0000-0000-000000000001';
 
   // Real 7-day week calendar calculated dynamically from current date and real login streak
   const weekDays = useMemo(() => {
@@ -337,8 +316,8 @@ export default function LearnerDashboardPage() {
       id: 'm1',
       title: 'Hoàn thành bài đánh giá đầu vào',
       done: Boolean(competencyProfile?.hasTakenAssessment),
-      actionHref: baselineTestId ? `/personal/take/${baselineTestId}` : undefined,
-      actionLabel: baselineTestId ? 'Làm ngay' : 'Chưa có đề',
+      actionHref: baselineTestId ? `/personal/assessments/${baselineTestId}` : '/personal/assessments',
+      actionLabel: baselineTestId ? 'Làm ngay' : 'Xem danh sách',
     },
     {
       id: 'm2',
@@ -378,8 +357,8 @@ export default function LearnerDashboardPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header & Quick Indicators (Chuỗi và Level hòa với nền, không viền khung) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-zinc-850">
+      {/* 1. Header & Quick Indicators (Không viền ngang) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-1">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -401,7 +380,7 @@ export default function LearnerDashboardPage() {
         {/* Quick Indicators: Streak & Level (Borderless, Background-transparent, seamlessly blending with page) */}
         <div className="flex items-center gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0 flex-wrap sm:flex-nowrap">
           {/* Streak Days Tracker (Hòa vào nền, không viền, không rớt dòng) */}
-          <div className="p-0 bg-transparent border-0 shadow-none">
+          <div className="p-0 bg-transparent shadow-none">
             <div className="flex items-center justify-between gap-3 text-[11px] mb-1.5">
               <div className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100 font-bold whitespace-nowrap">
                 <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -432,7 +411,7 @@ export default function LearnerDashboardPage() {
           </div>
 
           {/* Level Progress Gauge (Hòa vào nền, không viền) */}
-          <div className="p-0 bg-transparent border-0 shadow-none flex items-center gap-3">
+          <div className="p-0 bg-transparent shadow-none flex items-center gap-3">
             <div className="relative w-12 h-12 flex items-center justify-center">
               <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
                 <path
@@ -493,38 +472,27 @@ export default function LearnerDashboardPage() {
                 : 'Thiết lập Hồ sơ Năng lực Số Ban Đầu'}
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-neutral-400 leading-relaxed max-w-2xl">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-neutral-300 max-w-xl leading-relaxed">
               {competencyProfile?.hasTakenAssessment
-                ? `Hồ sơ của bạn đã xác định ${passedDomainsCount}/5 miền đạt chuẩn. Hãy hoàn thành các bài học ở miền "${priorityDomain?.name}" để nâng cao trình độ.`
-                : 'Hoàn thành bài đánh giá đầu vào để hệ thống xây dựng lộ trình phù hợp với bạn. Khảo thí xác định chính xác điểm mạnh và khoảng trống cần bồi dưỡng.'}
+                ? 'Hồ sơ 5 miền đã sẵn sàng. Hãy tiếp tục chặng học để nâng cao kỹ năng.'
+                : 'Làm bài khảo thí nhanh để chẩn đoán điểm 5 miền và mở khóa lộ trình học tập.'}
             </p>
 
-            <div className="flex items-center gap-5 text-xs text-slate-500 dark:text-neutral-400 flex-wrap pt-1 font-medium">
-              <span className="flex items-center gap-1.5 font-mono">
-                <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
-                <span>{competencyProfile?.hasTakenAssessment ? 'Tự chủ thời gian' : '15 – 20 phút'}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
-                <span>5 miền năng lực</span>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-1">
               {competencyProfile?.hasTakenAssessment ? (
                 <Link
                   href="/personal/learning-path"
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20"
                 >
-                  <span>Vào bài học tiếp theo</span>
+                  <span>Học tiếp</span>
                   <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
                 </Link>
               ) : baselineTestId ? (
                 <Link
-                  href={`/personal/take/${baselineTestId}`}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20"
+                  href="/personal/take/baseline"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
                 >
-                  <span>Làm bài khảo thí ngay</span>
+                  <span>Làm ngay</span>
                   <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
                 </Link>
               ) : (
@@ -532,7 +500,7 @@ export default function LearnerDashboardPage() {
                   disabled
                   className="px-5 py-2.5 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 text-xs font-semibold inline-flex items-center gap-2 cursor-not-allowed"
                 >
-                  <span>Chưa mở đợt khảo thí</span>
+                  <span>Chưa mở đợt thi</span>
                 </button>
               )}
               <Link
@@ -586,10 +554,10 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
-        {/* Card 3: Activity Points (PTS) */}
+        {/* Card 3: Activity Points */}
         <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
-            <span className="font-medium text-neutral-700 dark:text-zinc-300">Điểm tích lũy (PTS)</span>
+            <span className="font-medium text-neutral-700 dark:text-zinc-300">Điểm tích lũy</span>
             <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300">
               <Trophy className="w-4 h-4" strokeWidth={1.75} />
             </div>
@@ -618,23 +586,15 @@ export default function LearnerDashboardPage() {
             <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
           </div>
           <div className="text-[10px] text-slate-400 dark:text-neutral-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            Chuẩn Năng lực số Quốc gia &rarr;
+            Xem điều kiện cấp chứng chỉ &rarr;
           </div>
         </Link>
       </div>
 
-      {/* 3.5. Organization Work Section (V3: Từ tổ chức của bạn) */}
-      {orgWork.hasOrganization && (
-        <OrgAssignmentsWidget
-          organizationName={orgWork.organization?.name || 'Tổ chức của bạn'}
-          tasks={orgWork.tasks}
-        />
-      )}
-
       {/* 4. Middle Section: Competency Profile (Conditional: Empty State vs Radar Chart) */}
       {!competencyProfile?.hasTakenAssessment ? (
         <div className="p-6 sm:p-8 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-850">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
@@ -684,7 +644,7 @@ export default function LearnerDashboardPage() {
 
           <div className="pt-2 flex items-center gap-3 flex-wrap">
             <Link
-              href={`/personal/take/${baselineTestId}`}
+              href={baselineTestId ? `/personal/assessments/${baselineTestId}` : '/personal/assessments'}
               className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20"
             >
               <span>Đánh giá năng lực ban đầu</span>
@@ -700,15 +660,15 @@ export default function LearnerDashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Radar Chart */}
+          {/* Left: Radar Chart (Không viền ngang) */}
           <div className="lg:col-span-6 p-6 sm:p-7 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-2">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Năng lực số của bạn
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Kết quả từ các bài đánh giá, làm bài và hoạt động học tập.
+                  Kết quả từ các bài đánh giá và hoạt động học tập.
                 </p>
               </div>
               <Link
@@ -724,7 +684,7 @@ export default function LearnerDashboardPage() {
               <CompetencyRadarChart data={currentRadarData} size={310} />
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-center gap-6 text-[11px] text-slate-600 dark:text-neutral-400 font-medium">
+            <div className="pt-2 flex items-center justify-center gap-6 text-[11px] text-slate-600 dark:text-neutral-400 font-medium">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-blue-600 dark:bg-blue-400" />
                 <span>Năng lực hiện tại</span>
@@ -736,10 +696,10 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          {/* Right: 5 Domains Progress Breakdown */}
+          {/* Right: 5 Domains Progress Breakdown (Không viền ngang) */}
           <div className="lg:col-span-6 p-6 sm:p-7 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
+              <div className="flex items-center justify-between pb-2">
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Tiến độ theo 5 miền năng lực
                 </h3>
@@ -817,7 +777,7 @@ export default function LearnerDashboardPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
+            <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
               <span className="flex items-center gap-1.5">
                 <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span>Kết quả được xác minh từ các bài khảo thí và nộp bài hợp lệ.</span>
@@ -833,12 +793,12 @@ export default function LearnerDashboardPage() {
         </div>
       )}
 
-      {/* 5. Row 1 of Bottom: Lộ Trình Học Tập (Stepper) & Bảng Xếp Hạng */}
+      {/* 5. Row 1 of Bottom: Lộ Trình Học Tập (Stepper) & Bảng Xếp Hạng (Không viền ngang) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Card 1: Lộ trình học tập dành cho bạn (Horizontal Stepper) */}
         <div className="lg:col-span-8 p-6 sm:p-7 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-2">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Lộ trình học tập dành cho bạn
@@ -895,8 +855,8 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-xs">
-            <span className="text-slate-500 dark:text-neutral-400 font-medium">Chặng 1: Xây dựng nền tảng thông tin &amp; dữ liệu</span>
+          <div className="pt-2 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-neutral-400 font-medium">Chặng 1: Nền tảng thông tin &amp; dữ liệu</span>
             <Link
               href="/personal/learning-path"
               className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
@@ -906,10 +866,10 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
-        {/* Card 2: Bảng xếp hạng mini (Hiển thị avatar ảnh thật cho Top 1) */}
+        {/* Card 2: Bảng xếp hạng mini */}
         <div className="lg:col-span-4 p-6 sm:p-7 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
@@ -1005,7 +965,7 @@ export default function LearnerDashboardPage() {
         {/* Card 1: Hoạt động gần đây */}
         <div className="p-6 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-2 mb-2">
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                 Hoạt động gần đây
               </h3>
@@ -1032,7 +992,7 @@ export default function LearnerDashboardPage() {
                         </div>
                       </div>
                       <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full text-[11px] shrink-0">
-                        +1 PTS
+                        +1 điểm
                       </span>
                     </div>
                   )}
@@ -1047,19 +1007,19 @@ export default function LearnerDashboardPage() {
                       </div>
                     </div>
                     <span className="font-mono text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full text-[11px] shrink-0">
-                      {stats.points} PTS
+                      {stats.points} điểm
                     </span>
                   </div>
                 </>
               ) : (
                 <div className="py-6 text-center text-xs text-slate-400 dark:text-neutral-500">
-                  Chưa có hoạt động ghi nhận điểm. Làm bài khảo thí hoặc học bài để nhận PTS.
+                  Chưa có hoạt động ghi nhận điểm. Làm bài khảo thí hoặc học bài để nhận điểm.
                 </div>
               )}
             </div>
           </div>
 
-          <div className="pt-3 mt-2 border-t border-slate-100 dark:border-zinc-850 text-right">
+          <div className="pt-2 mt-2 text-right">
             <Link
               href="/personal/leaderboard"
               className="text-[11px] text-slate-400 hover:text-blue-600 transition-colors"
@@ -1069,10 +1029,10 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
-        {/* Card 2: Gợi ý cho bạn (Sử dụng ảnh minh họa thật đầy đủ) */}
+        {/* Card 2: Gợi ý cho bạn */}
         <div className="p-6 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-1.5 pb-3 mb-3 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center gap-1.5 pb-2 mb-2">
               <Lightbulb className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                 Gợi ý cho bạn
@@ -1092,7 +1052,7 @@ export default function LearnerDashboardPage() {
                   />
                   <div className="truncate">
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
-                      Tìm hiểu về Khung năng lực số
+                      Tìm hiểu về 5 miền năng lực số
                     </div>
                     <div className="text-[10px] text-slate-400 dark:text-neutral-500">Bài viết &bull; 10 phút</div>
                   </div>
@@ -1142,7 +1102,7 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-3 mt-2 border-t border-slate-100 dark:border-zinc-850 text-right">
+          <div className="pt-2 mt-2 text-right">
             <Link
               href="/personal/learning-path"
               className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold hover:underline"
@@ -1152,10 +1112,10 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
-        {/* Card 3: Mục tiêu nhanh (Tự động đồng bộ theo tiến trình thực tế, không tick tay) */}
+        {/* Card 3: Mục tiêu nhanh */}
         <div className="p-6 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-2 mb-2">
               <div className="flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />
                 <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -1214,7 +1174,7 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-3 mt-4 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500">
+          <div className="pt-2 mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500">
             <span>
               Tiến độ: <strong className="font-mono text-neutral-900 dark:text-neutral-100">{completedMilestonesCount}</strong> / {masterMilestones.length} hoàn thành
             </span>
@@ -1230,7 +1190,7 @@ export default function LearnerDashboardPage() {
       {showLevelModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-xl space-y-4 text-xs text-neutral-800 dark:text-zinc-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
                 <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">

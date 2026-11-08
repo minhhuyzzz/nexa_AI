@@ -14,5 +14,11 @@ export default async function PersonalAuthoringEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <AuthoringEditorTwoPane assessmentId={id} />;
+  return (
+    <AuthoringEditorTwoPane
+      assessmentId={id}
+      workspaceMode="PERSONAL"
+      returnUrl="/personal/authoring"
+    />
+  );
 }

@@ -225,7 +225,7 @@ export function BulkMemberImportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md shadow-xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <FileSpreadsheet className="w-4 h-4" />
@@ -248,7 +248,7 @@ export function BulkMemberImportModal({
         </div>
 
         {/* 3 Steps indicator */}
-        <div className="grid grid-cols-3 border-b border-slate-100 dark:border-zinc-800 text-xs bg-slate-50/50 dark:bg-zinc-900/50">
+        <div className="grid grid-cols-3 text-xs bg-slate-50/50 dark:bg-zinc-900/50">
           {[
             { num: 1, label: 'Tải tệp CSV' },
             { num: 2, label: 'Cấu hình vai trò' },
@@ -260,12 +260,12 @@ export function BulkMemberImportModal({
               onClick={() => {
                 if (parsedRows.length > 0 || s.num === 1) setStep(s.num as 1 | 2 | 3);
               }}
-              className={`py-2 px-3 text-center border-b-2 font-medium flex items-center justify-center gap-1.5 transition ${
+              className={`py-1.5 px-3 rounded-lg text-center font-semibold flex items-center justify-center gap-1.5 transition-all ${
                 step === s.num
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-white dark:bg-zinc-900'
+                  ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-2xs'
                   : step > s.num
-                    ? 'border-transparent text-emerald-600 dark:text-emerald-400'
-                    : 'border-transparent text-slate-400 dark:text-zinc-600'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-slate-400 dark:text-zinc-600'
               }`}
             >
               <span
@@ -285,7 +285,7 @@ export function BulkMemberImportModal({
         </div>
 
         {/* Quota Strip */}
-        <div className="bg-slate-50 dark:bg-zinc-800/40 px-5 py-2.5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+        <div className="bg-slate-50 dark:bg-zinc-800/40 px-5 py-2.5 flex items-center justify-between text-xs">
           <div className="flex items-center gap-4 text-slate-600 dark:text-neutral-400">
             <span>
               Ghế trống hiện có:{' '}
@@ -461,7 +461,7 @@ export function BulkMemberImportModal({
               )}
 
               {/* Filter tabs */}
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-2">
+              <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                   {[
                     { id: 'ALL', label: `Tất cả (${parsedRows.length})` },
@@ -497,7 +497,7 @@ export function BulkMemberImportModal({
               {/* Preview table */}
               <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden max-h-56 overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-zinc-800/80 text-slate-500 dark:text-neutral-400 font-semibold border-b border-slate-200 dark:border-zinc-800 sticky top-0">
+                  <thead className="bg-slate-50 dark:bg-zinc-800/80 text-slate-500 dark:text-neutral-400 font-semibold sticky top-0">
                     <tr>
                       <th className="py-2 px-3">Email</th>
                       <th className="py-2 px-3">Họ và tên</th>
@@ -506,7 +506,7 @@ export function BulkMemberImportModal({
                       <th className="py-2 px-3">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  <tbody className="">
                     {displayedRows.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-6 text-center text-slate-400">
@@ -527,10 +527,10 @@ export function BulkMemberImportModal({
                             {row.email}
                           </td>
                           <td className="py-2 px-3 text-slate-700 dark:text-neutral-300">
-                            {row.fullName || '—'}
+                            {row.fullName || 'Chưa cập nhật'}
                           </td>
                           <td className="py-2 px-3 font-mono text-[11px] text-slate-500">
-                            {row.studentId || '—'}
+                            {row.studentId || 'Chưa có'}
                           </td>
                           <td className="py-2 px-3 text-[11px]">
                             <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-medium">
@@ -559,7 +559,7 @@ export function BulkMemberImportModal({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
+        <div className="px-5 py-3 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
           <button
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-md border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 font-medium transition"

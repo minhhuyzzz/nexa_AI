@@ -54,7 +54,7 @@ export async function GET(
         .from('evaluator_classes')
         .select('id')
         .eq('organization_id', orgId)
-        .eq('evaluator_id', user.id);
+        .or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
 
       const myClassIds = (myClasses || []).map((c) => c.id);
 
@@ -238,7 +238,7 @@ export async function POST(
         .from('evaluator_classes')
         .select('id')
         .eq('organization_id', orgId)
-        .eq('evaluator_id', user.id);
+        .or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
 
       const { data: myCampaigns } = await adminSupabase
         .from('assessment_campaigns')

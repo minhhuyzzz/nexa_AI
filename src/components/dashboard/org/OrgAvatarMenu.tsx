@@ -130,7 +130,7 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
             />
             <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-xl py-2 z-50 text-xs text-slate-700 dark:text-zinc-200 animate-in fade-in zoom-in-95 duration-100">
               {/* Profile Header */}
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3">
+              <div className="px-4 py-3 flex items-center gap-3">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -228,7 +228,7 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
               </div>
 
               {/* Sign out */}
-              <div className="pt-1 mt-1 border-t border-slate-100 dark:border-zinc-800">
+              <div className="pt-1 mt-1">
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium"
@@ -257,6 +257,7 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
           isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
           organization={inviteOrg}
+          userRole={inviteOrg.role}
         />
       )}
     </>

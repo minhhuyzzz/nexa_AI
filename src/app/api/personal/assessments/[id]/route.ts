@@ -12,6 +12,11 @@ const updateSchema = z.object({
   passing_score: z.number().min(0).max(100).optional(),
   point_reward: z.number().int().min(0).max(1000).optional(),
   is_published: z.boolean().optional(),
+  visibility: z.enum(['PERSONAL', 'ORGANIZATION', 'PUBLIC']).optional(),
+  security_settings: z.record(z.any()).optional(),
+  snapshot_data: z.record(z.any()).optional(),
+  is_vip: z.boolean().optional(),
+  access_tier: z.enum(['FREE', 'VIP']).optional(),
 });
 
 export async function GET(
@@ -41,7 +46,31 @@ export async function GET(
       return NextResponse.json({ error: 'Không tìm thấy bài khảo thí' }, { status: 404 });
     }
 
-    if (assessment.created_by !== user.id && assessment.owner_user_id !== user.id) {
+    let isAuthorized = assessment.created_by === user.id || assessment.owner_user_id === user.id;
+    if (!isAuthorized && assessment.organization_id) {
+      const { data: membership } = await db
+        .from('user_organizations')
+        .select('org_role, status')
+        .eq('user_id', user.id)
+        .eq('organization_id', assessment.organization_id)
+        .maybeSingle();
+      if (membership && membership.status === 'ACTIVE' && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(membership.org_role)) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized && assessment.organization_id === null) {
+      const { data: profile } = await db
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (profile?.role === 'ADMIN') {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Bạn không có quyền truy cập đề thi này' },
         { status: 403 }
@@ -74,7 +103,7 @@ export async function PATCH(
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
     const { data: assessment } = await db
       .from('assessments')
-      .select('id, created_by, owner_user_id')
+      .select('id, created_by, owner_user_id, organization_id')
       .eq('id', id)
       .maybeSingle();
 
@@ -82,7 +111,31 @@ export async function PATCH(
       return NextResponse.json({ error: 'Không tìm thấy bài khảo thí' }, { status: 404 });
     }
 
-    if (assessment.created_by !== user.id && assessment.owner_user_id !== user.id) {
+    let isAuthorized = assessment.created_by === user.id || assessment.owner_user_id === user.id;
+    if (!isAuthorized && assessment.organization_id) {
+      const { data: membership } = await db
+        .from('user_organizations')
+        .select('org_role, status')
+        .eq('user_id', user.id)
+        .eq('organization_id', assessment.organization_id)
+        .maybeSingle();
+      if (membership && membership.status === 'ACTIVE' && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(membership.org_role)) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized && assessment.organization_id === null) {
+      const { data: profile } = await db
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (profile?.role === 'ADMIN') {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Bạn không có quyền chỉnh sửa đề thi này' },
         { status: 403 }
@@ -98,12 +151,34 @@ export async function PATCH(
       );
     }
 
+    const { data: userProfile } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const isPlatformAdmin = userProfile?.role === 'ADMIN';
+
+    const safeUpdateData: Record<string, any> = {
+      ...validated.data,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (!isPlatformAdmin) {
+      // Non-admins cannot alter platform monetization tiers (FREE/VIP)
+      delete safeUpdateData.is_vip;
+      delete safeUpdateData.access_tier;
+
+      // Preserve organization ownership and visibility
+      if (assessment.organization_id) {
+        safeUpdateData.organization_id = assessment.organization_id;
+        safeUpdateData.visibility = 'ORGANIZATION';
+      }
+    }
+
     const { data: updated, error: updateError } = await db
       .from('assessments')
-      .update({
-        ...validated.data,
-        updated_at: new Date().toISOString(),
-      })
+      .update(safeUpdateData)
       .eq('id', id)
       .select()
       .single();
@@ -138,7 +213,7 @@ export async function DELETE(
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
     const { data: assessment } = await db
       .from('assessments')
-      .select('id, title, created_by, owner_user_id')
+      .select('id, title, created_by, owner_user_id, organization_id')
       .eq('id', id)
       .maybeSingle();
 
@@ -146,7 +221,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Không tìm thấy bài khảo thí' }, { status: 404 });
     }
 
-    if (assessment.created_by !== user.id && assessment.owner_user_id !== user.id) {
+    let isAuthorized = assessment.created_by === user.id || assessment.owner_user_id === user.id;
+    if (!isAuthorized && assessment.organization_id) {
+      const { data: membership } = await db
+        .from('user_organizations')
+        .select('org_role, status')
+        .eq('user_id', user.id)
+        .eq('organization_id', assessment.organization_id)
+        .maybeSingle();
+      if (membership && membership.status === 'ACTIVE' && ['ORG_OWNER', 'ORG_ADMIN'].includes(membership.org_role)) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Bạn không có quyền xóa đề thi này' },
         { status: 403 }

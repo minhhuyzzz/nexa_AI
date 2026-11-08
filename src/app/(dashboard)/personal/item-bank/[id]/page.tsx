@@ -199,7 +199,7 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
         <div className="flex items-center gap-3">
           <Link
             href="/personal/item-bank"
@@ -280,7 +280,7 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
 
           {/* Question Type Logic */}
           <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-4 shadow-2xs">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
+            <div className="flex items-center justify-between pb-3">
               <h2 className="text-xs font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wide">
                 {type === 'MCQ' ? 'Các phương án trả lời trắc nghiệm' : 'Thang tiêu chí đánh giá (Rubric)'}
               </h2>
@@ -358,7 +358,7 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
         {/* Right 1 Col: Metadata & Properties */}
         <div className="space-y-5">
           <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-4 shadow-2xs text-xs">
-            <h2 className="font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide border-b border-slate-100 dark:border-zinc-850 pb-2">
+            <h2 className="font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide pb-2">
               Thuộc tính câu hỏi
             </h2>
 

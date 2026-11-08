@@ -135,15 +135,15 @@ export function ApprovalQueueView({
 
         {/* Requests Table */}
         <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/75 dark:bg-zinc-900/60 border-b border-slate-200/80 dark:border-zinc-800 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+              <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                 <th className="py-2.5 px-4 w-10">
                   <input
                     type="checkbox"
                     checked={requests.length > 0 && selectedIds.length === requests.length}
                     onChange={toggleSelectAll}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded text-blue-600 focus:ring-blue-500"
                   />
                 </th>
                 <th className="py-2.5 px-4">Người yêu cầu</th>
@@ -154,7 +154,7 @@ export function ApprovalQueueView({
                 <th className="py-2.5 px-4">Trạng thái</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-850 text-xs">
+            <tbody className="text-xs">
               {requests.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-neutral-500 text-xs">
@@ -185,7 +185,7 @@ export function ApprovalQueueView({
                           type="checkbox"
                           checked={isRowSelected}
                           onChange={() => {}}
-                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded text-blue-600 focus:ring-blue-500"
                         />
                       </td>
                       <td className="py-3 px-4 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -222,7 +222,7 @@ export function ApprovalQueueView({
 
           {/* Batch Actions Bar */}
           {selectedIds.length > 0 && (
-            <div className="p-3 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 flex items-center justify-between">
+            <div className="p-3 bg-slate-50 dark:bg-zinc-900/60 flex items-center justify-between">
               <span className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                 Đã chọn <strong className="font-mono text-blue-600">{selectedIds.length}</strong> yêu cầu
               </span>
@@ -253,7 +253,7 @@ export function ApprovalQueueView({
       <div className="space-y-4">
         {activeRequest ? (
           <div className="p-5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
                 Duyệt yêu cầu
               </h3>
@@ -286,7 +286,7 @@ export function ApprovalQueueView({
             </div>
 
             {/* Request Meta Info */}
-            <div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-zinc-850">
+            <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between py-1.5">
                 <span className="text-slate-500">Lớp được chọn:</span>
                 <span className="font-semibold text-neutral-800 dark:text-zinc-200">

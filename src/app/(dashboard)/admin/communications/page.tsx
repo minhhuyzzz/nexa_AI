@@ -134,7 +134,7 @@ export default function AdminCommunicationsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Trung Tâm Truyền Thông &amp; Hộp Thư Góp Ý
@@ -176,43 +176,45 @@ export default function AdminCommunicationsPage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-zinc-800 text-xs font-medium">
-        <button
-          onClick={() => setActiveTab('feedback')}
-          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 -mb-px transition-colors ${
-            activeTab === 'feedback'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
-          <span>Hộp thư góp ý ({unreadCount} mở)</span>
-        </button>
+      {/* Tabs (Pill Tabs, không gạch chân) */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('feedback')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'feedback'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
+            <span>Hộp thư góp ý ({unreadCount} mở)</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('broadcast')}
-          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 -mb-px transition-colors ${
-            activeTab === 'broadcast'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-          }`}
-        >
-          <Megaphone className="w-4 h-4" strokeWidth={1.75} />
-          <span>Thông báo lưu DB (Broadcast)</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('broadcast')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'broadcast'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            <Megaphone className="w-4 h-4" strokeWidth={1.75} />
+            <span>Thông báo lưu DB (Broadcast)</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('email')}
-          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 -mb-px transition-colors ${
-            activeTab === 'email'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-          }`}
-        >
-          <Mail className="w-4 h-4" strokeWidth={1.75} />
-          <span>Chiến dịch Email</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('email')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'email'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            <Mail className="w-4 h-4" strokeWidth={1.75} />
+            <span>Chiến dịch Email</span>
+          </button>
+        </div>
       </div>
 
       {/* TAB 1: FEEDBACK INBOX */}
@@ -224,7 +226,7 @@ export default function AdminCommunicationsPage() {
             </div>
           )}
 
-          <div className="divide-y divide-slate-100 dark:divide-zinc-850 border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111114] overflow-hidden">
+          <div className="border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111114] overflow-hidden">
             {loadingFeedbacks ? (
               <div className="p-8 text-center text-slate-400 dark:text-neutral-500 text-xs">
                 Đang tải dữ liệu ý kiến đóng góp...
@@ -313,7 +315,7 @@ export default function AdminCommunicationsPage() {
       {/* TAB 2: IN-APP BROADCAST */}
       {activeTab === 'broadcast' && (
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-6 space-y-5 text-xs shadow-xs">
-          <div className="pb-3 border-b border-slate-100 dark:border-zinc-850">
+          <div className="pb-3">
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Megaphone className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
               <span>Phát Thông Báo Toàn Nền Tảng Lưu Database</span>
@@ -401,7 +403,7 @@ export default function AdminCommunicationsPage() {
       {/* TAB 3: EMAIL COMMUNICATIONS */}
       {activeTab === 'email' && (
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-6 space-y-5 text-xs shadow-xs">
-          <div className="pb-3 border-b border-slate-100 dark:border-zinc-850">
+          <div className="pb-3">
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
               <span>Gửi Bản Tin &amp; Thông Báo Email</span>

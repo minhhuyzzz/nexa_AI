@@ -32,7 +32,7 @@ export function OrgPageHeader({
                 {orgName}
               </h1>
               <span className="px-2.5 py-0.5 text-[10px] font-semibold font-mono rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                Gói Business Plus
+                Gói Business
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">

@@ -143,7 +143,7 @@ export function InviteMemberDrawer({
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-2xl bg-white dark:bg-[#111114] shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col justify-between">
           {/* Header */}
-          <div className="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <Users className="w-4 h-4" strokeWidth={1.75} />
@@ -325,7 +325,7 @@ export function InviteMemberDrawer({
                       id="sendEmailNow"
                       checked={sendEmailNow}
                       onChange={(e) => setSendEmailNow(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded text-blue-600 focus:ring-blue-500"
                     />
                     <label htmlFor="sendEmailNow" className="text-xs text-slate-600 dark:text-neutral-400">
                       Gửi email thông báo ngay kèm hướng dẫn kích hoạt tài khoản
@@ -426,7 +426,7 @@ export function InviteMemberDrawer({
                 )}
 
                 {/* Submit Action */}
-                <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-zinc-800">
+                <div className="pt-2 flex items-center justify-end gap-3">
                   <button
                     type="button"
                     onClick={onClose}

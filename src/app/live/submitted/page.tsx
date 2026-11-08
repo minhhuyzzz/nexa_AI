@@ -164,7 +164,7 @@ function LiveSubmittedContent() {
       }`}
     >
       {/* 1. Top Header Banner (Screen 14) */}
-      <header className="flex items-center justify-between pb-4 border-b border-white/10">
+      <header className="flex items-center justify-between pb-4">
         <div className="flex items-center gap-2">
           <span className="font-extrabold text-lg tracking-wider text-blue-500 font-sans">
             NEXA.
@@ -272,7 +272,7 @@ function LiveSubmittedContent() {
           </div>
 
           {/* Stepper Status (Screen 14) */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+          <div className="pt-2 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
               <CheckCircle2 className="w-4 h-4" />
               <span>1. Đã nộp bài</span>

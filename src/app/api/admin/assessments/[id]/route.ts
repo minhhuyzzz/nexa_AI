@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 import { z } from 'zod';
@@ -15,6 +16,7 @@ const updateAssessmentSchema = z.object({
   is_published: z.boolean().optional(),
   is_vip: z.boolean().optional(),
   access_tier: z.enum(['FREE', 'VIP']).optional(),
+  security_settings: z.record(z.any()).optional(),
 });
 
 export async function GET(
@@ -42,6 +44,7 @@ export async function GET(
         is_published,
         is_vip,
         access_tier,
+        security_settings,
         created_at,
         updated_at,
         assessment_items (
@@ -96,11 +99,66 @@ export async function GET(
       .eq('id', id)
       .single();
 
-    if (error || !assessment) {
-      return NextResponse.json({ error: 'Không tìm thấy bài khảo thí' }, { status: 404 });
+    let resolvedAssessment: any = assessment;
+
+    if (error || !resolvedAssessment) {
+      console.warn('[ADMIN_GET_ASSESSMENT_RLS_FALLBACK]', error?.message || 'Assessment null, attempting admin client');
+      const adminClient = createAdminClient();
+      const { data: adminAssessment, error: adminErr } = await adminClient
+        .from('assessments')
+        .select(`
+          id,
+          title,
+          description,
+          duration_minutes,
+          passing_score,
+          point_reward,
+          is_published,
+          is_vip,
+          access_tier,
+          security_settings,
+          created_at,
+          updated_at,
+          assessment_items (
+            id,
+            type,
+            prompt,
+            points,
+            order_index,
+            competency_id,
+            is_multi_competency,
+            target_competencies,
+            rubric_guide,
+            competencies (
+              id,
+              skill_code,
+              title,
+              domain_id,
+              competency_domains (
+                code,
+                title
+              )
+            ),
+            item_options (
+              id,
+              content,
+              is_correct,
+              explanation,
+              order_index
+            )
+          )
+        `)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (adminErr || !adminAssessment) {
+        console.error('[ADMIN_GET_ASSESSMENT_FINAL_ERROR]:', adminErr);
+        return NextResponse.json({ error: 'Không tìm thấy bài khảo thí' }, { status: 404 });
+      }
+      resolvedAssessment = adminAssessment;
     }
 
-    return NextResponse.json({ assessment });
+    return NextResponse.json({ assessment: resolvedAssessment });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });

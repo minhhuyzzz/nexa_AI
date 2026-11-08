@@ -206,7 +206,7 @@ export default async function OrgCampaignDetailPage({
         </div>
 
         {/* Academic Details strip */}
-        <div className="pt-4 border-t border-slate-100 dark:border-zinc-850 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-zinc-400">
+        <div className="pt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-zinc-400">
           <span className="flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
             Đề thi: <strong className="text-slate-800 dark:text-zinc-200">{asm?.title || 'Đề thi tổ chức'}</strong> (v{asm?.version || '1.0'})
@@ -274,7 +274,7 @@ export default async function OrgCampaignDetailPage({
 
       {/* Submissions Table */}
       <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-5 shadow-2xs space-y-4 text-xs">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
+        <div className="flex items-center justify-between pb-3">
           <h2 className="font-bold text-slate-900 dark:text-zinc-100 uppercase text-xs tracking-wide">
             Danh Sách Bài Nộp &amp; Kết Quả Thí Sinh ({submissions.length})
           </h2>
@@ -290,7 +290,7 @@ export default async function OrgCampaignDetailPage({
         ) : (
           <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 font-bold uppercase text-[10px]">
+              <thead className="bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 font-bold uppercase text-[10px]">
                 <tr>
                   <th className="py-2.5 px-3">Thí sinh</th>
                   <th className="py-2.5 px-3">Email</th>
@@ -300,7 +300,7 @@ export default async function OrgCampaignDetailPage({
                   <th className="py-2.5 px-3 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850 text-slate-700 dark:text-zinc-300">
+              <tbody className="text-slate-700 dark:text-zinc-300">
                 {submissions.map((s) => {
                   const prof = (s.profiles as any);
                   const isGraded = s.status === 'EVALUATED';

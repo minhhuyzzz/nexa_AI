@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from './superadmin';
 
-export type OrgRole = 'ORG_OWNER' | 'ORG_ADMIN' | 'ASSESSOR' | 'EVALUATOR' | 'REPORT_VIEWER' | 'MEMBER';
+export type OrgRole = 'ORG_OWNER' | 'ORG_ADMIN' | 'ASSESSOR' | 'EVALUATOR' | 'MEMBER';
 
 export type OrgPermissionAction =
   | 'VIEW_WORKSPACE'
@@ -42,16 +42,16 @@ export interface OrgAuthContext {
 }
 
 const ACTION_ROLE_MAP: Record<OrgPermissionAction, OrgRole[]> = {
-  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN'],
+  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
   MANAGE_MEMBERS: ['ORG_OWNER', 'ORG_ADMIN'],
-  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN'],
-  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN'],
-  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN'],
+  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
   VIEW_AI_QUOTA: ['ORG_OWNER', 'ORG_ADMIN'],
-  MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN'],
-  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN'],
+  MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
   MANAGE_SETTINGS: ['ORG_OWNER', 'ORG_ADMIN'],
-  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN'],
+  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
 };
 
 /**

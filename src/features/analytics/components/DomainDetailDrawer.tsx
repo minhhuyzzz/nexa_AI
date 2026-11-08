@@ -50,7 +50,7 @@ export function DomainDetailDrawer({ domain, onClose }: Props) {
         className="relative z-10 w-full max-w-md bg-white dark:bg-[#0A0A0B] border-l border-slate-200 dark:border-zinc-800 shadow-xl flex flex-col h-full animate-in slide-in-from-right duration-250"
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-start justify-between gap-3">
+        <div className="p-5 flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40">
@@ -92,22 +92,12 @@ export function DomainDetailDrawer({ domain, onClose }: Props) {
             </div>
 
             <div className="p-3.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40">
-              <div className="text-[11px] text-slate-500 dark:text-neutral-400">Đánh giá trình độ</div>
-              <div className="text-base font-bold font-mono mt-1 tabular-nums">
-                {isEvaluated ? (
-                  isProficient ? (
-                    <span className="text-emerald-600 dark:text-emerald-400">Thành thạo</span>
-                  ) : isGap ? (
-                    <span className="text-amber-600 dark:text-amber-400">Cần bồi dưỡng</span>
-                  ) : (
-                    <span className="text-slate-800 dark:text-neutral-200">Mức cơ bản</span>
-                  )
-                ) : (
-                  <span className="text-slate-400 dark:text-neutral-500 font-normal">Chưa khảo thí</span>
-                )}
+              <div className="text-[11px] text-slate-500 dark:text-neutral-400">Độ phủ &amp; Người đánh giá</div>
+              <div className="text-xl font-bold font-mono text-slate-900 dark:text-neutral-100 mt-1 tabular-nums">
+                {domain.coverageRate !== null ? `${domain.coverageRate}%` : '—'}
               </div>
               <div className="text-[10px] text-slate-400 dark:text-neutral-500 mt-1">
-                {domain.testedCount > 0 ? `${domain.testedCount} lượt làm bài` : 'Chưa có bài thi'}
+                {domain.testedCount > 0 ? `${domain.testedCount} người có bằng chứng` : 'Chưa có bài thi'}
               </div>
             </div>
           </div>
@@ -176,7 +166,7 @@ export function DomainDetailDrawer({ domain, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 flex justify-end">
+        <div className="p-4 bg-slate-50 dark:bg-zinc-900/60 flex justify-end">
           <button
             type="button"
             onClick={onClose}

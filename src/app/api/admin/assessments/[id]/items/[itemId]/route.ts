@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { z } from 'zod';
 import { RubricService } from '@/features/assessments/services/rubric.service';
@@ -97,7 +98,7 @@ export async function PUT(
     }
 
     const { id: assessmentId, itemId } = await params;
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
     const body = await req.json();
 
     const parsed = updateItemSchema.safeParse(body);
@@ -123,7 +124,7 @@ export async function PUT(
 
     let competencyId = rawCompId;
     if (!competencyId && skill_code) {
-      const { data: comp } = await supabase
+      const { data: comp } = await adminSupabase
         .from('competencies')
         .select('id')
         .eq('skill_code', skill_code.trim())
@@ -147,7 +148,7 @@ export async function PUT(
       itemUpdatePayload.rubric_guide = rubric_guide ? rubric_guide.trim() : null;
     }
 
-    const { data: updatedItem, error: updateErr } = await supabase
+    const { data: updatedItem, error: updateErr } = await adminSupabase
       .from('assessment_items')
       .update(itemUpdatePayload)
       .eq('id', itemId)
@@ -162,7 +163,7 @@ export async function PUT(
 
     // If options are provided, update them
     if (options && options.length > 0) {
-      await supabase.from('item_options').delete().eq('item_id', itemId);
+      await adminSupabase.from('item_options').delete().eq('item_id', itemId);
 
       const optInserts = options.map((opt, idx) => ({
         item_id: itemId,
@@ -172,14 +173,14 @@ export async function PUT(
         order_index: idx + 1,
       }));
 
-      await supabase.from('item_options').insert(optInserts);
+      await adminSupabase.from('item_options').insert(optInserts);
     }
 
     // If rubric is provided, update it
     let savedRubric = null;
     if (rubric) {
       const rubRes = await RubricService.saveRubricForItem(
-        supabase,
+        adminSupabase,
         itemId,
         rubric,
         updatedItem.points
@@ -190,7 +191,7 @@ export async function PUT(
         console.error('Error updating rubric for item:', rubRes.errors);
       }
     } else {
-      savedRubric = await RubricService.getRubricByItemId(supabase, itemId);
+      savedRubric = await RubricService.getRubricByItemId(adminSupabase, itemId);
     }
 
     return NextResponse.json({ item: updatedItem, rubric: savedRubric });
@@ -211,10 +212,10 @@ export async function DELETE(
     }
 
     const { id: assessmentId, itemId } = await params;
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
 
     // Check if this item is part of submitted answers
-    const { count } = await supabase
+    const { count } = await adminSupabase
       .from('submission_answers')
       .select('*', { count: 'exact', head: true })
       .eq('item_id', itemId);
@@ -227,10 +228,10 @@ export async function DELETE(
     }
 
     // Delete options first (if foreign key doesn't cascade)
-    await supabase.from('item_options').delete().eq('item_id', itemId);
+    await adminSupabase.from('item_options').delete().eq('item_id', itemId);
 
     // Delete item
-    const { error } = await supabase
+    const { error } = await adminSupabase
       .from('assessment_items')
       .delete()
       .eq('id', itemId)

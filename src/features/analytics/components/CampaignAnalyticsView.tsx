@@ -70,7 +70,7 @@ export function CampaignAnalyticsView({
 
   return (
     <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
-      <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
             Danh Sách Đợt Đánh Giá & Khảo Thí
@@ -87,7 +87,7 @@ export function CampaignAnalyticsView({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="bg-slate-50 dark:bg-zinc-900/60 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-300 font-semibold">
+            <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-600 dark:text-neutral-300 font-semibold">
               <th className="py-3 px-4">Tên đợt đánh giá</th>
               <th className="py-3 px-4 text-center">Trạng thái</th>
               <th className="py-3 px-4">Thời gian</th>
@@ -98,7 +98,7 @@ export function CampaignAnalyticsView({
               <th className="py-3 px-4 text-center">Hành động</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+          <tbody className="">
             {campaigns.map((cmp) => {
               const isSelected = selectedCampaignId === cmp.campaignId;
               const hasData = cmp.evaluatedCount > 0;

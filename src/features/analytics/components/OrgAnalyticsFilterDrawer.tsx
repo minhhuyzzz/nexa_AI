@@ -76,7 +76,7 @@ export function OrgAnalyticsFilterDrawer({
         className="relative z-10 w-full max-w-sm bg-white dark:bg-[#0A0A0B] border-l border-slate-200 dark:border-zinc-800 shadow-xl flex flex-col h-full animate-in slide-in-from-right duration-200 text-xs"
       >
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h2 id="filter-drawer-title" className="text-sm font-bold text-slate-900 dark:text-neutral-100">
@@ -140,7 +140,7 @@ export function OrgAnalyticsFilterDrawer({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 flex items-center justify-between gap-3">
+        <div className="p-4 bg-slate-50 dark:bg-zinc-900/60 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleReset}

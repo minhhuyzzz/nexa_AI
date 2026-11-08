@@ -30,7 +30,7 @@ export function AiWorkflowSection() {
             </p>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
+          <div className="pt-4 flex items-center gap-2 text-xs text-slate-500">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Phản hồi chi tiết, minh bạch</span>
           </div>
@@ -50,7 +50,7 @@ export function AiWorkflowSection() {
             </p>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
+          <div className="pt-4 flex items-center gap-2 text-xs text-slate-500">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Tiết kiệm thời gian, hiệu quả cao</span>
           </div>
@@ -70,7 +70,7 @@ export function AiWorkflowSection() {
             </p>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
+          <div className="pt-4 flex items-center gap-2 text-xs text-slate-500">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Tự động khử thông tin định danh</span>
           </div>

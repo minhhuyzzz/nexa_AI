@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import {
   AdminAssessmentBankClient,
   type AssessmentItemRecord,
@@ -7,7 +7,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function AdminContentPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // 1. Fetch official canonical system assessments only (Exclude Org & Personal assessments)
   const { data: rawAssessments } = await supabase
@@ -24,6 +24,7 @@ export default async function AdminContentPage() {
       access_tier,
       visibility,
       organization_id,
+      security_settings,
       created_at,
       assessment_items (
         id,
@@ -45,9 +46,17 @@ export default async function AdminContentPage() {
     .order('created_at', { ascending: false });
 
   // Strictly isolate: only include system canonical assessments (PUBLIC / SYSTEM_CURATED), never Org or Personal tests
+  // Also isolate the Baseline Intake exam into its dedicated '/admin/baseline' workspace
   const filteredCanonical = (rawAssessments || []).filter((a: any) => {
     if (a.organization_id) return false;
     if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+    if (
+      a.id === 'a0000000-0000-0000-0000-000000000001' ||
+      a.slug === 'baseline' ||
+      a.title?.toLowerCase().includes('đầu vào')
+    ) {
+      return false;
+    }
     return true;
   });
 
@@ -62,6 +71,12 @@ export default async function AdminContentPage() {
     .from('competencies')
     .select('id, skill_code, title, domain_id')
     .order('skill_code', { ascending: true });
+
+  // 4. Fetch real pending contributions count from community_contributions
+  const { count: pendingContributionsCount } = await supabase
+    .from('community_contributions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'PENDING');
 
   // Format assessments
   const assessments: AssessmentItemRecord[] = filteredCanonical.map((a: any) => {
@@ -117,6 +132,7 @@ export default async function AdminContentPage() {
       typeLabel: typeLabels.length > 0 ? typeLabels.join(', ') : 'Chưa có câu hỏi',
       domainName,
       domainCodes,
+      security_settings: a.security_settings || null,
     };
   });
 
@@ -133,6 +149,7 @@ export default async function AdminContentPage() {
       initialAssessments={assessments}
       domains={domains}
       competencies={competencies}
+      pendingContributionsCount={pendingContributionsCount || 0}
     />
   );
 }

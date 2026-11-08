@@ -656,7 +656,7 @@ function LiveControlContent() {
         {/* ======================================================================= */}
         {/* 1. TOP HEADER: Back Link, Breadcrumb, Room Title & Primary Actions     */}
         {/* ======================================================================= */}
-        <div className="space-y-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <div className="space-y-3 pb-3">
           <Link
             href={backToListUrl}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 text-xs font-semibold shadow-2xs transition-colors"
@@ -848,7 +848,7 @@ function LiveControlContent() {
             <div className="lg:col-span-7 space-y-5">
               {/* Card 1: Arena Hero Display */}
               <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between pb-3">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
                     <span>Sảnh chờ đang mở &ndash; Sẵn sàng đón thí sinh</span>
@@ -904,7 +904,7 @@ function LiveControlContent() {
                     </div>
 
                     {/* Step-by-step instructions */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2 text-xs text-slate-600 dark:text-neutral-400">
+                    <div className="pt-3 space-y-2 text-xs text-slate-600 dark:text-neutral-400">
                       <div className="flex items-start gap-2">
                         <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
                           1
@@ -947,7 +947,7 @@ function LiveControlContent() {
 
               {/* Card 2: Danh sách Thí sinh trong Sảnh chờ */}
               <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 p-5 shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between pb-3">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
@@ -1006,7 +1006,7 @@ function LiveControlContent() {
             {/* CỘT PHẢI (5 / 12 COLS): BẢNG CÀI ĐẶT SẢNH CHỜ VỚI BỘ CHỌN THEME CÓ ẢNH THẬT & HẸN GIỜ CA THI */}
             <div className="lg:col-span-5 space-y-5 sticky top-6">
               <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 shadow-xs space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between pb-3">
                   <div className="flex items-center gap-2">
                     <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 uppercase tracking-wider">
@@ -1145,7 +1145,7 @@ function LiveControlContent() {
                 )}
 
                 {/* 2. Bộ chọn Theme với HÌNH ẢNH MINH HỌA THẬT */}
-                <div className="space-y-2.5 pt-3 border-t border-slate-100 dark:border-zinc-800 text-xs">
+                <div className="space-y-2.5 pt-3 text-xs">
                   <div className="flex items-center justify-between">
                     <label className="font-semibold text-neutral-800 dark:text-neutral-200">
                       Chủ đề giao diện (Themes):
@@ -1201,7 +1201,7 @@ function LiveControlContent() {
                 </div>
 
                 {/* 3. Quy chế làm bài Toggles */}
-                <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-zinc-800 text-xs">
+                <div className="space-y-3 pt-3 text-xs">
                   <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
                     Quy chế khảo thí &amp; Giám sát:
                   </label>
@@ -1213,7 +1213,7 @@ function LiveControlContent() {
                         type="checkbox"
                         checked={lobbyAutoSubmit}
                         onChange={(e) => setLobbyAutoSubmit(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                       />
                     </label>
 
@@ -1223,7 +1223,7 @@ function LiveControlContent() {
                         type="checkbox"
                         checked={lobbyLockLate}
                         onChange={(e) => setLobbyLockLate(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                       />
                     </label>
 
@@ -1233,14 +1233,14 @@ function LiveControlContent() {
                         type="checkbox"
                         checked={lobbySound}
                         onChange={(e) => setLobbySound(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                       />
                     </label>
                   </div>
                 </div>
 
                 {/* 4. Action CTA Tương ứng Chế độ */}
-                <div className="pt-4 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                <div className="pt-4 space-y-2">
                   {scheduleMode === 'INSTANT' ? (
                     <>
                       <button
@@ -1401,7 +1401,7 @@ function LiveControlContent() {
               {/* CỘT 1: THÍ SINH & THAO TÁC CAN THIỆP CÁ NHÂN (4 / 12 Cols)          */}
               {/* =================================================================== */}
               <div className="lg:col-span-4 bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs p-4 space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between pb-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
@@ -1544,7 +1544,7 @@ function LiveControlContent() {
                           </div>
 
                           {/* Quick Intervention Controls */}
-                          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-[11px]">
+                          <div className="mt-3 pt-2 flex items-center justify-between text-[11px]">
                             <div className="flex items-center gap-1.5">
                               {hasAlert && (
                                 <span className="text-[10px] text-amber-600 font-semibold inline-flex items-center gap-0.5">
@@ -1582,7 +1582,7 @@ function LiveControlContent() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between pt-2 text-[11px] text-slate-400">
                         <span>
                           {(currentPage - 1) * pageSize + 1} &ndash;{' '}
                           {Math.min(currentPage * pageSize, filteredParticipants.length)} /{' '}
@@ -1620,7 +1620,7 @@ function LiveControlContent() {
               <div className="lg:col-span-5 space-y-4">
                 {/* Card 1: Bảng trạng thái làm bài trực tiếp */}
                 <div className="bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs p-4 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
                     <div className="flex items-center gap-2">
                       <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
@@ -1739,7 +1739,7 @@ function LiveControlContent() {
 
                 {/* Card 2: Dòng sự kiện phòng thi (Realtime Activity Stream) */}
                 <div className="bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs p-4 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between pb-2">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-slate-400" />
                       <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
@@ -1781,7 +1781,7 @@ function LiveControlContent() {
               <div className="lg:col-span-3 space-y-4">
                 {/* Card 1: Cảnh báo kỷ luật phòng thi */}
                 <div className="bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs p-4 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between pb-2">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-500" />
                       <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
@@ -1818,7 +1818,7 @@ function LiveControlContent() {
 
                 {/* Card 2: Bộ công cụ giám thị (Proctor Toolkit) */}
                 <div className="bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs p-4 space-y-3">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-2 pb-2">
                     <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                       Điều khiển nhanh
@@ -1847,7 +1847,7 @@ function LiveControlContent() {
                     </button>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                  <div className="pt-2 space-y-2">
                     <Link
                       href={`/live/projector?roomId=${roomId}&pin=${displayPin}`}
                       target="_blank"
@@ -1873,7 +1873,7 @@ function LiveControlContent() {
       {announceModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <h3 className="font-bold text-base text-neutral-900 dark:text-neutral-100">
@@ -1927,7 +1927,7 @@ function LiveControlContent() {
       {extendTimeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 <h3 className="font-bold text-base text-neutral-900 dark:text-neutral-100">
@@ -1960,7 +1960,7 @@ function LiveControlContent() {
               ))}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+            <div className="pt-2 flex items-center justify-between text-xs">
               <span className="text-slate-500">Hoặc tự nhập:</span>
               <div className="flex items-center gap-1.5">
                 <input

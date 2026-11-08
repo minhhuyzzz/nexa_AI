@@ -89,7 +89,7 @@ export function ProctoringTimeline({ roomId }: ProctoringTimelineProps) {
 
   return (
     <div className="p-4 rounded-md bg-white border border-slate-200 shadow-xs space-y-3">
-      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-2">
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
           <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">

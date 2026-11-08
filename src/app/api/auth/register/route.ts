@@ -8,7 +8,8 @@ const registerSchema = z.object({
     .string()
     .trim()
     .min(2, 'Biệt danh phải có ít nhất 2 ký tự')
-    .max(30, 'Biệt danh tối đa 30 ký tự'),
+    .max(30, 'Biệt danh tối đa 30 ký tự')
+    .optional(),
   email: z.string().trim().toLowerCase().email('Địa chỉ email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string().min(1, 'Vui lòng xác nhận lại mật khẩu'),
@@ -40,19 +41,27 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Kiểm tra trùng biệt danh trước khi tạo tài khoản để trả lỗi rõ ràng
-    const { data: isAvailable, error: nicknameCheckError } = await supabase.rpc(
-      'is_nickname_available',
-      { p_nickname: nickname }
-    );
+    // Tự động lấy tên hiển thị từ email nếu không nhập biệt danh
+    const emailPrefix = email.split('@')[0] || 'User';
+    const fallbackNickname = emailPrefix.length >= 2 ? emailPrefix.slice(0, 30) : `${emailPrefix}1`;
+    const finalNickname = nickname?.trim() || fallbackNickname;
 
-    if (nicknameCheckError) {
-      console.error('Nickname availability check failed:', nicknameCheckError.message);
-    } else if (isAvailable === false) {
-      return NextResponse.json(
-        { error: 'Biệt danh này đã có người sử dụng. Vui lòng chọn biệt danh khác.' },
-        { status: 409 }
+    // Nếu người dùng chủ động truyền nickname riêng, kiểm tra xem có bị trùng không.
+    // Nếu lấy tự động từ email, trigger public.handle_new_user sẽ tự động gọi public.make_unique_nickname để thêm hậu tố nếu trùng.
+    if (nickname?.trim()) {
+      const { data: isAvailable, error: nicknameCheckError } = await supabase.rpc(
+        'is_nickname_available',
+        { p_nickname: nickname.trim() }
       );
+
+      if (nicknameCheckError) {
+        console.error('Nickname availability check failed:', nicknameCheckError.message);
+      } else if (isAvailable === false) {
+        return NextResponse.json(
+          { error: 'Biệt danh này đã có người sử dụng. Vui lòng chọn biệt danh khác.' },
+          { status: 409 }
+        );
+      }
     }
 
     const origin = new URL(request.url).origin;
@@ -62,7 +71,12 @@ export async function POST(request: Request) {
       email,
       password,
       options: {
-        data: { nickname, full_name: nickname, role, is_onboarded: true },
+        data: {
+          nickname: finalNickname,
+          full_name: finalNickname,
+          role,
+          is_onboarded: true,
+        },
         emailRedirectTo: `${origin}/auth/callback`,
       },
     });

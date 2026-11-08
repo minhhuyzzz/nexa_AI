@@ -166,7 +166,7 @@ export default async function AssessmentResultPage({
     <div className="space-y-6">
       {/* Result Hero Banner */}
       <div className="p-6 rounded-md bg-white border border-slate-200 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span
@@ -311,7 +311,7 @@ export default async function AssessmentResultPage({
                 }`}
               >
                 {/* Meta */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                <div className="flex items-center justify-between pb-3 mb-3">
                   <div className="flex items-center gap-2">
                     <span
                       className={`px-2 py-0.5 rounded text-[11px] font-bold ${

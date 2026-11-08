@@ -81,7 +81,7 @@ export function ExportReportModal({
         aria-labelledby="export-modal-title"
         className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111114] rounded-lg border border-slate-200 dark:border-zinc-800 shadow-2xl p-6 text-xs animate-in zoom-in-95 duration-200"
       >
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between pb-4">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h2 id="export-modal-title" className="text-sm font-bold text-slate-900 dark:text-neutral-100">
@@ -115,7 +115,7 @@ export function ExportReportModal({
               {selectedClassName || 'Toàn bộ đơn vị'}
             </span>
           </div>
-          <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-zinc-800/80">
+          <div className="flex justify-between pt-1">
             <span className="text-slate-500 dark:text-neutral-400">Dữ liệu hợp lệ:</span>
             <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
               {evaluatedCount} bài đã phê duyệt
@@ -184,7 +184,7 @@ export function ExportReportModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end pt-3 border-t border-slate-200 dark:border-zinc-800">
+        <div className="flex justify-end pt-3">
           <button
             type="button"
             onClick={onClose}

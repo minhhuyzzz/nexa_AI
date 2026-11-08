@@ -210,31 +210,33 @@ export default function AdminTransactionsPage() {
         </p>
       </div>
 
-      {/* 2. Top Navigation Tabs */}
-      <div className="flex items-center gap-6 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('transactions')}
-          className={`flex items-center gap-2 pb-3 transition-colors ${
-            activeTab === 'transactions'
-              ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
-              : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
-        >
-          <CreditCard className="w-4 h-4" />
-          <span>Giao dịch</span>
-        </button>
+      {/* 2. Top Navigation Tabs (Pill Tabs, không gạch chân) */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('transactions')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'transactions'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Giao dịch</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('reconciliation')}
-          className={`flex items-center gap-2 pb-3 transition-colors ${
-            activeTab === 'reconciliation'
-              ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
-              : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Đối soát</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('reconciliation')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'reconciliation'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Đối soát</span>
+          </button>
+        </div>
       </div>
 
       {/* Action Notification Message */}
@@ -437,7 +439,7 @@ export default function AdminTransactionsPage() {
           <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/75 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-zinc-800 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <thead className="bg-slate-50/75 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
                     <th className="py-3 px-4">
                       <div className="flex items-center gap-1 cursor-pointer">
@@ -461,7 +463,7 @@ export default function AdminTransactionsPage() {
                 </thead>
 
                 {filteredTransactions.length > 0 ? (
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+                  <tbody className="">
                     {filteredTransactions.map((tx) => {
                       const isSuccess = tx.status === 'SUCCESS' || tx.status === 'COMPLETED';
                       const isPending = tx.status === 'PENDING';
@@ -649,7 +651,7 @@ export default function AdminTransactionsPage() {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
+          <div className="pt-2">
             <a
               href="#guide"
               onClick={(e) => {
@@ -669,7 +671,7 @@ export default function AdminTransactionsPage() {
       {reconcileTx && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-2">
                 <FileCheck2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">

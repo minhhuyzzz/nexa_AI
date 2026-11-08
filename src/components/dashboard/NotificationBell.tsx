@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Bell, CheckCheck, Award, MessageSquare, BookOpen, Clock, X } from 'lucide-react';
 
 interface NotificationItem {
@@ -15,6 +16,7 @@ interface NotificationItem {
 }
 
 export function NotificationBell() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -105,6 +107,14 @@ export function NotificationBell() {
     }
   };
 
+  const handleNotificationClick = (item: NotificationItem) => {
+    markAsRead(item.id);
+    setIsOpen(false);
+    if (item.href) {
+      router.push(item.href);
+    }
+  };
+
   return (
     <div className="relative" ref={menuRef}>
       {/* Bell Button */}
@@ -119,10 +129,10 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu (No horizontal borders, clean card style) */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-md shadow-sm z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-          <div className="p-3.5 border-b border-slate-100 dark:border-zinc-850 flex items-center justify-between">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-2 space-y-1">
+          <div className="p-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">Thông báo</span>
               {unreadCount > 0 && (
@@ -135,7 +145,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-[11px] text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium inline-flex items-center gap-1"
+                className="text-[11px] text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium inline-flex items-center gap-1 cursor-pointer"
               >
                 <CheckCheck className="w-3 h-3" />
                 <span>Đã đọc tất cả</span>
@@ -144,7 +154,7 @@ export function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-850">
+          <div className="max-h-80 overflow-y-auto space-y-1 pr-0.5">
             {notifications.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-400 dark:text-zinc-500">
                 Chưa có thông báo nào
@@ -153,9 +163,9 @@ export function NotificationBell() {
               notifications.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => markAsRead(item.id)}
-                  className={`p-3.5 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors flex items-start gap-3 text-xs cursor-pointer ${
-                    !item.isRead ? 'bg-sky-50/20 dark:bg-sky-950/30' : ''
+                  onClick={() => handleNotificationClick(item)}
+                  className={`p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors flex items-start gap-3 text-xs cursor-pointer ${
+                    !item.isRead ? 'bg-sky-50/30 dark:bg-sky-950/30' : ''
                   }`}
                 >
                   <div className="mt-0.5 w-7 h-7 rounded-full bg-slate-100 dark:bg-zinc-850 flex items-center justify-center shrink-0">

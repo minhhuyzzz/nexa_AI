@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 const memberRowSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   orgRole: z
-    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'REPORT_VIEWER', 'MEMBER'])
+    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])
     .default('MEMBER'),
   fullName: z.string().trim().max(100).optional(),
   studentId: z.string().trim().max(50).optional(),

@@ -334,7 +334,7 @@ export function MasterCertificateCard({
             </div>
 
             {/* Bottom Row: QR Code Verification (Left) and Signatures (Right) */}
-            <div className="w-full grid grid-cols-12 items-end pt-4 sm:pt-6 border-t border-slate-100/80 gap-4">
+            <div className="w-full grid grid-cols-12 items-end pt-4 sm:pt-6 gap-4">
               {/* Left Column: QR Code & Verification Data */}
               <div className="col-span-12 sm:col-span-5 flex items-center gap-3 text-left">
                 {/* Real Dynamic QR Code Image */}

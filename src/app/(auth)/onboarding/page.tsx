@@ -205,7 +205,7 @@ export default function OnboardingPage() {
         </div>
       </form>
 
-      <div className="text-center text-xs text-slate-400 border-t border-slate-100 pt-4 flex items-center justify-center gap-1.5">
+      <div className="text-center text-xs text-slate-400 pt-4 flex items-center justify-center gap-1.5">
         <span>Không phải tài khoản của bạn?</span>
         <button
           type="button"

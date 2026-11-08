@@ -19,7 +19,7 @@ interface OrgDomainBarsProps {
 export function OrgDomainBars({ domains, orgSlug, hasAnyData }: OrgDomainBarsProps) {
   return (
     <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between h-full">
-      <div className="p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
+      <div className="p-4 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
             Hồ sơ năng lực số &bull; 5 miền
@@ -94,7 +94,7 @@ export function OrgDomainBars({ domains, orgSlug, hasAnyData }: OrgDomainBarsPro
         )}
       </div>
 
-      <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
+      <div className="p-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
         <span>&bull; Điểm trung bình các bài đã duyệt</span>
         <span className="font-mono">Mục tiêu tham chiếu: 70%</span>
       </div>

@@ -103,7 +103,7 @@ export function OrgMemberOverviewView({
             {pendingCount} <span className="text-sm font-normal text-slate-400 dark:text-neutral-500">bài</span>
           </div>
           <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-2">
-            Đã nộp bài, đang chờ giảng viên duyệt
+            Đã nộp bài, đang chờ khảo thí viên duyệt
           </div>
         </div>
 
@@ -123,7 +123,7 @@ export function OrgMemberOverviewView({
 
       {/* 3. Assigned Campaigns Table */}
       <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between">
           <div>
             <h2 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
               Bài khảo thí được phân công
@@ -153,9 +153,9 @@ export function OrgMemberOverviewView({
               </p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50/75 dark:bg-zinc-900/60 border-b border-slate-200/80 dark:border-zinc-800 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+                <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                   <th className="py-2.5 px-4">Đợt đánh giá</th>
                   <th className="py-2.5 px-4">Đề thi</th>
                   <th className="py-2.5 px-4">Thời hạn</th>
@@ -163,7 +163,7 @@ export function OrgMemberOverviewView({
                   <th className="py-2.5 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850 text-xs">
+              <tbody className="text-xs">
                 {assignedCampaigns.map((c) => {
                   let statusBadge = (
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">

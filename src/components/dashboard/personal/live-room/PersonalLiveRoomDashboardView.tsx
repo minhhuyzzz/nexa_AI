@@ -380,9 +380,9 @@ export function PersonalLiveRoomDashboardView() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs min-w-[840px]">
+                <table className="w-full text-left text-xs min-w-[840px]">
                   <thead>
-                    <tr className="border-b border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400">
+                    <tr className="bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400">
                       <th className="py-3 px-4 min-w-[210px]">Tên phòng</th>
                       <th className="py-3 px-4 min-w-[200px]">Đề khảo thí</th>
                       <th className="py-3 px-4 whitespace-nowrap min-w-[110px]">Thời gian</th>
@@ -392,7 +392,7 @@ export function PersonalLiveRoomDashboardView() {
                       <th className="py-3 px-4 text-right whitespace-nowrap min-w-[140px]">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  <tbody className="">
                     {paginatedRooms.map((room) => {
                       const isInProgress = room.status === 'IN_PROGRESS';
                       const isWaiting = room.status === 'WAITING';
@@ -555,7 +555,7 @@ export function PersonalLiveRoomDashboardView() {
 
             {/* Pagination Footer */}
             {totalPages > 1 && (
-              <div className="p-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs text-slate-500">
+              <div className="p-3 flex items-center justify-between text-xs text-slate-500">
                 <span>
                   Hiển thị {(currentPage - 1) * pageSize + 1} &ndash;{' '}
                   {Math.min(currentPage * pageSize, filteredRooms.length)} trên {filteredRooms.length} phòng

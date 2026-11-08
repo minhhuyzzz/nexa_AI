@@ -261,7 +261,7 @@ export function OrgSettingsView({
       {/* ============================================================ */}
       {/* 1. PAGE HEADER                                              */}
       {/* ============================================================ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -331,7 +331,7 @@ export function OrgSettingsView({
       {/* 2. GROUP A: HỒ SƠ TỔ CHỨC                                   */}
       {/* ============================================================ */}
       <section className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] p-5 sm:p-6 shadow-xs space-y-6">
-        <div className="border-b border-slate-100 dark:border-zinc-800/80 pb-4">
+        <div className="pb-4">
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -477,7 +477,7 @@ export function OrgSettingsView({
       {/* 3. GROUP B: THÔNG TIN LIÊN HỆ                                */}
       {/* ============================================================ */}
       <section className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] p-5 sm:p-6 shadow-xs space-y-5">
-        <div className="border-b border-slate-100 dark:border-zinc-800/80 pb-4">
+        <div className="pb-4">
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">

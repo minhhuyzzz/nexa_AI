@@ -27,6 +27,7 @@ import {
   EyeOff,
   Link as LinkIcon,
 } from 'lucide-react';
+import { SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
 
 interface LearningPathItem {
   id: string;
@@ -105,6 +106,7 @@ export default function AdminLearningPathsPage() {
   const [moduleTitle, setModuleTitle] = useState('');
   const [moduleDomain, setModuleDomain] = useState('D1');
   const [moduleSkillCode, setModuleSkillCode] = useState('1.1');
+  const [moduleLevel, setModuleLevel] = useState<'BASIC' | 'INTERMEDIATE' | 'ADVANCED' | 'HIGHLY_ADVANCED'>('BASIC');
   const [moduleDescription, setModuleDescription] = useState('');
   const [moduleDuration, setModuleDuration] = useState(20);
   const [modulePointReward, setModulePointReward] = useState(30);
@@ -264,9 +266,10 @@ export default function AdminLearningPathsPage() {
     setModuleTitle('');
     setModuleDomain(selectedPath.domainCodes[0] || 'D1');
     setModuleSkillCode('1.1');
+    setModuleLevel('BASIC');
     setModuleDescription('');
-    setModuleDuration(20);
-    setModulePointReward(30);
+    setModuleDuration(15);
+    setModulePointReward(15);
     setModuleContent('');
     setModuleAssessmentId('');
     setModuleTier(selectedPath.accessTier);
@@ -279,6 +282,7 @@ export default function AdminLearningPathsPage() {
     setModuleTitle(m.title);
     setModuleDomain(m.domain_code);
     setModuleSkillCode(m.skill_code);
+    setModuleLevel((m as any).difficulty_level || 'BASIC');
     setModuleDescription(m.description || '');
     setModuleDuration(m.duration_minutes);
     setModulePointReward(m.point_reward);
@@ -303,6 +307,7 @@ export default function AdminLearningPathsPage() {
             title: moduleTitle.trim(),
             domainCode: moduleDomain,
             skillCode: moduleSkillCode.trim(),
+            difficultyLevel: moduleLevel,
             description: moduleDescription.trim() || null,
             durationMinutes: Number(moduleDuration),
             pointReward: Number(modulePointReward),
@@ -325,6 +330,7 @@ export default function AdminLearningPathsPage() {
             title: moduleTitle.trim(),
             domainCode: moduleDomain,
             skillCode: moduleSkillCode.trim(),
+            difficultyLevel: moduleLevel,
             description: moduleDescription.trim() || null,
             durationMinutes: Number(moduleDuration),
             pointReward: Number(modulePointReward),
@@ -479,8 +485,8 @@ export default function AdminLearningPathsPage() {
             className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
             <option value="ALL">Phân hạng: Tất cả</option>
-            <option value="FREE">Miễn phí (FREE)</option>
-            <option value="VIP">Độc quyền (VIP)</option>
+            <option value="FREE">Miễn phí</option>
+            <option value="VIP">Gói Chuyên sâu</option>
           </select>
 
           <select
@@ -526,10 +532,15 @@ export default function AdminLearningPathsPage() {
 
       {/* 4. Main Content: Table or Grid View (Chuẩn Ảnh 8) */}
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-          <p className="text-xs">Đang tải danh mục lộ trình học tập...</p>
-        </div>
+        viewMode === 'table' ? (
+          <SkeletonTable rows={5} columns={5} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} lines={3} />
+            ))}
+          </div>
+        )
       ) : error ? (
         <div className="p-6 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 text-red-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
@@ -556,11 +567,11 @@ export default function AdminLearningPathsPage() {
       ) : viewMode === 'table' ? (
         <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 font-medium">
+                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
                   <th className="py-3 px-4 w-10">
-                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                    <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
                   </th>
                   <th className="py-3 px-4">Lộ trình</th>
                   <th className="py-3 px-4">Miền ưu tiên</th>
@@ -571,14 +582,14 @@ export default function AdminLearningPathsPage() {
                   <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <tbody className="">
                 {filteredPaths.map((p, idx) => {
                   const code = `LP-${String(idx + 1).padStart(3, '0')}`;
                   const modCount = p.modulesCount || 6;
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
                       <td className="py-3.5 px-4">
-                        <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                        <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
                       </td>
 
                       {/* Lộ trình */}
@@ -684,7 +695,7 @@ export default function AdminLearningPathsPage() {
             </table>
           </div>
 
-          <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+          <div className="p-4">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <div>Hiển thị 1–{Math.min(6, filteredPaths.length)} trên {paths.length || 217} lộ trình</div>
               <div className="flex items-center gap-1">
@@ -753,7 +764,7 @@ export default function AdminLearningPathsPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
+              <div className="pt-3 flex items-center justify-between gap-2 text-xs">
                 <span className="font-mono text-slate-500 text-[11px]">
                   <strong>{path.modulesCount}</strong> học phần
                 </span>
@@ -800,7 +811,7 @@ export default function AdminLearningPathsPage() {
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="w-full max-w-2xl bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 h-full flex flex-col shadow-2xl overflow-hidden">
             {/* Drawer Header */}
-            <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="p-5 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
                   QUẢN LÝ HỌC PHẦN LỘ TRÌNH
@@ -889,7 +900,7 @@ export default function AdminLearningPathsPage() {
                       {m.description || 'Chuyên đề bồi dưỡng năng lực số.'}
                     </p>
 
-                    <div className="flex items-center gap-3 pt-1 border-t border-slate-100 dark:border-zinc-800 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400" />
                         {m.duration_minutes} phút
@@ -920,7 +931,7 @@ export default function AdminLearningPathsPage() {
       {isPathModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl max-w-lg w-full p-6 text-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
                 {editingPath ? 'Chỉnh sửa lộ trình' : 'Tạo lộ trình học tập mới'}
               </h3>
@@ -987,7 +998,7 @@ export default function AdminLearningPathsPage() {
                               setPathDomains(pathDomains.filter((c) => c !== d.code));
                             }
                           }}
-                          className="rounded border-slate-300 text-blue-600"
+                          className="rounded text-blue-600"
                         />
                         <span className="text-[11px] truncate">{d.label}</span>
                       </label>
@@ -1006,14 +1017,14 @@ export default function AdminLearningPathsPage() {
                     onChange={(e) => setPathTier(e.target.value as any)}
                     className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
                   >
-                    <option value="FREE">Miễn phí (FREE)</option>
+                    <option value="FREE">Miễn phí</option>
                     <option value="VIP">VIP / Gói nâng cao</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Điểm thưởng hoàn thành (PTS)
+                    Điểm thưởng hoàn thành
                   </label>
                   <input
                     type="number"
@@ -1032,7 +1043,7 @@ export default function AdminLearningPathsPage() {
                     type="checkbox"
                     checked={pathPublished}
                     onChange={(e) => setPathPublished(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600"
+                    className="rounded text-blue-600"
                   />
                   <span className="font-semibold text-slate-800 dark:text-neutral-200">
                     Phát hành công khai cho học viên
@@ -1040,7 +1051,7 @@ export default function AdminLearningPathsPage() {
                 </label>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end gap-2">
+              <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsPathModalOpen(false)}
@@ -1065,7 +1076,7 @@ export default function AdminLearningPathsPage() {
       {isModuleModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl max-w-xl w-full p-6 text-xs space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
                 {editingModule ? 'Chỉnh sửa học phần' : 'Thêm học phần vào lộ trình'}
               </h3>
@@ -1125,6 +1136,41 @@ export default function AdminLearningPathsPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
+                  Cấp độ năng lực số (Account Level)
+                </label>
+                <select
+                  value={moduleLevel}
+                  onChange={(e) => {
+                    const lvl = e.target.value as any;
+                    setModuleLevel(lvl);
+                    if (lvl === 'BASIC') {
+                      setModulePointReward(15);
+                      setModuleDuration(15);
+                    } else if (lvl === 'INTERMEDIATE') {
+                      setModulePointReward(25);
+                      setModuleDuration(20);
+                    } else if (lvl === 'ADVANCED') {
+                      setModulePointReward(40);
+                      setModuleDuration(25);
+                    } else if (lvl === 'HIGHLY_ADVANCED') {
+                      setModulePointReward(60);
+                      setModuleDuration(30);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
+                >
+                  <option value="BASIC">Level 1: Basic (Căn bản - Nền tảng)</option>
+                  <option value="INTERMEDIATE">Level 2: Intermediate (Trung cấp - Ứng dụng)</option>
+                  <option value="ADVANCED">Level 3: Advanced (Nâng cao - Làm chủ)</option>
+                  <option value="HIGHLY_ADVANCED">Level 4: Highly Advanced (Chuyên sâu - Dẫn dắt)</option>
+                </select>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Đồng bộ chuẩn 4 cấp độ level của người học và khung năng lực số.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
@@ -1142,7 +1188,7 @@ export default function AdminLearningPathsPage() {
 
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Điểm thưởng hoàn thành (PTS)
+                    Điểm thưởng hoàn thành
                   </label>
                   <input
                     type="number"
@@ -1191,7 +1237,7 @@ export default function AdminLearningPathsPage() {
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end gap-2">
+              <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModuleModalOpen(false)}

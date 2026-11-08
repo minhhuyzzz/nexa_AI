@@ -12,7 +12,7 @@ interface Props {
 export function DomainCompetencyTable({ domains, onSelectDomain }: Props) {
   return (
     <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
-      <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
             Phân Tích Chi Tiết 5 Miền Năng Lực Số
@@ -29,7 +29,7 @@ export function DomainCompetencyTable({ domains, onSelectDomain }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="bg-slate-50 dark:bg-zinc-900/60 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-300 font-semibold">
+            <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-600 dark:text-neutral-300 font-semibold">
               <th className="py-3 px-4 w-16">Mã</th>
               <th className="py-3 px-4">Miền năng lực</th>
               <th className="py-3 px-4 text-right">Điểm trung bình</th>
@@ -38,7 +38,7 @@ export function DomainCompetencyTable({ domains, onSelectDomain }: Props) {
               <th className="py-3 px-4 w-12 text-center"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+          <tbody className="">
             {domains.map((domain) => {
               const score = domain.score;
               const isEvaluated = score !== null;

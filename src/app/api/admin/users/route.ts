@@ -95,7 +95,11 @@ export async function GET() {
         email: p.email,
         role: p.role || 'LEARNER',
         adminRole: p.admin_role || (p.role === 'ADMIN' ? 'SUPER_ADMIN' : 'LEARNER'),
-        planTier: p.plan_tier || 'FREE',
+        planTier: (p.plan_tier === 'BUSINESS' || p.plan_tier === 'ENTERPRISE' || !!orgRel)
+          ? 'BUSINESS'
+          : p.plan_tier === 'PRO'
+          ? 'PRO'
+          : 'FREE',
         points: p.points || 0,
         isSuspended: Boolean(p.is_suspended),
         suspendedReason: p.suspended_reason || null,
@@ -121,7 +125,7 @@ interface PatchBody {
   action?: 'UPDATE' | 'SUSPEND' | 'UNSUSPEND' | 'REVOKE_SESSION';
   role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
   adminRole?: 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR' | 'LEARNER';
-  planTier?: 'FREE' | 'PRO' | 'ENTERPRISE';
+  planTier?: 'FREE' | 'PRO' | 'BUSINESS';
   organizationId?: string;
   reason?: string;
 }
@@ -274,7 +278,7 @@ export async function PATCH(request: NextRequest) {
       updated_at: string;
       role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
       admin_role?: string;
-      plan_tier?: 'FREE' | 'PRO' | 'ENTERPRISE';
+      plan_tier?: 'FREE' | 'PRO' | 'BUSINESS';
     } = { updated_at: new Date().toISOString() };
 
     if (role && ['LEARNER', 'EVALUATOR', 'ADMIN'].includes(role)) {
@@ -283,7 +287,7 @@ export async function PATCH(request: NextRequest) {
     if (adminRole) {
       updates.admin_role = adminRole;
     }
-    if (planTier && ['FREE', 'PRO', 'ENTERPRISE'].includes(planTier)) {
+    if (planTier && ['FREE', 'PRO', 'BUSINESS'].includes(planTier)) {
       updates.plan_tier = planTier;
     }
 

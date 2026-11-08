@@ -107,7 +107,7 @@ export function PricingSection() {
   const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
 
   return (
-    <section id="pricing" className="py-20 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-950/40 transition-colors scroll-mt-16">
+    <section id="pricing" className="py-20 bg-slate-50/60 dark:bg-zinc-950/40 transition-colors scroll-mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
@@ -184,7 +184,7 @@ export function PricingSection() {
 
                 <div className={`p-7 sm:p-8 flex-1 flex flex-col ${isPro ? 'pt-8 sm:pt-9' : ''}`}>
                   {/* Top Badge & Target Audience */}
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between pb-3 mb-4">
                     <span
                       className={`text-[11px] font-extrabold uppercase tracking-wider ${
                         isPro
@@ -205,7 +205,7 @@ export function PricingSection() {
                   </p>
 
                   {/* Price Block */}
-                  <div className="pb-6 mb-6 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="pb-6 mb-6">
                     {isBusiness ? (
                       <div className="space-y-1">
                         <div className="text-3xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight">

@@ -118,7 +118,7 @@ export default function JoinPortalPage() {
             </button>
           </form>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 text-center">
+          <div className="pt-3 text-center">
             <Link
               href="/personal/dashboard"
               className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"

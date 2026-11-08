@@ -28,7 +28,17 @@ import {
   Sparkles,
   Copy,
   Crown,
+  MoreHorizontal,
+  Ban,
+  Compass,
+  Settings,
+  Shield,
 } from 'lucide-react';
+import { SecuritySettingsCard } from '@/features/assessments/components/SecuritySettingsCard';
+import {
+  AssessmentSecuritySettings,
+  DEFAULT_SECURITY_SETTINGS,
+} from '@/features/assessments/types/security.types';
 import {
   downloadMCQTemplate,
   downloadScenarioTemplate,
@@ -54,18 +64,21 @@ export interface AssessmentItemRecord {
   typeLabel: string;
   domainName: string;
   domainCodes: string[];
+  security_settings?: AssessmentSecuritySettings | null;
 }
 
 interface Props {
   initialAssessments: AssessmentItemRecord[];
   domains: Array<{ id: string; code: string; title: string }>;
   competencies: Array<{ id: string; skill_code: string; title: string; domain_id: string }>;
+  pendingContributionsCount?: number;
 }
 
 export function AdminAssessmentBankClient({
   initialAssessments,
   domains,
   competencies,
+  pendingContributionsCount = 0,
 }: Props) {
   const [assessments, setAssessments] = useState<AssessmentItemRecord[]>(initialAssessments);
 
@@ -80,7 +93,19 @@ export function AdminAssessmentBankClient({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
-  const [selectedDetailExam, setSelectedDetailExam] = useState<AssessmentItemRecord | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // Quick Settings Modal State (Thay thế modal chi tiết brochure)
+  const [settingsExam, setSettingsExam] = useState<AssessmentItemRecord | null>(null);
+  const [settingsTitle, setSettingsTitle] = useState('');
+  const [settingsDescription, setSettingsDescription] = useState('');
+  const [settingsDuration, setSettingsDuration] = useState(60);
+  const [settingsPassingScore, setSettingsPassingScore] = useState(70);
+  const [settingsIsVip, setSettingsIsVip] = useState(false);
+  const [settingsIsPublished, setSettingsIsPublished] = useState(true);
+  const [settingsSecurity, setSettingsSecurity] = useState<AssessmentSecuritySettings>(DEFAULT_SECURITY_SETTINGS);
+  const [settingsTab, setSettingsTab] = useState<'GENERAL' | 'SECURITY'>('GENERAL');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Form State for Create / Edit Assessment
   const [formTitle, setFormTitle] = useState('');
@@ -158,6 +183,81 @@ export function AdminAssessmentBankClient({
     setFormIsVip(exam.is_vip);
     setFormIsPublished(exam.is_published);
     setIsCreateModalOpen(true);
+  };
+
+  // Open Settings Modal
+  const handleOpenSettings = (exam: AssessmentItemRecord) => {
+    setSettingsExam(exam);
+    setSettingsTitle(exam.title);
+    setSettingsDescription(exam.description || '');
+    setSettingsDuration(exam.duration_minutes);
+    setSettingsPassingScore(exam.passing_score);
+    setSettingsIsVip(exam.is_vip);
+    setSettingsIsPublished(exam.is_published);
+    setSettingsSecurity(
+      exam.security_settings
+        ? { ...DEFAULT_SECURITY_SETTINGS, ...exam.security_settings }
+        : DEFAULT_SECURITY_SETTINGS
+    );
+    setSettingsTab('GENERAL');
+  };
+
+  // Save Settings Modal
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settingsExam) return;
+    if (!settingsTitle.trim()) {
+      showToast('Tiêu đề bài thi không được để trống.');
+      return;
+    }
+
+    setIsSavingSettings(true);
+    try {
+      const res = await fetch(`/api/admin/assessments/${settingsExam.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: settingsTitle.trim(),
+          description: settingsDescription.trim(),
+          duration_minutes: Number(settingsDuration),
+          passing_score: Number(settingsPassingScore),
+          is_vip: settingsIsVip,
+          access_tier: settingsIsVip ? 'VIP' : 'FREE',
+          is_published: settingsIsPublished,
+          security_settings: settingsSecurity,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Không thể lưu cài đặt');
+      }
+
+      setAssessments((prev) =>
+        prev.map((item) =>
+          item.id === settingsExam.id
+            ? {
+                ...item,
+                title: settingsTitle.trim(),
+                description: settingsDescription.trim(),
+                duration_minutes: Number(settingsDuration),
+                passing_score: Number(settingsPassingScore),
+                is_vip: settingsIsVip,
+                access_tier: settingsIsVip ? 'VIP' : 'FREE',
+                is_published: settingsIsPublished,
+                security_settings: settingsSecurity,
+              }
+            : item
+        )
+      );
+
+      showToast('Đã lưu cấu hình bài khảo thí thành công!');
+      setSettingsExam(null);
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi lưu cấu hình');
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   // Save Create or Edit Assessment
@@ -551,73 +651,7 @@ export function AdminAssessmentBankClient({
         </div>
       </div>
 
-      {/* 2. Canonical Notice Banner (Chuẩn Ảnh 6) */}
-      <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-200 flex items-center gap-2.5">
-        <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
-        <span>
-          Chỉ hiển thị đề chuẩn hệ thống đã phê duyệt; không hiển thị đề do dashboard Org hoặc Personal tạo.
-        </span>
-      </div>
-
-      {/* 3. 5 KPI Cards (Chuẩn Ảnh 6) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-            <span>Tổng số đề</span>
-            <span className="text-blue-600 font-semibold text-[11px]">↗ +6,8%</span>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-            {totalAssessments.toLocaleString('vi-VN')}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-            <span>Đang phát hành</span>
-            <span className="text-blue-600 font-semibold text-[11px]">↗ +4,9%</span>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-            {publishedAssessments.toLocaleString('vi-VN')}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-            <span>Miễn phí</span>
-            <span className="text-blue-600 font-semibold text-[11px]">↗ +3,1%</span>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-            {freeAssessments.toLocaleString('vi-VN')}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-            <span>VIP</span>
-            <span className="text-blue-600 font-semibold text-[11px]">↗ +8,2%</span>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-            {vipAssessments.toLocaleString('vi-VN')}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-            <span>Chờ duyệt đóng góp</span>
-            <span className="text-slate-400 font-semibold text-[11px]">↘ -12,3%</span>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-            187
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">So với 30 ngày trước</div>
-        </div>
-      </div>
-
-      {/* 4. Toolbar: Search & Filters (Chuẩn Ảnh 6) */}
+      {/* Toolbar: Search & Filters */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         <div className="flex-1 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
@@ -676,38 +710,58 @@ export function AdminAssessmentBankClient({
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto min-h-[420px] pb-52">
+            <table className="w-full text-left text-xs min-w-[1100px]">
               <thead>
-                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 text-xs font-medium">
-                  <th className="py-3 px-4">Bài khảo thí</th>
-                  <th className="py-3 px-4">Miền năng lực</th>
-                  <th className="py-3 px-4">Dạng câu hỏi</th>
-                  <th className="py-3 px-4 text-center">Số câu</th>
-                  <th className="py-3 px-4">Thời gian &amp; ngưỡng đạt</th>
-                  <th className="py-3 px-4 text-center">Phân hạng</th>
-                  <th className="py-3 px-4">Trạng thái phát hành</th>
-                  <th className="py-3 px-4">Nguồn</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 text-xs font-medium">
+                  <th className="py-3 px-4 min-w-[240px]">Bài khảo thí</th>
+                  <th className="py-3 px-4 min-w-[140px]">Miền năng lực</th>
+                  <th className="py-3 px-4 min-w-[140px]">Dạng câu hỏi</th>
+                  <th className="py-3 px-4 text-center min-w-[70px]">Số câu</th>
+                  <th className="py-3 px-4 min-w-[160px]">Thời gian &amp; ngưỡng đạt</th>
+                  <th className="py-3 px-4 text-center min-w-[90px]">Phân hạng</th>
+                  <th className="py-3 px-4 min-w-[140px]">Trạng thái phát hành</th>
+                  <th className="py-3 px-4 min-w-[140px]">Nguồn</th>
+                  <th className="py-3 px-4 text-right min-w-[100px]">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <tbody>
                 {filteredAssessments.map((exam, index) => {
                   const examCode = `NEXA-${(exam.domainCodes?.[0] || 'GEN').toUpperCase()}-${String(index + 1).padStart(4, '0')}`;
+                  const isNearBottom = filteredAssessments.length > 3 && index >= filteredAssessments.length - 2;
                   return (
                     <tr key={exam.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
                       {/* Bài khảo thí */}
-                      <td className="py-3.5 px-4 max-w-xs">
+                      <td className="py-3.5 px-4 min-w-[240px] max-w-[320px]">
                         <div className="flex items-center gap-2.5">
                           <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedDetailExam(exam)}
-                              className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block line-clamp-1 text-left cursor-pointer transition-colors"
-                            >
-                              {exam.title}
-                            </button>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="group relative min-w-0 max-w-[240px] sm:max-w-[280px]">
+                                <Link
+                                  href={`/admin/content/assessments/${exam.id}`}
+                                  className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block truncate transition-colors leading-snug cursor-pointer"
+                                  title={exam.title}
+                                >
+                                  {exam.title}
+                                </Link>
+
+                                {/* Tooltip khi rê chuột vào hiện đầy đủ */}
+                                <div className="pointer-events-none absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-max max-w-xs rounded-xl bg-neutral-900 dark:bg-zinc-800 text-white dark:text-zinc-100 px-3 py-2 text-xs shadow-xl border border-neutral-700 dark:border-zinc-700 animate-in fade-in duration-150 whitespace-normal leading-relaxed">
+                                  <p className="font-semibold">{exam.title}</p>
+                                  {exam.description && (
+                                    <p className="text-[10px] text-neutral-400 mt-1 line-clamp-2">{exam.description}</p>
+                                  )}
+                                  <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-neutral-900 dark:border-t-zinc-800" />
+                                </div>
+                              </div>
+
+                              {Boolean(exam.id === 'a0000000-0000-0000-0000-000000000001' || exam.title?.toLowerCase().includes('đầu vào')) && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                                  Đầu Vào
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[11px] font-mono text-slate-400 mt-0.5">
                               Mã: {examCode}
                             </div>
@@ -788,42 +842,134 @@ export function AdminAssessmentBankClient({
 
                       {/* Nguồn: System Canonical badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800">
-                          <Layers className="w-3 h-3 text-blue-600" />
-                          <span>System Canonical</span>
-                        </span>
+                        {Boolean(exam.id === 'a0000000-0000-0000-0000-000000000001' || exam.title?.toLowerCase().includes('đầu vào')) ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800">
+                            <Compass className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                            <span>Khảo thí đầu vào</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800">
+                            <Layers className="w-3 h-3 text-blue-600" />
+                            <span>System Canonical</span>
+                          </span>
+                        )}
                       </td>
 
                       {/* Thao tác */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap relative">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
-                            onClick={() => setSelectedDetailExam(exam)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                            title="Xem chi tiết đề khảo thí"
+                            onClick={() => handleOpenSettings(exam)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-zinc-800 transition-colors"
+                            title="Cài đặt tham số đề thi"
                           >
-                            <Eye className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            <Settings className="w-4 h-4" />
                           </button>
 
                           <button
                             type="button"
-                            onClick={() => handleCloneAssessment(exam)}
-                            disabled={cloningId === exam.id}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                            title="Nhân bản đề chuẩn"
+                            onClick={() => setActiveMenuId(activeMenuId === exam.id ? null : exam.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                            title="Tùy chọn thao tác khác"
                           >
-                            <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            <MoreHorizontal className="w-4 h-4" />
                           </button>
-
-                          <Link
-                            href={`/admin/content/assessments/${exam.id}`}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                            title="Sửa trong Studio"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                          </Link>
                         </div>
+
+                        {activeMenuId === exam.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-20"
+                              onClick={() => setActiveMenuId(null)}
+                            />
+                            <div className={`absolute right-4 ${isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'} w-48 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xl py-1.5 z-30 text-left animate-in fade-in zoom-in-95 duration-100`}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  handleOpenSettings(exam);
+                                }}
+                                className="w-full px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                              >
+                                <Settings className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Cài đặt tham số đề</span>
+                              </button>
+
+                              <Link
+                                href={`/admin/content/assessments/${exam.id}/preview`}
+                                onClick={() => setActiveMenuId(null)}
+                                className="w-full px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Xem trước bài thi</span>
+                              </Link>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  handleTogglePublish(exam);
+                                }}
+                                className="w-full px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                              >
+                                {exam.is_published ? (
+                                  <>
+                                    <Ban className="w-3.5 h-3.5 text-amber-600" />
+                                    <span>Tạm ngưng</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Kích hoạt phát hành</span>
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  handleCloneAssessment(exam);
+                                }}
+                                disabled={cloningId === exam.id}
+                                className="w-full px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                <Copy className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Nhân bản đề</span>
+                              </button>
+
+                              <Link
+                                href={`/admin/content/assessments/${exam.id}`}
+                                onClick={() => setActiveMenuId(null)}
+                                className="w-full px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Sửa trong Studio</span>
+                              </Link>
+
+                              <div className="my-1" />
+
+                              {Boolean(exam.id === 'a0000000-0000-0000-0000-000000000001' || exam.title?.toLowerCase().includes('đầu vào')) ? (
+                                <div className="px-3 py-2 text-[11px] text-slate-400 italic">
+                                  Đề đầu vào mặc định (Không thể xóa)
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleDeleteAssessment(exam.id);
+                                  }}
+                                  className="w-full px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Xóa đề</span>
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </td>
                     </tr>
                   );
@@ -833,17 +979,16 @@ export function AdminAssessmentBankClient({
           </div>
         )}
 
-        <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+        <div className="p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <div>
               Hiển thị 1–{Math.min(8, filteredAssessments.length)} trên {totalAssessments.toLocaleString('vi-VN')} đề chuẩn
             </div>
             <div className="flex items-center gap-1">
               <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>
-              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
-              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">3</span>
-              <span className="px-1">...</span>
-              <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">1.560</span>
+              {totalAssessments > 8 && (
+                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
+              )}
             </div>
           </div>
         </div>
@@ -853,13 +998,13 @@ export function AdminAssessmentBankClient({
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-md border border-slate-200 w-full max-w-lg shadow-sm overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-bold text-slate-900">
                   {editingAssessment ? 'Chỉnh Sửa Thông Tin Đề Thi' : 'Tạo Bài Khảo Thí Chuẩn Hóa Mới'}
                 </h2>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Thiết lập tham số bài thi, phân hạng Free / VIP và trạng thái phát hành.
+                  Thiết lập tham số bài thi, phân hạng truy cập và trạng thái phát hành.
                 </p>
               </div>
               <button
@@ -923,7 +1068,7 @@ export function AdminAssessmentBankClient({
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-800 mb-1">Điểm Thưởng (Pts)</label>
+                  <label className="block font-semibold text-slate-800 mb-1">Điểm thưởng</label>
                   <input
                     type="number"
                     min={0}
@@ -935,7 +1080,7 @@ export function AdminAssessmentBankClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-4 pt-3">
                 <div>
                   <span className="block font-semibold text-slate-800 mb-1.5">Phân Hạng Truy Cập</span>
                   <div className="flex items-center gap-2">
@@ -976,7 +1121,7 @@ export function AdminAssessmentBankClient({
                       type="checkbox"
                       checked={formIsPublished}
                       onChange={(e) => setFormIsPublished(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                      className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500"
                     />
                     <span className="text-xs font-medium text-slate-700">
                       Công khai trên kho đề thi ngay
@@ -985,7 +1130,7 @@ export function AdminAssessmentBankClient({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <div className="pt-4 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
@@ -1006,15 +1151,15 @@ export function AdminAssessmentBankClient({
         </div>
       )}
 
-      {/* Modal: Nạp Hàng Loạt (Bulk Import) */}
+      {/* Modal: Nạp Hàng Loạt */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-md border border-slate-200 w-full max-w-2xl shadow-sm overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <Upload className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                  <span>Nạp Đề &amp; Câu Hỏi Hàng Loạt (Bulk Import)</span>
+                  <span>Nạp đề &amp; câu hỏi hàng loạt</span>
                 </h2>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Nhập nhanh danh sách câu hỏi Trắc nghiệm, Tình huống, Thực hành từ tệp Excel/CSV hoặc JSON.
@@ -1138,8 +1283,8 @@ export function AdminAssessmentBankClient({
                   </div>
 
                   <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md">
-                    <table className="w-full text-left text-[11px] border-collapse">
-                      <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-500 sticky top-0">
+                    <table className="w-full text-left text-[11px]">
+                      <thead className="bg-slate-50 font-semibold text-slate-500 sticky top-0">
                         <tr>
                           <th className="py-2 px-3">#</th>
                           <th className="py-2 px-3">Kỹ năng</th>
@@ -1149,7 +1294,7 @@ export function AdminAssessmentBankClient({
                           <th className="py-2 px-3 text-right">Điểm</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody>
                         {importParsedItems.slice(0, 15).map((row, idx) => (
                           <tr key={idx} className="hover:bg-slate-50">
                             <td className="py-2 px-3 font-mono text-slate-400">{idx + 1}</td>
@@ -1184,7 +1329,7 @@ export function AdminAssessmentBankClient({
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0 bg-slate-50/50">
+            <div className="px-6 py-4 flex items-center justify-end gap-2 shrink-0 bg-slate-50/50">
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
@@ -1249,202 +1394,248 @@ export function AdminAssessmentBankClient({
         </div>
       )}
 
-      {/* Modal: Chi Tiết Đề Khảo Thí Chuẩn Hóa */}
-      {selectedDetailExam && (
+      {/* Modal: Cài Đặt Tham Số Bài Khảo Thí Chuẩn (Exam Settings) */}
+      {settingsExam && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl max-h-[90vh] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 flex flex-col">
             {/* Header */}
-            <div className="px-6 py-5 border-b border-slate-100 dark:border-zinc-800 flex items-start justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800">
-                    <Layers className="w-3 h-3 text-blue-600" />
-                    <span>SYSTEM CANONICAL &bull; ĐỀ CHUẨN NỀN TẢNG</span>
-                  </span>
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    selectedDetailExam.is_vip
-                      ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                  }`}>
-                    {selectedDetailExam.is_vip ? <Crown className="w-3 h-3" /> : null}
-                    <span>{selectedDetailExam.is_vip ? 'Gói Chuyên Sâu (PRO)' : 'Miễn Phí (FREE)'}</span>
-                  </span>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    selectedDetailExam.is_published
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200'
-                      : 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${selectedDetailExam.is_published ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-                    <span>{selectedDetailExam.is_published ? 'Đang phát hành' : 'Bản nháp (Ẩn)'}</span>
-                  </span>
+            <div className="px-6 py-4 flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <Settings className="w-4 h-4" />
                 </div>
-
-                <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-                  {selectedDetailExam.title}
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  {selectedDetailExam.description || 'Bài khảo thí chuẩn hóa đánh giá 5 miền năng lực số toàn diện.'}
-                </p>
+                <div>
+                  <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                    Cài đặt bài khảo thí
+                  </h2>
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
+                    {settingsExam.questionCount} câu hỏi &bull; {settingsExam.domainName}
+                  </p>
+                </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => setSelectedDetailExam(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+                onClick={() => setSettingsExam(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shrink-0 cursor-pointer"
               >
                 <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
 
-            {/* Content Body */}
-            <div className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
-              {/* 4 Metric Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
-                    <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Thời lượng</span>
-                  </div>
-                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-neutral-100">
-                    {selectedDetailExam.duration_minutes} <span className="text-xs font-normal text-slate-500">phút</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">Đồng hồ đếm ngược, tự động thu bài</p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Ngưỡng đạt</span>
-                  </div>
-                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-neutral-100">
-                    ≥ {selectedDetailExam.passing_score}%
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">Chuẩn xét cấp chứng chỉ số</p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
-                    <Award className="w-3.5 h-3.5 text-amber-500" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Điểm thưởng</span>
-                  </div>
-                  <div className="text-lg font-black font-mono text-amber-600 dark:text-amber-400">
-                    +{selectedDetailExam.point_reward} <span className="text-xs font-normal text-slate-500">PTS</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">Cộng bảng vàng thành tích</p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400">
-                    <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider font-mono">Quy mô</span>
-                  </div>
-                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-neutral-100">
-                    {selectedDetailExam.questionCount} <span className="text-xs font-normal text-slate-500">câu</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">{selectedDetailExam.typeLabel || 'Trắc nghiệm'}</p>
-                </div>
-              </div>
-
-              {/* Assessment Architecture & 5-Domain Alignment */}
-              <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-blue-600" />
-                    <span>Cấu trúc Khảo Thí &bull; 5 Miền Năng Lực Số</span>
-                  </h3>
-                  <span className="font-mono text-slate-500 text-[11px]">
-                    {selectedDetailExam.domainName}
-                  </span>
-                </div>
-
-                <p className="text-slate-600 dark:text-neutral-400 leading-relaxed text-[11px]">
-                  Bài thi được đối soát theo chuẩn 5 miền năng lực số. Khi thí sinh nộp bài, hệ thống tự động bóc tách kết quả thành 5 điểm thành phần để dựng biểu đồ Radar, chẩn đoán khoảng trống và đề xuất lộ trình bồi dưỡng cá nhân hóa.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800">
-                    <span className="text-slate-600 dark:text-neutral-400">Phân quyền gói học viên:</span>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await handleToggleVip(selectedDetailExam);
-                        setSelectedDetailExam((prev) => prev ? { ...prev, is_vip: !prev.is_vip } : null);
-                      }}
-                      className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                    >
-                      {selectedDetailExam.is_vip ? 'Chuyên sâu (PRO) ⇄ Đổi Free' : 'Miễn phí (FREE) ⇄ Đổi PRO'}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800">
-                    <span className="text-slate-600 dark:text-neutral-400">Trạng thái phát hành:</span>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await handleTogglePublish(selectedDetailExam);
-                        setSelectedDetailExam((prev) => prev ? { ...prev, is_published: !prev.is_published } : null);
-                      }}
-                      className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                    >
-                      {selectedDetailExam.is_published ? 'Đang phát hành ⇄ Tắt (Ẩn)' : 'Bản nháp ⇄ Phát hành ngay'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notice Box about Publishing to Personal Dashboard */}
-              <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900 text-blue-900 dark:text-blue-200 space-y-1">
-                <div className="font-bold flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>Luồng kết nối với Kho Khảo Thí Personal</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-blue-800 dark:text-blue-300">
-                  Khi trạng thái là <strong>Đang phát hành</strong>, bài thi sẽ hiển thị ngay lập tức trên trang Khảo thí cá nhân (<code>/personal/assessments</code>). Nếu đề được gắn nhãn <strong>FREE</strong>, mọi học viên đều làm bài được; nếu gắn nhãn <strong>PRO</strong>, chỉ tài khoản đã nâng cấp gói mới được mở khóa.
-                </p>
-              </div>
+            {/* Navigation Tabs */}
+            <div className="px-6 pt-2 flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSettingsTab('GENERAL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  settingsTab === 'GENERAL'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                    : 'text-slate-500 dark:text-neutral-400 hover:text-slate-800'
+                }`}
+              >
+                Thông số cơ bản
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsTab('SECURITY')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  settingsTab === 'SECURITY'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                    : 'text-slate-500 dark:text-neutral-400 hover:text-slate-800'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Bảo mật &amp; Giám thị (11 công tắc)</span>
+              </button>
             </div>
 
-            {/* Footer Actions */}
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleCloneAssessment(selectedDetailExam);
-                    setSelectedDetailExam(null);
-                  }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Nhân bản đề</span>
-                </button>
-                <Link
-                  href={`/personal/take/${selectedDetailExam.id}`}
-                  target="_blank"
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Xem trước bài thi</span>
-                </Link>
-              </div>
+            {/* Form Body */}
+            <form onSubmit={handleSaveSettings} className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
+              {settingsTab === 'GENERAL' ? (
+                <>
+                  <div>
+                    <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1">
+                      Tiêu đề bài khảo thí <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={settingsTitle}
+                      onChange={(e) => setSettingsTitle(e.target.value)}
+                      placeholder="Ví dụ: Đánh Giá Năng Lực Số Toàn Diện 5 Miền"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
+                    />
+                  </div>
 
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setSelectedDetailExam(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors cursor-pointer"
-                >
-                  Đóng
-                </button>
-                <Link
-                  href={`/admin/content/assessments/${selectedDetailExam.id}`}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Mở Trình Soạn Đề (Studio)</span>
-                </Link>
+                  <div>
+                    <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1">
+                      Mô tả mục tiêu khảo hạch
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={settingsDescription}
+                      onChange={(e) => setSettingsDescription(e.target.value)}
+                      placeholder="Mô tả tóm tắt chuẩn đầu ra năng lực của bài thi..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1">
+                        Thời lượng làm bài (Phút)
+                      </label>
+                      <input
+                        type="number"
+                        min={5}
+                        max={300}
+                        value={settingsDuration}
+                        onChange={(e) => setSettingsDuration(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-mono text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1">
+                        Chuẩn đạt yêu cầu (%)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={settingsPassingScore}
+                        onChange={(e) => setSettingsPassingScore(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-mono text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <span className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1.5">
+                        Phân hạng truy cập
+                      </span>
+                      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => setSettingsIsVip(false)}
+                          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-center transition-colors cursor-pointer ${
+                            !settingsIsVip
+                              ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs'
+                              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900'
+                          }`}
+                        >
+                          Miễn phí
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSettingsIsVip(true)}
+                          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-center transition-colors cursor-pointer ${
+                            settingsIsVip
+                              ? 'bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-xs'
+                              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900'
+                          }`}
+                        >
+                          Gói Chuyên sâu
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1.5">
+                        Trạng thái phát hành
+                      </span>
+                      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => setSettingsIsPublished(false)}
+                          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-center transition-colors cursor-pointer ${
+                            !settingsIsPublished
+                              ? 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-neutral-200 shadow-xs'
+                              : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900'
+                          }`}
+                        >
+                          Bản nháp (Ẩn)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSettingsIsPublished(true)}
+                          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-center transition-colors cursor-pointer ${
+                            settingsIsPublished
+                              ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                              : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900'
+                          }`}
+                        >
+                          Đang phát hành
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tóm tắt metadata thực tế */}
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
+                    <span>Dạng đề: <strong>{settingsExam.typeLabel || 'Trắc nghiệm'}</strong></span>
+                    <span>Ngày tạo: <strong>{new Date(settingsExam.created_at).toLocaleDateString('vi-VN')}</strong></span>
+                    <Link
+                      href={`/admin/content/assessments/${settingsExam.id}`}
+                      className="text-blue-600 dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>Soạn câu hỏi trong Studio &rarr;</span>
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <SecuritySettingsCard
+                  value={settingsSecurity}
+                  onChange={setSettingsSecurity}
+                  disabled={isSavingSettings}
+                />
+              )}
+
+              {/* Footer Actions */}
+              <div className="pt-3 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/content/assessments/${settingsExam.id}/preview`}
+                    target="_blank"
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Xem trước</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCloneAssessment(settingsExam);
+                      setSettingsExam(null);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Nhân bản</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettingsExam(null)}
+                    className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingSettings}
+                    className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {isSavingSettings ? 'Đang lưu...' : 'Lưu cấu hình'}
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

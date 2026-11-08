@@ -198,7 +198,7 @@ export default function LearnerBillingPage() {
                     {p.description}
                   </p>
 
-                  <div className="my-5 pb-5 border-b border-slate-200/80 dark:border-zinc-800">
+                  <div className="my-5 pb-5">
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-bold font-mono tracking-tight text-neutral-900 dark:text-neutral-100">
                         {isFree ? 'Miễn phí' : `${p.price_vnd.toLocaleString('vi-VN')} đ`}

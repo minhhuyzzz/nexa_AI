@@ -417,13 +417,13 @@ function LeaderboardContent() {
           <div className="border border-slate-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-xs">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 text-[11px] font-semibold">
+                <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 text-[11px] font-semibold">
                   <th className="py-3 px-4 w-24 text-center">THỨ HẠNG</th>
                   <th className="py-3 px-4">HỌC VIÊN</th>
                   <th className="py-3 px-4 text-right">TỔNG PTS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
+              <tbody className="">
                 {filteredList.map((entry) => {
                   const isCurrentUser = myRank && entry.userId === myRank.userId;
                   const rank = entry.rank;

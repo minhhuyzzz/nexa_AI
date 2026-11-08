@@ -177,10 +177,16 @@ export class DomainAssessmentSummaryService {
 
       if (answers) {
         for (const ans of answers) {
+          // P0: Do not accumulate question if it is pending rubric grading (score_awarded is null/undefined)
+          // Otherwise, adding points to max with 0 earned artificially degrades the domain score.
+          if (ans.score_awarded === null || ans.score_awarded === undefined) {
+            continue;
+          }
+
           const item = ans.assessment_items as unknown as ItemCompetencyDomainJoin | null;
           const domainIndex = item?.competencies?.competency_domains?.domain_index ?? 0;
           const points = Number(item?.points || 1);
-          const scoreAwarded = Number(ans.score_awarded || 0);
+          const scoreAwarded = Number(ans.score_awarded);
 
           if (domainIndex >= 1 && domainIndex <= 5) {
             domainAccumulators[domainIndex].earned += scoreAwarded;

@@ -34,7 +34,7 @@ export function SubmissionTrackingView({ item, onBack }: SubmissionTrackingViewP
       </div>
 
       {/* 2. Page Header */}
-      <div className="pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
           <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
@@ -115,12 +115,12 @@ export function SubmissionTrackingView({ item, onBack }: SubmissionTrackingViewP
           </div>
 
           {/* Submitted version details */}
-          <div className="border-t border-slate-100 dark:border-zinc-850 pt-5 space-y-3">
+          <div className="pt-5 space-y-3">
             <h3 className="text-xs font-bold text-neutral-800 dark:text-zinc-200 uppercase tracking-wide">
               Phiên bản bài nộp đã gửi
             </h3>
 
-            <div className="space-y-2.5 text-xs divide-y divide-slate-100 dark:divide-zinc-850">
+            <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500 dark:text-neutral-400">Thời gian hệ thống ghi nhận</span>
                 <span className="font-semibold text-neutral-800 dark:text-zinc-200 font-mono">
@@ -167,7 +167,7 @@ export function SubmissionTrackingView({ item, onBack }: SubmissionTrackingViewP
           </div>
 
           {/* Student note */}
-          <div className="border-t border-slate-100 dark:border-zinc-850 pt-5 space-y-2">
+          <div className="pt-5 space-y-2">
             <h3 className="text-xs font-bold text-neutral-800 dark:text-zinc-200 uppercase tracking-wide">
               Ghi chú đã gửi kèm bài nộp
             </h3>
@@ -184,7 +184,7 @@ export function SubmissionTrackingView({ item, onBack }: SubmissionTrackingViewP
               Tóm tắt nhiệm vụ
             </h2>
 
-            <div className="space-y-3 text-xs divide-y divide-slate-100 dark:divide-zinc-850">
+            <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500 dark:text-neutral-400">Trạng thái</span>
                 <span className="font-semibold text-amber-600 dark:text-amber-400">Chờ đánh giá</span>

@@ -218,7 +218,7 @@ export function ClassStreamTab({ classId, role, currentUserId, onNavigateTab }: 
                 type="checkbox"
                 checked={isAnnouncement}
                 onChange={(e) => setIsAnnouncement(e.target.checked)}
-                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                className="rounded text-sky-600 focus:ring-sky-500"
               />
               <span>Ghim thông báo quan trọng</span>
             </label>
@@ -410,7 +410,7 @@ export function ClassStreamTab({ classId, role, currentUserId, onNavigateTab }: 
                 </div>
 
                 {/* Inline Replies */}
-                <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+                <div className="mt-4 pt-3 space-y-2">
                   {(post.replies || []).length > 0 && (
                     <div className="space-y-2 pl-3 border-l-2 border-slate-100">
                       {post.replies?.map((rep) => (

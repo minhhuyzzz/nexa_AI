@@ -288,7 +288,7 @@ export default function LearnerGroupsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* 1. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Lớp &amp; Nhóm của tôi
@@ -321,7 +321,7 @@ export default function LearnerGroupsPage() {
             {/* Quick Join Popover */}
             {isJoinDropdownOpen && (
               <div className="absolute right-0 mt-2 w-80 sm:w-96 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-850">
+                <div className="flex items-center justify-between pb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
                     <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
@@ -393,7 +393,7 @@ export default function LearnerGroupsPage() {
       </div>
 
       {/* 2. Tabs Stand & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-zinc-850">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2">
         {/* Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto text-xs font-semibold">
           <button
@@ -493,7 +493,7 @@ export default function LearnerGroupsPage() {
               >
                 {/* Card Cover Banner */}
                 <div>
-                  <div className="p-4 flex items-center justify-between border-b border-slate-100/80 dark:border-zinc-850 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-transparent dark:from-blue-950/30 dark:via-indigo-950/20">
+                  <div className="p-4 flex items-center justify-between bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-transparent dark:from-blue-950/30 dark:via-indigo-950/20">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-base shadow-2xs bg-blue-600 text-white">
                         {monogram}
@@ -594,7 +594,7 @@ export default function LearnerGroupsPage() {
                 </div>
 
                 {/* Card Footer Link */}
-                <div className="p-4 pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <div className="p-4 pt-3 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
                   <span className="group-hover:underline">Vào không gian lớp</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>

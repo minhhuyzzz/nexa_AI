@@ -558,7 +558,7 @@ function LearnerProfileContent() {
             </div>
 
             {/* Hàng 2: Tiến độ học tập số (Chỉ giữ Bài đã hoàn thành, loại bỏ Tỷ lệ đúng & Chủ đề đã học) */}
-            <div className="pt-2 border-t border-blue-200/50 dark:border-zinc-800/80">
+            <div className="pt-3">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-800 dark:text-zinc-200 mb-2">
                 <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={2} />
                 <span>Tiến độ học tập số</span>
@@ -577,44 +577,46 @@ function LearnerProfileContent() {
         </div>
       </div>
 
-      {/* TOP NAVIGATION TABS (Chỉ còn Hồ sơ & Chứng chỉ đã cấp) */}
-      <div className="border-b border-slate-200 dark:border-zinc-800 flex items-center gap-6 text-xs font-medium">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('PROFILE');
-            router.replace('/personal/profile');
-          }}
-          className={`py-3 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
-            activeTab === 'PROFILE'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
-              : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200'
-          }`}
-        >
-          <User className="w-4 h-4" strokeWidth={1.75} />
-          <span>Hồ sơ</span>
-        </button>
+      {/* TOP NAVIGATION TABS (Modern Pill Tabs, không gạch chân) */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('PROFILE');
+              router.replace('/personal/profile');
+            }}
+            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'PROFILE'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <User className="w-4 h-4" strokeWidth={1.75} />
+            <span>Hồ sơ</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('CREDENTIALS');
-            router.replace('/personal/profile?tab=credentials');
-          }}
-          className={`py-3 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
-            activeTab === 'CREDENTIALS'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
-              : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200'
-          }`}
-        >
-          <Award className="w-4 h-4" strokeWidth={1.75} />
-          <span>Chứng chỉ đã cấp</span>
-          {credentials.length > 0 && (
-            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 font-semibold">
-              {credentials.length}
-            </span>
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('CREDENTIALS');
+              router.replace('/personal/profile?tab=credentials');
+            }}
+            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'CREDENTIALS'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Award className="w-4 h-4" strokeWidth={1.75} />
+            <span>Chứng chỉ đã cấp</span>
+            {credentials.length > 0 && (
+              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold">
+                {credentials.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* TAB 1: PROFILE & SETTINGS (2-COLUMN LAYOUT) */}
@@ -709,7 +711,7 @@ function LearnerProfileContent() {
                 </div>
               </div>
 
-              <div className="space-y-4 pt-1 divide-y divide-slate-100 dark:divide-zinc-850">
+              <div className="space-y-4 pt-1">
                 {/* 1.1 Hiển thị hồ sơ cá nhân */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
                   <div className="space-y-0.5 max-w-lg">
@@ -829,7 +831,7 @@ function LearnerProfileContent() {
                 </div>
               </div>
 
-              <div className="space-y-4 pt-1 divide-y divide-slate-100 dark:divide-zinc-850">
+              <div className="space-y-4 pt-1">
                 {/* 2.1 Bài đánh giá mới */}
                 <div className="flex items-center justify-between gap-4 pt-3">
                   <div className="space-y-0.5 max-w-lg">
@@ -1117,7 +1119,7 @@ function LearnerProfileContent() {
                 </div>
               </div>
 
-              <div className="space-y-4 pt-1 divide-y divide-slate-100 dark:divide-zinc-850">
+              <div className="space-y-4 pt-1">
                 {/* 5.1 Xuất dữ liệu */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
                   <div className="space-y-0.5 max-w-lg">
@@ -1190,7 +1192,7 @@ function LearnerProfileContent() {
       {/* TAB 2: CREDENTIALS */}
       {activeTab === 'CREDENTIALS' && (
         <div className="p-6 bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl space-y-5 shadow-2xs pt-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
               <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -1279,7 +1281,7 @@ function LearnerProfileContent() {
       {showEditNicknameModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-blue-600" strokeWidth={2} />
                 <span>Chỉnh sửa biệt danh hiển thị</span>
@@ -1314,7 +1316,7 @@ function LearnerProfileContent() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-end gap-2 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowEditNicknameModal(false)}
@@ -1360,7 +1362,7 @@ function LearnerProfileContent() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-2 pt-3">
               <button
                 type="button"
                 onClick={() => setShowPauseModal(false)}
@@ -1401,7 +1403,7 @@ function LearnerProfileContent() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-2 pt-3">
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(false)}

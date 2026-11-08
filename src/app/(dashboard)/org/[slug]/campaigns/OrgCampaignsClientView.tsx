@@ -73,7 +73,7 @@ export function OrgCampaignsClientView({
   return (
     <div className="space-y-6">
       {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
@@ -96,16 +96,16 @@ export function OrgCampaignsClientView({
         )}
       </div>
 
-      {/* 2. Filter & Tabs Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-zinc-800 pb-2">
-        <div className="flex items-center gap-4 text-xs font-semibold overflow-x-auto">
+      {/* 2. Filter & Tabs Bar (Pill Tabs, không gạch chân) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('ALL')}
-            className={`pb-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'ALL'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
             }`}
           >
             Tất cả ({campaigns.length})
@@ -113,10 +113,10 @@ export function OrgCampaignsClientView({
           <button
             type="button"
             onClick={() => setActiveTab('ACTIVE')}
-            className={`pb-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'ACTIVE'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
             }`}
           >
             Đang diễn ra ({activeCount})
@@ -124,10 +124,10 @@ export function OrgCampaignsClientView({
           <button
             type="button"
             onClick={() => setActiveTab('SCHEDULED')}
-            className={`pb-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'SCHEDULED'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
             }`}
           >
             Sắp diễn ra ({scheduledCount})
@@ -135,10 +135,10 @@ export function OrgCampaignsClientView({
           <button
             type="button"
             onClick={() => setActiveTab('COMPLETED')}
-            className={`pb-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'COMPLETED'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
             }`}
           >
             Đã hoàn thành ({completedCount})
@@ -203,7 +203,7 @@ export function OrgCampaignsClientView({
                     </span>
 
                     <span className="text-[11px] font-mono text-slate-400 dark:text-neutral-500 tabular-nums">
-                      {c.ends_at ? new Date(c.ends_at).toLocaleDateString('vi-VN') : '—'}
+                      {c.ends_at ? new Date(c.ends_at).toLocaleDateString('vi-VN') : 'Không giới hạn'}
                     </span>
                   </div>
 
@@ -215,7 +215,7 @@ export function OrgCampaignsClientView({
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
+                <div className="mt-5 pt-3.5">
                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 font-mono mb-3.5">
                     <div className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
@@ -241,6 +241,15 @@ export function OrgCampaignsClientView({
                     >
                       <span>Báo cáo</span>
                     </Link>
+                    {isManager && c.assessments?.id && (
+                      <Link
+                        href={`/org/${slug}/campaigns/new?assessmentId=${c.assessments.id}`}
+                        className="h-8 px-2.5 rounded border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-500 hover:text-blue-600 text-xs font-semibold flex items-center justify-center transition-colors"
+                        title="Tạo đợt mới từ đề thi này"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

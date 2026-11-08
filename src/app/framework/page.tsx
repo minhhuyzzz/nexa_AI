@@ -141,7 +141,7 @@ export default async function FrameworkPage() {
               key={domain.id}
               className="rounded-md border border-slate-200 bg-white p-6 sm:p-7 shadow-xs"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-2">
                 <div className="flex items-center gap-3">
                   <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-900 text-xs font-semibold border border-slate-200">
                     MIỀN {domain.code}

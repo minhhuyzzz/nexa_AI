@@ -297,7 +297,7 @@ export default function AdminCompliancePage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
+              <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
                 <th className="py-3 px-4">Người dùng</th>
                 <th className="py-3 px-4">Phiên bản</th>
                 <th className="py-3 px-4">Trạng thái</th>
@@ -307,7 +307,7 @@ export default function AdminCompliancePage() {
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+            <tbody className="">
               {sampleConsentRecords.map((r, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
                   {/* Người dùng */}
@@ -388,7 +388,7 @@ export default function AdminCompliancePage() {
           </table>
         </div>
 
-        <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+        <div className="p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <div>Hiển thị 1–6 của 284.720 bản ghi</div>
             <div className="flex items-center gap-1">

@@ -234,7 +234,7 @@ export default function AdminFrameworksPage() {
 
               {/* Skills Grid */}
               {isOpen && (
-                <div className="p-5 pt-0 border-t border-slate-100 dark:border-zinc-800/80 mt-1">
+                <div className="p-5 pt-0 mt-1">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 pt-4">
                     {domain.skills.map((skill) => (
                       <div
@@ -255,7 +255,7 @@ export default function AdminFrameworksPage() {
                           </p>
                         </div>
 
-                        <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-zinc-800/60">
+                        <div className="mt-3 pt-2.5">
                           <button
                             onClick={() => setEditingSkill(skill)}
                             className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 transition-colors"
@@ -278,7 +278,7 @@ export default function AdminFrameworksPage() {
       {editingSkill && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                 Chỉnh sửa kỹ năng {editingSkill.code}: {editingSkill.title}
               </h3>

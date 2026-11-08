@@ -28,7 +28,7 @@ export function OrgAssignmentsWidget({
     <div className="space-y-4">
       {/* Main Section Card */}
       <section className="p-6 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800 pb-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 mb-3">
           <div>
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -56,7 +56,7 @@ export function OrgAssignmentsWidget({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-zinc-800">
+          <div className="space-y-2.5">
             {tasks.map((task, idx) => {
               const deadlineFormatted = task.deadline
                 ? new Date(task.deadline).toLocaleDateString('vi-VN', {
@@ -69,7 +69,7 @@ export function OrgAssignmentsWidget({
               return (
                 <div
                   key={task.id}
-                  className="py-3.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-3 rounded-xl border border-slate-200/70 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="flex items-start sm:items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 mt-0.5 sm:mt-0">

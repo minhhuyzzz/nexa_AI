@@ -138,7 +138,7 @@ export function QuestionBankDrawer({
     <div className="fixed inset-0 z-50 overflow-hidden flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-2xl bg-white h-full shadow-sm flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+        <div className="p-4 flex items-center justify-between bg-white shrink-0">
           <div>
             <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
@@ -159,7 +159,7 @@ export function QuestionBankDrawer({
         </div>
 
         {/* Search & Filters */}
-        <div className="p-4 border-b border-slate-200 bg-slate-50 space-y-3 shrink-0">
+        <div className="p-4 bg-slate-50 space-y-3 shrink-0">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
@@ -264,7 +264,7 @@ export function QuestionBankDrawer({
 
                       {/* Options preview for MCQ */}
                       {opts.length > 0 && (
-                        <div className="mt-2.5 pt-2 border-t border-slate-100 grid grid-cols-2 gap-1.5">
+                        <div className="mt-2.5 pt-2 grid grid-cols-2 gap-1.5">
                           {opts.slice(0, 4).map((opt, optIdx) => (
                             <div
                               key={opt.id}
@@ -294,7 +294,7 @@ export function QuestionBankDrawer({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+        <div className="p-4 bg-slate-50 flex items-center justify-between shrink-0">
           <div className="text-xs text-slate-600">
             Đã chọn <strong className="font-mono text-slate-900">{selectedIds.size}</strong> câu hỏi
           </div>

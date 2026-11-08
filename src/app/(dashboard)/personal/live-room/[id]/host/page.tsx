@@ -543,7 +543,7 @@ export default function HostWaitingRoomPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left: Participant Roster (2 Cols) */}
         <div className="lg:col-span-2 bg-white rounded-md border border-slate-200 shadow-xs p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
             <div>
               <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
                 <span>Danh sách người tham gia</span>
@@ -654,7 +654,7 @@ export default function HostWaitingRoomPage() {
               ))}
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 text-xs">
+            <div className="text-xs">
               {filteredParticipants.map((p, idx) => (
                 <div key={p.id} className="py-2.5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">

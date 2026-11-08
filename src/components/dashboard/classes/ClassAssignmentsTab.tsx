@@ -363,11 +363,11 @@ export function ClassAssignmentsTab({
 
                 {/* Evaluator: Submissions List for this assignment */}
                 {role === 'EVALUATOR' && submissions.length > 0 && (
-                  <div className="pt-3 border-t border-slate-100">
+                  <div className="pt-3">
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
                       Danh sách bài nộp của học viên
                     </span>
-                    <div className="divide-y divide-slate-100 border border-slate-100 rounded">
+                    <div className="border border-slate-100 rounded">
                       {submissions
                         .filter((s) => s.assignmentId === asg.id)
                         .slice(0, 5)
@@ -428,7 +428,7 @@ export function ClassAssignmentsTab({
             onSubmit={handleAssignSubmit}
             className="bg-white border border-slate-200 rounded-md shadow-md max-w-md w-full p-6 space-y-4"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
                 <span>Giao Bài Khảo Thí Vào Nhóm</span>
@@ -475,7 +475,7 @@ export function ClassAssignmentsTab({
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 text-xs">
+            <div className="pt-3 flex items-center justify-end gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}

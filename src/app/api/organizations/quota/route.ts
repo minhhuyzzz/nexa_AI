@@ -43,8 +43,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         quota: {
-          planCode: entitlements.status === 'PROVISIONING' ? 'BUSINESS_PROVISIONING' : 'BUSINESS_PLUS',
-          planName: entitlements.planName || 'NEXA Business Plus',
+          planCode: entitlements.status === 'PROVISIONING' ? 'BUSINESS_PROVISIONING' : 'BUSINESS',
+          planName: entitlements.planName || 'Gói Business',
           status: entitlements.status,
           isProvisioning: entitlements.isProvisioning,
           daysRemaining: entitlements.daysRemaining,

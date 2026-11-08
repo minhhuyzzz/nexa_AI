@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         room_code,
         title,
         assessment_id,
+        created_by,
         room_mode,
         is_active,
         is_locked,
@@ -90,7 +91,19 @@ export async function GET(request: Request) {
       console.warn('Could not fetch room participants:', pError);
     }
 
-    // 3. Fetch user profiles for participants
+    // 3. Fetch user profiles for participants and determine requester permissions
+    let currentUser: { id: string } | null = null;
+    try {
+      if (supabase.auth?.getUser) {
+        const authRes = await supabase.auth.getUser();
+        currentUser = authRes?.data?.user || null;
+      }
+    } catch {
+      currentUser = null;
+    }
+    const isHost = Boolean(currentUser && currentUser.id === (room as any).created_by);
+    const canSeeAllScores = isHost || Boolean(room.results_published);
+
     const userIds = (participants || []).map((p) => p.user_id);
     let profilesMap: Record<string, { full_name?: string; avatar_url?: string; student_code?: string }> = {};
 
@@ -115,6 +128,10 @@ export async function GET(request: Request) {
         .map((w) => w[0].toUpperCase())
         .join('');
 
+      // P0 Security: Do not leak scores before results are published unless host
+      const isSelf = Boolean(currentUser && currentUser.id === p.user_id);
+      const allowScore = canSeeAllScores || (isSelf && Boolean(room.results_published));
+
       return {
         id: p.id,
         userId: p.user_id,
@@ -125,7 +142,7 @@ export async function GET(request: Request) {
         isReady: p.is_ready || false,
         readyAt: p.ready_at,
         connectionStatus: p.connection_status || 'ONLINE',
-        score: p.score,
+        score: allowScore ? p.score : null,
         submittedAt: p.submitted_at,
         answersCount: p.answers_count || 0,
         totalQuestions: p.total_questions || 0,

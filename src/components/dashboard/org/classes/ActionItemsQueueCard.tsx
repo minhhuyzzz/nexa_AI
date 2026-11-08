@@ -45,7 +45,7 @@ export function ActionItemsQueueCard({
               <AlertTriangle className="w-3.5 h-3.5" />
             </div>
             <span className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
-              <strong className="font-mono tabular-nums">{unassignedInstructorCount}</strong> lớp chưa có giảng viên
+              <strong className="font-mono tabular-nums">{unassignedInstructorCount}</strong> nhóm chưa có người phụ trách
             </span>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition" />

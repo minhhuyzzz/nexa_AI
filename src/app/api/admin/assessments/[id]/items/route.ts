@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { z } from 'zod';
 import { RubricService } from '@/features/assessments/services/rubric.service';
@@ -197,6 +198,58 @@ export async function POST(
     }
 
     return NextResponse.json({ item: newItem, rubric: savedRubric }, { status: 201 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await requirePlatformAdmin();
+    if (!auth.isAuthorized) {
+      return auth.errorResponse!;
+    }
+
+    const { id: assessmentId } = await params;
+    const adminSupabase = createAdminClient();
+
+    // 1. Get all item IDs for this assessment
+    const { data: items } = await adminSupabase
+      .from('assessment_items')
+      .select('id')
+      .eq('assessment_id', assessmentId);
+
+    if (items && items.length > 0) {
+      const itemIds = items.map((i: any) => i.id);
+
+      // 2. Delete item options
+      await adminSupabase
+        .from('item_options')
+        .delete()
+        .in('item_id', itemIds);
+
+      // 3. Delete rubrics if any
+      await adminSupabase
+        .from('rubrics')
+        .delete()
+        .in('item_id', itemIds);
+
+      // 4. Delete items
+      const { error: delError } = await adminSupabase
+        .from('assessment_items')
+        .delete()
+        .eq('assessment_id', assessmentId);
+
+      if (delError) {
+        return NextResponse.json({ error: delError.message }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ success: true, message: 'Đã xóa toàn bộ câu hỏi của bài khảo thí' });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });

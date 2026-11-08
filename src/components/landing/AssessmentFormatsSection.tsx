@@ -33,7 +33,7 @@ const formats = [
 
 export function AssessmentFormatsSection() {
   return (
-    <section className="py-20 border-t border-slate-200/80 bg-slate-50/50">
+    <section className="py-20 bg-slate-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="text-xs font-semibold uppercase tracking-wider text-sky-600 mb-2">

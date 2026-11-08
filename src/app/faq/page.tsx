@@ -111,7 +111,7 @@ export default function FaqPage() {
             const Icon = cat.icon;
             return (
               <section key={catIdx} className="bg-white rounded-md border border-slate-200 p-6 sm:p-8 shadow-xs">
-                <div className="flex items-center gap-3 pb-4 mb-6 border-b border-slate-100">
+                <div className="flex items-center gap-3 pb-4 mb-6">
                   <div className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
                     <Icon className="w-4 h-4" strokeWidth={1.75} />
                   </div>

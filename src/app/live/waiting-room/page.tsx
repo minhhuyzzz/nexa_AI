@@ -491,7 +491,7 @@ function WaitingRoomContent() {
           </div>
 
           {/* Toggle Ready Button */}
-          <div className="pt-4 border-t border-white/10 space-y-2">
+          <div className="pt-4 space-y-2">
             <button
               onClick={handleToggleReady}
               disabled={togglingReady}

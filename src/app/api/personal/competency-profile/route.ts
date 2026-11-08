@@ -4,6 +4,12 @@ import { DomainAssessmentSummaryService } from '@/features/competency/services/d
 
 export const dynamic = 'force-dynamic';
 
+function normalizeDomainCode(code: string | null | undefined): string {
+  if (!code) return '01';
+  const match = String(code).match(/(\d+)/);
+  return match ? match[1].padStart(2, '0') : '01';
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -30,8 +36,8 @@ export async function GET() {
     );
 
     let insights: {
-      strongest: { code: string; name: string; score: number; level: string } | null;
-      weakest: { code: string; name: string; score: number; level: string; isGap: boolean } | null;
+      strongest: { code: string; domainCode?: string; rawCode: string; name: string; score: number; level: string } | null;
+      weakest: { code: string; domainCode?: string; rawCode: string; name: string; score: number; level: string; isGap: boolean } | null;
     } | null = null;
 
     if (assessedDomains.length > 0) {
@@ -42,12 +48,16 @@ export async function GET() {
       insights = {
         strongest: {
           code: strongest.code,
+          domainCode: normalizeDomainCode(strongest.code),
+          rawCode: strongest.code,
           name: strongest.name,
           score: strongest.score,
           level: strongest.level,
         },
         weakest: {
           code: weakest.code,
+          domainCode: normalizeDomainCode(weakest.code),
+          rawCode: weakest.code,
           name: weakest.name,
           score: weakest.score,
           level: weakest.level,
@@ -81,8 +91,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      success: true,
+    const payload = {
       hasTakenAssessment: summary.hasTakenAssessment,
       totalAssessmentsCompleted: summary.totalAssessmentsCompleted,
       assessedDomainsCount: summary.assessedDomainsCount,
@@ -92,6 +101,12 @@ export async function GET() {
       radarData: summary.radarData,
       insights,
       latestAnalysis,
+    };
+
+    return NextResponse.json({
+      success: true,
+      profile: payload,
+      ...payload,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

@@ -94,7 +94,7 @@ export function CompetencyFrameworkSection() {
                 <p className="text-xs text-slate-600 leading-relaxed">{domain.desc}</p>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="pt-4 mt-4 flex items-center justify-between text-[11px] text-slate-400">
                 <span>{domain.skillsCount}</span>
               </div>
             </div>

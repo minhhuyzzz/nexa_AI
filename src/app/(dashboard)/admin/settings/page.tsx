@@ -213,15 +213,15 @@ function AdminSettingsContent() {
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-slate-200 dark:border-zinc-800">
-        <div className="flex items-center gap-6 text-sm font-medium">
+      {/* Navigation Tabs (Pill Tabs, không gạch chân) */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
           <button
             onClick={() => switchTab('general')}
-            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'general'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <Sliders className="w-4 h-4" strokeWidth={1.75} />
@@ -230,10 +230,10 @@ function AdminSettingsContent() {
 
           <button
             onClick={() => switchTab('roles')}
-            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'roles'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <Users className="w-4 h-4" strokeWidth={1.75} />
@@ -242,10 +242,10 @@ function AdminSettingsContent() {
 
           <button
             onClick={() => switchTab('integrations')}
-            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'integrations'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <Webhook className="w-4 h-4" strokeWidth={1.75} />
@@ -254,10 +254,10 @@ function AdminSettingsContent() {
 
           <button
             onClick={() => switchTab('audit')}
-            className={`pb-3 border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'audit'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}
           >
             <FileText className="w-4 h-4" strokeWidth={1.75} />
@@ -272,7 +272,7 @@ function AdminSettingsContent() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Card 1: Nền tảng & vận hành */}
             <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="flex items-center justify-between pb-3">
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Nền tảng &amp; vận hành
                 </h3>
@@ -352,7 +352,7 @@ function AdminSettingsContent() {
 
             {/* Card 2: Quy tắc hệ thống */}
             <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
-              <div className="pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="pb-3">
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Quy tắc hệ thống
                 </h3>
@@ -440,7 +440,7 @@ function AdminSettingsContent() {
 
             {/* Card 3: Kiểm duyệt & dữ liệu hệ thống */}
             <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
-              <div className="pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="pb-3">
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Kiểm duyệt &amp; dữ liệu hệ thống
                 </h3>
@@ -534,7 +534,7 @@ function AdminSettingsContent() {
 
             {/* Card 4: Thông báo vận hành */}
             <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
-              <div className="pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="pb-3">
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Thông báo vận hành
                 </h3>
@@ -576,7 +576,7 @@ function AdminSettingsContent() {
                           }
                         }}
                         placeholder="Thêm email nhận thông báo..."
-                        className="flex-1 px-2.5 py-1 text-xs bg-transparent border-0 focus:outline-none text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400"
+                        className="flex-1 px-2.5 py-1 text-xs bg-transparent focus:outline-none text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400"
                       />
                       <button
                         type="button"
@@ -627,7 +627,7 @@ function AdminSettingsContent() {
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={handleResetDefaults}
@@ -651,7 +651,7 @@ function AdminSettingsContent() {
       {/* TAB 2: VAI TRÒ ADMIN NỘI BỘ */}
       {activeTab === 'roles' && (
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between pb-4">
             <div>
               <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
@@ -702,7 +702,7 @@ function AdminSettingsContent() {
       {/* TAB 3: TÍCH HỢP & WEBHOOK */}
       {activeTab === 'integrations' && (
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-6">
-          <div className="pb-4 border-b border-slate-100 dark:border-zinc-800">
+          <div className="pb-4">
             <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Webhook className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
               <span>Cấu hình tích hợp dịch vụ thực tế</span>
@@ -763,7 +763,7 @@ function AdminSettingsContent() {
       {/* TAB 4: NHẬT KÝ KIỂM TOÁN */}
       {activeTab === 'audit' && (
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between pb-3">
             <div>
               <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
@@ -776,25 +776,25 @@ function AdminSettingsContent() {
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 text-xs text-slate-600 dark:text-neutral-400 space-y-2.5 font-mono">
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+            <div className="flex justify-between items-center py-1.5">
               <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-04 15:40]</span>
               <span className="text-blue-600 dark:text-blue-400 font-semibold">SYSTEM_CONFIG_UPDATED</span>
               <span>Target: platform_settings</span>
               <span>Admin: master@nexa.vn</span>
             </div>
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+            <div className="flex justify-between items-center py-1.5">
               <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-04 14:15]</span>
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">PAYMENT_RECONCILED</span>
               <span>Target: tx_ref_9812</span>
               <span>Admin: finance@nexa.vn</span>
             </div>
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+            <div className="flex justify-between items-center py-1.5">
               <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-04 11:02]</span>
               <span className="text-indigo-600 dark:text-indigo-400 font-semibold">ORG_INVITATION_SENT</span>
               <span>Target: org_fpt_edu</span>
               <span>Admin: ops@nexa.vn</span>
             </div>
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-zinc-800">
+            <div className="flex justify-between items-center py-1.5">
               <span className="font-bold text-neutral-900 dark:text-neutral-100">[2026-11-03 19:20]</span>
               <span className="text-amber-600 dark:text-amber-400 font-semibold">USER_ROLE_ASSIGNED</span>
               <span>Target: assessor_vu@hust.edu.vn</span>

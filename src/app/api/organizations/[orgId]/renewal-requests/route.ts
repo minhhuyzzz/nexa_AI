@@ -15,17 +15,32 @@ const createRenewalSchema = z.object({
   notes: z.string().trim().max(1000).optional().nullable(),
 });
 
+async function resolveOrgId(orgIdentifier: string): Promise<string> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orgIdentifier);
+  if (isUuid) return orgIdentifier;
+
+  const adminSupabase = createAdminClient();
+  const { data: orgData } = await adminSupabase
+    .from('organizations')
+    .select('id')
+    .or(`slug.eq.${orgIdentifier},code.ilike.${orgIdentifier}`)
+    .maybeSingle();
+
+  return orgData?.id || orgIdentifier;
+}
+
 async function checkOrgAdminPermission(userId: string, email: string | undefined, orgId: string) {
   if (isSuperadminEmail(email)) {
     return { isAllowed: true, isSuperadmin: true };
   }
 
+  const resolvedId = await resolveOrgId(orgId);
   const adminSupabase = createAdminClient();
   const { data: member } = await adminSupabase
     .from('user_organizations')
     .select('org_role, status')
     .eq('user_id', userId)
-    .eq('organization_id', orgId)
+    .eq('organization_id', resolvedId)
     .eq('status', 'ACTIVE')
     .maybeSingle();
 
@@ -40,6 +55,7 @@ export async function GET(
 ) {
   try {
     const { orgId } = await params;
+    const resolvedOrgId = await resolveOrgId(orgId);
     const supabase = await createClient();
     const {
       data: { user },
@@ -50,7 +66,7 @@ export async function GET(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { isAllowed } = await checkOrgAdminPermission(user.id, user.email, orgId);
+    const { isAllowed } = await checkOrgAdminPermission(user.id, user.email, resolvedOrgId);
     if (!isAllowed) {
       return NextResponse.json({ error: 'Chỉ Quản trị viên tổ chức mới có quyền xem thông tin gia hạn' }, { status: 403 });
     }
@@ -59,7 +75,7 @@ export async function GET(
     const { data: requests, error } = await adminSupabase
       .from('renewal_requests')
       .select('*')
-      .eq('organization_id', orgId)
+      .eq('organization_id', resolvedOrgId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -85,6 +101,7 @@ export async function POST(
 ) {
   try {
     const { orgId } = await params;
+    const resolvedOrgId = await resolveOrgId(orgId);
     const supabase = await createClient();
     const {
       data: { user },
@@ -95,7 +112,7 @@ export async function POST(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { isAllowed } = await checkOrgAdminPermission(user.id, user.email, orgId);
+    const { isAllowed } = await checkOrgAdminPermission(user.id, user.email, resolvedOrgId);
     if (!isAllowed) {
       return NextResponse.json({ error: 'Chỉ Quản trị viên tổ chức mới có quyền yêu cầu gia hạn' }, { status: 403 });
     }
@@ -116,7 +133,7 @@ export async function POST(
     const { data: existingPending } = await adminSupabase
       .from('renewal_requests')
       .select('id, created_at')
-      .eq('organization_id', orgId)
+      .eq('organization_id', resolvedOrgId)
       .eq('status', 'PENDING')
       .maybeSingle();
 
@@ -130,7 +147,7 @@ export async function POST(
     const { data: newRequest, error: insertError } = await adminSupabase
       .from('renewal_requests')
       .insert({
-        organization_id: orgId,
+        organization_id: resolvedOrgId,
         requested_by: user.id,
         period_months: periodMonths,
         requested_seats: requestedSeats || null,

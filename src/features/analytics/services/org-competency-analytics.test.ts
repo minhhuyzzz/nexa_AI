@@ -16,7 +16,42 @@ describe('Organization 5-Domain Competency Analytics (ORG-F05, DEC-01)', () => {
     summary.domains.forEach((d) => {
       expect(d.score).toBeNull();
       expect(d.testedCount).toBe(0);
+      expect(d.coverageRate).toBeNull();
     });
+
+    expect(summary.fiveDomainCoverageRate).toBeNull();
+    expect(summary.coverageWarningDomain).toBeNull();
+    expect(summary.suggestedActions).toHaveLength(0);
+  });
+
+  it('tổ chức có thành viên nhưng chưa có bài nộp (uniqueUsersWithEvidence = 0) không tạo cảnh báo độ phủ ảo', () => {
+    const mockClasses = [
+      { id: 'c1', name: 'Lớp 1', member_user_ids: ['u1', 'u2', 'u3', 'u4', 'u5'] },
+    ];
+    const summary = OrgCompetencyAnalyticsService.aggregateOrgCompetency([], mockClasses, []);
+
+    expect(summary.totalScopeUsers).toBe(5);
+    expect(summary.uniqueUsersWithEvidence).toBe(0);
+    expect(summary.fiveDomainCoverageRate).toBeNull();
+    expect(summary.coverageWarningDomain).toBeNull();
+    expect(summary.suggestedActions).toHaveLength(0);
+  });
+
+  it('lọc khoảng ngày tùy chỉnh (timeRange = custom) chính xác', () => {
+    const submissions = [
+      { id: 'sub-1', created_at: '2026-03-05T10:00:00Z', status: 'EVALUATED' },
+      { id: 'sub-2', created_at: '2026-03-20T15:00:00Z', status: 'EVALUATED' },
+      { id: 'sub-3', created_at: '2026-04-02T08:00:00Z', status: 'EVALUATED' },
+    ];
+
+    const filtered = OrgCompetencyAnalyticsService.filterSubmissions(submissions, [], {
+      timeRange: 'custom',
+      startDate: '2026-03-10',
+      endDate: '2026-03-25',
+    });
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe('sub-2');
   });
 
   it('bài thi chưa hoàn thành (SUBMITTED/IN_PROGRESS) không được đưa vào tính điểm trung bình', () => {

@@ -162,7 +162,7 @@ function PersonalAuthoringDeployContent({ id }: { id: string }) {
       </div>
 
       {/* 2. Header */}
-      <div className="pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
           <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
@@ -347,7 +347,7 @@ function PersonalAuthoringDeployContent({ id }: { id: string }) {
         )}
 
         {/* Action Buttons */}
-        <div className="pt-4 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between">
+        <div className="pt-4 flex items-center justify-between">
           <Link
             href={`/personal/authoring/${id}`}
             className="text-xs text-slate-500 hover:text-neutral-900 dark:hover:text-white"

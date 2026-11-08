@@ -107,12 +107,12 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
         visible ? 'translate-y-0' : '-translate-y-full pointer-events-none'
       } ${
         scrolled
-          ? 'bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs'
-          : 'bg-white/40 md:bg-transparent border-b border-transparent'
+          ? 'bg-white/90 backdrop-blur-md shadow-xs'
+          : 'bg-transparent shadow-none'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -129,7 +129,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             href="/"
             className={`transition-colors py-1 ${
               currentPath === '/'
-                ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                ? 'text-blue-600 font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -142,7 +142,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
               href="/framework"
               className={`transition-colors py-1 inline-flex items-center gap-1 ${
                 currentPath === '/framework'
-                  ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                  ? 'text-blue-600 font-bold'
                   : 'text-slate-600 group-hover:text-slate-900'
               }`}
             >
@@ -153,19 +153,19 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             {/* Mega Dropdown Panel */}
             <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[920px] max-w-[95vw] hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1 duration-150">
               <div className="bg-white rounded-md border border-slate-200 shadow-sm p-5 text-slate-900">
-                <div className="grid grid-cols-5 divide-x divide-slate-100">
+                <div className="grid grid-cols-5 divide-x">
                   {frameworkDomains.map((domain) => (
                     <div key={domain.title} className="px-3.5 first:pl-0 last:pr-0 flex flex-col">
-                      <div className="text-xs font-semibold text-slate-900 pb-2.5 border-b border-slate-100 min-h-[44px] flex items-start leading-snug">
+                      <div className="text-xs font-semibold text-slate-900 pb-2 min-h-[44px] flex items-start leading-snug">
                         {domain.title}
                       </div>
                       <div className="space-y-2 pt-2.5 flex-1">
                         {domain.skills.map((skill) => (
                           <div
                             key={skill}
-                            className="flex items-start gap-1.5 text-[11px] text-slate-600 hover:text-sky-700 leading-snug cursor-default select-none transition-colors group/item"
+                            className="flex items-start gap-1.5 text-[11px] text-slate-600 hover:text-blue-600 leading-snug cursor-default select-none transition-colors group/item"
                           >
-                            <span className="w-1 h-1 rounded-full bg-slate-300 group-hover/item:bg-sky-500 shrink-0 mt-1.5 transition-colors" />
+                            <span className="w-1 h-1 rounded-full bg-slate-300 group-hover/item:bg-blue-600 shrink-0 mt-1.5 transition-colors" />
                             <span>{skill}</span>
                           </div>
                         ))}
@@ -181,7 +181,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             href="/pricing"
             className={`transition-colors py-1 ${
               currentPath === '/pricing'
-                ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                ? 'text-blue-600 font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -192,7 +192,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             href="/faq"
             className={`transition-colors py-1 ${
               currentPath === '/faq'
-                ? 'text-slate-900 font-semibold border-b-2 border-sky-600'
+                ? 'text-blue-600 font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -202,7 +202,6 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
         {/* Right: Actions & Demo */}
         <div className="flex items-center gap-3">
-
           <Link
             href="/login"
             className="text-xs font-medium text-slate-700 hover:text-slate-900 px-3 py-1.5 rounded-full hover:bg-slate-100/70 transition-colors"

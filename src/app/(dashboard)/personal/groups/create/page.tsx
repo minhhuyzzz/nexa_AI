@@ -82,7 +82,7 @@ export default function CreatePersonalGroupPage() {
       </div>
 
       {/* 2. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
@@ -144,7 +144,7 @@ export default function CreatePersonalGroupPage() {
           </div>
 
           {/* 2. Participation Policy */}
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-850">
+          <div className="pt-2">
             <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-2.5">
               Chế độ thành viên tham gia
             </label>
@@ -210,7 +210,7 @@ export default function CreatePersonalGroupPage() {
           </div>
 
           {/* 3. Member Permissions */}
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-850">
+          <div className="pt-2">
             <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-2.5">
               Quyền hạn của thành viên
             </label>
@@ -280,7 +280,7 @@ export default function CreatePersonalGroupPage() {
           </div>
 
           {/* Submit Action */}
-          <div className="pt-4 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between">
+          <div className="pt-4 flex items-center justify-between">
             <Link
               href="/personal/groups"
               className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-700 dark:text-zinc-300 text-xs font-semibold"
@@ -311,7 +311,7 @@ export default function CreatePersonalGroupPage() {
         {/* Live Preview Panel (Right - 5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pb-3 mb-4">
               <span className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider font-mono">
                 XEM TRƯỚC THẺ KHÔNG GIAN
               </span>
@@ -344,14 +344,14 @@ export default function CreatePersonalGroupPage() {
                   {description.trim() || 'Chưa có mô tả mục tiêu học tập.'}
                 </p>
 
-                <div className="pt-3 mt-2 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
+                <div className="pt-3 mt-2 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
                   <span>1 thành viên (Bạn)</span>
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">Vào không gian &rarr;</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-850 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed flex items-start gap-2">
+            <div className="mt-4 pt-3 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <span>
                 Không gian lớp cá nhân giúp bạn chủ động tổ chức học liệu, giao đề luyện thi và quản trị các thành viên học tập cùng nhau.

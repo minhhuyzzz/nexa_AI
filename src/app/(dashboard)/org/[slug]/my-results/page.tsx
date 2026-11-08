@@ -146,7 +146,7 @@ export default async function OrgMyResultsPage({
 
       {/* Submissions List */}
       <div className="rounded-md border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between">
           <div>
             <h2 className="text-xs font-bold text-slate-900">Danh sách bài khảo thí</h2>
             <p className="text-[11px] text-slate-400 mt-0.5">
@@ -163,11 +163,11 @@ export default async function OrgMyResultsPage({
             <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" strokeWidth={1.75} />
             <p className="font-semibold text-slate-700">Bạn chưa có bài khảo thí nào trong tổ chức</p>
             <p className="text-[11px] text-slate-400 mt-1">
-              Khi giảng viên phát hành đợt đánh giá, bạn có thể làm bài và xem kết quả tại đây.
+              Khi tổ chức phát hành đợt khảo thí, bạn có thể làm bài và xem kết quả tại đây.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="">
             {submissions.map((sub) => {
               const isEvaluated = sub.status === 'EVALUATED';
               const isPassed = Boolean(sub.is_passed);

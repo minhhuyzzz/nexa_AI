@@ -192,7 +192,7 @@ export function SubmissionSubmitView({
       </div>
 
       {/* 2. Page Header */}
-      <div className="pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
           <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
@@ -320,7 +320,7 @@ export function SubmissionSubmitView({
               id="honest"
               checked={isHonestChecked}
               onChange={(e) => setIsHonestChecked(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-zinc-700 cursor-pointer"
+              className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
             <label htmlFor="honest" className="text-xs text-slate-600 dark:text-neutral-300 cursor-pointer select-none">
               Tôi xác nhận đây là bài làm do chính mình hoàn thành và chịu trách nhiệm về nội dung, dữ liệu đã nộp.
@@ -328,7 +328,7 @@ export function SubmissionSubmitView({
           </div>
 
           {/* Form Actions */}
-          <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 dark:border-zinc-850">
+          <div className="flex flex-wrap items-center gap-3 pt-3">
             <button
               type="button"
               disabled={isSubmitting || isSavingDraft}
@@ -374,7 +374,7 @@ export function SubmissionSubmitView({
               Trước khi nộp bài
             </h2>
 
-            <div className="space-y-3 text-xs divide-y divide-slate-100 dark:divide-zinc-850">
+            <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500 dark:text-neutral-400">Hạn chót</span>
                 <span className="font-bold text-neutral-900 dark:text-neutral-100">

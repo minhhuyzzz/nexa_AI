@@ -107,7 +107,7 @@ export function OrgPlanClientView({
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Gói Business
@@ -156,12 +156,12 @@ export function OrgPlanClientView({
             </div>
 
             <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              {isProvisioning ? 'Đang cấp gói Business' : entitlements.planName || 'NEXA Business Plus'}
+              {isProvisioning ? 'Đang cấp gói Business' : entitlements.planName || 'Gói Business'}
             </h2>
             <p className="text-xs text-slate-300">
               {isProvisioning
                 ? 'NEXA đang chuẩn bị quyền lợi dành cho tổ chức. Hạn mức và ngày hết hạn sẽ tự xuất hiện ngay sau khi hoàn tất.'
-                : 'Không gian của bạn đang có đầy đủ quyền lợi của gói Business Plus. Không phụ thuộc vào gói cá nhân.'}
+                : 'Không gian của bạn đang có đầy đủ quyền lợi của gói Business. Không phụ thuộc vào gói cá nhân.'}
             </p>
 
             {/* Metadata strip */}
@@ -188,7 +188,7 @@ export function OrgPlanClientView({
           </div>
 
           {/* Action CTA */}
-          <div className="relative z-10 flex flex-col items-start lg:items-end justify-center gap-2.5 shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-white/10">
+          <div className="relative z-10 flex flex-col items-start lg:items-end justify-center gap-2.5 shrink-0 pt-4 lg:pt-0">
             {isActive && (
               <span className="text-xs font-medium text-slate-300">
                 {isExpiring ? (
@@ -231,7 +231,7 @@ export function OrgPlanClientView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Column 1: Quyền lợi trong gói */}
         <div className="p-6 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-5">
-          <div className="border-b border-slate-100 dark:border-zinc-800 pb-3">
+          <div className="pb-3">
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
               Quyền lợi trong gói
             </h2>
@@ -269,25 +269,29 @@ export function OrgPlanClientView({
               </div>
             </div>
 
-            {/* 2. Đề đánh giá */}
+            {/* 2. Đề đánh giá (Không giới hạn cho tổ chức B2B) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-blue-600" />
                   Số đề đánh giá
                 </span>
-                <span className="font-mono tabular-nums text-slate-600 dark:text-neutral-400">
-                  <strong className="text-neutral-900 dark:text-neutral-100">{assessmentCount}</strong> / {maxAssessments}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono tabular-nums text-slate-600 dark:text-neutral-400">
+                    Đã tạo: <strong className="text-neutral-900 dark:text-neutral-100">{assessmentCount}</strong> đề
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
+                    Không giới hạn
+                  </span>
+                </div>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+              <div className="w-full h-2 rounded-full bg-emerald-100 dark:bg-emerald-950/40 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all duration-300"
-                  style={{ width: `${assessmentPercent}%` }}
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-300 w-full"
                 />
               </div>
               <div className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Còn <strong className="text-blue-600 dark:text-blue-400 font-mono">{remainingAssessments}</strong> đề có thể tạo trong tổ chức
+                Gói Business không giới hạn số lượng đề khảo thí năng lực số nội bộ
               </div>
             </div>
 
@@ -320,7 +324,7 @@ export function OrgPlanClientView({
         {/* Column 2: Lịch sử dịch vụ */}
         <div className="p-6 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-5 flex flex-col justify-between">
           <div>
-            <div className="border-b border-slate-100 dark:border-zinc-800 pb-3">
+            <div className="pb-3">
               <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                 Lịch sử dịch vụ
               </h2>
@@ -337,7 +341,7 @@ export function OrgPlanClientView({
                 </div>
                 <div>
                   <strong className="block text-neutral-900 dark:text-neutral-100 font-medium">
-                    Gói {entitlements.planName || 'Business Plus'} đã được kích hoạt
+                    Gói {entitlements.planName || 'Business'} đã được kích hoạt
                   </strong>
                   <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
                     {formattedStartsAt} &bull; Do NEXA Admin thực hiện
@@ -375,7 +379,7 @@ export function OrgPlanClientView({
                         Đã gia hạn thành công {r.period_months} tháng
                       </strong>
                       <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
-                        {r.reviewed_at ? new Date(r.reviewed_at).toLocaleDateString('vi-VN') : '—'} &bull; Đã phê duyệt
+                        {r.reviewed_at ? new Date(r.reviewed_at).toLocaleDateString('vi-VN') : 'Chờ duyệt'} &bull; Đã phê duyệt
                       </span>
                     </div>
                   </div>
@@ -397,7 +401,7 @@ export function OrgPlanClientView({
         onClose={() => setIsRenewOpen(false)}
         organizationId={organization.id}
         organizationName={organization.name}
-        planName={entitlements.planName || 'NEXA Business Plus'}
+        planName={entitlements.planName || 'Gói Business'}
         currentExpiresAt={entitlements.expiresAt}
         currentSeats={maxSeats}
         onSuccess={handleRenewalSuccess}

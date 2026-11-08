@@ -298,7 +298,7 @@ export function AssessmentDetailTabs({
       </div>
 
       {/* 2. Tabs Navigation Bar */}
-      <div className="border-b border-slate-200 dark:border-zinc-800 flex items-center gap-1 overflow-x-auto">
+      <div className="p-1 bg-slate-100/80 dark:bg-zinc-900 rounded-xl flex items-center gap-1 overflow-x-auto max-w-fit">
         {[
           { id: 'OVERVIEW', label: '1. Tổng quan', count: null },
           { id: 'QUESTIONS', label: '2. Danh sách câu hỏi', count: totalQuestions },
@@ -311,10 +311,10 @@ export function AssessmentDetailTabs({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`py-3 px-4 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
+              className={`py-1.5 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                 isActive
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                  ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               <span>{tab.label}</span>
@@ -393,7 +393,7 @@ export function AssessmentDetailTabs({
           {/* Right Column: 1:1 Square Catalog Card Preview */}
           <div className="lg:col-span-4 space-y-4">
             <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3 shadow-2xs text-xs">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-2">
+              <div className="flex items-center justify-between pb-2">
                 <span className="font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide">
                   Xem trước Thẻ bài thi (1:1 Square)
                 </span>
@@ -419,7 +419,7 @@ export function AssessmentDetailTabs({
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-400">
+                <div className="pt-2 flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-400">
                   <span>{assessment.duration_minutes} phút</span>
                   <span>Đạt: &ge; {assessment.passing_score}%</span>
                 </div>
@@ -516,7 +516,7 @@ export function AssessmentDetailTabs({
 
                     {/* Expandable answers / rubric */}
                     {isExpanded && (
-                      <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 space-y-3 animate-in fade-in-50 text-xs">
+                      <div className="pt-3 space-y-3 animate-in fade-in-50 text-xs">
                         {item.options && item.options.length > 0 && (
                           <div className="space-y-1.5">
                             <span className="font-semibold text-slate-700 dark:text-zinc-300 block text-[11px]">
@@ -602,14 +602,14 @@ export function AssessmentDetailTabs({
             </h2>
             <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 uppercase text-[10px] font-bold">
+                <thead className="bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 uppercase text-[10px] font-bold">
                   <tr>
                     <th className="py-2.5 px-3">Mức độ đạt</th>
                     <th className="py-2.5 px-3">Tỷ lệ điểm</th>
                     <th className="py-2.5 px-3">Mô tả hành vi năng lực số chuẩn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-850 text-slate-700 dark:text-zinc-300">
+                <tbody className="text-slate-700 dark:text-zinc-300">
                   <tr>
                     <td className="py-2.5 px-3 font-semibold text-emerald-600 dark:text-emerald-400">Xuất sắc</td>
                     <td className="py-2.5 px-3 font-mono">100%</td>
@@ -708,7 +708,7 @@ export function AssessmentDetailTabs({
               Đợt đánh giá doanh nghiệp (Assessment Campaigns)
             </h3>
             {assessment.campaigns && assessment.campaigns.length > 0 ? (
-              <div className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <div className="">
                 {assessment.campaigns.map((c) => (
                   <div key={c.id} className="py-3 flex items-center justify-between gap-3">
                     <div>
@@ -736,7 +736,7 @@ export function AssessmentDetailTabs({
               Phiên phòng thi trực tiếp (Live PIN Sessions)
             </h3>
             {assessment.live_sessions && assessment.live_sessions.length > 0 ? (
-              <div className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <div className="">
                 {assessment.live_sessions.map((s) => (
                   <div key={s.id} className="py-3 flex items-center justify-between gap-3">
                     <div>

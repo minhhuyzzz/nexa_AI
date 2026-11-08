@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { sendOrgOwnerWelcomeEmail, sendOrgInvitationEmail } from '@/lib/email/email-service';
 
 export const dynamic = 'force-dynamic';
 
 const approveInquirySchema = z.object({
   inquiryId: z.string().uuid('ID yêu cầu tư vấn không hợp lệ'),
-  planName: z.string().trim().min(2).default('Business Plus'),
+  planName: z.string().trim().min(2).default('Business'),
   contractNumber: z.string().trim().max(50).optional(),
   orgCode: z.string().trim().min(2, 'Mã tổ chức tối thiểu 2 ký tự').max(30),
   cycleMonths: z.number().int().min(1).max(36).default(12),
@@ -149,26 +150,89 @@ export async function POST(request: NextRequest | Request) {
     // 5. Generate secure invitation for organization representative
     const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
     const inviteExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
+    const origin = 'nextUrl' in request ? request.nextUrl.origin : new URL(request.url).origin;
 
-    const { error: inviteErr } = await adminSupabase.from('organization_invitations').insert({
-      organization_id: org.id,
-      email: targetEmail,
-      org_role: 'ORG_OWNER',
-      token,
-      invited_by: authCheck.user.id,
-      status: 'PENDING',
-      expires_at: inviteExpiry.toISOString(),
-    });
+    // Kiểm tra xem email người đại diện đã có tài khoản trên NEXA chưa
+    let existingProfile: { id: string; email: string; full_name?: string } | null = null;
+    const profilesTable = adminSupabase.from('profiles');
+    if (profilesTable && typeof profilesTable.select === 'function') {
+      const { data: prof } = await profilesTable
+        .select('id, email, full_name')
+        .eq('email', targetEmail)
+        .maybeSingle();
+      existingProfile = prof;
+    }
 
-    if (inviteErr) {
-      // Atomic rollback: remove created entitlement, organization, and reset inquiry status
-      await adminSupabase.from('organization_entitlements').delete().eq('organization_id', org.id);
-      await adminSupabase.from('organizations').delete().eq('id', org.id);
-      await adminSupabase.from('business_inquiries').update({ status: 'NEW' }).eq('id', inquiryId);
-      return NextResponse.json(
-        { error: `Không thể tạo lời mời ORG_OWNER: ${inviteErr.message}` },
-        { status: 500 }
+    let isDirectAssigned = false;
+    let emailSent = false;
+    let inviteUrl = '';
+
+    if (existingProfile) {
+      // 5.1. Đã có tài khoản: Cấp thẳng quyền ORG_OWNER
+      isDirectAssigned = true;
+      await adminSupabase.from('user_organizations').upsert(
+        {
+          user_id: existingProfile.id,
+          organization_id: org.id,
+          org_role: 'ORG_OWNER',
+          status: 'ACTIVE',
+        },
+        { onConflict: 'user_id, organization_id' }
       );
+
+      await adminSupabase.from('organization_invitations').insert({
+        organization_id: org.id,
+        email: targetEmail,
+        org_role: 'ORG_OWNER',
+        token,
+        invited_by: authCheck.user.id,
+        status: 'ACCEPTED',
+        accepted_at: new Date().toISOString(),
+        expires_at: inviteExpiry.toISOString(),
+      });
+
+      const mailRes = await sendOrgOwnerWelcomeEmail({
+        toEmail: targetEmail,
+        fullName: existingProfile.full_name || inquiry.contact_name,
+        orgName: org.name,
+        orgSlug: cleanSlug,
+        origin,
+      });
+      emailSent = mailRes.success;
+    } else {
+      // 5.2. Chưa có tài khoản: Tạo lời mời PENDING và gửi email mở tài khoản
+      const { error: inviteErr } = await adminSupabase.from('organization_invitations').insert({
+        organization_id: org.id,
+        email: targetEmail,
+        org_role: 'ORG_OWNER',
+        token,
+        invited_by: authCheck.user.id,
+        status: 'PENDING',
+        expires_at: inviteExpiry.toISOString(),
+      });
+
+      if (inviteErr) {
+        // Atomic rollback: remove created entitlement, organization, and reset inquiry status
+        await adminSupabase.from('organization_entitlements').delete().eq('organization_id', org.id);
+        await adminSupabase.from('organizations').delete().eq('id', org.id);
+        await adminSupabase.from('business_inquiries').update({ status: 'NEW' }).eq('id', inquiryId);
+        return NextResponse.json(
+          { error: `Không thể tạo lời mời ORG_OWNER: ${inviteErr.message}` },
+          { status: 500 }
+        );
+      }
+
+      inviteUrl = `${origin}/accept-invite?token=${token}`;
+
+      const mailRes = await sendOrgInvitationEmail({
+        toEmail: targetEmail,
+        fullName: inquiry.contact_name,
+        orgName: org.name,
+        orgRole: 'ORG_OWNER',
+        inviteUrl,
+        expiresAt: inviteExpiry.toISOString(),
+      });
+      emailSent = mailRes.success;
     }
 
     // 6. Mark inquiry as ACTIVATED
@@ -198,11 +262,9 @@ export async function POST(request: NextRequest | Request) {
         maxAssessments,
         aiCredits,
         cycleMonths,
+        isDirectAssigned,
       },
     });
-
-    const origin = 'nextUrl' in request ? request.nextUrl.origin : new URL(request.url).origin;
-    const inviteUrl = `${origin}/personal/accept-invite?token=${token}`;
 
     return NextResponse.json({
       success: true,
@@ -210,6 +272,8 @@ export async function POST(request: NextRequest | Request) {
       organization: org,
       entitlement: entitlement || null,
       inviteUrl,
+      isDirectAssigned,
+      emailSent,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

@@ -7,8 +7,8 @@ export function ClassOperationalTipsCard() {
   const tips = [
     {
       icon: UserCheck,
-      title: 'Bổ sung giảng viên cho lớp',
-      desc: 'Đảm bảo mỗi lớp có giảng viên phụ trách để quản lý và giải đáp hiệu quả.',
+      title: 'Bổ sung người phụ trách',
+      desc: 'Đảm bảo mỗi đơn vị hoặc nhóm có người phụ trách để quản lý và giải đáp hiệu quả.',
     },
     {
       icon: FileText,
@@ -24,7 +24,7 @@ export function ClassOperationalTipsCard() {
 
   return (
     <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-xs">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-zinc-800">
+      <div className="flex items-center gap-2 mb-3 pb-2">
         <Lightbulb className="w-4 h-4 text-amber-500" />
         <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
           Mẹo vận hành lớp

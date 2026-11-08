@@ -341,17 +341,17 @@ export function OrgClassDetailView({
         )}
       </div>
 
-      {/* 3. Horizontal Navigation Tabs (Parity with Personal Workspace) */}
-      <div className="border-b border-slate-200/80 dark:border-zinc-800">
-        <nav className="flex space-x-1 sm:space-x-3 overflow-x-auto text-xs font-semibold" aria-label="Tabs lớp học">
+      {/* 3. Navigation Tabs (Modern Pill Tabs, không gạch chân border-b) */}
+      <div>
+        <nav className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl overflow-x-auto text-xs font-semibold" aria-label="Tabs lớp học">
           {/* Tab 1: Bảng tin & Thông báo */}
           <button
             type="button"
             onClick={() => setActiveTab('stream')}
-            className={`inline-flex items-center gap-2 py-3 px-3.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`inline-flex items-center gap-2 py-1.5 px-3 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'stream'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
@@ -362,10 +362,10 @@ export function OrgClassDetailView({
           <button
             type="button"
             onClick={() => setActiveTab('assignments')}
-            className={`inline-flex items-center gap-2 py-3 px-3.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`inline-flex items-center gap-2 py-1.5 px-3 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'assignments'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             <BookOpen className="w-4 h-4" strokeWidth={1.75} />
@@ -376,10 +376,10 @@ export function OrgClassDetailView({
           <button
             type="button"
             onClick={() => setActiveTab('materials')}
-            className={`inline-flex items-center gap-2 py-3 px-3.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`inline-flex items-center gap-2 py-1.5 px-3 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'materials'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             <FileText className="w-4 h-4" strokeWidth={1.75} />
@@ -390,10 +390,10 @@ export function OrgClassDetailView({
           <button
             type="button"
             onClick={() => setActiveTab('members')}
-            className={`inline-flex items-center gap-2 py-3 px-3.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`inline-flex items-center gap-2 py-1.5 px-3 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'members'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             <Users className="w-4 h-4" strokeWidth={1.75} />
@@ -404,10 +404,10 @@ export function OrgClassDetailView({
           <button
             type="button"
             onClick={() => setActiveTab('settings')}
-            className={`inline-flex items-center gap-2 py-3 px-3.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            className={`inline-flex items-center gap-2 py-1.5 px-3 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'settings'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             <Settings className="w-4 h-4" strokeWidth={1.75} />
@@ -529,7 +529,7 @@ export function OrgClassDetailView({
                 onSubmit={handleSaveSettings}
                 className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-5 text-xs shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between pb-3">
                   <div>
                     <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                       Cài đặt thông tin Lớp / Không gian
@@ -608,7 +608,7 @@ export function OrgClassDetailView({
                     />
                   </div>
 
-                  <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-850">
+                  <div className="flex justify-end pt-2">
                     <button
                       type="submit"
                       disabled={savingSettings}
@@ -632,7 +632,7 @@ export function OrgClassDetailView({
 
               {/* Section 2: Quy định & Hoạt động của học viên */}
               <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-4 text-xs shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                <div className="pb-3 border-b border-slate-100 dark:border-zinc-850">
+                <div className="pb-3">
                   <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                     Quy chế hoạt động của thành viên
                   </h3>
@@ -768,7 +768,7 @@ export function OrgClassDetailView({
                 </div>
 
                 {/* Direct Link Section */}
-                <div className="space-y-1.5 pt-3 border-t border-slate-100 dark:border-zinc-850">
+                <div className="space-y-1.5 pt-3">
                   <span className="text-[11px] font-semibold text-slate-600 dark:text-neutral-400 block">
                     Đường dẫn tham gia trực tiếp:
                   </span>
@@ -797,7 +797,7 @@ export function OrgClassDetailView({
                   Thông tin không gian
                 </h3>
 
-                <div className="divide-y divide-slate-100 dark:divide-zinc-850 space-y-2.5">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-slate-500 dark:text-neutral-400">Trạng thái</span>
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -937,7 +937,7 @@ export function OrgClassDetailView({
             </p>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-neutral-500 border-t border-zinc-800 pt-4">
+          <div className="flex items-center justify-between text-xs text-neutral-500 pt-4">
             <span>Hệ thống Khảo thí &amp; Quản lý Lớp học NEXA</span>
             <button
               type="button"

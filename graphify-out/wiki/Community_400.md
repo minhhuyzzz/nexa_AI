@@ -1,0 +1,28 @@
+# Community 400
+
+> 4 nodes
+
+## Key Concepts
+
+- **2. PLATFORM MODE RULE** (4 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-mobile/SKILL.md`
+- **Android-native premium** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-mobile/SKILL.md`
+- **Cross-platform premium neutral** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-mobile/SKILL.md`
+- **iOS-native premium** (1 connections) — `.agents/skills/taste-skill/skills/imagegen-frontend-mobile/SKILL.md`
+
+## Relationships
+
+- [Community 92](Community_92.md) (1 shared connections)
+
+## Source Files
+
+- `.agents/skills/taste-skill/skills/imagegen-frontend-mobile/SKILL.md`
+
+## Audit Trail
+
+- EXTRACTED: 4 (100%)
+- INFERRED: 0 (0%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*

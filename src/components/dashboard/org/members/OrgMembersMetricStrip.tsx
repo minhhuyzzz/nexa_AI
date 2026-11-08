@@ -21,7 +21,7 @@ export function OrgMembersMetricStrip({
 
   return (
     <div className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-zinc-800">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:divide-x">
         {/* 1. Thành viên hoạt động */}
         <div className="flex items-center gap-3.5 pr-2">
           <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">

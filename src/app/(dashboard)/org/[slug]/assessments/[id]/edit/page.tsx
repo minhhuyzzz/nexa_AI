@@ -24,6 +24,8 @@ export default async function OrgAuthoringEditPage({
       returnUrl={`/org/${slug}/assessments`}
       previewUrl={`/org/${slug}/assessments`}
       organizationId={org.id}
+      workspaceMode="ORG"
+      slug={slug}
     />
   );
 }

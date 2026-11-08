@@ -89,7 +89,7 @@ export function ClassMembersTab({
           <p className="text-xs text-slate-500">Chưa có thành viên nào trong danh sách.</p>
         </div>
       ) : (
-        <div className="border border-slate-200 rounded-md bg-white divide-y divide-slate-100">
+        <div className="border border-slate-200 rounded-md bg-white">
           {filteredMembers.map((member) => {
             const prof = member.profiles;
             const name = prof?.nickname || 'Học viên';

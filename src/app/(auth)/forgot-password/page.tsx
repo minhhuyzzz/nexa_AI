@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-emerald-200/60">
+          <div className="pt-2">
             <Link
               href="/login"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950"
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
         </form>
       )}
 
-      <div className="text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
+      <div className="text-center text-xs text-slate-500 pt-4">
         Nhớ lại mật khẩu?{' '}
         <Link href="/login" className="font-semibold text-sky-600 hover:text-sky-700">
           Đăng nhập ngay

@@ -93,7 +93,7 @@ export function EditClassModal({
     >
       <div className="relative w-full max-w-lg bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between p-5">
           <div>
             <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               Chỉnh sửa Lớp / Nhóm
@@ -211,7 +211,7 @@ export function EditClassModal({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-end gap-2.5 pt-3">
             <button
               type="button"
               onClick={onClose}

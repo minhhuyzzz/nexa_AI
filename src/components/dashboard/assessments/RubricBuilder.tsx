@@ -150,7 +150,7 @@ export function RubricBuilder({
   return (
     <div className="space-y-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 transition-colors">
       {/* Header & Toggle */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+      <div className="flex items-center justify-between pb-1">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-sky-600 dark:text-blue-400" strokeWidth={1.75} />
           <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wider">
@@ -164,7 +164,7 @@ export function RubricBuilder({
               type="checkbox"
               checked={isEnabled}
               onChange={handleToggleEnable}
-              className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 w-3.5 h-3.5"
+              className="rounded text-sky-600 focus:ring-sky-500 w-3.5 h-3.5"
             />
             <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium">
               Kích hoạt Rubric có cấu trúc
@@ -258,7 +258,7 @@ export function RubricBuilder({
                   className="rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 overflow-hidden"
                 >
                   {/* Criterion Header Bar */}
-                  <div className="p-3 flex items-center justify-between gap-3 bg-slate-100/60 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800">
+                  <div className="p-3 flex items-center justify-between gap-3 bg-slate-100/60 dark:bg-zinc-900 rounded-t-xl">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <button
                         type="button"
@@ -282,7 +282,7 @@ export function RubricBuilder({
                         disabled={readOnly}
                         value={crit.name}
                         onChange={(e) => handleUpdateCriterion(cIdx, 'name', e.target.value)}
-                        className="text-xs font-bold text-slate-900 dark:text-zinc-100 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-zinc-700 focus:border-sky-600 focus:outline-none flex-1 truncate"
+                        className="text-xs font-bold text-slate-900 dark:text-zinc-100 bg-transparent hover:border-slate-300 dark:hover:border-zinc-700 focus:border-sky-600 focus:outline-none flex-1 truncate"
                         placeholder="Tên tiêu chí..."
                       />
                     </div>

@@ -1,65 +1,148 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { HeroRadarInteractive } from './HeroRadarInteractive';
+import { ArrowRight, BarChart3, Layers, Users } from 'lucide-react';
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] flex items-center border-b border-slate-200 bg-white overflow-hidden py-12 lg:py-0">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 w-full relative z-10">
-        {/* 2-Column Hero: Text on Left, Interactive Draggable Radar on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center w-full">
-          {/* Left Column: Heading, Subtitle & CTAs */}
-          <div className="lg:col-span-6 text-left">
-            {/* Subtle pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 mb-6 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-              <span>Nền tảng đánh giá và phát triển năng lực số thế hệ mới</span>
-            </div>
+    <section
+      id="top"
+      className="relative isolation-isolate overflow-hidden min-h-screen flex items-center"
+      style={{
+        background: `
+          radial-gradient(ellipse 55% 75% at 90% 31%, rgba(134,181,253,.35), transparent 76%),
+          radial-gradient(ellipse 58% 64% at 44% 1%, rgba(196,218,253,.4), transparent 85%),
+          linear-gradient(116deg, #f0f5fe 0%, #f8fbff 37%, #d7e6fc 100%)
+        `,
+      }}
+    >
+      {/* Top ambient curves */}
+      <svg
+        className="pointer-events-none absolute top-4 left-[40%] w-[65%] h-[280px] z-0 opacity-50 hidden md:block"
+        viewBox="0 0 1020 300"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M-110 298C180 279 207 163 481 100S802 -23 1080 -94"
+          stroke="white"
+          strokeWidth="2"
+          fill="none"
+          opacity=".88"
+        />
+        <path
+          d="M-80 300C210 250 251 181 501 102S857 -47 1120 -109"
+          stroke="#bdd4fe"
+          strokeWidth="1.2"
+          fill="none"
+          opacity=".4"
+        />
+      </svg>
 
-            {/* Main Title - Proportioned cleanly across 2 lines */}
-            <h1 className="text-3xl sm:text-4xl md:text-[42px] lg:text-[46px] xl:text-[50px] font-bold tracking-tight text-slate-900 leading-[1.16]">
-              <span className="block">Đo lường & Phát triển</span>
-              <span className="text-sky-600 block mt-1">Năng lực Số Toàn diện</span>
+      {/* Main Hero Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 pt-20 pb-16 sm:pt-24 sm:pb-20 lg:pt-24 lg:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          {/* Left Column: Heading, Subtitle, Actions, Features */}
+          <div className="lg:col-span-6 xl:col-span-6 text-left">
+            {/* Title: 2 lines, clean proportion */}
+            <h1 className="text-3xl sm:text-4xl md:text-[44px] lg:text-[48px] xl:text-[52px] font-bold tracking-tight text-[#07143a] leading-[1.16]">
+              <span className="block">Đo lường và phát triển</span>
+              <span className="text-[#2369ef] block mt-1">Năng lực số toàn diện</span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="mt-6 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-              Đánh giá năng lực thực tế qua tình huống thực tiễn, nhận diện chính xác điểm mạnh và điểm yếu và học tập theo lộ trình cá nhân hóa được hỗ trợ bởi trí tuệ nhân tạo.
+            {/* Description */}
+            <p className="mt-5 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed max-w-xl font-normal">
+              Đánh giá chuẩn xác 5 miền năng lực số, phát hiện khoảng trống kỹ năng và mở khóa lộ trình bồi dưỡng cá nhân hóa bằng AI.
             </p>
 
-            {/* Primary CTAs with Rounded-Full & Shining Border Beam */}
-            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              {/* Primary Action with Animated Border Beam Light & Gradient Fill */}
+            {/* Actions */}
+            <div className="mt-7 flex flex-wrap items-center gap-3.5 sm:gap-4">
               <Link
                 href="/register"
-                className="relative inline-flex items-center justify-center p-[2px] rounded-full overflow-hidden group shadow-md shadow-sky-500/20 transition-transform active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm sm:text-base transition-all shadow-sm transform hover:-translate-y-0.5 active:translate-y-0"
               >
-                {/* Rotating Light Beam around Border */}
-                <span className="absolute inset-[-200%] animate-border-beam bg-[conic-gradient(from_0deg,transparent_0_300deg,#38bdf8_340deg,#ffffff_360deg)] pointer-events-none" />
+                <span>Bắt đầu miễn phí</span>
+                <ArrowRight className="w-4 h-4" strokeWidth={2} />
+              </Link>
+              <Link
+                href="#features"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white/80 hover:bg-white text-slate-800 font-medium text-sm sm:text-base border border-slate-200 shadow-2xs transition-all hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span>Xem giải pháp</span>
+              </Link>
+            </div>
 
-                {/* Button Face with Smooth Gradient */}
-                <span className="relative z-10 inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-gradient-to-r from-sky-400 via-sky-600 to-blue-700 text-white font-medium hover:brightness-110 transition-all text-sm w-full h-full">
-                  <span>Bắt đầu</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
+            {/* 3 Highlight Features Row (Không viền ngang) */}
+            <div
+              className="mt-8 sm:mt-10 flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-6 max-w-xl pt-2"
+              aria-label="Giá trị nổi bật"
+            >
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-4 h-4" strokeWidth={2} />
+                </div>
+                <span className="text-xs sm:text-sm font-medium text-slate-900 leading-snug">
+                  Đánh giá<br />chuẩn hóa
                 </span>
-              </Link>
+              </div>
 
-              {/* Secondary Action: Đánh giá miễn phí */}
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-slate-700 font-medium border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs text-sm"
-              >
-                <span>Đánh giá miễn phí</span>
-              </Link>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Layers className="w-4 h-4" strokeWidth={2} />
+                </div>
+                <span className="text-xs sm:text-sm font-medium text-slate-900 leading-snug">
+                  Lộ trình<br />cá nhân hóa
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Users className="w-4 h-4" strokeWidth={2} />
+                </div>
+                <span className="text-xs sm:text-sm font-medium text-slate-900 leading-snug">
+                  Phát triển<br />bền vững
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Interactive 5-Domain Radar + Draggable Sliders */}
-          <div className="lg:col-span-6 w-full flex items-center justify-center lg:justify-end">
-            <HeroRadarInteractive />
+          {/* Right Column: Layered Dashboard Mockup Artwork */}
+          <div className="lg:col-span-6 xl:col-span-6 flex items-center justify-center lg:justify-end mt-6 lg:mt-0">
+            <div className="relative w-full max-w-[500px] lg:max-w-[580px] xl:max-w-[640px]">
+              <Image
+                src="/images/hero-mockup.png"
+                alt="Tổng quan giao diện đánh giá năng lực số, radar 5 miền và lộ trình bồi dưỡng NEXA"
+                width={941}
+                height={667}
+                priority
+                className="w-full h-auto drop-shadow-[0_20px_35px_rgba(84,120,201,0.12)] transition-transform duration-300 hover:scale-[1.01]"
+              />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Bottom wave swooshes connecting seamlessly into next section */}
+      <svg
+        className="pointer-events-none absolute bottom-0 left-0 w-full h-[80px] sm:h-[110px] lg:h-[140px] z-10"
+        viewBox="0 0 1672 160"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0 80 C263 15 342 50 588 110 c221 55 357-20 570-35 c202-14 347 22 514 26 v59 H0 Z"
+          fill="rgba(143,181,251,0.22)"
+        />
+        <path
+          d="M0 115 C173 50 316 65 517 105 c262 45 363-5 558-35 c213-32 391 55 597 35 v45 H0 Z"
+          fill="rgba(209,226,255,0.48)"
+        />
+        <path
+          d="M0 138 C240 95 410 115 650 145 c220 30 420-15 700-28 c180-10 230 10 322 16 v27 H0 Z"
+          fill="#ffffff"
+        />
+      </svg>
     </section>
   );
 }
+
+export default HeroSection;

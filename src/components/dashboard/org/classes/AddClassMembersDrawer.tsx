@@ -49,11 +49,11 @@ const ROLE_PERMISSIONS: Record<
     ],
   },
   ASSISTANT_TEACHER: {
-    label: 'Giảng viên hỗ trợ',
+    label: 'Khảo thí viên hỗ trợ',
     permissions: [
-      'Hỗ trợ giảng viên chính trong quản lý lớp và học viên.',
+      'Hỗ trợ quản lý đơn vị và thành viên.',
       'Tham gia chấm bài, phản hồi và theo dõi tiến độ.',
-      'Không có quyền thay đổi cài đặt lớp hoặc cấu hình tổ chức.',
+      'Không có quyền thay đổi cài đặt hoặc cấu hình tổ chức.',
     ],
   },
   CLASS_LEADER: {
@@ -183,7 +183,7 @@ export function AddClassMembersDrawer({
       {/* Centered Modal Dialog */}
       <div className="relative w-full max-w-4xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-zinc-900/40">
+        <div className="p-5 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-zinc-900/40">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
               <UserPlus className="w-5 h-5" strokeWidth={1.75} />
@@ -211,7 +211,7 @@ export function AddClassMembersDrawer({
         </div>
 
         {/* Capacity banner */}
-        <div className="bg-blue-50/60 dark:bg-blue-950/40 px-5 py-2.5 border-b border-blue-100 dark:border-blue-900 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200">
+        <div className="bg-blue-50/60 dark:bg-blue-950/40 px-5 py-2.5 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             <span>
@@ -331,15 +331,15 @@ export function AddClassMembersDrawer({
 
             {/* Candidate Table */}
             <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden max-h-72 overflow-y-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-50 dark:bg-zinc-900 text-slate-500 font-semibold border-b border-slate-200 dark:border-zinc-800 sticky top-0">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-zinc-900 text-slate-500 font-semibold sticky top-0">
                   <tr>
                     <th className="py-2 px-3 w-8">Chọn</th>
                     <th className="py-2 px-3">Thành viên</th>
                     <th className="py-2 px-3 text-right">Gợi ý</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                <tbody className="">
                   {filteredCandidates.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="py-8 text-center text-slate-400">
@@ -364,7 +364,7 @@ export function AddClassMembersDrawer({
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => {}}
-                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              className="rounded text-blue-600 focus:ring-blue-500"
                             />
                           </td>
                           <td className="py-2.5 px-3">
@@ -391,7 +391,7 @@ export function AddClassMembersDrawer({
 
           {/* Right Column: Enrollment Config (5 cols) */}
           <div className="lg:col-span-5 space-y-3.5 bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 rounded-md p-4">
-            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 border-b border-slate-200 dark:border-zinc-800 pb-2">
+            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 pb-2">
               Thiết lập khi thêm vào lớp
             </h4>
 
@@ -404,10 +404,10 @@ export function AddClassMembersDrawer({
                 onChange={(e) => setTargetRole(e.target.value as RoleInClass)}
                 className="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600"
               >
-                <option value="STUDENT">Học viên / Sinh viên</option>
-                <option value="CLASS_LEADER">Lớp trưởng</option>
-                <option value="VICE_LEADER">Lớp phó</option>
-                <option value="ASSISTANT_TEACHER">Giảng viên hỗ trợ</option>
+                <option value="STUDENT">Thành viên</option>
+                <option value="CLASS_LEADER">Trưởng nhóm / Đại diện</option>
+                <option value="VICE_LEADER">Phó nhóm</option>
+                <option value="ASSISTANT_TEACHER">Khảo thí viên hỗ trợ</option>
               </select>
             </div>
 
@@ -438,7 +438,7 @@ export function AddClassMembersDrawer({
 
             {/* Selected Chips List */}
             {selectedCandidates.length > 0 && (
-              <div className="pt-2 border-t border-slate-200 dark:border-zinc-800 space-y-2">
+              <div className="pt-2 space-y-2">
                 <span className="font-semibold text-neutral-800 dark:text-neutral-200 text-[11px] block">
                   Đã chọn ({selectedCandidates.length} thành viên):
                 </span>
@@ -465,7 +465,7 @@ export function AddClassMembersDrawer({
             )}
 
             {/* Role Permissions Box */}
-            <div className="pt-2 border-t border-slate-200 dark:border-zinc-800 space-y-1.5">
+            <div className="pt-2 space-y-1.5">
               <span className="font-semibold text-blue-600 dark:text-blue-400 text-[11px] flex items-center gap-1">
                 <Shield className="w-3.5 h-3.5" /> Quyền của vai trò {ROLE_PERMISSIONS[targetRole]?.label}
               </span>
@@ -479,7 +479,7 @@ export function AddClassMembersDrawer({
         </div>
 
         {/* Drawer Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
+        <div className="px-5 py-3 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
           <button
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-zinc-400 hover:text-neutral-900 rounded-md border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 font-medium transition"

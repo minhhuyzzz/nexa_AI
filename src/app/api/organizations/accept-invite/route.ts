@@ -6,6 +6,8 @@ import { checkRateLimit, getClientIp } from '@/lib/security/rate-limiter';
 
 const acceptSchema = z.object({
   token: z.string().min(10, 'Mã lời mời không hợp lệ'),
+  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự').optional(),
+  fullName: z.string().trim().min(2, 'Họ và tên tối thiểu 2 ký tự').optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -29,35 +31,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Vui lòng đăng nhập để chấp nhận lời mời' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validation = acceptSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Dữ liệu không hợp lệ', details: validation.error.format() },
+        { error: validation.error.errors[0]?.message || 'Dữ liệu không hợp lệ', details: validation.error.format() },
         { status: 400 }
       );
     }
 
-    const { token } = validation.data;
+    const { token, password, fullName } = validation.data;
     const adminSupabase = createAdminClient();
 
     // 1. Fetch invitation record
     const { data: invitation, error: inviteErr } = await adminSupabase
       .from('organization_invitations')
-      .select('id, organization_id, email, org_role, status, expires_at')
+      .select('id, organization_id, email, org_role, status, expires_at, invited_by')
       .eq('token', token)
       .single();
 
@@ -87,17 +76,74 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Security validation: Verify the authenticated user is the actual invitee
-    const currentEmail = user.email?.trim().toLowerCase();
-    const invitedEmail = invitation.email?.trim().toLowerCase();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!currentEmail || currentEmail !== invitedEmail) {
-      return NextResponse.json(
-        {
-          error: `Lời mời này được gửi cho địa chỉ email ${invitation.email}. Bạn đang đăng nhập bằng ${user.email || 'tài khoản khác'}. Vui lòng đăng nhập đúng tài khoản nhận lời mời.`,
-        },
-        { status: 403 }
-      );
+    let targetUserId = user?.id;
+
+    // 2. Security validation & Authentication resolution
+    if (!user) {
+      if (!password) {
+        return NextResponse.json(
+          { error: 'Vui lòng đăng nhập hoặc nhập mật khẩu để kích hoạt tài khoản' },
+          { status: 401 }
+        );
+      }
+
+      // Check if user already exists
+      const { data: existingUser } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('email', invitation.email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingUser) {
+        return NextResponse.json(
+          { error: 'Tài khoản với email này đã tồn tại trên NEXA. Vui lòng đăng nhập để tiếp tục.' },
+          { status: 400 }
+        );
+      }
+
+      // Create new user in Supabase Auth
+      const { data: createdAuth, error: createAuthErr } = await adminSupabase.auth.admin.createUser({
+        email: invitation.email.trim().toLowerCase(),
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName || 'Thành viên' },
+      });
+
+      if (createAuthErr || !createdAuth.user) {
+        return NextResponse.json(
+          { error: 'Không thể tạo tài khoản: ' + (createAuthErr?.message || 'Lỗi không xác định') },
+          { status: 400 }
+        );
+      }
+
+      targetUserId = createdAuth.user.id;
+
+      // Upsert profile
+      await adminSupabase.from('profiles').upsert({
+        id: targetUserId,
+        email: invitation.email.trim().toLowerCase(),
+        full_name: fullName || 'Thành viên',
+        nickname: fullName ? fullName.split(' ')[0] : 'Thành viên',
+        role: invitation.org_role === 'ORG_OWNER' ? 'ADMIN' : 'LEARNER',
+        is_onboarded: true,
+      });
+    } else {
+      const currentEmail = user.email?.trim().toLowerCase();
+      const invitedEmail = invitation.email?.trim().toLowerCase();
+
+      if (!currentEmail || currentEmail !== invitedEmail) {
+        return NextResponse.json(
+          {
+            error: `Lời mời này được gửi cho địa chỉ email ${invitation.email}. Bạn đang đăng nhập bằng ${user.email || 'tài khoản khác'}. Vui lòng đăng nhập đúng tài khoản nhận lời mời.`,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // 3. Fetch organization info & verify active status and seats availability
@@ -168,7 +214,7 @@ export async function POST(request: NextRequest) {
       .from('user_organizations')
       .upsert(
         {
-          user_id: user.id,
+          user_id: targetUserId,
           organization_id: invitation.organization_id,
           org_role: invitation.org_role,
           status: 'ACTIVE',
@@ -190,6 +236,36 @@ export async function POST(request: NextRequest) {
         { error: 'Lỗi khi cập nhật thành viên tổ chức', details: memberError.message },
         { status: 500 }
       );
+    }
+
+    // Two-way in-app notification
+    try {
+      const notifTable = adminSupabase.from('user_notifications');
+      if (typeof notifTable?.insert === 'function') {
+        // 1. Notify the member who joined
+        await notifTable.insert({
+          user_id: targetUserId,
+          title: 'Tham gia tổ chức thành công',
+          message: `Chào mừng bạn đã chính thức gia nhập ${org?.name || 'tổ chức'}!`,
+          category: 'CAMPAIGN',
+          link_url: '/personal/groups',
+          is_read: false,
+        });
+
+        // 2. Notify the inviter (owner or admin)
+        if (invitation.invited_by) {
+          await notifTable.insert({
+            user_id: invitation.invited_by,
+            title: 'Thành viên mới gia nhập',
+            message: `${user?.email || fullName || 'Thành viên'} đã chấp nhận lời mời tham gia ${org?.name || 'tổ chức'}.`,
+            category: 'CAMPAIGN',
+            link_url: `/org/${org?.slug}/members`,
+            is_read: false,
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.warn('[ACCEPT_INVITE_NOTIF_WARN]', notifErr);
     }
 
     // 6. If this was an ORG_OWNER accepting, activate the organization
@@ -248,6 +324,12 @@ export async function GET(request: NextRequest) {
 
     const isExpired = new Date(invitation.expires_at) < new Date();
 
+    const { data: existingProfile } = await adminSupabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('email', invitation.email.trim().toLowerCase())
+      .maybeSingle();
+
     return NextResponse.json({
       success: true,
       invitation: {
@@ -257,6 +339,7 @@ export async function GET(request: NextRequest) {
         status: isExpired && invitation.status === 'PENDING' ? 'EXPIRED' : invitation.status,
         expiresAt: invitation.expires_at,
         organization: invitation.organizations,
+        hasExistingAccount: Boolean(existingProfile),
       },
     });
   } catch (err) {

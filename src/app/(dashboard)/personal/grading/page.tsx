@@ -480,7 +480,7 @@ function EvaluatorGradingContent() {
             )}
 
             {/* Filter Tabs */}
-            <div className="grid grid-cols-3 gap-1 pt-1 border-t border-slate-100 dark:border-zinc-800">
+            <div className="grid grid-cols-3 gap-1 pt-1">
               <button
                 onClick={() => setFilterStatus('ALL')}
                 className={`py-1 text-[11px] font-medium rounded text-center transition-colors ${
@@ -567,7 +567,7 @@ function EvaluatorGradingContent() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 dark:border-zinc-800 text-slate-600 dark:text-neutral-400">
+                    <div className="flex items-center justify-between text-[11px] pt-2 text-slate-600 dark:text-neutral-400">
                       <span>Điểm: {sub.totalScore.toFixed(1)} đ</span>
                       <span className="text-slate-400">
                         {new Date(sub.submittedAt).toLocaleTimeString('vi-VN', {
@@ -865,7 +865,7 @@ function EvaluatorGradingContent() {
 
                     {activeAiEval ? (
                       <div className="p-3.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 space-y-2.5 text-xs">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
                               className={`w-2 h-2 rounded-full ${
@@ -921,7 +921,7 @@ function EvaluatorGradingContent() {
 
                   {/* Rubric Criteria Selection Form */}
                   <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between pb-2">
                       <div>
                         <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                           {activeItem?.rubric?.title || 'Bảng Rubric Thẩm định Chuyên môn'}
@@ -1010,7 +1010,7 @@ function EvaluatorGradingContent() {
                     </div>
 
                     {/* Save and Publish Button */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+                    <div className="pt-3 flex items-center justify-between">
                       {saveSuccessMsg ? (
                         <div className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />

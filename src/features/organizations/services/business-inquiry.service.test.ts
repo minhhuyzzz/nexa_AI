@@ -164,7 +164,7 @@ describe('B2B Business Inquiry & Admin Approval Lifecycle (DEC-03)', () => {
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(body.organization.status).toBe('ACTIVE');
-    expect(body.inviteUrl).toContain('/personal/accept-invite?token=');
+    expect(body.inviteUrl).toContain('/accept-invite?token=');
     expect(mockOrgInsert).toHaveBeenCalledTimes(1);
     expect(mockEntitlementInsert).toHaveBeenCalledTimes(1);
   });

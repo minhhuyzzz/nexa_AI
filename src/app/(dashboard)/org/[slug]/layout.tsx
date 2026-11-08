@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { OrgSidebar } from '@/components/dashboard/org/OrgSidebar';
 import { OrgTopbar } from '@/components/dashboard/org/OrgTopbar';
+import { OrgSuspendedView } from '@/components/dashboard/org/OrgSuspendedView';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
@@ -30,11 +31,11 @@ export default async function OrgLayout({
   // 1. Fetch organization details
   const { data: org, error: orgError } = await adminSupabase
     .from('organizations')
-    .select('id, name, slug, is_active')
+    .select('id, name, slug, is_active, status')
     .eq('slug', slug)
     .single();
 
-  if (orgError || !org || !org.is_active) {
+  if (orgError || !org) {
     redirect('/dashboard');
   }
 
@@ -54,10 +55,32 @@ export default async function OrgLayout({
 
   const userRole = isSuperadmin ? 'ORG_ADMIN' : membership?.org_role || 'MEMBER';
 
-  // Strict Spec Rule: Org Workspace is strictly for ORG_OWNER and ORG_ADMIN.
+  // Strict Spec Rule: Org Workspace is strictly for ORG_OWNER, ORG_ADMIN, and ASSESSOR.
   // Members must use Personal Workspace exclusively.
-  if (!isSuperadmin && userRole !== 'ORG_OWNER' && userRole !== 'ORG_ADMIN') {
+  if (
+    !isSuperadmin &&
+    userRole !== 'ORG_OWNER' &&
+    userRole !== 'ORG_ADMIN' &&
+    userRole !== 'ASSESSOR' &&
+    userRole !== 'EVALUATOR'
+  ) {
     redirect('/personal/dashboard');
+  }
+
+  // 3. Organization Suspension & Contract Renewal Check
+  // Never kick users out silently! If organization is suspended, display the OrgSuspendedView.
+  const isSuspended = !org.is_active || org.status === 'SUSPENDED';
+
+  if (isSuspended) {
+    return (
+      <OrgSuspendedView
+        orgId={org.id}
+        orgName={org.name}
+        orgSlug={org.slug}
+        userRole={userRole}
+        userEmail={user.email}
+      />
+    );
   }
 
   return (

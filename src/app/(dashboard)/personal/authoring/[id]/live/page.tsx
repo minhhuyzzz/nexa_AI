@@ -202,7 +202,7 @@ function PersonalLiveSessionContent({ id }: { id: string }) {
           <span className="text-[11px] text-slate-400">Tự động đồng bộ</span>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-zinc-850 border border-slate-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <div className="border border-slate-100 dark:border-zinc-800 rounded-xl overflow-hidden">
           {candidates.map((cand) => (
             <div
               key={cand.id}

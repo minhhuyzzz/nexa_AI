@@ -18,7 +18,7 @@ export function CampaignComparisonChart({
         <BarChart2 className="w-8 h-8 text-slate-300 mx-auto mb-2" strokeWidth={1.75} />
         <h3 className="text-xs font-semibold text-slate-700">Chưa có dữ liệu khảo thí chính thức</h3>
         <p className="text-[11px] text-slate-400 mt-0.5">
-          Biểu đồ phân tích 5 miền sẽ tự động xuất hiện sau khi các bài thi được giảng viên phê duyệt điểm.
+          Biểu đồ phân tích 5 miền sẽ tự động xuất hiện sau khi các bài thi được khảo thí viên phê duyệt điểm.
         </p>
       </div>
     );
@@ -61,7 +61,7 @@ export function CampaignComparisonChart({
                 </h4>
               </div>
 
-              <div className="mt-3 pt-2 border-t border-slate-100">
+              <div className="mt-3 pt-2">
                 <div className="flex items-baseline justify-between mb-1">
                   <span className="text-[10px] text-slate-400">Điểm TB:</span>
                   <span className="text-xs font-mono font-bold tabular-nums text-slate-900">

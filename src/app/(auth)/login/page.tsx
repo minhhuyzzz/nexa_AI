@@ -1,20 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, LogIn, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { translateAuthError } from '@/lib/utils/auth-error-translator';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+  const emailParam = searchParams.get('email');
+
+  const [email, setEmail] = useState(emailParam || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (emailParam && !email) {
+      setEmail(emailParam);
+    }
+  }, [emailParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +44,18 @@ export default function LoginPage() {
         throw new Error(data.error || 'Email hoặc mật khẩu không chính xác');
       }
 
-      router.push(data.redirectUrl || '/dashboard');
+      // Safe local redirect check (prevent Open Redirect vulnerability)
+      let destination = data.redirectUrl || '/dashboard';
+      if (
+        redirectParam &&
+        redirectParam.startsWith('/') &&
+        !redirectParam.startsWith('//') &&
+        !redirectParam.includes('\\')
+      ) {
+        destination = redirectParam;
+      }
+
+      router.push(destination);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? translateAuthError(err.message) : 'Lỗi hệ thống');
@@ -71,6 +92,12 @@ export default function LoginPage() {
         </p>
       </div>
 
+      {redirectParam && (
+        <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-800 flex items-center gap-2">
+          <span>Vui lòng đăng nhập để tiếp nhận quyền truy cập hoặc lời mời của bạn.</span>
+        </div>
+      )}
+
       {error && (
         <div className="p-3 rounded-md bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" strokeWidth={1.75} />
@@ -78,7 +105,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Login Form (Placed at Top) */}
+      {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="login-email" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -175,13 +202,28 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {/* Register Link */}
-      <div className="text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
+      {/* Register Link (Không viền ngang) */}
+      <div className="text-center text-xs text-slate-500 pt-3">
         Chưa có tài khoản?{' '}
         <Link href="/register" className="font-semibold text-sky-600 hover:text-sky-700">
           Đăng ký miễn phí
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 flex items-center justify-center text-xs text-slate-400">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          Đang tải trang đăng nhập...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

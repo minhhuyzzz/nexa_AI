@@ -104,7 +104,7 @@ export function SubmissionCard({ item, onSelect }: SubmissionCardProps) {
       </div>
 
       {/* Middle: Deadline & Status */}
-      <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-zinc-850">
+      <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 pt-2 md:pt-0">
         {/* Due date */}
         <div className="text-left md:text-right min-w-[120px]">
           <div className="flex items-center md:justify-end gap-1.5 text-xs text-slate-500 dark:text-neutral-400">

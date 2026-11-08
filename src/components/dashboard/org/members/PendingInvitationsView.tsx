@@ -166,6 +166,7 @@ export function PendingInvitationsView({
           >
             <option value="ALL">Tất cả vai trò</option>
             <option value="ADMIN">Quản trị viên</option>
+            <option value="ASSESSOR">Khảo thí viên</option>
             <option value="MEMBER">Thành viên</option>
           </select>
         </div>
@@ -188,9 +189,9 @@ export function PendingInvitationsView({
       {/* Table view */}
       <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+              <tr className="bg-slate-50/70 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                 <th className="py-2.5 px-4">Email người nhận</th>
                 <th className="py-2.5 px-4">Vai trò đề xuất</th>
                 <th className="py-2.5 px-4">Ngày gửi</th>
@@ -199,7 +200,7 @@ export function PendingInvitationsView({
                 <th className="py-2.5 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-xs">
+            <tbody className="text-xs">
               {filteredInvitations.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center">

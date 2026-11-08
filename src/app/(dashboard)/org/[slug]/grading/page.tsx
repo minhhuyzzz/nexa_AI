@@ -18,16 +18,25 @@ export default async function OrgGradingPage({
 }) {
   const { slug } = await params;
   const { classId, campaignId, status, submissionId } = await searchParams;
-  const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_GRADING');
+  const authContext = await requireOrgPagePermission(slug, 'VIEW_GRADING');
+  const org = authContext.organization;
+  const user = authContext.user;
+  const role = authContext.role;
+  const isOrgAdminOrOwner = role === 'ORG_OWNER' || role === 'ORG_ADMIN' || authContext.isSuperadmin;
   const adminSupabase = createAdminClient();
 
   // 1. Fetch related IDs and metadata for this organization
+  const classQuery = adminSupabase
+    .from('evaluator_classes')
+    .select('id, name, class_code')
+    .eq('organization_id', org.id);
+
+  if (!isOrgAdminOrOwner) {
+    classQuery.or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
+  }
+
   const [{ data: orgClasses }, { data: orgCampaigns }, { data: orgAssessments }] = await Promise.all([
-    adminSupabase
-      .from('evaluator_classes')
-      .select('id, name, class_code')
-      .eq('organization_id', org.id)
-      .order('name'),
+    classQuery.order('name'),
     adminSupabase
       .from('assessment_campaigns')
       .select('id, title')
@@ -87,6 +96,7 @@ export default async function OrgGradingPage({
         evaluator_notes,
         class_assignment_id,
         campaign_id,
+        proctoring_summary,
         assessments (
           id,
           title,
@@ -150,7 +160,7 @@ export default async function OrgGradingPage({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
         <div className="flex items-center gap-2.5">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Bàn chấm bài

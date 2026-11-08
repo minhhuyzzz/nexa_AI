@@ -28,6 +28,7 @@ function createChain(resolveValue: any) {
   const chain: any = {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
+    or: vi.fn(() => chain),
     in: vi.fn(() => chain),
     order: vi.fn(() => chain),
     limit: vi.fn(() => chain),
@@ -86,7 +87,7 @@ describe('NEXA SaaS Business v3.0 Lifecycle Test Suite', () => {
               ai_credits_used: 1200,
               starts_at: new Date().toISOString(),
               expires_at: futureDate.toISOString(),
-              plan_name: 'NEXA Business Plus',
+              plan_name: 'Gói Business',
               is_active: true,
             });
           }

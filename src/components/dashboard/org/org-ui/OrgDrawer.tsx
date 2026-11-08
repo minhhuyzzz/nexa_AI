@@ -70,7 +70,7 @@ export function OrgDrawer({
         className={`relative z-10 w-full ${WIDTH_CLASSES[width]} bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col h-full transform transition-transform duration-180 ease-out animate-in slide-in-from-right`}
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-start justify-between gap-4 shrink-0">
+        <div className="p-5 flex items-start justify-between gap-4 shrink-0">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 tracking-tight">
               {title}

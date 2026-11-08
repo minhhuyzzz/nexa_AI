@@ -134,7 +134,7 @@ export function TrendAnalysisView({ trend }: Props) {
 
       {/* Historical Data Table */}
       <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-200 dark:border-zinc-800">
+        <div className="p-4">
           <h3 className="text-xs font-bold text-slate-900 dark:text-neutral-100">
             Bảng Số Liệu Chi Tiết 5 Miền Theo Kỳ
           </h3>
@@ -142,7 +142,7 @@ export function TrendAnalysisView({ trend }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50 dark:bg-zinc-900/60 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-300 font-semibold">
+              <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-600 dark:text-neutral-300 font-semibold">
                 <th className="py-2.5 px-4">Kỳ khảo thí</th>
                 <th className="py-2.5 px-4 text-right">Bài thi đã duyệt</th>
                 <th className="py-2.5 px-4 text-right">Điểm TB toàn kỳ</th>
@@ -153,7 +153,7 @@ export function TrendAnalysisView({ trend }: Props) {
                 <th className="py-2.5 px-4 text-center">D5</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+            <tbody className="">
               {trend.map((pt) => (
                 <tr key={pt.key} className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50">
                   <td className="py-3 px-4 font-semibold text-slate-900 dark:text-neutral-100">

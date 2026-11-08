@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { sendOrgOwnerWelcomeEmail, sendOrgInvitationEmail } from '@/lib/email/email-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,6 +104,20 @@ export async function POST(request: Request | NextRequest) {
     const supabase = createAdminClient();
     const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
     const cleanSlug = cleanCode.toLowerCase();
+    const cleanEmail = (contactEmail || '').trim().toLowerCase();
+
+    // Kiểm tra xem email người đại diện đã có tài khoản trên NEXA chưa
+    let existingProfile: { id: string; email: string; full_name?: string } | null = null;
+    if (cleanEmail) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      existingProfile = profile;
+    }
+
+    const initialStatus = existingProfile ? 'ACTIVE' : cleanEmail ? 'PENDING_OWNER' : 'ACTIVE';
 
     const { data, error } = await supabase
       .from('organizations')
@@ -112,13 +127,14 @@ export async function POST(request: Request | NextRequest) {
         slug: cleanSlug,
         type: type === 'ACADEMY' ? 'EDUCATIONAL' : type,
         contact_name: (contactName || '').trim(),
-        contact_email: (contactEmail || '').trim().toLowerCase(),
+        contact_email: cleanEmail,
         contact_phone: (contactPhone || '').trim(),
         expected_learners: expectedLearners,
         max_members: expectedLearners,
         quota_assessments: expectedLearners * 10,
-        status: contactEmail && contactEmail.trim() ? 'PENDING_OWNER' : 'ACTIVE',
+        status: initialStatus,
         is_active: true,
+        plan_tier: 'BUSINESS',
         notes: (notes || '').trim(),
       })
       .select()
@@ -134,27 +150,86 @@ export async function POST(request: Request | NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    const origin = 'nextUrl' in request ? request.nextUrl.origin : new URL(request.url).origin;
     let inviteUrl = '';
-    if (contactEmail && contactEmail.trim()) {
+    let isDirectAssigned = false;
+    let emailSent = false;
+
+    if (cleanEmail) {
       const token =
         crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      await supabase.from('organization_invitations').insert({
-        organization_id: data.id,
-        email: contactEmail.trim().toLowerCase(),
-        org_role: 'ORG_OWNER',
-        token,
-        status: 'PENDING',
-        expires_at: expiresAt.toISOString(),
-      });
+      if (existingProfile) {
+        // CASE 1: Email ĐÃ CÓ tài khoản -> Cấp thẳng quyền ORG_OWNER vào user_organizations
+        isDirectAssigned = true;
+        await supabase.from('user_organizations').upsert(
+          {
+            user_id: existingProfile.id,
+            organization_id: data.id,
+            org_role: 'ORG_OWNER',
+            status: 'ACTIVE',
+          },
+          { onConflict: 'user_id, organization_id' }
+        );
 
-      const origin = 'nextUrl' in request ? request.nextUrl.origin : new URL(request.url).origin;
-      inviteUrl = `${origin}/personal/accept-invite?token=${token}`;
+        // Ghi nhận bản ghi lời mời đã chấp nhận
+        await supabase.from('organization_invitations').insert({
+          organization_id: data.id,
+          email: cleanEmail,
+          org_role: 'ORG_OWNER',
+          token,
+          status: 'ACCEPTED',
+          accepted_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+        });
+
+        // Gửi email thông báo bổ nhiệm quyền Chủ sở hữu
+        const mailRes = await sendOrgOwnerWelcomeEmail({
+          toEmail: cleanEmail,
+          fullName: existingProfile.full_name || contactName,
+          orgName: data.name,
+          orgSlug: cleanSlug,
+          origin,
+        });
+        emailSent = mailRes.success;
+      } else {
+        // CASE 2: Email CHƯA CÓ tài khoản -> Lưu lời mời PENDING và gửi email mở tài khoản
+        await supabase.from('organization_invitations').insert({
+          organization_id: data.id,
+          email: cleanEmail,
+          org_role: 'ORG_OWNER',
+          token,
+          status: 'PENDING',
+          expires_at: expiresAt.toISOString(),
+        });
+
+        inviteUrl = `${origin}/accept-invite?token=${token}`;
+
+        // Gửi email kích hoạt tài khoản
+        const mailRes = await sendOrgInvitationEmail({
+          toEmail: cleanEmail,
+          fullName: contactName,
+          orgName: data.name,
+          orgRole: 'ORG_OWNER',
+          inviteUrl,
+          expiresAt: expiresAt.toISOString(),
+        });
+        emailSent = mailRes.success;
+      }
     }
 
-    return NextResponse.json({ success: true, organization: data, inviteUrl });
+    return NextResponse.json({
+      success: true,
+      organization: data,
+      inviteUrl,
+      isDirectAssigned,
+      emailSent,
+      message: isDirectAssigned
+        ? `Đã tạo tổ chức và tự động gán quyền Chủ sở hữu cho tài khoản ${cleanEmail}`
+        : 'Đã tạo tổ chức và phát hành lời mời kích hoạt tài khoản',
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -208,6 +283,39 @@ export async function PATCH(request: Request | NextRequest) {
     }
 
     return NextResponse.json({ success: true, organization: data });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request | NextRequest) {
+  try {
+    const authCheck = await requirePlatformAdmin();
+    if (!authCheck.isAuthorized || authCheck.errorResponse) {
+      return authCheck.errorResponse!;
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Thiếu ID tổ chức cần xóa' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+
+    // Xóa tổ chức (các bảng user_organizations, organization_invitations, entitlements đều cascade)
+    const { error } = await supabase
+      .from('organizations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Đã xóa tổ chức thành công' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';
     return NextResponse.json({ error: message }, { status: 500 });

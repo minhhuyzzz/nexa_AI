@@ -346,28 +346,15 @@ export class QuotaEnforcementService {
 
       const currentUsage = count || 0;
 
-      const maxLimit = org.quota_assessments || 500;
-
-
+      const maxLimit = org.quota_assessments || 999999;
 
       return {
-
-        allowed: currentUsage < maxLimit,
-
-        reason:
-
-          currentUsage >= maxLimit
-
-            ? `Tổ chức đã đạt giới hạn tối đa ${maxLimit} đề thi. Vui lòng liên hệ quản trị viên để mở rộng hạn mức.`
-
-            : undefined,
-
+        // Tổ chức doanh nghiệp B2B: Không giới hạn số lượng đề khảo thí
+        allowed: true,
+        reason: undefined,
         currentUsage,
-
         maxLimit,
-
         planTier: 'ENTERPRISE',
-
       };
 
     }
@@ -697,7 +684,7 @@ export class QuotaEnforcementService {
 
       return {
         contractNumber: entitlement.contract_number || 'NEXA-B2B-STD',
-        planName: entitlement.plan_name || 'NEXA Business Plus',
+        planName: entitlement.plan_name || 'Gói Business',
         status,
         isProvisioning: status === 'PROVISIONING',
         daysRemaining,

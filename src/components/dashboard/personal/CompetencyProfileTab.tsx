@@ -103,7 +103,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-zinc-850 pt-3 sm:pt-0 sm:pl-6 shrink-0">
+          <div className="flex items-center gap-4 sm:border-l border-slate-200/60 dark:border-zinc-800 pt-3 sm:pt-0 sm:pl-6 shrink-0">
             <div className="text-center">
               <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">
                 Điểm trung bình
@@ -130,7 +130,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
 
         {/* Baseline comparison if exists */}
         {baselineSnapshot && overallScore !== null && (
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between text-xs text-slate-600 dark:text-zinc-400">
+          <div className="mt-4 p-3 rounded-xl bg-slate-50/70 dark:bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600 dark:text-zinc-400">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.75} />
               <span>
@@ -154,7 +154,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
 
       {/* 2. 5 DigComp Domains Bar Breakdown */}
       <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-6 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
+        <div className="flex items-center justify-between pb-1">
           <h3 className="font-bold text-slate-900 dark:text-zinc-100 uppercase text-xs tracking-wide">
             Chi tiết 5 miền năng lực số chuẩn hóa
           </h3>

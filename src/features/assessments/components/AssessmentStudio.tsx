@@ -31,6 +31,7 @@ import {
   BookOpen,
   Link as LinkIcon,
   Sparkles,
+  Eye,
 } from 'lucide-react';
 import {
   downloadMCQTemplate,
@@ -508,7 +509,7 @@ export function AssessmentStudio({
       )}
 
       {/* 1. TOP ACTION BAR (Fixed) */}
-      <header className="h-14 px-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0 z-10">
+      <header className="h-14 px-4 bg-white flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
           <Link
             href={backHref}
@@ -524,7 +525,7 @@ export function AssessmentStudio({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Nhập tiêu đề đề khảo thí..."
-              className="text-sm font-bold text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-sky-600 focus:outline-none transition-colors px-1 py-0.5 w-full max-w-md truncate"
+              className="text-sm font-bold text-slate-900 bg-transparent hover:border-slate-300 focus:border-sky-600 focus:outline-none transition-colors px-1 py-0.5 w-full max-w-md truncate"
             />
 
             <span
@@ -555,6 +556,18 @@ export function AssessmentStudio({
 
           {role === 'ADMIN' ? (
             <>
+              {assessmentId && (
+                <Link
+                  href={`/admin/content/assessments/${assessmentId}/preview`}
+                  target="_blank"
+                  className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                  title="Mở chế độ xem trước thẩm định bài thi"
+                >
+                  <Eye className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+                  <span>Xem trước</span>
+                </Link>
+              )}
+
               <button
                 type="button"
                 onClick={() => handleSaveAssessment(false)}
@@ -606,7 +619,7 @@ export function AssessmentStudio({
         {/* COLUMN 1: QUESTION NAVIGATOR (Width: 280px) */}
         <aside className="w-72 border-r border-slate-200 bg-slate-50/70 flex flex-col shrink-0 overflow-hidden">
           {/* Top Quick Add Bar */}
-          <div className="p-3 border-b border-slate-200 space-y-2 bg-white">
+          <div className="p-3 space-y-2 bg-white">
             <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
@@ -659,7 +672,7 @@ export function AssessmentStudio({
           </div>
 
           {/* Navigator Header */}
-          <div className="px-3 py-2 border-b border-slate-200 flex items-center justify-between text-[11px]">
+          <div className="px-3 py-2 flex items-center justify-between text-[11px]">
             <span className="font-semibold text-slate-500 uppercase tracking-wider">
               Câu hỏi ({questions.length})
             </span>
@@ -815,7 +828,7 @@ export function AssessmentStudio({
           ) : (
             <div className="max-w-3xl mx-auto space-y-6">
               {/* Question Header & Type indicator */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center justify-between pb-4">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-base font-bold text-slate-900 tabular-nums">
                     Câu {String(selectedIndex + 1).padStart(2, '0')}
@@ -1106,7 +1119,7 @@ export function AssessmentStudio({
         {/* COLUMN 3: SETTINGS INSPECTOR (Width: 320px) */}
         <aside className="w-80 border-l border-slate-200 bg-white flex flex-col shrink-0 overflow-hidden">
           {/* Segmented Tab Bar with Auto-Switch */}
-          <div className="p-3 border-b border-slate-200 bg-slate-50 shrink-0">
+          <div className="p-3 bg-slate-50 shrink-0">
             <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-200/80 rounded-md text-xs font-semibold">
               <button
                 type="button"
@@ -1181,7 +1194,7 @@ export function AssessmentStudio({
                 </div>
 
                 {/* 2. Proctoring Toggle Switches */}
-                <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="pt-2 space-y-3">
                   <label className="text-xs font-semibold text-slate-800 block">
                     Chế độ Giám sát Khảo thí:
                   </label>
@@ -1275,7 +1288,7 @@ export function AssessmentStudio({
                 </div>
 
                 {/* 3. Duration */}
-                <div className="pt-2 border-t border-slate-100">
+                <div className="pt-2">
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
                     Thời lượng làm bài:
                   </label>
@@ -1294,7 +1307,7 @@ export function AssessmentStudio({
 
                 {/* 4. Access Tier (Admin only) */}
                 {role === 'ADMIN' && (
-                  <div className="pt-2 border-t border-slate-100">
+                  <div className="pt-2">
                     <label className="text-xs font-semibold text-slate-800 block mb-1">
                       Phân hạng quyền truy cập:
                     </label>
@@ -1330,7 +1343,7 @@ export function AssessmentStudio({
             ) : currentQuestion ? (
               /* TAB 2: THUỘC TÍNH CÂU HỎI */
               <div className="space-y-4">
-                <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
+                <div className="pb-2 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
                     <span>Thuộc tính câu #{selectedIndex + 1}</span>
@@ -1384,7 +1397,7 @@ export function AssessmentStudio({
       {showImportModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-md shadow-md max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Upload className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
                 <span>Nạp Hàng Loạt Câu Hỏi Từ Tệp Excel/CSV</span>
@@ -1399,7 +1412,7 @@ export function AssessmentStudio({
             </div>
 
             {/* 3 Tabs */}
-            <div className="grid grid-cols-3 gap-2 border-b border-slate-200 pb-2">
+            <div className="grid grid-cols-3 gap-2 pb-2">
               <button
                 type="button"
                 onClick={() => {
@@ -1514,7 +1527,7 @@ export function AssessmentStudio({
             )}
 
             {/* Modal Actions */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <div className="pt-3 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowImportModal(false)}

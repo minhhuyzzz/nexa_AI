@@ -101,7 +101,7 @@ export default async function VerifyCredentialKioskPage({
         {/* Verification Status Card */}
         <div className="p-6 sm:p-8 rounded-md bg-white border border-slate-200 shadow-xs space-y-6">
           {/* Status Badge Strip */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
             <div className="flex items-center gap-3">
               <span
                 className={`w-3 h-3 rounded-full ${
@@ -235,7 +235,7 @@ export default async function VerifyCredentialKioskPage({
           </div>
 
           {/* Action Row */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <a
               href={`/api/credentials/${credential.id}/pdf`}
               target="_blank"

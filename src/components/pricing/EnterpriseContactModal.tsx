@@ -58,7 +58,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white rounded-md border border-slate-200 shadow-md max-w-lg w-full overflow-hidden text-slate-900 font-sans">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50/70">
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
             <h3 className="text-sm font-bold text-slate-900">
@@ -210,7 +210,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
             </div>
 
             {/* Footer buttons */}
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+            <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={onClose}

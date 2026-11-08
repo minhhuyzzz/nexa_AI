@@ -390,7 +390,7 @@ export default function LiveRoomResultsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Candidate Results Table (8 Cols) */}
         <div className="lg:col-span-8 bg-white rounded-md border border-slate-200 shadow-xs p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
             <h2 className="text-sm font-bold text-neutral-900">
               Kết quả thí sinh ({filteredResults.length})
             </h2>
@@ -433,9 +433,9 @@ export default function LiveRoomResultsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50 text-[11px] font-semibold text-slate-500">
+                  <tr className="bg-slate-50 text-[11px] font-semibold text-slate-500">
                     <th className="py-2.5 px-3 w-12 text-center">#</th>
                     <th className="py-2.5 px-3">Thí sinh</th>
                     <th className="py-2.5 px-3 text-center">Điểm (/100)</th>
@@ -443,7 +443,7 @@ export default function LiveRoomResultsPage() {
                     <th className="py-2.5 px-3">Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="">
                   {filteredResults.map((r) => {
                     const isTop1 = r.rank === 1;
                     const isTop2 = r.rank === 2;
@@ -544,7 +544,7 @@ export default function LiveRoomResultsPage() {
                 </select>
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-slate-100">
+              <div className="space-y-2 pt-2">
                 <label className="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
                   <span className="font-medium text-slate-700">Hiển thị điểm số</span>
                   <input

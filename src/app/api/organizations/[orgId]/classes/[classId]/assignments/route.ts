@@ -20,6 +20,7 @@ const assignAssessmentSchema = z.object({
   allowedEvidenceTypes: z.array(z.string()).default(['PDF', 'DOCX', 'PPTX', 'XLSX']),
   maxEvidenceMb: z.number().int().min(1).max(200).default(50),
   estimatedAiCredits: z.number().int().min(0).default(0),
+  securitySettings: z.record(z.any()).optional(),
 });
 
 async function checkOrgPermission(userId: string, userEmail: string | undefined, orgId: string) {
@@ -155,6 +156,7 @@ export async function POST(
       allowedEvidenceTypes,
       maxEvidenceMb,
       estimatedAiCredits,
+      securitySettings,
     } = parsed.data;
 
     // Check timeline consistency
@@ -199,6 +201,7 @@ export async function POST(
           allowed_evidence_types: allowedEvidenceTypes,
           max_evidence_mb: maxEvidenceMb,
           estimated_ai_credits: estimatedAiCredits,
+          security_settings: securitySettings || {},
           status: 'PUBLISHED',
         },
         { onConflict: 'class_id, assessment_id' }

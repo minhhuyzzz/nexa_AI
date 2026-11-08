@@ -109,69 +109,71 @@ export default function LearnerGroupDetailPage() {
         onOpenSettings={() => setActiveTab('settings')}
       />
 
-      {/* Horizontal Tabs (Cobalt blue active indicator #2563EB) */}
-      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setActiveTab('stream')}
-          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'stream'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          }`}
-        >
-          {isOwner ? 'Bảng tin & Thông báo' : 'Tổng quan & Thông báo'}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('assignments')}
-          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'assignments'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          }`}
-        >
-          Bài khảo thí ({group.assignmentCount})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('materials')}
-          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'materials'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          }`}
-        >
-          Tài liệu & Học liệu
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('members')}
-          className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'members'
-              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          }`}
-        >
-          {isOwner ? `Thành viên (${group.memberCount})` : `Bạn cùng lớp (${group.memberCount})`}
-        </button>
-
-        {isOwner && (
+      {/* Horizontal Tabs (Modern Pill Tabs, không gạch chân) */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'settings'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+            onClick={() => setActiveTab('stream')}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'stream'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            Cài đặt lớp
+            {isOwner ? 'Bảng tin & Thông báo' : 'Tổng quan & Thông báo'}
           </button>
-        )}
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('assignments')}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'assignments'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+            }`}
+          >
+            Bài khảo thí ({group.assignmentCount})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('materials')}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'materials'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+            }`}
+          >
+            Tài liệu & Học liệu
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('members')}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'members'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+            }`}
+          >
+            {isOwner ? `Thành viên (${group.memberCount})` : `Bạn cùng lớp (${group.memberCount})`}
+          </button>
+
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('settings')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'settings'
+                  ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                  : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+              }`}
+            >
+              Cài đặt lớp
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tab Panels */}
@@ -199,7 +201,7 @@ export default function LearnerGroupDetailPage() {
               />
 
               {/* Feed posts and discussions below */}
-              <div className="pt-4 border-t border-slate-100 dark:border-zinc-850">
+              <div className="pt-4">
                 <ClassStreamTab
                   classId={group.id}
                   role={userClassRole}

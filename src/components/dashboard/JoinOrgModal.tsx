@@ -187,7 +187,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center gap-3 pb-4">
           <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/60 shrink-0">
             <KeyRound className="w-5 h-5" strokeWidth={1.75} />
           </div>
@@ -298,7 +298,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
 
               {/* Step 2: Org Info & Identity Confirmation (Visible after valid check) */}
               {checkResult && checkResult.organization && (
-                <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-zinc-800 animate-in fade-in duration-150">
+                <div className="space-y-3 pt-2 animate-in fade-in duration-150">
                   {/* Org Banner Card */}
                   <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
                     <div className="flex items-center gap-2.5">

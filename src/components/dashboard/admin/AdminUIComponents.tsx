@@ -133,7 +133,7 @@ export function AdminQueueCard({
         </p>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
+      <div className="mt-4 pt-1">
         <Link
           href={actionHref}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-800 hover:text-blue-600 dark:text-zinc-200 dark:hover:text-blue-400 transition-colors"
@@ -353,7 +353,7 @@ export function AdminPagination({
   const endRecord = Math.min(currentPage * recordsPerPage, totalRecords);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-200/80 dark:border-zinc-800 text-xs text-slate-500 dark:text-neutral-400">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 text-xs text-slate-500 dark:text-neutral-400">
       <div>
         Hiển thị{' '}
         <span className="font-semibold text-neutral-900 dark:text-neutral-200">

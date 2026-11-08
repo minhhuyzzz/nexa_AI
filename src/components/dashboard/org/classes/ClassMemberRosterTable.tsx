@@ -165,9 +165,9 @@ export function ClassMemberRosterTable({
       {/* Member Table Container (Seamless single-box layout) */}
       <div className="rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+              <tr className="bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
               <th className="py-2.5 px-3 w-8">
                 <input
                   type="checkbox"
@@ -175,7 +175,7 @@ export function ClassMemberRosterTable({
                     selectedIds.length === filteredMembers.length && filteredMembers.length > 0
                   }
                   onChange={toggleSelectAll}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded text-blue-600 focus:ring-blue-500"
                 />
               </th>
               <th className="py-2.5 px-3">Thành viên</th>
@@ -186,7 +186,7 @@ export function ClassMemberRosterTable({
               <th className="py-2.5 px-3 text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+          <tbody className="">
             {paginatedMembers.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-slate-400">
@@ -212,7 +212,7 @@ export function ClassMemberRosterTable({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectRow(member.id)}
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded text-blue-600 focus:ring-blue-500"
                       />
                     </td>
 
@@ -286,7 +286,7 @@ export function ClassMemberRosterTable({
       </div>
 
       {/* Pagination Footer inside Table Card */}
-      <div className="flex items-center justify-between px-4 py-3 text-xs border-t border-slate-100 dark:border-zinc-800 bg-slate-50/30 dark:bg-zinc-900/20">
+      <div className="flex items-center justify-between px-4 py-3 text-xs bg-slate-50/30 dark:bg-zinc-900/20">
         <span className="text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
           Hiển thị {paginatedMembers.length} trên {filteredMembers.length} thành viên
         </span>

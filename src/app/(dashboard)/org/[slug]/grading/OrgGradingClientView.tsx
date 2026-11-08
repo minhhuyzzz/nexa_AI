@@ -22,7 +22,15 @@ import {
   Layers,
   GraduationCap,
   Calendar,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Flag,
+  Shield,
 } from 'lucide-react';
+import { ProctoringSummary } from '@/features/assessments/types/security.types';
 
 export interface AssessmentItemInfo {
   id: string;
@@ -56,6 +64,7 @@ export interface SubmissionItem {
   evaluator_notes?: string | null;
   class_assignment_id?: string | null;
   campaign_id?: string | null;
+  proctoring_summary?: ProctoringSummary | null;
   assessments?: {
     id: string;
     title: string;
@@ -127,6 +136,7 @@ export function OrgGradingClientView({
   const [selectedId, setSelectedId] = useState<string | null>(
     initialSubmissionId || initialSubmissions[0]?.id || null
   );
+  const [showProctoringTimeline, setShowProctoringTimeline] = useState(false);
 
   // Filtered queue based on context dropdowns, status, and search
   const filteredSubmissions = useMemo(() => {
@@ -502,7 +512,7 @@ export function OrgGradingClientView({
               : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          2. Bài làm {selectedSub ? `(${selectedSub.profiles?.nickname || 'Học viên'})` : ''}
+          2. Bài làm {selectedSub ? `(${selectedSub.profiles?.nickname || 'Thành viên'})` : ''}
         </button>
         <button
           type="button"
@@ -523,12 +533,12 @@ export function OrgGradingClientView({
             CỘT 1: HÀNG ĐỢI NỘP BÀI (SUBMISSION QUEUE) - 3 cols
             ========================================================================= */}
         <div
-          className={`lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-slate-50/50 dark:bg-[#0d0d10] ${
+          className={`lg:col-span-3 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-slate-50/50 dark:bg-[#0d0d10] ${
             mobileTab === 'queue' ? 'block' : 'hidden lg:flex'
           }`}
         >
           {/* Queue Header & Filters */}
-          <div className="p-3.5 border-b border-slate-200 dark:border-zinc-800 space-y-2.5">
+          <div className="p-3.5 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
                 HÀNG ĐỢI NỘP BÀI
@@ -548,7 +558,7 @@ export function OrgGradingClientView({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên học viên, bài thi..."
+                placeholder="Tìm theo tên thành viên, bài thi..."
                 className="w-full h-8 pl-8 pr-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
@@ -592,7 +602,7 @@ export function OrgGradingClientView({
           </div>
 
           {/* Queue Items List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/80 max-h-[600px] lg:max-h-[calc(100vh-280px)]">
+          <div className="flex-1 overflow-y-auto max-h-[600px] lg:max-h-[calc(100vh-280px)]">
             {filteredSubmissions.length === 0 ? (
               <div className="p-8 text-center space-y-2">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mx-auto text-slate-400">
@@ -604,14 +614,14 @@ export function OrgGradingClientView({
                 <p className="text-[11px] text-slate-400 dark:text-neutral-500 leading-relaxed max-w-xs mx-auto">
                   {hasActiveFilter
                     ? 'Không có bài nộp nào phù hợp với bộ lọc hiện tại.'
-                    : 'Chưa có bài thi nào đang chờ chấm. Khi học viên nộp bài thực hành hoặc tự luận, bài làm sẽ tự động hiển thị tại đây để bạn thẩm định.'}
+                    : 'Chưa có bài thi nào đang chờ chấm. Khi thành viên nộp bài thực hành hoặc tự luận, bài làm sẽ tự động hiển thị tại đây để bạn thẩm định.'}
                 </p>
               </div>
             ) : (
               filteredSubmissions.map((sub) => {
                 const isSelected = sub.id === selectedId;
                 const isEvaluated = sub.status === 'EVALUATED';
-                const name = sub.profiles?.nickname || sub.profiles?.full_name || 'Học viên';
+                const name = sub.profiles?.nickname || sub.profiles?.full_name || 'Thành viên';
 
                 return (
                   <button
@@ -660,15 +670,34 @@ export function OrgGradingClientView({
                           })}{' '}
                           &bull; {new Date(sub.submitted_at).toLocaleDateString('vi-VN')}
                         </span>
-                        <span
-                          className={
-                            isEvaluated
-                              ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                              : 'text-amber-600 dark:text-amber-400 font-semibold'
-                          }
-                        >
-                          {isEvaluated ? 'Đã duyệt' : 'Chờ chấm'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {sub.proctoring_summary && (
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5 ${
+                                sub.proctoring_summary.integrityFlag === 'FLAGGED'
+                                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
+                                  : sub.proctoring_summary.integrityFlag === 'SUSPICIOUS'
+                                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
+                                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                              }`}
+                              title={`Trust Score: ${sub.proctoring_summary.trustScore}% - ${sub.proctoring_summary.totalViolations} vi phạm`}
+                            >
+                              {sub.proctoring_summary.integrityFlag !== 'HIGH_TRUST' && (
+                                <Flag className="w-2.5 h-2.5 fill-current" />
+                              )}
+                              <span>{sub.proctoring_summary.trustScore}%</span>
+                            </span>
+                          )}
+                          <span
+                            className={
+                              isEvaluated
+                                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                                : 'text-amber-600 dark:text-amber-400 font-semibold'
+                            }
+                          >
+                            {isEvaluated ? 'Đã duyệt' : 'Chờ chấm'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -682,18 +711,18 @@ export function OrgGradingClientView({
             CỘT 2: MINH CHỨNG BÀI LÀM (EVIDENCE & DOCUMENT VIEWER) - 5 cols
             ========================================================================= */}
         <div
-          className={`lg:col-span-5 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-white dark:bg-[#111114] ${
+          className={`lg:col-span-5 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-white dark:bg-[#111114] ${
             mobileTab === 'evidence' ? 'block' : 'hidden lg:flex'
           }`}
         >
           {selectedSub ? (
             <>
               {/* Candidate & Test Header */}
-              <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3">
+              <div className="p-4 flex items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
-                      {selectedSub.profiles?.nickname || selectedSub.profiles?.full_name || 'Học viên'}
+                      {selectedSub.profiles?.nickname || selectedSub.profiles?.full_name || 'Thành viên'}
                     </h3>
                     <span className="text-xs text-slate-400">&bull;</span>
                     <span className="text-xs text-slate-500 dark:text-neutral-400">
@@ -720,6 +749,135 @@ export function OrgGradingClientView({
 
               {/* Evidence & Answers Content */}
               <div className="flex-1 p-5 overflow-y-auto space-y-5 max-h-[600px] lg:max-h-[calc(100vh-280px)]">
+                {/* Smart Proctoring & Trust Dossier Card if present */}
+                {selectedSub.proctoring_summary && (
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#111114] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {selectedSub.proctoring_summary.integrityFlag === 'HIGH_TRUST' ? (
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <ShieldCheck className="w-4 h-4" />
+                          </div>
+                        ) : selectedSub.proctoring_summary.integrityFlag === 'SUSPICIOUS' ? (
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                            <ShieldAlert className="w-4 h-4" />
+                          </div>
+                        ) : (
+                          <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                            <span>Bản Ghi Giám Sát Khảo Thí</span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                selectedSub.proctoring_summary.integrityFlag === 'HIGH_TRUST'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                  : selectedSub.proctoring_summary.integrityFlag === 'SUSPICIOUS'
+                                  ? 'bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300'
+                                  : 'bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
+                              }`}
+                            >
+                              {selectedSub.proctoring_summary.integrityFlag === 'HIGH_TRUST'
+                                ? 'Độ tin cậy cao'
+                                : selectedSub.proctoring_summary.integrityFlag === 'SUSPICIOUS'
+                                ? 'Cần xem xét'
+                                : 'Cảnh báo vi phạm'}
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                            Điểm tin cậy:{' '}
+                            <strong className="text-neutral-800 dark:text-neutral-200 font-mono">
+                              {selectedSub.proctoring_summary.trustScore}%
+                            </strong>
+                            {' '}&bull; {selectedSub.proctoring_summary.totalViolations} sự kiện vi phạm
+                          </p>
+                        </div>
+                      </div>
+
+                      {selectedSub.proctoring_summary.events && selectedSub.proctoring_summary.events.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowProctoringTimeline((prev) => !prev)}
+                          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors text-slate-600 dark:text-neutral-300 flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>{showProctoringTimeline ? 'Thu gọn' : 'Chi tiết'}</span>
+                          {showProctoringTimeline ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Metric mini grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Rời tab/màn hình</span>
+                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
+                          {selectedSub.proctoring_summary.tabSwitchesCount} lần
+                        </strong>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Mất tiêu điểm</span>
+                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
+                          {selectedSub.proctoring_summary.totalTimeOutOfFocusSeconds}s
+                        </strong>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Thoát Fullscreen</span>
+                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
+                          {selectedSub.proctoring_summary.fullscreenExitsCount} lần
+                        </strong>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Chặn Copy / F12</span>
+                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
+                          {selectedSub.proctoring_summary.copyAttemptsCount + selectedSub.proctoring_summary.devtoolsAttemptsCount} lần
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Timeline of violation events if expanded */}
+                    {showProctoringTimeline && selectedSub.proctoring_summary.events && selectedSub.proctoring_summary.events.length > 0 && (
+                      <div className="pt-2 space-y-1.5 max-h-48 overflow-y-auto">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block mb-1">
+                          Nhật ký sự kiện vi phạm ({selectedSub.proctoring_summary.events.length})
+                        </span>
+                        {selectedSub.proctoring_summary.events.map((ev, evIdx) => (
+                          <div
+                            key={ev.id || evIdx}
+                            className="flex items-start justify-between text-[11px] p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-850 gap-2"
+                          >
+                            <div className="space-y-0.5">
+                              <span className="font-mono font-semibold text-slate-700 dark:text-neutral-300">
+                                {ev.type === 'TAB_SWITCH'
+                                  ? 'Rời màn hình / Chuyển tab'
+                                  : ev.type === 'FULLSCREEN_EXIT'
+                                  ? 'Thoát chế độ toàn màn hình'
+                                  : ev.type === 'COPY_ATTEMPT'
+                                  ? 'Cố gắng sao chép nội dung'
+                                  : 'Thao tác kiểm tra mã nguồn (DevTools)'}
+                              </span>
+                              {ev.details && (
+                                <p className="text-[10px] text-slate-500 dark:text-neutral-400">{ev.details}</p>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0 font-mono text-[10px] text-slate-400">
+                              <span>
+                                {new Date(ev.timestamp).toLocaleTimeString('vi-VN')}
+                              </span>
+                              {ev.durationSeconds ? (
+                                <span className="block text-amber-600 dark:text-amber-400 font-bold">
+                                  ({ev.durationSeconds}s)
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Auto-graded MCQ Banner if present */}
                 {autoMcqAnswers.length > 0 && (
                   <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-850 bg-emerald-50/60 dark:bg-emerald-950/20 space-y-1">
@@ -813,7 +971,7 @@ export function OrgGradingClientView({
                 )}
 
                 {/* Mobile Next CTA */}
-                <div className="lg:hidden pt-3 border-t border-slate-100 dark:border-zinc-800">
+                <div className="lg:hidden pt-3">
                   <button
                     type="button"
                     onClick={() => setMobileTab('rubric')}
@@ -848,7 +1006,7 @@ export function OrgGradingClientView({
                   </span>
                   <div className="text-xs">
                     <span className="font-bold text-neutral-800 dark:text-zinc-200">
-                      Học viên nộp sản phẩm thực hành
+                      Thành viên nộp sản phẩm thực hành
                     </span>
                     <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
                       Tải lên tệp đính kèm (Word, Excel, PDF...) hoặc chia sẻ liên kết trực tuyến (Drive, Figma, GitHub...).
@@ -900,7 +1058,7 @@ export function OrgGradingClientView({
             <form onSubmit={handleApproveGrade} className="space-y-5 flex-1 flex flex-col justify-between">
               <div className="space-y-4">
                 {/* Desk Header */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-3">
+                <div className="flex items-center justify-between pb-3">
                   <span className="text-[11px] font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
                     BẢNG ĐIỂM RUBRIC /100
                   </span>
@@ -940,7 +1098,7 @@ export function OrgGradingClientView({
 
                   {/* Score breakdown per question */}
                   {openAnswers.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-2">
+                    <div className="pt-2 space-y-2">
                       <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-neutral-500 block">
                         Chấm điểm từng câu thực hành:
                       </span>
@@ -1094,7 +1252,7 @@ export function OrgGradingClientView({
               </div>
 
               {/* Bottom Primary Action Button */}
-              <div className="pt-4 border-t border-slate-200 dark:border-zinc-800">
+              <div className="pt-4">
                 <button
                   type="submit"
                   disabled={isSubmittingGrade}
@@ -1118,7 +1276,7 @@ export function OrgGradingClientView({
             /* Skeleton Frame for Rubric Desk when no submission is chosen */
             <div className="space-y-5 flex-1 flex flex-col justify-between">
               <div className="space-y-5 opacity-70">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-3">
+                <div className="flex items-center justify-between pb-3">
                   <span className="text-[11px] font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
                     BẢNG ĐIỂM RUBRIC /100
                   </span>
@@ -1158,7 +1316,7 @@ export function OrgGradingClientView({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-200 dark:border-zinc-800">
+              <div className="pt-4">
                 <button
                   type="button"
                   disabled

@@ -623,7 +623,7 @@ function LearnerSubmissionsContent() {
       )}
 
       {/* 6. Professional Footnote Note */}
-      <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-neutral-500 pt-2 border-t border-slate-100 dark:border-zinc-850">
+      <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-neutral-500 pt-2">
         <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />
         <span>
           <strong className="text-slate-600 dark:text-neutral-400 font-semibold">Lưu ý:</strong> Bài quá hạn được đánh dấu trực tiếp tại thẻ nhiệm vụ; không tạo tab riêng theo chuẩn UX v2.

@@ -398,142 +398,150 @@ export default async function OrgOverviewPage({
       {/* 4. ONBOARDING ROADMAP (Khi tổ chức mới / chưa có đợt thi)   */}
       {/* ============================================================ */}
       {rawCampaigns.length === 0 && (
-        <div className="rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/10 p-5 sm:p-6 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-100/80 dark:border-blue-900/40 pb-4 mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-600" />
-                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                  Quy Trình Khởi Tạo Khảo Thí Số Chuẩn Hóa
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Thiết lập chu trình đánh giá khép kín từ đào tạo đến cấp chứng nhận năng lực số.
-              </p>
+        <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/30 p-5 sm:p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Quy trình thiết lập khảo thí số
+              </h2>
             </div>
-            <span className="text-[11px] font-mono font-semibold text-blue-700 dark:text-blue-300 bg-blue-100/60 dark:bg-blue-900/40 px-2.5 py-1 rounded-md shrink-0">
-              Khởi tạo vận hành
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">
+                Tiến độ:
+              </span>
+              <span className="text-[11px] font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-100/70 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2.5 py-1 rounded-md">
+                {(classesCount > 0 ? 1 : 0) + (membersCount > 1 ? 1 : 0)}/4 bước hoàn tất
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Step 1 */}
-            <div className="p-4 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
                     BƯỚC 01
                   </span>
                   {classesCount > 0 ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                      <CheckCircle2 className="w-3 h-3" /> Đã tạo {classesCount} lớp
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Hoàn tất
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
-                      Cần thực hiện
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 px-2 py-0.5 rounded-full">
+                      Chưa tạo
                     </span>
                   )}
                 </div>
-                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-                  Thiết lập Lớp học &amp; Đơn vị
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Tạo các lớp học hoặc nhóm đào tạo để phân loại và giao bài theo khóa.
-                </p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    Lớp học &amp; Đơn vị
+                  </h3>
+                </div>
               </div>
               <Link
                 href={`/org/${slug}/classes`}
-                className="mt-3.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group"
               >
-                <span>{classesCount > 0 ? 'Xem danh sách lớp' : 'Tạo lớp học ngay'}</span>
-                <ArrowRight className="w-3 h-3" />
+                <span>{classesCount > 0 ? 'Xem danh sách lớp' : 'Tạo lớp học'}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>
 
             {/* Step 2 */}
-            <div className="p-4 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
                     BƯỚC 02
                   </span>
                   {membersCount > 1 ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                      <CheckCircle2 className="w-3 h-3" /> {membersCount} thành viên
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Hoàn tất
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                      Chờ mời
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 px-2 py-0.5 rounded-full">
+                      Chưa mời
                     </span>
                   )}
                 </div>
-                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-                  Mời Thành Viên &amp; Học Viên
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Thêm giảng viên, cán bộ khảo thí hoặc chia sẻ mã lớp cho học viên.
-                </p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    Mời thành viên
+                  </h3>
+                </div>
               </div>
               <Link
                 href={`/org/${slug}/members`}
-                className="mt-3.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group"
               >
-                <span>Mời thành viên</span>
-                <ArrowRight className="w-3 h-3" />
+                <span>{membersCount > 1 ? 'Xem thành viên' : 'Mời thành viên'}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>
 
             {/* Step 3 */}
-            <div className="p-4 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-blue-200 dark:border-blue-900/60 flex flex-col justify-between shadow-2xs ring-1 ring-blue-500/10 hover:border-blue-400 transition-colors">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
                     BƯỚC 03
                   </span>
-                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-2 py-0.5 rounded-full">
                     Trọng tâm
                   </span>
                 </div>
-                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-                  Phát Hành Đợt Khảo Thí
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Giao đề khảo thí 5 miền năng lực cho lớp học kèm thời hạn và quy chế thi.
-                </p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    Khởi tạo đợt thi
+                  </h3>
+                </div>
               </div>
               <Link
                 href={`/org/${slug}/campaigns/new`}
-                className="mt-3.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-xs group"
               >
-                <span>Khởi tạo đợt thi</span>
-                <ArrowRight className="w-3 h-3" />
+                <span>Tạo đợt thi ngay</span>
+                <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
             {/* Step 4 */}
-            <div className="p-4 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
                     BƯỚC 04
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-400 dark:text-neutral-500 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700/60 px-2 py-0.5 rounded-full">
                     Tự động hóa
                   </span>
                 </div>
-                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-                  Thẩm Định &amp; Xem Phổ Điểm
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Chấm bài tự luận/thực hành và xem báo cáo phổ điểm 5 miền toàn đơn vị.
-                </p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 flex items-center justify-center shrink-0">
+                    <BarChart2 className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    Thẩm định &amp; Phổ điểm
+                  </h3>
+                </div>
               </div>
               <Link
                 href={`/org/${slug}/grading`}
-                className="mt-3.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group"
               >
                 <span>Bàn chấm bài</span>
-                <ArrowRight className="w-3 h-3" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>
           </div>
@@ -548,7 +556,7 @@ export default async function OrgOverviewPage({
         <div className="lg:col-span-8 space-y-6">
           {/* Module 1: Đợt Khảo Thí Gần Đây */}
           <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="p-4 sm:p-5 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -590,7 +598,7 @@ export default async function OrgOverviewPage({
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+              <div className="">
                 {rawCampaigns.map((camp: any) => {
                   const asm = Array.isArray(camp.assessments) ? camp.assessments[0] : camp.assessments;
                   const statusBadge =
@@ -660,7 +668,7 @@ export default async function OrgOverviewPage({
 
           {/* Module 2: Lớp Học & Không Gian Đang Vận Hành */}
           <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="p-4 sm:p-5 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -671,7 +679,7 @@ export default async function OrgOverviewPage({
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Các lớp học, đơn vị trực thuộc và mã tham gia của học viên.
+                  Các đơn vị, nhóm trực thuộc và mã tham gia của thành viên.
                 </p>
               </div>
               <Link
@@ -700,7 +708,7 @@ export default async function OrgOverviewPage({
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-zinc-800/80">
+              <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x">
                 {recentClasses.map((cls: any) => {
                   const studentCount = Array.isArray(cls.class_members) ? cls.class_members.length : 0;
                   const assignCount = Array.isArray(cls.class_assignments) ? cls.class_assignments.length : 0;
@@ -725,7 +733,7 @@ export default async function OrgOverviewPage({
                         <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5">
                           <span className="inline-flex items-center gap-1">
                             <Users className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
-                            {studentCount} học viên
+                            {studentCount} thành viên
                           </span>
                           <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
                           <span className="inline-flex items-center gap-1">
@@ -735,7 +743,7 @@ export default async function OrgOverviewPage({
                         </div>
                       </div>
 
-                      <div className="pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800/60 flex items-center justify-between">
+                      <div className="pt-3 mt-3 flex items-center justify-between">
                         <Link
                           href={`/org/${slug}/grading?classId=${cls.id}`}
                           className="text-[11px] font-medium text-slate-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -763,7 +771,7 @@ export default async function OrgOverviewPage({
           {/* Card 1: Năng Lực Số 5 Miền Cốt Lõi (Luôn hiện sẵn khung 5 miền chuẩn hóa) */}
           <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs p-5 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3 mb-4">
+              <div className="flex items-center justify-between gap-2 pb-3 mb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-md bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
                     <BarChart2 className="w-4 h-4" strokeWidth={1.75} />
@@ -784,7 +792,7 @@ export default async function OrgOverviewPage({
               </div>
 
               {/* Điểm trung bình đơn vị */}
-              <div className="flex items-baseline justify-between text-xs pb-3 mb-3 border-b border-slate-100 dark:border-zinc-800/80">
+              <div className="flex items-baseline justify-between text-xs pb-3 mb-3">
                 <span className="text-slate-500 dark:text-neutral-400 font-medium">
                   Điểm trung bình toàn đơn vị:
                 </span>
@@ -836,7 +844,7 @@ export default async function OrgOverviewPage({
               </div>
             </div>
 
-            <div className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 mt-4 text-[11px] text-slate-500 dark:text-neutral-400 flex items-center justify-between">
+            <div className="pt-3.5 mt-4 text-[11px] text-slate-500 dark:text-neutral-400 flex items-center justify-between">
               <span>Chuẩn hóa 5 miền năng lực</span>
               <span className="font-mono tabular-nums font-medium text-neutral-800 dark:text-neutral-200">
                 {evaluatedCount} mẫu đánh giá
@@ -846,7 +854,7 @@ export default async function OrgOverviewPage({
 
           {/* Card 2: Phím Tắt Khảo Thí & Điều Hành Nhanh (Executive Dock) */}
           <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs p-5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3 mb-3">
+            <div className="flex items-center justify-between pb-3 mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-neutral-900 dark:text-neutral-100">
                 Phím Tắt Điều Hành
               </h3>
@@ -855,7 +863,7 @@ export default async function OrgOverviewPage({
               </span>
             </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-zinc-800/60">
+            <div className="">
               {/* Shortcut 1: Bàn chấm bài */}
               <Link
                 href={`/org/${slug}/grading`}

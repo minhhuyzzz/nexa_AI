@@ -75,7 +75,7 @@ export function EditGoalModal({
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-150">
       <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-xl space-y-5 text-xs text-neutral-800 dark:text-zinc-200">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
+        <div className="flex items-center justify-between pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <Target className="w-4 h-4" strokeWidth={2} />
@@ -202,7 +202,7 @@ export function EditGoalModal({
           </div>
 
           {/* Actions */}
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-end gap-2.5">
+          <div className="pt-3 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}

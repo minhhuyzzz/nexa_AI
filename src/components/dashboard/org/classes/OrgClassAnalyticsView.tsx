@@ -125,14 +125,14 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* KPI Strip (7 cols) */}
         <div className="lg:col-span-7 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3 shadow-xs">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2 pb-2">
             <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
               Tình hình lớp
             </h3>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 divide-x divide-slate-100 dark:divide-zinc-800 text-xs">
+          <div className="grid grid-cols-3 gap-3 divide-x text-xs">
             <div className="space-y-1">
               <span className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100">
                 92%
@@ -165,7 +165,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
 
         {/* Quick Insights (5 cols) */}
         <div className="lg:col-span-5 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-2.5 shadow-xs">
-          <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2 pb-1.5">
             <Lightbulb className="w-4 h-4 text-amber-500" />
             <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
               Nhận định nhanh
@@ -193,7 +193,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left: Trend line chart (7 cols) */}
         <div className="lg:col-span-7 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3 shadow-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between pb-2">
             <div>
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
                 Mức độ tham gia theo tuần
@@ -226,7 +226,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
                   {d.pct}%
                 </span>
                 <div
-                  className="w-full max-w-[36px] bg-blue-600/20 hover:bg-blue-600/40 rounded-t border-t-2 border-blue-600 transition-all"
+                  className="w-full max-w-[36px] bg-blue-600/20 hover:bg-blue-600/40 rounded-t transition-all"
                   style={{ height: `${(d.pct - 60) * 2.5}%` }}
                 />
                 <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">
@@ -241,7 +241,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
         <div className="lg:col-span-5 space-y-4">
           {/* Donut card */}
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-xs">
-            <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono pb-2 border-b border-slate-100 dark:border-zinc-800 mb-3">
+            <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono pb-2 mb-3">
               Tiến độ hoàn thành đề đánh giá
             </h3>
 
@@ -299,7 +299,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
 
           {/* Sub-groups Leaderboard */}
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800 mb-2">
+            <div className="flex items-center justify-between pb-2 mb-2">
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
                 Nhóm hoạt động nổi bật
               </h3>
@@ -338,7 +338,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* At-risk table (7 cols) */}
         <div className="lg:col-span-7 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3 shadow-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between pb-2">
             <div>
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
                 Danh sách cần chú ý (3)
@@ -351,7 +351,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
 
           <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-zinc-900 text-slate-500 font-semibold border-b border-slate-200 dark:border-zinc-800">
+              <thead className="bg-slate-50 dark:bg-zinc-900 text-slate-500 font-semibold">
                 <tr>
                   <th className="py-2 px-3">Thành viên</th>
                   <th className="py-2 px-3">Vấn đề cần chú ý</th>
@@ -359,7 +359,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
                   <th className="py-2 px-3 text-right">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+              <tbody className="">
                 {atRiskMembers.map((m) => (
                   <tr key={m.userId} className="hover:bg-slate-50/50">
                     <td className="py-2.5 px-3">
@@ -406,7 +406,7 @@ export function OrgClassAnalyticsView({ slug, classData }: OrgClassAnalyticsView
 
         {/* Action recommendations (5 cols) */}
         <div className="lg:col-span-5 space-y-3 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-xs">
-          <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono pb-2 border-b border-slate-100 dark:border-zinc-800">
+          <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono pb-2">
             Đề xuất hành động
           </h3>
 

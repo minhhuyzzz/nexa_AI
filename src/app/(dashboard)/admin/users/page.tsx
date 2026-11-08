@@ -19,6 +19,7 @@ import {
   Shield,
   LogOut,
   UserPlus,
+  Copy,
 } from 'lucide-react';
 import {
   AdminKpiCard,
@@ -33,7 +34,7 @@ interface UserRecord {
   email: string;
   role: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
   adminRole?: string;
-  planTier: 'FREE' | 'PRO' | 'ENTERPRISE';
+  planTier: 'FREE' | 'PRO' | 'BUSINESS';
   points: number;
   isSuspended: boolean;
   suspendedReason?: string | null;
@@ -73,7 +74,7 @@ function UsersContent() {
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<'LEARNER' | 'EVALUATOR' | 'ADMIN'>('LEARNER');
   const [newAdminRole, setNewAdminRole] = useState<string>('LEARNER');
-  const [newTier, setNewTier] = useState<'FREE' | 'PRO' | 'ENTERPRISE'>('FREE');
+  const [newTier, setNewTier] = useState<'FREE' | 'PRO' | 'BUSINESS'>('FREE');
   const [saving, setSaving] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
   const [editError, setEditError] = useState('');
@@ -288,7 +289,7 @@ function UsersContent() {
       (roleFilter === 'LEARNER' && u.role === 'LEARNER');
     const matchTier =
       tierFilter === 'ALL' ||
-      (tierFilter === 'ENTERPRISE' && u.planTier === 'ENTERPRISE') ||
+      (tierFilter === 'BUSINESS' && u.planTier === 'BUSINESS') ||
       (tierFilter === 'PRO' && u.planTier === 'PRO') ||
       (tierFilter === 'FREE' && u.planTier === 'FREE');
     const matchStatus =
@@ -299,10 +300,10 @@ function UsersContent() {
     return matchQuery && matchRole && matchTier && matchStatus;
   });
 
-  const totalUsersCount = users.length > 0 ? users.length : 284720;
-  const learnersCount = users.filter((u) => u.role === 'LEARNER').length || 262104;
-  const evaluatorsCount = users.filter((u) => u.role === 'EVALUATOR').length || 18540;
-  const suspendedCount = users.filter((u) => u.isSuspended).length || 412;
+  const totalUsersCount = users.length;
+  const learnersCount = users.filter((u) => u.role === 'LEARNER').length;
+  const evaluatorsCount = users.filter((u) => u.role === 'EVALUATOR').length;
+  const suspendedCount = users.filter((u) => u.isSuspended).length;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -345,33 +346,25 @@ function UsersContent() {
         <AdminKpiCard
           label="Tổng người dùng"
           value={totalUsersCount.toLocaleString('vi-VN')}
-          change="+6,8%"
-          changeType="positive"
-          timeframe="Tăng +6,8% so với 30 ngày trước"
+          timeframe="Tài khoản trên toàn hệ thống"
           icon={Users}
         />
         <AdminKpiCard
           label="Học viên"
           value={learnersCount.toLocaleString('vi-VN')}
-          change="+7,1%"
-          changeType="positive"
-          timeframe="Tăng +7,1% so với 30 ngày trước"
+          timeframe="Người dùng cá nhân & thành viên"
           icon={GraduationCap}
         />
         <AdminKpiCard
-          label="Chuyên gia / Giảng viên"
+          label="Khảo thí viên"
           value={evaluatorsCount.toLocaleString('vi-VN')}
-          change="+2,1%"
-          changeType="positive"
-          timeframe="Tăng +2,1% so với 30 ngày trước"
+          timeframe="Cán bộ khảo thí & đánh giá"
           icon={Award}
         />
         <AdminKpiCard
           label="Tài khoản bị khóa"
           value={suspendedCount.toLocaleString('vi-VN')}
-          change="-12,3%"
-          changeType="negative"
-          timeframe="Giảm -12,3% so với 30 ngày trước"
+          timeframe={suspendedCount > 0 ? 'Tài khoản đang bị tạm ngưng' : 'Không có tài khoản bị khóa'}
           icon={Lock}
         />
       </div>
@@ -407,7 +400,7 @@ function UsersContent() {
           >
             <option value="ALL">Vai trò: Tất cả</option>
             <option value="ADMIN">Quản trị hệ thống</option>
-            <option value="EVALUATOR">Chuyên gia / Giảng viên</option>
+            <option value="EVALUATOR">Khảo thí viên</option>
             <option value="LEARNER">Học viên</option>
           </select>
 
@@ -417,9 +410,9 @@ function UsersContent() {
             className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
             <option value="ALL">Gói: Tất cả</option>
-            <option value="ENTERPRISE">Enterprise</option>
+            <option value="FREE">Free</option>
             <option value="PRO">Pro</option>
-            <option value="FREE">Basic / Free</option>
+            <option value="BUSINESS">Business</option>
           </select>
 
           <select
@@ -451,23 +444,22 @@ function UsersContent() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
+              <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
                 <th className="py-3 px-4 w-10">
-                  <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                  <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
                 </th>
                 <th className="py-3 px-4">Người dùng</th>
                 <th className="py-3 px-4">Trạng thái</th>
                 <th className="py-3 px-4">Vai trò</th>
                 <th className="py-3 px-4">Gói dịch vụ</th>
-                <th className="py-3 px-4">Nguồn tham gia</th>
-                <th className="py-3 px-4 text-center">Bài khảo thí</th>
+                <th className="py-3 px-4">Tổ chức trực thuộc</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+            <tbody className="">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     {loading ? 'Đang tải danh sách người dùng...' : 'Không tìm thấy người dùng phù hợp với bộ lọc.'}
                   </td>
                 </tr>
@@ -479,10 +471,10 @@ function UsersContent() {
                   return (
                     <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
                       <td className="py-3 px-4">
-                        <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                        <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
                       </td>
 
-                      {/* Người dùng: Avatar tròn + Tên + Email */}
+                      {/* Người dùng: Avatar tròn + Tên + Email + ID */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-[11px] shrink-0 border border-blue-200 dark:border-blue-800">
@@ -494,6 +486,24 @@ function UsersContent() {
                             </div>
                             <div className="text-[11px] text-slate-400 dark:text-zinc-500">
                               {u.email}
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="font-mono text-[10px] text-slate-400 dark:text-zinc-500">
+                                ID: {u.id.slice(0, 8)}...
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(u.id);
+                                  setActionMsg(`Đã sao chép ID người dùng: ${u.id}`);
+                                  setTimeout(() => setActionMsg(''), 2000);
+                                }}
+                                className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-0.5 rounded hover:bg-slate-100 dark:hover:bg-zinc-800"
+                                title={`Sao chép toàn bộ ID: ${u.id}`}
+                              >
+                                <Copy className="w-2.5 h-2.5" />
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -524,30 +534,57 @@ function UsersContent() {
                             {u.role === 'ADMIN'
                               ? 'Quản trị hệ thống'
                               : u.role === 'EVALUATOR'
-                              ? 'Chuyên gia / Giảng viên'
+                              ? 'Khảo thí viên'
                               : 'Học viên'}
                           </span>
                         </div>
                       </td>
 
-                      {/* Gói dịch vụ */}
+                      {/* Gói dịch vụ: Free, Pro, Business */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
-                          {u.planTier === 'ENTERPRISE' ? 'Enterprise' : u.planTier === 'PRO' ? 'Pro' : 'Basic'}
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                          u.planTier === 'BUSINESS'
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800'
+                            : u.planTier === 'PRO'
+                            ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+                        }`}>
+                          {u.planTier === 'BUSINESS' ? 'Business' : u.planTier === 'PRO' ? 'Pro' : 'Free'}
                         </span>
                       </td>
 
-                      {/* Nguồn tham gia */}
+                      {/* Tổ chức trực thuộc */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-slate-500 dark:text-zinc-400">
-                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{u.organization ? 'Mời bởi tổ chức' : 'Đăng ký tự do'}</span>
-                        </div>
-                      </td>
-
-                      {/* Bài khảo thí */}
-                      <td className="py-3 px-4 text-center tabular-nums font-semibold text-neutral-800 dark:text-zinc-200">
-                        {u.submissionsCount || 0}
+                        {u.organization ? (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <div>
+                              <div className="font-medium text-neutral-800 dark:text-zinc-200">
+                                {u.organization.name}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="font-mono text-[10px] text-slate-400">
+                                  {u.organization.code}
+                                </span>
+                                {u.organization.orgRole && (
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
+                                    {u.organization.orgRole === 'ORG_OWNER'
+                                      ? 'Chủ sở hữu'
+                                      : u.organization.orgRole === 'ORG_ADMIN'
+                                      ? 'Quản trị viên'
+                                      : u.organization.orgRole === 'ASSESSOR'
+                                      ? 'Khảo thí viên'
+                                      : 'Thành viên'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                            Cá nhân
+                          </span>
+                        )}
                       </td>
 
                       {/* Thao tác */}
@@ -593,7 +630,7 @@ function UsersContent() {
           </table>
         </div>
 
-        <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
+        <div className="p-4">
           <AdminPagination
             currentPage={1}
             totalPages={Math.ceil(Math.max(1, filteredUsers.length) / 10)}
@@ -607,7 +644,7 @@ function UsersContent() {
       {editingUser && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                 Phân quyền &amp; Gói: {editingUser.email}
               </h3>
@@ -636,7 +673,7 @@ function UsersContent() {
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                 >
                   <option value="LEARNER">Học viên (LEARNER)</option>
-                  <option value="EVALUATOR">Chuyên gia / Giảng viên (EVALUATOR)</option>
+                  <option value="EVALUATOR">Khảo thí viên (EVALUATOR)</option>
                   <option value="ADMIN">Quản trị viên (ADMIN)</option>
                 </select>
               </div>
@@ -650,9 +687,9 @@ function UsersContent() {
                   onChange={(e) => setNewTier(e.target.value as any)}
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                 >
-                  <option value="FREE">Gói Basic (Free)</option>
-                  <option value="PRO">Gói Chuyên nghiệp (Pro)</option>
-                  <option value="ENTERPRISE">Gói Doanh nghiệp (Enterprise)</option>
+                  <option value="FREE">Gói Miễn phí</option>
+                  <option value="PRO">Gói Chuyên sâu</option>
+                  <option value="BUSINESS">Gói Doanh nghiệp (Business)</option>
                 </select>
               </div>
 
@@ -681,7 +718,7 @@ function UsersContent() {
       {suspendingUser && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                 Xác nhận tạm khóa tài khoản
               </h3>

@@ -96,7 +96,7 @@ export default function PersonalNewAssessmentPage() {
       </div>
 
       {/* 2. Header */}
-      <div className="pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="pb-4">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
           Khởi tạo đề đánh giá mới
         </h1>
@@ -183,7 +183,7 @@ export default function PersonalNewAssessmentPage() {
           </div>
 
           {/* Submit action */}
-          <div className="pt-4 border-t border-slate-100 dark:border-zinc-850 flex items-center justify-between">
+          <div className="pt-4 flex items-center justify-between">
             <Link
               href="/personal/authoring"
               className="text-xs text-slate-500 hover:text-neutral-900 dark:hover:text-white"
@@ -232,7 +232,7 @@ export default function PersonalNewAssessmentPage() {
               </div>
             </div>
 
-            <div className="space-y-2.5 text-xs divide-y divide-slate-100 dark:divide-zinc-850">
+            <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500 dark:text-neutral-400">Trạng thái</span>
                 <span className="font-semibold text-slate-600 dark:text-neutral-300">Bản nháp</span>

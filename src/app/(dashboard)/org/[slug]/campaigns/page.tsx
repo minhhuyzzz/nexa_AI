@@ -11,12 +11,16 @@ export default async function OrgCampaignsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { organization: org, isSuperadmin, role } = await requireOrgPagePermission(
+  const authContext = await requireOrgPagePermission(
     slug,
     'MANAGE_CAMPAIGNS'
   );
-  const adminSupabase = createAdminClient();
+  const org = authContext.organization;
+  const user = authContext.user;
+  const isSuperadmin = authContext.isSuperadmin;
+  const role = authContext.role;
   const isManager = isSuperadmin || role === 'ORG_OWNER' || role === 'ORG_ADMIN';
+  const adminSupabase = createAdminClient();
 
   // Fetch campaigns with assessment details
   const { data: campaignsRaw } = await adminSupabase
@@ -42,7 +46,24 @@ export default async function OrgCampaignsPage({
     .eq('organization_id', org.id)
     .order('created_at', { ascending: false });
 
-  const campaigns = (campaignsRaw as unknown as CampaignItem[]) || [];
+  let campaigns = (campaignsRaw as unknown as CampaignItem[]) || [];
+
+  // Scoped view for ASSESSOR: only show campaigns they are assigned to
+  if (!isManager) {
+    const { data: myClasses } = await adminSupabase
+      .from('evaluator_classes')
+      .select('id')
+      .eq('organization_id', org.id)
+      .or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
+
+    const myClassIds = new Set((myClasses || []).map((c) => c.id));
+
+    campaigns = campaigns.filter((c) => {
+      const isDirectAssessor = Array.isArray(c.assessor_ids) && c.assessor_ids.includes(user.id);
+      const isClassAssessor = Array.isArray(c.class_ids) && c.class_ids.some((id) => myClassIds.has(id));
+      return isDirectAssessor || isClassAssessor;
+    });
+  }
 
   return (
     <OrgCampaignsClientView

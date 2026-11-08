@@ -177,7 +177,7 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16">
       {/* Top Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-zinc-800">
+      <div className="flex items-center justify-between pb-3">
         <Link
           href="/personal/billing"
           className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-100 dark:hover:text-neutral-100 transition-colors"
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
         <div className="md:col-span-7 space-y-5">
           {/* Order Summary Card */}
           <div className="bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 rounded-xl p-6 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3">
               <div>
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                   THÔNG TIN GÓI NÂNG CẤP

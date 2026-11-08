@@ -46,6 +46,59 @@ describe('Organization Member Management & RBAC Protection Suite', () => {
       expect(isPermitted).toBe(false);
     });
 
+    it('should prevent ORG_ADMIN from deleting another ORG_ADMIN', () => {
+      const callerRole: string = 'ORG_ADMIN';
+      const targetRole: string = 'ORG_ADMIN';
+      const isOwner = callerRole === 'ORG_OWNER';
+
+      const canDelete = isOwner || (callerRole === 'ORG_ADMIN' && targetRole !== 'ORG_OWNER' && targetRole !== 'ORG_ADMIN');
+      expect(canDelete).toBe(false);
+    });
+
+    it('should allow ORG_OWNER to delete an ORG_ADMIN', () => {
+      const callerRole: string = 'ORG_OWNER';
+      const targetRole: string = 'ORG_ADMIN';
+      const isOwner = callerRole === 'ORG_OWNER';
+
+      const canDelete = isOwner || (callerRole === 'ORG_ADMIN' && targetRole !== 'ORG_OWNER' && targetRole !== 'ORG_ADMIN');
+      expect(canDelete).toBe(true);
+    });
+
+    it('should prevent ORG_ADMIN from modifying another ORG_ADMIN', () => {
+      const callerRole: string = 'ORG_ADMIN';
+      const targetRole: string = 'ORG_ADMIN';
+      const isCallerOwner = callerRole === 'ORG_OWNER';
+
+      const canModify = isCallerOwner || (callerRole === 'ORG_ADMIN' && targetRole !== 'ORG_OWNER' && targetRole !== 'ORG_ADMIN');
+      expect(canModify).toBe(false);
+    });
+
+    it('should prevent ORG_ADMIN from inviting a member as ORG_ADMIN', () => {
+      const callerRole: string = 'ORG_ADMIN';
+      const inviteRole: string = 'ORG_ADMIN';
+      const isOwner = callerRole === 'ORG_OWNER';
+
+      const canInviteWithRole = isOwner || (callerRole === 'ORG_ADMIN' && inviteRole !== 'ORG_ADMIN');
+      expect(canInviteWithRole).toBe(false);
+    });
+
+    it('should allow ORG_OWNER to invite a member as ORG_ADMIN', () => {
+      const callerRole: string = 'ORG_OWNER';
+      const inviteRole: string = 'ORG_ADMIN';
+      const isOwner = callerRole === 'ORG_OWNER';
+
+      const canInviteWithRole = isOwner || (callerRole === 'ORG_ADMIN' && inviteRole !== 'ORG_ADMIN');
+      expect(canInviteWithRole).toBe(true);
+    });
+
+    it('should block any user from self-deleting from organization', () => {
+      const callerUserId = 'user-123';
+      const targetUserId = 'user-123';
+
+      const canSelfDelete = targetUserId !== callerUserId;
+      expect(canSelfDelete).toBe(false);
+    });
+
     it('should prevent ORG_ADMIN from elevating any member to ORG_OWNER', () => {
       const callerRole = 'ORG_ADMIN';
       const newRole = 'ORG_OWNER';
@@ -56,12 +109,38 @@ describe('Organization Member Management & RBAC Protection Suite', () => {
 
     it('should allow ORG_OWNER to manage ORG_ADMIN, ASSESSOR, and MEMBER', () => {
       const callerRole = 'ORG_OWNER';
-      const allowedRolesToAssign = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'REPORT_VIEWER', 'MEMBER'];
+      const allowedRolesToAssign = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'MEMBER'];
 
       allowedRolesToAssign.forEach((role) => {
         const canAssign = callerRole === 'ORG_OWNER' || (callerRole === 'ORG_ADMIN' && role !== 'ORG_OWNER');
         expect(canAssign).toBe(true);
       });
+    });
+
+    it('should display exactly 3 functional roles in UI while marking Owner attribute', () => {
+      const UI_FUNCTIONAL_ROLES = ['ORG_ADMIN', 'ASSESSOR', 'MEMBER'];
+      expect(UI_FUNCTIONAL_ROLES.length).toBe(3);
+
+      const resolveDisplayRole = (role: string) => {
+        if (role === 'ORG_OWNER') {
+          return { label: 'Quản trị viên', isOwner: true };
+        }
+        if (role === 'ORG_ADMIN') {
+          return { label: 'Quản trị viên', isOwner: false };
+        }
+        if (role === 'ASSESSOR' || role === 'EVALUATOR') {
+          return { label: 'Khảo thí viên', isOwner: false };
+        }
+        return { label: 'Thành viên', isOwner: false };
+      };
+
+      const ownerDisplay = resolveDisplayRole('ORG_OWNER');
+      expect(ownerDisplay.label).toBe('Quản trị viên');
+      expect(ownerDisplay.isOwner).toBe(true);
+
+      const adminDisplay = resolveDisplayRole('ORG_ADMIN');
+      expect(adminDisplay.label).toBe('Quản trị viên');
+      expect(adminDisplay.isOwner).toBe(false);
     });
   });
 
@@ -174,7 +253,7 @@ describe('Organization Member Management & RBAC Protection Suite', () => {
         { role: 'MEMBER' },
         { role: 'MEMBER' },
         { role: 'MEMBER' },
-        { role: 'REPORT_VIEWER' },
+        { role: 'MEMBER' },
         { role: 'MEMBER' },
       ];
 
@@ -186,8 +265,8 @@ describe('Organization Member Management & RBAC Protection Suite', () => {
 
       expect(adminCount).toBe(2);
       expect(teacherCount).toBe(2);
-      expect(studentCount).toBe(5);
-      expect(otherCount).toBe(1);
+      expect(studentCount).toBe(6);
+      expect(otherCount).toBe(0);
 
       const adminPct = Math.round((adminCount / total) * 100);
       const teacherPct = Math.round((teacherCount / total) * 100);
@@ -195,7 +274,7 @@ describe('Organization Member Management & RBAC Protection Suite', () => {
 
       expect(adminPct).toBe(20);
       expect(teacherPct).toBe(20);
-      expect(studentPct).toBe(50);
+      expect(studentPct).toBe(60);
     });
   });
 });

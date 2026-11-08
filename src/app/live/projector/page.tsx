@@ -184,7 +184,7 @@ function ProjectorContent() {
       }`}
     >
       {/* 1. Header Bar */}
-      <div className="flex items-center justify-between pb-6 border-b border-black/10 dark:border-white/10">
+      <div className="flex items-center justify-between pb-6">
         <div className="flex items-center gap-4">
           <Link
             href={roomId ? `/live/control?roomId=${roomId}` : '/personal/live-room'}
@@ -288,7 +288,7 @@ function ProjectorContent() {
       </div>
 
       {/* 3. Bottom Candidate Stage (Bay vào theo thời gian thực) */}
-      <div className="pt-6 border-t border-black/10 dark:border-white/10 space-y-4">
+      <div className="pt-6 space-y-4">
         <div className="flex items-center justify-between text-xs sm:text-sm">
           <div className="flex items-center gap-2 font-bold">
             <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />

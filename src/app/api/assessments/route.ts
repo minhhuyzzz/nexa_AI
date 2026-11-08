@@ -45,10 +45,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Không thể tải danh sách bài khảo thí' }, { status: 500 });
     }
 
-    // Only serve official system assessments to learners (filter out personal and org assessments)
+    // Only serve official system assessments to learners (filter out personal, org assessments, and baseline diagnostic test)
+    // Baseline assessment is exclusively taken from the onboarding / dashboard banner
     const publicSystemAssessments = (assessments || []).filter((a: any) => {
       if (a.organization_id) return false;
       if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+      if (a.is_system_baseline === true) return false;
+      if (a.id === 'a0000000-0000-0000-0000-000000000001') return false;
       return true;
     });
 

@@ -401,9 +401,9 @@ export default function PersonalAuthoringListPage() {
         /* TABLE VIEW (Exact Design from Screen 01 Image) */
         <div className="overflow-hidden rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-2xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-zinc-850 bg-slate-50/70 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 text-[11px] font-bold">
+                <tr className="bg-slate-50/70 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 text-[11px] font-bold">
                   <th className="py-3 px-4 min-w-[240px]">Tên đề</th>
                   <th className="py-3 px-3 min-w-[150px]">Miền năng lực</th>
                   <th className="py-3 px-3 text-center min-w-[80px]">Số câu</th>
@@ -414,7 +414,7 @@ export default function PersonalAuthoringListPage() {
                   <th className="py-3 px-4 text-right min-w-[110px]">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <tbody className="">
                 {paginatedList.map((item) => {
                   // Domain badge style
                   let domainBadgeColor = 'bg-blue-50 text-blue-700 border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300';
@@ -599,7 +599,7 @@ export default function PersonalAuthoringListPage() {
           </div>
 
           {/* Pagination Footer (Screen 01 Design) */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100 dark:border-zinc-850 bg-slate-50/40 dark:bg-zinc-900/30 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-slate-50/40 dark:bg-zinc-900/30 text-xs">
             <span className="text-slate-500 font-medium">
               Hiển thị {paginatedList.length} trên tổng số {filteredList.length} đề
             </span>

@@ -241,7 +241,7 @@ DECLARE
 BEGIN
     SELECT to_jsonb(a) INTO v_assessment
     FROM (
-        SELECT id, title, description, duration_minutes, passing_score, point_reward, total_questions, framework_id
+        SELECT id, title, description, duration_minutes, passing_score, point_reward, framework_id
         FROM public.assessments
         WHERE id = p_assessment_id AND is_published = TRUE
     ) a;

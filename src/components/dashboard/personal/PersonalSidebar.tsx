@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -88,7 +88,7 @@ export function PersonalSidebar() {
       >
         <div className="flex flex-col h-full min-h-0">
           {/* Brand header */}
-          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-850 shrink-0">
+          <div className="h-16 px-4 flex items-center justify-between shrink-0">
             <Link
               href="/personal/dashboard"
               className="flex items-center gap-2 overflow-hidden"
@@ -148,8 +148,8 @@ export function PersonalSidebar() {
               </div>
             </div>
 
-            {/* Subtle Divider */}
-            <div className="my-2.5 border-t border-slate-100 dark:border-zinc-800/80" />
+            {/* Spacing between groups */}
+            <div className="my-2" />
 
             {/* 2. Nhóm & Công việc */}
             <div>
@@ -186,8 +186,8 @@ export function PersonalSidebar() {
               </div>
             </div>
 
-            {/* Subtle Divider */}
-            <div className="my-2.5 border-t border-slate-100 dark:border-zinc-800/80" />
+            {/* Spacing between groups */}
+            <div className="my-2" />
 
             {/* 3. Công cụ tạo & Tổ chức */}
             <div>
@@ -226,7 +226,7 @@ export function PersonalSidebar() {
           </nav>
 
           {/* Footer Items: Feedback only (Cài đặt đã chuyển lên Menu Avatar) */}
-          <div className="p-3 border-t border-slate-100 dark:border-zinc-850 shrink-0">
+          <div className="p-3 shrink-0">
             <button
               onClick={() => setShowFeedback(true)}
               title="Đóng góp ý kiến cho NEXA"

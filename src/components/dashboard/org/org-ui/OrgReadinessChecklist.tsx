@@ -49,7 +49,7 @@ export function OrgReadinessChecklist({
 
   return (
     <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between h-full">
-      <div className="p-4 border-b border-slate-100 dark:border-zinc-800/80">
+      <div className="p-4">
         <h2 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
           {isBrandNew ? 'Bắt đầu vận hành NEXA' : 'Mức độ sẵn sàng vận hành'}
         </h2>
@@ -60,7 +60,7 @@ export function OrgReadinessChecklist({
         </p>
       </div>
 
-      <div className="p-4 divide-y divide-slate-100 dark:divide-zinc-850 flex-1">
+      <div className="p-4 flex-1">
         {steps.map((step, idx) => {
           const stepNumber = String(idx + 1).padStart(2, '0');
           return (
@@ -103,7 +103,7 @@ export function OrgReadinessChecklist({
         })}
       </div>
 
-      <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/30 text-[11px] text-slate-500 dark:text-neutral-400">
+      <div className="p-3 bg-slate-50/50 dark:bg-zinc-900/30 text-[11px] text-slate-500 dark:text-neutral-400">
         Chu trình đánh giá khép kín: Lớp &bull; Đề &bull; Đợt &bull; Chấm &bull; Báo cáo 5 miền
       </div>
     </div>

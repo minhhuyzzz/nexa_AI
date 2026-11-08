@@ -45,10 +45,10 @@ export function AdminTopbar() {
 
   return (
     <header
-      className={`h-16 px-6 flex items-center justify-between sticky top-0 z-20 transition-all duration-200 border-b ${
+      className={`h-16 px-6 flex items-center justify-between sticky top-0 z-20 transition-all duration-200 ${
         scrolled
-          ? 'bg-white/95 dark:bg-black/95 backdrop-blur-sm border-slate-200 dark:border-zinc-800 shadow-xs'
-          : 'bg-white dark:bg-black border-slate-200/80 dark:border-zinc-800'
+          ? 'bg-white/95 dark:bg-black/95 backdrop-blur-sm shadow-xs'
+          : 'bg-white dark:bg-black'
       }`}
     >
       {/* Breadcrumb Path Navigation with Home Icon */}

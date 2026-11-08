@@ -29,8 +29,7 @@ export type OrgRoleType =
   | 'ORG_ADMIN'
   | 'ASSESSOR'
   | 'EVALUATOR'
-  | 'REPORT_VIEWER'
-  | 'MEMBER';
+    | 'MEMBER';
 
 export interface WorkspaceItem {
   membershipId: string;
@@ -187,12 +186,13 @@ export function AvatarWorkspaceSection({
     }
   };
 
-  const adminWorkspaces = workspaces.filter(
-    (w) => w.role === 'ORG_OWNER' || w.role === 'ORG_ADMIN'
+  // Organizations accessible by this user (ADMIN, ASSESSOR, EVALUATOR). Excludes MEMBER.
+  const orgWorkspaces = workspaces.filter(
+    (w) => w.role !== 'MEMBER'
   );
 
   const isPersonalActive = pathname?.startsWith('/personal') || activeWorkspaceId === 'personal';
-  const currentActiveOrg = adminWorkspaces.find((w) =>
+  const currentActiveOrg = orgWorkspaces.find((w) =>
     pathname?.startsWith(`/org/${w.organization.slug}`) || activeWorkspaceId === `org_${w.organization.id}`
   );
 
@@ -207,7 +207,7 @@ export function AvatarWorkspaceSection({
   };
 
   return (
-    <div className="py-2.5 border-b border-slate-100 dark:border-zinc-850">
+    <div className="py-2.5">
       {/* 1. NÂNG CẤP PRO Ở CÁ NHÂN: Đặt ở PHÍA TRÊN không gian làm việc */}
       {isPersonalActive && !currentActiveOrg && personalPlan === 'FREE' && (
         <div className="px-3 pb-2.5">
@@ -275,7 +275,7 @@ export function AvatarWorkspaceSection({
         {isFlyoutOpen && (
           <div className="mt-2 sm:mt-0 sm:absolute sm:right-[calc(100%+8px)] sm:top-0 w-full sm:w-64 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xl p-2.5 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
             {/* Header */}
-            <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-zinc-800 sm:border-none mb-1">
+            <div className="flex items-center justify-between px-2 py-1 mb-1">
               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
                 Chuyển đổi
               </span>
@@ -316,8 +316,8 @@ export function AvatarWorkspaceSection({
                 )}
               </button>
 
-              {/* Option 2+: Các tổ chức quản trị (Chỉ hiển thị cho ORG_OWNER / ORG_ADMIN) */}
-              {adminWorkspaces.map((ws) => {
+              {/* Option 2+: Các tổ chức (Chỉ hiển thị cho ORG_OWNER / ORG_ADMIN / ASSESSOR) */}
+              {orgWorkspaces.map((ws) => {
                 const isOrgActive =
                   pathname?.startsWith(`/org/${ws.organization.slug}`) ||
                   activeWorkspaceId === `org_${ws.organization.id}` ||
@@ -358,7 +358,7 @@ export function AvatarWorkspaceSection({
             </div>
 
             {/* Hành động dưới cùng của Menu Chuyển đổi */}
-            <div className="pt-1.5 mt-1.5 border-t border-slate-100 dark:border-zinc-800">
+            <div className="pt-1.5 mt-1.5">
               {currentActiveOrg ? (
                 /* Khi đang ở Tổ chức: Hiển thị "Mời thành viên" */
                 <button

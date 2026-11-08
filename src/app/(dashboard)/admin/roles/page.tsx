@@ -134,38 +134,40 @@ export default function AdminRolesPage() {
         </div>
       </div>
 
-      {/* 2. Tabs (Chuẩn Ảnh 3) */}
-      <div className="flex items-center gap-6 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('roles')}
-          className={`pb-3 transition-colors ${
-            activeTab === 'roles'
-              ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
-              : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
-        >
-          Vai trò
-        </button>
-        <button
-          onClick={() => setActiveTab('permissions')}
-          className={`pb-3 transition-colors ${
-            activeTab === 'permissions'
-              ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
-              : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
-        >
-          Bộ quyền
-        </button>
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`pb-3 transition-colors ${
-            activeTab === 'audit'
-              ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
-              : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
-        >
-          Rà soát truy cập
-        </button>
+      {/* 2. Tabs (Pill Tabs, không gạch chân) */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('roles')}
+            className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'roles'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            Vai trò
+          </button>
+          <button
+            onClick={() => setActiveTab('permissions')}
+            className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'permissions'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            Bộ quyền
+          </button>
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'audit'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            Rà soát truy cập
+          </button>
+        </div>
       </div>
 
       {/* 3. Amber Notice Banner (Chuẩn Ảnh 3) */}
@@ -217,10 +219,10 @@ export default function AdminRolesPage() {
       <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/75 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-zinc-800 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <thead className="bg-slate-50/75 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4 w-10">
-                  <input type="checkbox" className="rounded border-slate-300" />
+                  <input type="checkbox" className="rounded" />
                 </th>
                 <th className="py-3 px-4">Vai trò</th>
                 <th className="py-3 px-4">Cấp truy cập</th>
@@ -232,7 +234,7 @@ export default function AdminRolesPage() {
                 <th className="py-3 px-3 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+            <tbody className="">
               {filteredRoles.map((role) => {
                 const IconComponent = role.icon;
                 return (
@@ -241,7 +243,7 @@ export default function AdminRolesPage() {
                     className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40 transition-colors"
                   >
                     <td className="py-3.5 px-4">
-                      <input type="checkbox" className="rounded border-slate-300" />
+                      <input type="checkbox" className="rounded" />
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
@@ -314,7 +316,7 @@ export default function AdminRolesPage() {
         </div>
 
         {/* Footer info matching Ảnh 3 */}
-        <div className="p-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
+        <div className="p-4 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
           <span>Hiển thị 1 – 4 trên 4 vai trò chuẩn</span>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px]">NEXA RBAC v3.0</span>

@@ -100,9 +100,13 @@ export class CompetencyAggregationService {
 
       (submissions || []).forEach((sub) => {
         (sub.submission_answers || []).forEach((ans: any) => {
+          // P0: Do not evaluate pending questions where rubric grading is null
+          if (ans.score_awarded === null || ans.score_awarded === undefined) {
+            return;
+          }
           const compId = ans.assessment_items?.competency_id;
           const maxPts = Number(ans.assessment_items?.points) || 10;
-          const awarded = Number(ans.score_awarded) || 0;
+          const awarded = Number(ans.score_awarded);
           if (compId && maxPts > 0) {
             const percentage = (awarded / maxPts) * 100;
             const existing = evidenceMap.get(compId) || { totalWeightedScore: 0, totalWeight: 0, count: 0 };

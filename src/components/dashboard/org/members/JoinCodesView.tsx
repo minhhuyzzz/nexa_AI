@@ -281,9 +281,9 @@ export function JoinCodesView({
           {/* Table */}
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+                  <tr className="bg-slate-50/70 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                     <th className="py-2.5 px-3">Mã tham gia</th>
                     <th className="py-2.5 px-3">Lượt dùng</th>
                     <th className="py-2.5 px-3">Hạn hiệu lực</th>
@@ -291,7 +291,7 @@ export function JoinCodesView({
                     <th className="py-2.5 px-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-xs">
+                <tbody className="text-xs">
                   {filteredCodes.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-neutral-500">
@@ -427,7 +427,7 @@ export function JoinCodesView({
             onSubmit={handleCreateCode}
             className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md p-4 space-y-3.5"
           >
-            <div className="flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+            <div className="flex items-center gap-2 pb-2.5">
               <Plus className="w-4 h-4 text-blue-600" />
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                 Tạo mã gia nhập mới
@@ -537,7 +537,7 @@ export function JoinCodesView({
 
           {/* Live QR & Join Preview Card */}
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md p-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2 mb-3">
+            <div className="flex items-center justify-between pb-2 mb-3">
               <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
                 <QrCode className="w-3.5 h-3.5 text-blue-600" />
                 {selectedCodeForQr ? `Mã: ${selectedCodeForQr.code}` : 'Xem trước QR gia nhập'}

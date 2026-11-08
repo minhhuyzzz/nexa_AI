@@ -181,7 +181,7 @@ export default function PersonalAuthoringPreviewPage({
       </div>
 
       {/* 2. Header */}
-      <div className="pb-4 border-b border-slate-100 dark:border-zinc-850">
+      <div className="pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
           <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
@@ -395,7 +395,7 @@ export default function PersonalAuthoringPreviewPage({
               Thông số kiểm định
             </h2>
 
-            <div className="space-y-3 text-xs divide-y divide-slate-100 dark:divide-zinc-850">
+            <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500">Tổng số câu hỏi</span>
                 <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">

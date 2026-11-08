@@ -266,14 +266,14 @@ export default async function AdminDashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 font-medium">
+                  <tr className="text-slate-400 dark:text-zinc-500 font-medium">
                     <th className="py-2.5 pr-4">Thời gian</th>
                     <th className="py-2.5 px-4">Hoạt động</th>
                     <th className="py-2.5 px-4">Đối tượng</th>
                     <th className="py-2.5 pl-4">Người thực hiện</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+                <tbody className="">
                   {recentActivities.map((act, idx) => {
                     const ActIcon = act.icon;
                     return (

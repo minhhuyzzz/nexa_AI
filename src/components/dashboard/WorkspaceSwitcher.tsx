@@ -8,10 +8,9 @@ import {
   ChevronDown,
   Check,
   Plus,
-  Copy,
   ShieldCheck,
-  Loader2,
 } from 'lucide-react';
+import { OrgInviteModal } from './org/OrgInviteModal';
 
 export interface OrganizationInfo {
   id: string;
@@ -19,6 +18,7 @@ export interface OrganizationInfo {
   slug?: string;
   code?: string;
   plan_tier?: string;
+  status?: string;
 }
 
 export type OrgRoleType =
@@ -26,7 +26,6 @@ export type OrgRoleType =
   | 'ORG_ADMIN'
   | 'ASSESSOR'
   | 'EVALUATOR'
-  | 'REPORT_VIEWER'
   | 'MEMBER';
 
 export interface WorkspaceItem {
@@ -37,10 +36,9 @@ export interface WorkspaceItem {
 
 const ROLE_LABELS: Record<OrgRoleType, string> = {
   ORG_OWNER: 'Chủ sở hữu',
-  ORG_ADMIN: 'Quản trị tổ chức',
-  ASSESSOR: 'Người đánh giá',
-  EVALUATOR: 'Người đánh giá',
-  REPORT_VIEWER: 'Xem báo cáo',
+  ORG_ADMIN: 'Quản trị viên',
+  ASSESSOR: 'Khảo thí viên',
+  EVALUATOR: 'Khảo thí viên',
   MEMBER: 'Thành viên',
 };
 
@@ -53,12 +51,6 @@ export function WorkspaceSwitcher() {
   const [personalPlan, setPersonalPlan] = useState<'FREE' | 'PRO'>('FREE');
   const [isOpen, setIsOpen] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<OrgRoleType>('ASSESSOR');
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteResult, setInviteResult] = useState<{ inviteUrl: string } | null>(null);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,7 +75,12 @@ export function WorkspaceSwitcher() {
         if (res.ok) {
           const data = await res.json();
           if (data.workspaces) {
-            setWorkspaces(data.workspaces);
+            // RBAC: MEMBER must NOT switch to Organization workspace.
+            // Only show organizations where user is ADMIN/OWNER or ASSESSOR.
+            const eligibleWorkspaces = (data.workspaces as WorkspaceItem[]).filter(
+              (w) => w.role !== 'MEMBER'
+            );
+            setWorkspaces(eligibleWorkspaces);
             setIsPlatformAdmin(!!data.isPlatformAdmin);
             if (data.planTier) {
               setPersonalPlan(data.planTier.toUpperCase() === 'PRO' ? 'PRO' : 'FREE');
@@ -163,45 +160,6 @@ export function WorkspaceSwitcher() {
   const isAdmin = pathname?.startsWith('/admin') || activeWorkspaceId === 'admin';
   const isOrgManager = !isPersonal && !isAdmin && (activeWorkspace?.role === 'ORG_OWNER' || activeWorkspace?.role === 'ORG_ADMIN');
 
-  const handleCreateInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isPersonal || !activeWorkspace) return;
-
-    setIsInviting(true);
-    setInviteError(null);
-    setInviteResult(null);
-
-    try {
-      const res = await fetch('/api/organizations/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organizationId: activeWorkspace.organization.id,
-          email: inviteEmail,
-          orgRole: inviteRole,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Không thể tạo lời mời');
-      }
-
-      setInviteResult({ inviteUrl: data.invitation.inviteUrl });
-      setInviteEmail('');
-    } catch (err) {
-      setInviteError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setIsInviting(false);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Switcher Button */}
@@ -247,7 +205,7 @@ export function WorkspaceSwitcher() {
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute left-0 mt-1.5 w-72 rounded-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-md py-1.5 z-50 animate-in fade-in-50 zoom-in-95">
-          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-zinc-850 mb-1">
+          <div className="px-3 py-1.5 mb-1">
             <span className="text-[10px] font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
               Chọn không gian làm việc
             </span>
@@ -279,7 +237,7 @@ export function WorkspaceSwitcher() {
 
           {/* Organizations Group */}
           {workspaces.length > 0 && (
-            <div className="mt-1 pt-1 border-t border-slate-100 dark:border-zinc-850">
+            <div className="mt-1 pt-1">
               <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
                 Tổ chức / Trường học
               </div>
@@ -299,9 +257,16 @@ export function WorkspaceSwitcher() {
                       </div>
                       <div className="flex flex-col text-left truncate">
                         <span className="truncate">{ws.organization.name}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-normal">
-                          {ROLE_LABELS[ws.role] || ws.role} · <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">BUSINESS</span>
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-normal">
+                            {ROLE_LABELS[ws.role] || ws.role} · <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">BUSINESS</span>
+                          </span>
+                          {ws.organization.status === 'SUSPENDED' && (
+                            <span className="px-1 py-0.2 rounded text-[9px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60">
+                              Tạm ngưng
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />}
@@ -313,7 +278,7 @@ export function WorkspaceSwitcher() {
 
           {/* Platform Admin Option */}
           {isPlatformAdmin && (
-            <div className="mt-1 pt-1 border-t border-slate-100 dark:border-zinc-850">
+            <div className="mt-1 pt-1">
               <button
                 onClick={() => handleSelectWorkspace('admin')}
                 className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors hover:bg-slate-50 dark:hover:bg-zinc-900 cursor-pointer ${
@@ -341,7 +306,7 @@ export function WorkspaceSwitcher() {
 
           {/* Manage or Invite button for Org Admin */}
           {isOrgManager && (
-            <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-850 px-2">
+            <div className="mt-1.5 pt-1.5 px-2">
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -357,111 +322,14 @@ export function WorkspaceSwitcher() {
         </div>
       )}
 
-      {/* Invite Member Modal */}
+      {/* Unified Invite Member Modal */}
       {showInviteModal && activeWorkspace && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-lg p-5 space-y-4">
-            <div className="flex items-start justify-between border-b border-slate-100 dark:border-zinc-850 pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Mời thành viên mới</h3>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Tổ chức: {activeWorkspace.organization.name}</p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowInviteModal(false);
-                  setInviteResult(null);
-                  setInviteError(null);
-                }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 text-xs font-semibold cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-
-            {inviteError && (
-              <div className="p-2.5 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300">
-                {inviteError}
-              </div>
-            )}
-
-            {!inviteResult ? (
-              <form onSubmit={handleCreateInvite} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                    Email thành viên
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="giangvien@truong.edu.vn"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                    Vai trò trong tổ chức
-                  </label>
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as OrgRoleType)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100"
-                  >
-                    <option value="ASSESSOR">Người đánh giá (Soạn đề, chấm bài, mở phòng Live)</option>
-                    <option value="REPORT_VIEWER">Người xem báo cáo (Chỉ xem số liệu thống kê)</option>
-                    <option value="MEMBER">Thành viên (Tham gia làm bài theo kỳ thi)</option>
-                    <option value="ORG_ADMIN">Quản trị viên đơn vị (Toàn quyền quản lý)</option>
-                  </select>
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowInviteModal(false)}
-                    className="px-3 py-1.5 text-xs text-slate-600 dark:text-neutral-400 hover:text-slate-800 dark:hover:text-neutral-200 rounded border border-slate-200 dark:border-zinc-800 cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isInviting}
-                    className="px-4 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                  >
-                    {isInviting && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />}
-                    <span>Tạo liên kết mời</span>
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-3">
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-md text-xs text-emerald-800 dark:text-emerald-200">
-                  <div className="font-semibold">Đã tạo lời mời thành công!</div>
-                  <p className="text-[11px] mt-1 text-emerald-700 dark:text-emerald-300">
-                    Gửi liên kết sau cho thành viên. Liên kết có giá trị sử dụng 1 lần trong vòng 7 ngày.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={inviteResult.inviteUrl}
-                    className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md select-all text-neutral-900 dark:text-neutral-100"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(inviteResult.inviteUrl)}
-                    className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-md text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    <span>{copied ? 'Đã sao chép' : 'Sao chép'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <OrgInviteModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          organization={activeWorkspace.organization}
+          userRole={activeWorkspace.role}
+        />
       )}
     </div>
   );

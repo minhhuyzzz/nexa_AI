@@ -117,7 +117,7 @@ export function ClassMemberDashboardView({
               )}
             </div>
 
-            <div className="pt-3 border-t border-blue-100 dark:border-blue-900/60 flex items-center justify-between">
+            <div className="pt-3 flex items-center justify-between">
               <span className="text-[11px] text-slate-400 font-mono">
                 {pendingAssignments.length} bài chưa nộp trong lớp này
               </span>
@@ -155,7 +155,7 @@ export function ClassMemberDashboardView({
 
         {/* 2. Pinned & Important Announcements */}
         <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850">
+          <div className="flex items-center justify-between pb-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -214,7 +214,7 @@ export function ClassMemberDashboardView({
 
         {/* Assigned tasks quicklist */}
         <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-850">
+          <div className="flex items-center justify-between pb-2">
             <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
               Bài được giao
             </h4>

@@ -58,7 +58,7 @@ export default async function OrgClassDetailPage({
   const members: ClassMemberItem[] = (membersRaw || []).map((m: any) => {
     const prof = m.profiles;
     const meta = prof?.raw_user_meta_data || {};
-    const fullName = meta.full_name || meta.name || prof?.nickname || 'Học viên';
+    const fullName = meta.full_name || meta.name || prof?.nickname || 'Thành viên';
     const studentId = m.student_code || meta.student_id || `PH${m.user_id.slice(0, 5).toUpperCase()}`;
 
     return {

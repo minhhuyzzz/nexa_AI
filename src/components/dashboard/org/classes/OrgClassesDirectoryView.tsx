@@ -154,31 +154,33 @@ export function OrgClassesDirectoryView({
 
   return (
     <div className="space-y-4 font-sans">
-      {/* 1. Top Status Tabs & View Toggle (Seamless on page, no outer heavy box) */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-2 overflow-x-auto">
-        <div className="flex items-center gap-4 text-xs font-semibold whitespace-nowrap">
+      {/* 1. Top Status Tabs & View Toggle (Modern Pill Tabs, không gạch chân border-b) */}
+      <div className="flex items-center justify-between gap-3 overflow-x-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl">
           <button
+            type="button"
             onClick={() => {
               setStatusFilter('ALL');
               setCurrentPage(1);
             }}
-            className={`pb-2 border-b-2 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               statusFilter === 'ALL'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             Tất cả ({classes.length})
           </button>
           <button
+            type="button"
             onClick={() => {
               setStatusFilter('ACTIVE');
               setCurrentPage(1);
             }}
-            className={`pb-2 border-b-2 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               statusFilter === 'ACTIVE'
-                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
             Đang hoạt động ({activeCount})
@@ -186,14 +188,14 @@ export function OrgClassesDirectoryView({
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center gap-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-0.5 shrink-0">
+        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl p-1 shrink-0">
           <button
             type="button"
             onClick={() => setViewMode('card')}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition cursor-pointer ${
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer ${
               viewMode === 'card'
-                ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
-                : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -202,10 +204,10 @@ export function OrgClassesDirectoryView({
           <button
             type="button"
             onClick={() => setViewMode('table')}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition cursor-pointer ${
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer ${
               viewMode === 'table'
-                ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
-                : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
             }`}
           >
             <List className="w-3.5 h-3.5" />
@@ -336,7 +338,7 @@ export function OrgClassesDirectoryView({
                                     <span>Chỉnh sửa thông tin</span>
                                   </button>
 
-                                  <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+                                  <div className="my-1" />
 
                                   <button
                                     type="button"
@@ -369,15 +371,15 @@ export function OrgClassesDirectoryView({
                         </p>
                       ) : null}
 
-                      {/* Metadata Row */}
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400 pb-3 border-b border-slate-100 dark:border-zinc-850">
+                      {/* Metadata Row (Không gạch ngang phân cách) */}
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400">
                         <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-zinc-300">
                           <Users className="w-3.5 h-3.5 text-slate-400" />
                           <strong className="font-mono tabular-nums">{cls.membersCount}</strong> thành viên
                         </span>
                         {cls.term && (
                           <>
-                            <span>&bull;</span>
+                            <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
                             <span className="truncate">{cls.term}</span>
                           </>
                         )}
@@ -385,7 +387,7 @@ export function OrgClassesDirectoryView({
                     </div>
 
                     {/* Bottom Action & Stats */}
-                    <div className="pt-3 flex items-center justify-between gap-2">
+                    <div className="pt-4 flex items-center justify-between gap-2 mt-auto">
                       <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-neutral-400">
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold tabular-nums">
                           {cls.assignmentsCount} đề
@@ -417,9 +419,9 @@ export function OrgClassesDirectoryView({
       {viewMode === 'table' && (
         <div className="border border-slate-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+                <tr className="bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                   <th className="py-3 px-4">Tên lớp / Không gian</th>
                   <th className="py-3 px-4">Mã tham gia</th>
                   <th className="py-3 px-4">Loại không gian</th>
@@ -429,7 +431,7 @@ export function OrgClassesDirectoryView({
                   <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+              <tbody className="">
                 {paginatedClasses.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
@@ -497,7 +499,7 @@ export function OrgClassesDirectoryView({
 
       {/* 5. Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2 text-xs border-t border-slate-200/80 dark:border-zinc-800">
+        <div className="flex items-center justify-between pt-2 text-xs">
           <span className="text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
             Hiển thị {paginatedClasses.length} trên {filtered.length} lớp &amp; nhóm
           </span>

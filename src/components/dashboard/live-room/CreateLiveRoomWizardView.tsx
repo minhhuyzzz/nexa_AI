@@ -84,28 +84,23 @@ export function CreateLiveRoomWizardView({
       try {
         const promises: Promise<any>[] = [
           fetch('/api/assessments').then((r) => (r.ok ? r.json() : null)),
+          fetch('/api/personal/assessments').then((r) => (r.ok ? r.json() : null)),
         ];
-
-        if (!isOrg) {
-          promises.push(
-            fetch('/api/personal/assessments').then((r) => (r.ok ? r.json() : null))
-          );
-        }
 
         const [sysData, personalData] = await Promise.all(promises);
         if (!isMounted) return;
 
         const list: Assessment[] = [];
 
-        // 1. Process Personal Assessments (Đề của tôi)
+        // 1. Process Personal & Org Authored Assessments (Đề nội bộ / Đề của tôi)
         if (personalData && Array.isArray(personalData.assessments)) {
           personalData.assessments.forEach((pa: any) => {
             list.push({
               id: pa.id,
               title: pa.title,
               domain: 'Đề tự biên soạn',
-              domainName: 'Đề của tôi',
-              description: pa.description || 'Đề đánh giá do bạn tự biên soạn trong workspace cá nhân.',
+              domainName: pa.organization_id ? 'Đề nội bộ tổ chức' : 'Đề của tôi',
+              description: pa.description || 'Đề đánh giá khảo thí nội bộ.',
               duration_minutes: pa.duration_minutes || 45,
               passing_score: pa.passing_score || 70,
               questionCount: Array.isArray(pa.assessment_items) ? pa.assessment_items.length : (pa.questionCount || 20),
@@ -140,17 +135,48 @@ export function CreateLiveRoomWizardView({
           });
         }
 
+        // 3. Nếu có query assessmentId từ Kho đề thi mà chưa có trong list, fetch trực tiếp
+        const queryAssessmentId = searchParams.get('assessmentId');
+        if (queryAssessmentId && !list.some((item) => item.id === queryAssessmentId)) {
+          try {
+            const singleRes = await fetch(`/api/assessments/${queryAssessmentId}`).then((r) =>
+              r.ok ? r.json() : null
+            );
+            if (singleRes && singleRes.assessment) {
+              const sa = singleRes.assessment;
+              const fetchedItem: Assessment = {
+                id: sa.id,
+                title: sa.title,
+                domain: 'Đề khảo thí',
+                domainName: 'Khảo thí tổ chức',
+                description: sa.description || '',
+                duration_minutes: sa.duration_minutes || 45,
+                passing_score: sa.passing_score || 70,
+                questionCount: sa.assessment_items?.length || 20,
+                typeLabel: 'Khảo thí',
+                types: ['MCQ'],
+                origin: 'MY_ASSESSMENT',
+              };
+              list.unshift(fetchedItem);
+            }
+          } catch (e) {
+            console.error('Failed to fetch specific assessment from query:', e);
+          }
+        }
+
         setAssessments(list);
 
-        // Default selection: Pick the first available
-        if (list.length > 0) {
-          const first = list[0];
-          setSelectedAsmId(first.id);
-          setDurationMinutes(first.duration_minutes || 45);
+        // Pre-select based on query param if passed, otherwise default to first
+        const matched = queryAssessmentId ? list.find((item) => item.id === queryAssessmentId) : null;
+        const target = matched || (list.length > 0 ? list[0] : null);
+
+        if (target) {
+          setSelectedAsmId(target.id);
+          setDurationMinutes(target.duration_minutes || 45);
           const now = new Date();
           const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
           const prefix = isOrg ? `${orgName || 'Tổ chức'} - ` : '';
-          setRoomTitle(`${prefix}${first.title} (Ca ${timeStr})`);
+          setRoomTitle(`${prefix}${target.title} (Ca ${timeStr})`);
         }
       } catch (err) {
         console.error('Failed to load assessments:', err);
@@ -164,7 +190,7 @@ export function CreateLiveRoomWizardView({
     return () => {
       isMounted = false;
     };
-  }, [isOrg, orgName]);
+  }, [isOrg, orgName, searchParams]);
 
   // Selected Assessment derived directly from state
   const selectedAssessment = useMemo(() => {
@@ -284,7 +310,7 @@ export function CreateLiveRoomWizardView({
           <span>{isOrg ? 'Quay lại Phòng thi tổ chức' : 'Quay lại Phòng trực tiếp'}</span>
         </Link>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
@@ -375,7 +401,7 @@ export function CreateLiveRoomWizardView({
             </div>
 
             {/* Domain Filter Dropdown */}
-            <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2 text-xs">
+            <div className="pt-2 flex items-center gap-2 text-xs">
               <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <select
                 value={domainFilter}
@@ -474,7 +500,7 @@ export function CreateLiveRoomWizardView({
                     </div>
 
                     {/* Metadata Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800/80 text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
+                    <div className="flex items-center justify-between pt-3 text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-400" />
@@ -502,7 +528,7 @@ export function CreateLiveRoomWizardView({
         {/* Right Column: Selected Assessment & Instant Open Room CTA (4 Cols) */}
         <div className="lg:col-span-4 space-y-4 sticky top-6">
           <div className="p-5 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 shadow-xs space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center gap-2 pb-3">
               <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider">
                 Đề đã chọn & Mở phòng
@@ -539,7 +565,7 @@ export function CreateLiveRoomWizardView({
                 </div>
 
                 {/* Customizable Duration Minutes */}
-                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                <div className="space-y-2 pt-2">
                   <div className="flex items-center justify-between">
                     <label className="font-semibold text-neutral-800 dark:text-neutral-200">
                       Thời lượng làm bài:
@@ -583,7 +609,7 @@ export function CreateLiveRoomWizardView({
                 </div>
 
                 {/* Instant Launch Action Button */}
-                <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                <div className="pt-3 space-y-2">
                   <button
                     type="button"
                     onClick={handleCreateAndEnterLobby}

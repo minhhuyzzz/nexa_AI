@@ -1,0 +1,50 @@
+# Community 115
+
+> 23 nodes
+
+## Key Concepts
+
+- **.github/skills/impeccable/reference/document.md** (11 connections) — `.github/skills/impeccable/reference/document.md`
+- **Scan mode (approach C: auto-extract, then confirm descriptive language)** (8 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 4b: Write .impeccable/design.json sidecar (extensions only)** (6 connections) — `.github/skills/impeccable/reference/document.md`
+- **Seed mode** (4 connections) — `.github/skills/impeccable/reference/document.md`
+- **Component translation rules** (2 connections) — `.github/skills/impeccable/reference/document.md`
+- **Pitfalls** (2 connections) — `.github/skills/impeccable/reference/document.md`
+- **Narrative mapping** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Schema** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 1: Find the design assets** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 1: Route through new-work's workshop** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 2: Auto-extract what can be auto-extracted** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 2: Write seed DESIGN.md** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 3: Ask the user for qualitative language** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 3: Confirm** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 4: Write DESIGN.md** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Step 5: Confirm and refine** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Style guidelines** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **The frontmatter: token schema** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **The markdown body: eight sections (canonical order)** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Tonal ramps** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **Two paths** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **What to include** (1 connections) — `.github/skills/impeccable/reference/document.md`
+- **When to run** (1 connections) — `.github/skills/impeccable/reference/document.md`
+
+## Relationships
+
+- [Community 89](Community_89.md) (2 shared connections)
+- [Community 68](Community_68.md) (2 shared connections)
+- [Community 101](Community_101.md) (1 shared connections)
+- [Community 136](Community_136.md) (1 shared connections)
+
+## Source Files
+
+- `.github/skills/impeccable/reference/document.md`
+
+## Audit Trail
+
+- EXTRACTED: 26 (93%)
+- INFERRED: 2 (7%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*

@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   MessageSquare,
   Compass,
+  Target,
   LucideIcon,
 } from 'lucide-react';
 
@@ -61,8 +62,8 @@ const adminNavSections: NavSection[] = [
     id: 'content',
     label: 'Nội dung & Khảo thí',
     items: [
+      { name: 'Khảo thí đầu vào', href: '/admin/baseline', icon: Target, exact: false },
       { name: 'Ngân hàng đề chuẩn', href: '/admin/content', icon: BookOpenCheck, exact: false },
-      { name: 'Khung 5 miền năng lực', href: '/admin/frameworks', icon: Layers, exact: false },
       { name: 'Lộ trình học', href: '/admin/learning-paths', icon: Compass, exact: false },
       { name: 'Kiểm duyệt đóng góp', href: '/admin/contributions', icon: FileCheck2, exact: false },
     ],
@@ -90,7 +91,7 @@ export function AdminSidebar() {
     >
       <div className="flex-1 overflow-y-auto">
         {/* Brand Header */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 sticky top-0 bg-white dark:bg-black z-10">
+        <div className="h-16 px-4 flex items-center justify-between sticky top-0 bg-white dark:bg-black z-10">
           <Link
             href="/admin/dashboard"
             className="flex items-center gap-2 overflow-hidden"
@@ -178,7 +179,7 @@ export function AdminSidebar() {
       </div>
 
       {/* Footer Status - Chuẩn 12 ảnh: "Hệ thống hoạt động ổn định" */}
-      <div className="p-3.5 border-t border-slate-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-black">
+      <div className="p-3.5 shrink-0 bg-white dark:bg-black">
         <div className="flex items-center gap-2.5 px-2 py-1">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

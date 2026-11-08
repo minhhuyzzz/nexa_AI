@@ -30,7 +30,7 @@ export function OrgTodoCenter({
     {
       title: 'Bài chờ phê duyệt',
       count: pendingGradingCount,
-      subtext: pendingGradingCount > 0 ? 'Cần giảng viên chốt điểm' : 'Không có bài chờ chấm',
+      subtext: pendingGradingCount > 0 ? 'Cần khảo thí viên chốt điểm' : 'Không có bài chờ chấm',
       href: `/org/${orgSlug}/grading`,
       icon: CheckSquare,
       badgeColor: pendingGradingCount > 0
@@ -51,7 +51,7 @@ export function OrgTodoCenter({
 
   return (
     <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between h-full">
-      <div className="p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
+      <div className="p-4 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
             Trung tâm xử lý
@@ -71,7 +71,7 @@ export function OrgTodoCenter({
         </span>
       </div>
 
-      <div className="p-3 divide-y divide-slate-100 dark:divide-zinc-850 flex-1">
+      <div className="p-3 space-y-1 flex-1">
         {todoItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -106,7 +106,7 @@ export function OrgTodoCenter({
         })}
       </div>
 
-      <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80">
+      <div className="p-3 pt-0">
         <div className="p-2.5 rounded bg-slate-50/80 dark:bg-zinc-900/50 border border-slate-200/70 dark:border-zinc-800 flex items-start gap-2 text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
           <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" strokeWidth={1.75} />
           <span>
