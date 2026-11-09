@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Biên soạn câu hỏi khảo thí | NEXA Tổ chức',
-  description: 'Trình biên soạn câu hỏi 2 vùng chuẩn hóa năng lực số DigComp',
+  description: 'Trình biên soạn câu hỏi 2 vùng chuẩn hóa 5 miền năng lực số',
 };
 
 export default async function OrgAuthoringEditPage({
@@ -22,7 +22,7 @@ export default async function OrgAuthoringEditPage({
     <AuthoringEditorTwoPane
       assessmentId={id}
       returnUrl={`/org/${slug}/assessments`}
-      previewUrl={`/org/${slug}/assessments`}
+      previewUrl={`/org/${slug}/assessments/${id}/preview`}
       organizationId={org.id}
       workspaceMode="ORG"
       slug={slug}

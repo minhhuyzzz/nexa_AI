@@ -75,7 +75,8 @@ export async function GET(
         profiles (
           id,
           email,
-          raw_user_meta_data
+          full_name,
+          nickname
         )
       `)
       .eq('class_id', classId)
@@ -87,9 +88,8 @@ export async function GET(
 
     const formatted = (members || []).map((m: any) => {
       const profile = m.profiles;
-      const meta = profile?.raw_user_meta_data || {};
-      const fullName = meta.full_name || meta.name || profile?.email?.split('@')[0] || 'Thành viên';
-      const studentId = m.student_code || meta.student_id || `SV-${m.user_id.slice(0, 5).toUpperCase()}`;
+      const fullName = profile?.full_name || profile?.nickname || profile?.email?.split('@')[0] || 'Thành viên';
+      const studentId = m.student_code || `SV-${m.user_id.slice(0, 5).toUpperCase()}`;
 
       // Calculated or default participation rate
       const participationRate = 88;
@@ -154,34 +154,16 @@ export async function POST(
 
     const adminSupabase = createAdminClient();
 
-    // 1. Verify class exists and check capacity limit
+    // 1. Verify class exists in organization
     const { data: cls, error: clsErr } = await adminSupabase
       .from('evaluator_classes')
-      .select('id, max_capacity')
+      .select('id')
       .eq('id', classId)
       .eq('organization_id', orgId)
       .single();
 
     if (clsErr || !cls) {
       return NextResponse.json({ error: 'Không tìm thấy lớp học' }, { status: 404 });
-    }
-
-    const { count: currentMemberCount } = await adminSupabase
-      .from('class_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('class_id', classId);
-
-    const maxCap = cls.max_capacity || 50;
-    const current = currentMemberCount || 0;
-    const remainingSlots = Math.max(0, maxCap - current);
-
-    if (parsed.data.members.length > remainingSlots) {
-      return NextResponse.json(
-        {
-          error: `Số lượng thành viên muốn thêm (${parsed.data.members.length}) vượt quá số chỗ trống còn lại (${remainingSlots} chỗ)`,
-        },
-        { status: 400 }
-      );
     }
 
     // 2. Insert member records

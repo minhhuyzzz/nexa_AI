@@ -16,12 +16,15 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
   Paperclip,
   Image as ImageIcon,
   Clock,
   ArrowRight,
   HelpCircle,
 } from 'lucide-react';
+import { ProctoringSummary } from '@/features/assessments/types/security.types';
 
 interface CriterionLevel {
   id: string;
@@ -91,7 +94,8 @@ interface CandidateSubmission {
   passingScore: number;
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'EVALUATED';
   gradingStatus?: string | null;
-  integrityFlag?: string | null;
+  integrityFlag?: 'HIGH_TRUST' | 'SUSPICIOUS' | 'FLAGGED' | string | null;
+  proctoringSummary?: ProctoringSummary | null;
   evaluatorNotes?: string | null;
   totalScore: number;
   maxScore: number;
@@ -631,30 +635,22 @@ function EvaluatorGradingContent() {
                   <div className="text-right">
                     <div className="text-slate-500 dark:text-neutral-400 text-[11px]">GIÁM SÁT THI (INTEGRITY)</div>
                     <div className="font-semibold flex items-center gap-1.5 justify-end">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS'
-                            ? 'bg-amber-500'
-                            : activeSubmission.integrityFlag === 'MULTIPLE_DEVICES'
-                            ? 'bg-rose-600'
-                            : 'bg-emerald-600'
-                        }`}
-                      />
-                      <span
-                        className={
-                          activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS'
-                            ? 'text-amber-700'
-                            : activeSubmission.integrityFlag === 'MULTIPLE_DEVICES'
-                            ? 'text-rose-700'
-                            : 'text-emerald-700'
-                        }
-                      >
-                        {activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS'
-                          ? 'Có sự kiện chuyển tab'
-                          : activeSubmission.integrityFlag === 'MULTIPLE_DEVICES'
-                          ? 'Đa thiết bị'
-                          : 'Bình thường'}
-                      </span>
+                      {activeSubmission.integrityFlag === 'FLAGGED' ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Cảnh báo vi phạm ({activeSubmission.proctoringSummary?.trustScore ?? 50}%)</span>
+                        </span>
+                      ) : activeSubmission.integrityFlag === 'SUSPICIOUS' || activeSubmission.integrityFlag === 'TAB_SWITCH_SUSPICIOUS' ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          <span>Cần xem xét ({activeSubmission.proctoringSummary?.trustScore ?? 75}%)</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>Độ tin cậy cao ({activeSubmission.proctoringSummary?.trustScore ?? 100}%)</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="h-8 w-px bg-slate-200" />

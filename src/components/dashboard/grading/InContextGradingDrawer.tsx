@@ -12,11 +12,14 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
   RefreshCw,
   Send,
   User,
   Paperclip,
 } from 'lucide-react';
+import { ProctoringSummary } from '@/features/assessments/types/security.types';
 
 export interface RubricLevelOption {
   id: string;
@@ -49,6 +52,7 @@ export interface InContextGradingSubmission {
   maxScore: number;
   feedback?: string;
   rubricCriteria: RubricCriterionItem[];
+  proctoringSummary?: ProctoringSummary | null;
 }
 
 interface InContextGradingDrawerProps {
@@ -209,6 +213,40 @@ export function InContextGradingDrawer({
               </div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 Bài thi: <span className="font-semibold text-slate-800">{submission.assignmentTitle}</span> &bull; Nhóm: {submission.groupName}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                {submission.proctoringSummary ? (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      submission.proctoringSummary.integrityFlag === 'FLAGGED'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                        : submission.proctoringSummary.integrityFlag === 'SUSPICIOUS'
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}
+                  >
+                    {submission.proctoringSummary.integrityFlag === 'FLAGGED' ? (
+                      <AlertTriangle className="w-3 h-3 text-rose-600" />
+                    ) : submission.proctoringSummary.integrityFlag === 'SUSPICIOUS' ? (
+                      <ShieldAlert className="w-3 h-3 text-amber-600" />
+                    ) : (
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    )}
+                    <span>
+                      {submission.proctoringSummary.integrityFlag === 'FLAGGED'
+                        ? 'Cảnh báo vi phạm'
+                        : submission.proctoringSummary.integrityFlag === 'SUSPICIOUS'
+                        ? 'Cần xem xét'
+                        : 'Độ tin cậy cao'}
+                    </span>
+                    <span className="font-mono font-bold">({submission.proctoringSummary.trustScore}%)</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+                    <ShieldCheck className="w-3 h-3 text-slate-400" />
+                    <span>Độ tin cậy: 100%</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -10,7 +10,6 @@ import {
   GraduationCap,
   Users,
   Settings,
-  Share2,
   Radio,
   FileCheck,
 } from 'lucide-react';
@@ -23,8 +22,7 @@ interface ClassHeaderProps {
   memberCount: number;
   evaluatorName?: string;
   role: 'EVALUATOR' | 'LEARNER';
-  isChatOpen: boolean;
-  onToggleChat: () => void;
+  isSettingsOpen?: boolean;
   onOpenSettings?: () => void;
 }
 
@@ -35,8 +33,7 @@ export function ClassHeader({
   memberCount,
   evaluatorName = 'Quản trị viên',
   role,
-  isChatOpen,
-  onToggleChat,
+  isSettingsOpen,
   onOpenSettings,
 }: ClassHeaderProps) {
   const [copied, setCopied] = useState(false);
@@ -50,7 +47,7 @@ export function ClassHeader({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       {/* Breadcrumb */}
       <div>
         <Link
@@ -62,11 +59,11 @@ export function ClassHeader({
         </Link>
       </div>
 
-      {/* Class Banner (Screen 4-8 header design) */}
+      {/* Class Banner */}
       <div className="p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div className="flex items-start sm:items-center gap-4">
           {/* Monogram Box */}
-          <div className="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xl shadow-sm shrink-0">
+          <div className="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xl shadow-sm shrink-0 select-none">
             {monogram}
           </div>
 
@@ -92,11 +89,23 @@ export function ClassHeader({
 
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-neutral-400 flex-wrap">
               <span className="font-mono">{memberCount} thành viên</span>
-              <span>&bull;</span>
-              <span>Quản trị viên: <strong className="text-neutral-800 dark:text-zinc-200">{evaluatorName}</strong></span>
+              {!isOwner && (
+                <>
+                  <span>&bull;</span>
+                  <span>
+                    Quản trị viên:{' '}
+                    <strong className="text-neutral-800 dark:text-zinc-200 font-semibold">
+                      {evaluatorName}
+                    </strong>
+                  </span>
+                </>
+              )}
               <span>&bull;</span>
               <span>
-                Mã lớp: <strong className="font-mono text-neutral-900 dark:text-neutral-100">{code}</strong>
+                Mã lớp:{' '}
+                <strong className="font-mono text-neutral-900 dark:text-neutral-100">
+                  {code}
+                </strong>
               </span>
             </div>
           </div>
@@ -148,27 +157,18 @@ export function ClassHeader({
             </Link>
           )}
 
-          {/* Toggle Chat Drawer Button */}
-          <button
-            type="button"
-            onClick={onToggleChat}
-            className={`px-3.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-              isChatOpen
-                ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300'
-                : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-750 text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Thảo luận ({isChatOpen ? 'Mở' : 'Đóng'})</span>
-          </button>
-
           {/* Owner Quick Settings */}
           {isOwner && onOpenSettings && (
             <button
               type="button"
               onClick={onOpenSettings}
-              className="p-2 rounded-xl border border-slate-200 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-600 dark:text-neutral-300 transition-colors cursor-pointer"
-              title="Cài đặt lớp học"
+              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                isSettingsOpen
+                  ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 shadow-2xs'
+                  : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-750 text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-850'
+              }`}
+              title={isSettingsOpen ? 'Đóng cài đặt lớp' : 'Cài đặt lớp học'}
+              aria-label="Cài đặt lớp học"
             >
               <Settings className="w-4 h-4" />
             </button>

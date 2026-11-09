@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
 
 /**
  * Khối Skeleton nguyên tử cơ bản với hiệu ứng nhịp thở (animate-pulse).

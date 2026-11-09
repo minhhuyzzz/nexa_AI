@@ -126,10 +126,10 @@ export default async function FrameworkPage() {
           </p>
           <div className="mt-4 flex items-center justify-center gap-3">
             <span className="text-xs px-2.5 py-1 rounded-md bg-white text-slate-800 border border-slate-200 shadow-xs">
-              MÃ KHUNG: {framework?.code || 'DIGCOMP_VN'}
+              MÃ KHUNG: {framework?.code || '5_DOMAINS_VN'}
             </span>
             <span className="text-xs px-2.5 py-1 rounded-md bg-white text-slate-800 border border-slate-200 shadow-xs">
-              PHIÊN BẢN: v{framework?.version || '3.0'}
+              PHIÊN BẢN: v{framework?.version || '1.0'}
             </span>
           </div>
         </div>
@@ -139,7 +139,8 @@ export default async function FrameworkPage() {
           {displayDomains.map((domain) => (
             <div
               key={domain.id}
-              className="rounded-md border border-slate-200 bg-white p-6 sm:p-7 shadow-xs"
+              id={`domain-${domain.code}`}
+              className="rounded-md border border-slate-200 bg-white p-6 sm:p-7 shadow-xs scroll-mt-24"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-2">
                 <div className="flex items-center gap-3">

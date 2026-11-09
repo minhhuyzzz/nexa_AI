@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getEffectiveUser } from '@/lib/auth/getEffectiveUser';
 import { z } from 'zod';
 
@@ -30,19 +31,20 @@ export async function POST(request: NextRequest) {
     // 1. Tìm lớp học theo mã class_code
     const { data: cls, error: findErr } = await supabase
       .from('evaluator_classes')
-      .select('id, name, class_code, evaluator_id')
+      .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
       .ilike('class_code', cleanCode)
       .single();
 
     if (findErr || !cls) {
       return NextResponse.json(
-        { error: `Không tìm thấy nhóm lớp với mã '${cleanCode}'` },
+        { error: `Không tìm thấy nhóm/lớp với mã '${cleanCode}'` },
         { status: 404 }
       );
     }
 
     // 2. Nếu người dùng chính là giảng viên tạo nhóm
-    if (cls.evaluator_id === currentUser.id) {
+    const isOwner = cls.evaluator_id === currentUser.id || cls.owner_user_id === currentUser.id;
+    if (isOwner) {
       return NextResponse.json({
         success: true,
         message: 'Bạn là người tạo nhóm này',
@@ -68,7 +70,61 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Thêm người dùng vào danh sách thành viên class_members
+    // 4. Nếu lớp thuộc về một tổ chức (Organization), tự động liên kết thành viên tránh mồ côi vai trò
+    let affiliatedOrgName: string | null = null;
+    if (cls.organization_id) {
+      try {
+        let adminClient: any = null;
+        try {
+          adminClient = createAdminClient();
+        } catch {
+          adminClient = supabase;
+        }
+        const db = adminClient || supabase;
+
+        if (typeof db.from === 'function') {
+          const { data: orgData } = await db
+            .from('organizations')
+            .select('id, name, status, max_seats')
+            .eq('id', cls.organization_id)
+            .maybeSingle?.() || await db.from('organizations').select('id, name, status, max_seats').eq('id', cls.organization_id).single?.();
+
+          if (orgData) {
+            affiliatedOrgName = orgData.name;
+            const uoQuery = db
+              .from('user_organizations')
+              .select('id, org_role, status')
+              .eq('user_id', currentUser.id)
+              .eq('organization_id', cls.organization_id);
+
+            const { data: userOrg } =
+              typeof uoQuery?.maybeSingle === 'function'
+                ? await uoQuery.maybeSingle()
+                : typeof uoQuery?.single === 'function'
+                ? await uoQuery.single()
+                : { data: null };
+
+            if (!userOrg && typeof db.from('user_organizations')?.upsert === 'function') {
+              await db
+                .from('user_organizations')
+                .upsert(
+                  {
+                    user_id: currentUser.id,
+                    organization_id: cls.organization_id,
+                    org_role: 'MEMBER',
+                    status: 'ACTIVE',
+                  },
+                  { onConflict: 'user_id, organization_id' }
+                );
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Lưu ý liên kết tổ chức:', e);
+      }
+    }
+
+    // 5. Thêm người dùng vào danh sách thành viên class_members
     const { error: insertErr } = await supabase
       .from('class_members')
       .insert({
@@ -83,10 +139,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const successMessage = affiliatedOrgName
+      ? `Đã tham gia lớp học '${cls.name}' thuộc ${affiliatedOrgName}!`
+      : `Đã tham gia nhóm thành công: ${cls.name}`;
+
     return NextResponse.json(
       {
         success: true,
-        message: `Đã tham gia nhóm thành công: ${cls.name}`,
+        message: successMessage,
         classId: cls.id,
         className: cls.name,
       },

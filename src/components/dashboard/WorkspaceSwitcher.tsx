@@ -11,6 +11,11 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { OrgInviteModal } from './org/OrgInviteModal';
+import {
+  normalizeOrgRole,
+  type StandardOrgRole,
+  type OrgRole as OrgRoleType,
+} from '@/lib/auth/org-roles';
 
 export interface OrganizationInfo {
   id: string;
@@ -21,12 +26,7 @@ export interface OrganizationInfo {
   status?: string;
 }
 
-export type OrgRoleType =
-  | 'ORG_OWNER'
-  | 'ORG_ADMIN'
-  | 'ASSESSOR'
-  | 'EVALUATOR'
-  | 'MEMBER';
+export type { OrgRoleType };
 
 export interface WorkspaceItem {
   membershipId: string;
@@ -34,11 +34,10 @@ export interface WorkspaceItem {
   organization: OrganizationInfo;
 }
 
-const ROLE_LABELS: Record<OrgRoleType, string> = {
+const ROLE_LABELS: Record<StandardOrgRole, string> = {
   ORG_OWNER: 'Chủ sở hữu',
   ORG_ADMIN: 'Quản trị viên',
   ASSESSOR: 'Khảo thí viên',
-  EVALUATOR: 'Khảo thí viên',
   MEMBER: 'Thành viên',
 };
 
@@ -75,10 +74,10 @@ export function WorkspaceSwitcher() {
         if (res.ok) {
           const data = await res.json();
           if (data.workspaces) {
-            // RBAC: MEMBER must NOT switch to Organization workspace.
-            // Only show organizations where user is ADMIN/OWNER or ASSESSOR.
+            // RBAC: Cho phép mọi vai trò tổ chức (kể cả MEMBER) xem và chuyển workspace
+            const manageableRoles: OrgRoleType[] = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
             const eligibleWorkspaces = (data.workspaces as WorkspaceItem[]).filter(
-              (w) => w.role !== 'MEMBER'
+              (w) => w.organization && w.organization.status !== 'DELETED' && manageableRoles.includes(w.role)
             );
             setWorkspaces(eligibleWorkspaces);
             setIsPlatformAdmin(!!data.isPlatformAdmin);
@@ -155,10 +154,18 @@ export function WorkspaceSwitcher() {
     }
   };
 
-  const activeWorkspace = workspaces.find((w) => w.organization.id === activeWorkspaceId.replace('org_', ''));
-  const isPersonal = pathname?.startsWith('/personal') || activeWorkspaceId === 'personal' || !activeWorkspace;
+  const routeOrgSlug = pathname?.startsWith('/org/') ? pathname.split('/')[2] : null;
+  const activeWorkspace = routeOrgSlug
+    ? workspaces.find((w) => w.organization.slug === routeOrgSlug)
+    : workspaces.find((w) => w.organization.id === activeWorkspaceId.replace('org_', ''));
+  const isOrg = pathname?.startsWith('/org/');
   const isAdmin = pathname?.startsWith('/admin') || activeWorkspaceId === 'admin';
+  const isPersonal = !isOrg && !pathname?.startsWith('/admin') && (pathname?.startsWith('/personal') || activeWorkspaceId === 'personal' || !activeWorkspace);
   const isOrgManager = !isPersonal && !isAdmin && (activeWorkspace?.role === 'ORG_OWNER' || activeWorkspace?.role === 'ORG_ADMIN');
+
+  const manageableRoles = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
+  const manageableWorkspaces = workspaces.filter((ws) => manageableRoles.includes(ws.role));
+  const memberWorkspaces = workspaces.filter((ws) => ws.role === 'MEMBER');
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -190,9 +197,14 @@ export function WorkspaceSwitcher() {
                 {personalPlan}
               </span>
             ) : !isAdmin && activeWorkspace ? (
-              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300">
-                BUSINESS
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300">
+                  BUSINESS
+                </span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 font-medium">
+                  {ROLE_LABELS[normalizeOrgRole(activeWorkspace.role)] || activeWorkspace.role}
+                </span>
+              </div>
             ) : null}
           </div>
         </div>
@@ -235,14 +247,18 @@ export function WorkspaceSwitcher() {
             </div>
           </button>
 
-          {/* Organizations Group */}
-          {workspaces.length > 0 && (
+          {/* Manageable Organizations Group */}
+          {manageableWorkspaces.length > 0 && (
             <div className="mt-1 pt-1">
               <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
                 Tổ chức / Trường học
               </div>
-              {workspaces.map((ws) => {
-                const isSelected = !isAdmin && (activeWorkspaceId === `org_${ws.organization.id}` || activeWorkspaceId === ws.organization.id);
+              {manageableWorkspaces.map((ws) => {
+                const isSelected = !isAdmin && !isPersonal && (
+                  routeOrgSlug
+                    ? ws.organization.slug === routeOrgSlug
+                    : (activeWorkspaceId === `org_${ws.organization.id}` || activeWorkspaceId === ws.organization.id)
+                );
                 return (
                   <button
                     key={ws.membershipId}
@@ -259,7 +275,7 @@ export function WorkspaceSwitcher() {
                         <span className="truncate">{ws.organization.name}</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-normal">
-                            {ROLE_LABELS[ws.role] || ws.role} · <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">BUSINESS</span>
+                            {ROLE_LABELS[normalizeOrgRole(ws.role)] || ws.role} · <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">BUSINESS</span>
                           </span>
                           {ws.organization.status === 'SUSPENDED' && (
                             <span className="px-1 py-0.2 rounded text-[9px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60">
@@ -273,6 +289,40 @@ export function WorkspaceSwitcher() {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* Member Organizations (Learner) - Direct to Personal Groups */}
+          {memberWorkspaces.length > 0 && (
+            <div className="mt-1 pt-1">
+              <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                Tổ chức tham gia (Học viên)
+              </div>
+              {memberWorkspaces.map((ws) => (
+                <button
+                  key={ws.membershipId}
+                  onClick={() => {
+                    setIsOpen(false);
+                    router.push('/personal/groups');
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs transition-colors hover:bg-slate-50 dark:hover:bg-zinc-900 text-neutral-800 dark:text-zinc-200 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded bg-slate-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                      <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex flex-col text-left truncate">
+                      <span className="truncate">{ws.organization.name}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-normal">
+                          Học viên • Vào nhóm học tại Cá nhân
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 -rotate-90 shrink-0" />
+                </button>
+              ))}
             </div>
           )}
 

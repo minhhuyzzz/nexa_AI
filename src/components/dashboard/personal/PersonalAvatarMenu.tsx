@@ -12,6 +12,7 @@ import {
   Moon,
   MessageSquare,
   ChevronRight,
+  Building2,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { FeedbackModal } from '../FeedbackModal';
@@ -167,6 +168,7 @@ export function PersonalAvatarMenu() {
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">
+
                 <Link
                   href="/personal/profile"
                   onClick={() => setIsOpen(false)}

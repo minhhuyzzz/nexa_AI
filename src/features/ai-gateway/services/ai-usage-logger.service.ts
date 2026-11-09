@@ -3,7 +3,15 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export interface AIUsageLogEntry {
   userId?: string | null;
   organizationId?: string | null;
-  feature: 'RUBRIC_GRADING' | 'COMPETENCY_ANALYSIS' | 'HEALTH_CHECK' | 'OTHER';
+  feature:
+    | 'RUBRIC_GRADING'
+    | 'COMPETENCY_ANALYSIS'
+    | 'AUTHORING_ASSIST'
+    | 'SIMILAR_QUESTION'
+    | 'EXPLAIN_OPTIONS'
+    | 'GENERATE_BY_DOMAIN'
+    | 'HEALTH_CHECK'
+    | 'OTHER';
   provider: 'GOOGLE_GEMINI' | 'OPENAI' | 'ANTHROPIC';
   model: string;
   promptTokens?: number;

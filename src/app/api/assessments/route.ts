@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
-export async function GET() {
+export async function GET(req?: Request) {
   try {
+    const url = req ? new URL(req.url) : null;
+    const orgId = url?.searchParams.get('orgId');
     const supabase = await createClient();
 
-    const { data: assessments, error } = await supabase
+    let query = supabase
       .from('assessments')
       .select(`
         id, 
@@ -36,18 +38,24 @@ export async function GET() {
           )
         )
       `)
-      .eq('is_published', true)
-      .is('organization_id', null)
-      .order('created_at', { ascending: false });
+      .eq('is_published', true);
+
+    if (orgId) {
+      query = query.or(`organization_id.is.null,organization_id.eq.${orgId}`);
+    } else {
+      query = query.is('organization_id', null);
+    }
+
+    const { data: assessments, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching assessments from Supabase:', error);
       return NextResponse.json({ error: 'Không thể tải danh sách bài khảo thí' }, { status: 500 });
     }
 
-    // Only serve official system assessments to learners (filter out personal, org assessments, and baseline diagnostic test)
-    // Baseline assessment is exclusively taken from the onboarding / dashboard banner
-    const publicSystemAssessments = (assessments || []).filter((a: any) => {
+    // Serve system assessments and (if orgId provided) organization bank assessments
+    const filteredAssessments = (assessments || []).filter((a: any) => {
+      if (orgId && a.organization_id === orgId) return true;
       if (a.organization_id) return false;
       if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
       if (a.is_system_baseline === true) return false;
@@ -55,7 +63,7 @@ export async function GET() {
       return true;
     });
 
-    const formatted = publicSystemAssessments.map((a) => {
+    const formatted = filteredAssessments.map((a) => {
       const items = Array.isArray(a.assessment_items) ? a.assessment_items : [];
       const questionCount = items.length;
 
@@ -110,6 +118,9 @@ export async function GET() {
         domainCodes,
         isVip: Boolean((a as any).is_vip || (a as any).access_tier === 'VIP'),
         accessTier: (a as any).access_tier || ((a as any).is_vip ? 'VIP' : 'FREE'),
+        organization_id: a.organization_id || null,
+        organizationId: a.organization_id || null,
+        isOrgBank: Boolean(a.organization_id),
       };
     });
 
@@ -194,7 +205,7 @@ export async function POST(request: Request) {
       .from('assessments')
       .insert({
         title: title.trim(),
-        description: description?.trim() || 'Bài khảo thí năng lực số DigComp.',
+        description: description?.trim() || 'Bài khảo thí 5 miền năng lực số.',
         duration_minutes: Number(duration_minutes),
         passing_score: Number(passing_score),
         point_reward: Number(point_reward),

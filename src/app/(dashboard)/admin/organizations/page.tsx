@@ -31,6 +31,7 @@ import {
 import { ActivateBusinessModal, BusinessInquiryTarget } from '@/components/dashboard/admin/ActivateBusinessModal';
 import { AdminPagination } from '@/components/dashboard/admin/AdminUIComponents';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CelebrationCanvas } from '@/components/ui/CelebrationCanvas';
 
 interface OrganizationItem {
   id: string;
@@ -132,6 +133,7 @@ export default function AdminOrganizationsPage() {
     orgSlug?: string;
   } | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
 
   // Fetch Inquiries
@@ -198,6 +200,12 @@ export default function AdminOrganizationsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gia hạn thất bại');
+      setShowCelebration(true);
+      setActionToast('Đã phê duyệt và gia hạn hợp đồng B2B thành công!');
+      setTimeout(() => {
+        setActionToast(null);
+        setShowCelebration(false);
+      }, 4000);
       await fetchRenewals();
       await fetchOrganizations();
     } catch (err) {
@@ -1252,6 +1260,7 @@ export default function AdminOrganizationsPage() {
 
             {createdResult ? (
               <div className="py-4 space-y-3.5 text-xs">
+                <CelebrationCanvas />
                 {createdResult.isDirectAssigned ? (
                   <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 space-y-2">
                     <div className="font-bold flex items-center gap-1.5 text-[13px]">
@@ -1267,8 +1276,9 @@ export default function AdminOrganizationsPage() {
                           ✓ Đã gửi email thông báo bổ nhiệm tới {newOrgOwnerEmail}.
                         </span>
                       ) : (
-                        <span className="text-amber-700 dark:text-amber-400">
-                          ℹ️ Chưa có RESEND_API_KEY (đã ghi log nội dung email ra terminal). Chủ sở hữu có thể đăng nhập ngay để vào workspace.
+                        <span className="text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+                          <span>Chưa có RESEND_API_KEY (đã ghi log nội dung email ra terminal). Chủ sở hữu có thể đăng nhập ngay để vào workspace.</span>
                         </span>
                       )}
                     </div>
@@ -1288,8 +1298,9 @@ export default function AdminOrganizationsPage() {
                           ✓ Đã gửi email mời mở tài khoản tới {newOrgOwnerEmail}.
                         </span>
                       ) : (
-                        <span className="text-amber-700 dark:text-amber-400">
-                          ℹ️ Chưa có RESEND_API_KEY. Hãy sao chép liên kết bên dưới để gửi cho Owner mở tài khoản:
+                        <span className="text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+                          <span>Chưa có RESEND_API_KEY. Hãy sao chép liên kết bên dưới để gửi cho Owner mở tài khoản:</span>
                         </span>
                       )}
                     </div>
@@ -1453,6 +1464,8 @@ export default function AdminOrganizationsPage() {
           </div>
         </div>
       )}
+      {/* Global Celebration Canvas */}
+      {showCelebration && <CelebrationCanvas onComplete={() => setShowCelebration(false)} />}
     </div>
   );
 }

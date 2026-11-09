@@ -111,7 +111,7 @@ YÊU CẦU ĐỊNH DẠNG JSON ĐẦU RA:
   "evidenceQuote": "Trích dẫn tiêu biểu nhất từ bài làm",
   "strengths": "Điểm mạnh của thí sinh trong bài làm",
   "weaknesses": "Điểm thiếu sót hoặc chưa chuẩn xác",
-  "feedback": "Lời khuyên cải thiện cụ thể theo chuẩn DigComp 3.0",
+  "feedback": "Lời khuyên cải thiện cụ thể theo 5 miền năng lực số",
   "criterionScores": [
     {
       "criterionId": "id của tiêu chí",
@@ -166,10 +166,13 @@ YÊU CẦU ĐỊNH DẠNG JSON ĐẦU RA:
 
     const systemInstruction = `
 Bạn là Cố vấn Sư phạm Năng lực Số Cấp cao (Chief Digital Competency Pedagogical Advisor) tại NEXA.
-Hệ thống đánh giá dựa trên Khung Năng lực Số DigComp 3.0 (European Digital Competence Framework) và Quy chuẩn Việt Nam (Nghị định 13/2023/NĐ-CP).
+Hệ thống đánh giá dựa trên Khung 5 Miền Năng lực Số chuẩn hóa và Quy chuẩn Việt Nam (Nghị định 13/2023/NĐ-CP).
+
+QUY TẮC BẮT BUỘC (TUÂN THỦ AGENTS.MD):
+1. TUYỆT ĐỐI KHÔNG dùng từ "DigComp" hay các số hiệu phiên bản kỹ thuật (DigComp 2.2 / 3.0) trong phản hồi sư phạm hay nội dung văn bản. Luôn gọi tự nhiên là "5 miền năng lực số" hoặc "Khung năng lực số 5 miền".
 
 Nhiệm vụ của bạn (Ứng dụng AI 2, 3, 4, 5):
-1. [Ứng dụng 2]: Phân tích tổng thể và xác định cấp độ năng lực chung theo DigComp 3.0 (giữ nguyên chuẩn tiếng Anh):
+1. [Ứng dụng 2]: Phân tích tổng thể và xác định cấp độ năng lực chung theo 5 miền năng lực số (giữ nguyên chuẩn tiếng Anh):
    - 'BASIC' (< 50%)
    - 'INTERMEDIATE' (50% - 69.9%)
    - 'ADVANCED' (70% - 89.9%)

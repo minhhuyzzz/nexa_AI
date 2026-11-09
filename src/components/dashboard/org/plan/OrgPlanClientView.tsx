@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { OrgEntitlementSummary } from '@/features/billing/services/quota-enforcement.service';
 import { BusinessRenewalModal } from './BusinessRenewalModal';
+import { UpgradeCelebrationModal } from '@/components/dashboard/UpgradeCelebrationModal';
 
 interface OrgPlanClientViewProps {
   organization: {
@@ -60,6 +61,7 @@ export function OrgPlanClientView({
   const router = useRouter();
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [pendingRenewal, setPendingRenewal] = useState(initialPending);
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
 
   const isActive = Boolean(entitlements.isActive);
   const isProvisioning = Boolean(entitlements.isProvisioning || entitlements.status === 'PROVISIONING');
@@ -101,6 +103,7 @@ export function OrgPlanClientView({
       period_months: 12,
       created_at: new Date().toISOString(),
     });
+    setShowCelebrationModal(true);
     router.refresh();
   };
 
@@ -405,6 +408,19 @@ export function OrgPlanClientView({
         currentExpiresAt={entitlements.expiresAt}
         currentSeats={maxSeats}
         onSuccess={handleRenewalSuccess}
+      />
+
+      {/* Modal Vinh danh & Chúc mừng nâng cấp / kích hoạt gói Business */}
+      <UpgradeCelebrationModal
+        isOpen={showCelebrationModal}
+        onClose={() => setShowCelebrationModal(false)}
+        type="ORG_BUSINESS"
+        planName={entitlements.planName || 'NEXA Business B2B'}
+        targetName={organization.name}
+        seats={maxSeats}
+        credits={creditsGranted}
+        primaryActionUrl={`/org/${organization.slug}`}
+        primaryActionLabel="Vào không gian tổ chức"
       />
     </div>
   );

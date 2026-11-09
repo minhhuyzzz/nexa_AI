@@ -178,18 +178,8 @@ export function SecuritySettingsCard({
             label="Cho phép gắn cờ câu hỏi xem lại"
             description="Cung cấp nút đánh dấu câu hỏi chưa chắc chắn để thí sinh quay lại kiểm tra trước khi nộp bài."
             icon={<Flag className="w-4 h-4" />}
-            checked={value.review_flag_palette}
+            checked={value.review_flag_palette ?? true}
             onChange={() => handleToggle('review_flag_palette')}
-            disabled={disabled}
-          />
-
-          {/* Làm bài tuần tự */}
-          <ToggleRow
-            label="Làm bài tuần tự từng câu"
-            description="Thí sinh chỉ được làm tuần tự từ câu đầu tới cuối; khi chuyển sang câu mới sẽ không thể quay lại câu trước."
-            icon={<ArrowRightCircle className="w-4 h-4" />}
-            checked={value.linear_progression}
-            onChange={() => handleToggle('linear_progression')}
             disabled={disabled}
           />
         </div>

@@ -22,7 +22,12 @@ import {
   ChevronRight,
   CalendarRange,
   Radio,
+  ClipboardCheck,
 } from 'lucide-react';
+import {
+  normalizeOrgRole,
+  type StandardOrgRole,
+} from '@/lib/auth/org-roles';
 
 interface OrgSidebarProps {
   orgSlug: string;
@@ -30,11 +35,10 @@ interface OrgSidebarProps {
   userRole?: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
+const ROLE_LABELS: Record<StandardOrgRole, string> = {
   ORG_OWNER: 'Chủ sở hữu',
   ORG_ADMIN: 'Quản trị viên',
   ASSESSOR: 'Khảo thí viên',
-  EVALUATOR: 'Khảo thí viên',
   MEMBER: 'Thành viên',
 };
 
@@ -54,17 +58,21 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   const pathname = usePathname();
   const [showFeedback, setShowFeedback] = useState(false);
 
-  const role = userRole.toUpperCase();
-  const isAssessor = role === 'ASSESSOR' || role === 'EVALUATOR';
-  const roleLabel = ROLE_LABELS[role] || (isAssessor ? 'Khảo thí viên' : 'Quản trị viên');
+  const normalizedRole = normalizeOrgRole(userRole);
+  const isOwner = normalizedRole === 'ORG_OWNER';
+  const isAdmin = normalizedRole === 'ORG_ADMIN';
+  const isAssessor = normalizedRole === 'ASSESSOR';
+  const isMember = normalizedRole === 'MEMBER';
+  const roleLabel = ROLE_LABELS[normalizedRole] || 'Quản trị viên';
 
   // Xác định xem người dùng có đang ở trong phân hệ Khảo thí không
   // Báo cáo năng lực (/analytics) nay đã thuộc Menu chính nên không còn kích hoạt Rail phụ.
   const isAssessmentRoute =
-    pathname.startsWith(`/org/${orgSlug}/assessments`) ||
-    pathname.startsWith(`/org/${orgSlug}/campaigns`) ||
-    pathname.startsWith(`/org/${orgSlug}/grading`) ||
-    pathname.startsWith(`/org/${orgSlug}/live-room`);
+    !isMember &&
+    (pathname.startsWith(`/org/${orgSlug}/assessments`) ||
+      pathname.startsWith(`/org/${orgSlug}/campaigns`) ||
+      pathname.startsWith(`/org/${orgSlug}/grading`) ||
+      pathname.startsWith(`/org/${orgSlug}/live-room`));
 
   // Khi vào phân hệ Khảo thí, Sidebar chính tự động chuyển thành Icon Rail (w-20)
   // Khi ở các trang khác, Sidebar chính mở rộng (w-64)
@@ -75,6 +83,8 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   }, [isAssessmentRoute]);
 
   // MENU CHÍNH (PRIMARY):
+  // [F21 Note]: Dead code for isMember pruned per F21 (MEMBER redirected to /personal/groups).
+  // Historical reference: label: 'CÁ NHÂN', name: 'Phòng thi trực tiếp', href: `/org/${orgSlug}/live-room`
   // Báo cáo năng lực số nằm ở Menu chính; Đánh giá năng lực dẫn vào phân hệ Khảo thí.
   const navGroups: NavGroup[] = [
     {
@@ -86,57 +96,66 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
           icon: Building2,
           exact: true,
         },
-        ...(!isAssessor
+            ...(isOwner || isAdmin
+              ? [
+                  {
+                    name: 'Thành viên',
+                    href: `/org/${orgSlug}/members`,
+                    icon: Users,
+                  },
+                ]
+              : []),
+            {
+              name: 'Nhóm & Đơn vị',
+              href: `/org/${orgSlug}/classes`,
+              icon: FolderKanban,
+            },
+            {
+              name: 'Báo cáo năng lực',
+              href: `/org/${orgSlug}/analytics`,
+              icon: BarChart2,
+            },
+          ],
+        },
+        {
+          label: 'KHẢO THÍ',
+          items: [
+            {
+              name: 'Đánh giá năng lực',
+              href: `/org/${orgSlug}/assessments`,
+              icon: CheckSquare,
+            },
+            ...(isAssessor
+              ? [
+                  {
+                    name: 'Chấm bài',
+                    href: `/org/${orgSlug}/grading`,
+                    icon: ClipboardCheck,
+                  },
+                ]
+              : []),
+          ],
+        },
+        ...(isOwner
           ? [
               {
-                name: 'Thành viên',
-                href: `/org/${orgSlug}/members`,
-                icon: Users,
+                label: 'TÀI KHOẢN TỔ CHỨC',
+                items: [
+                  {
+                    name: 'Gói sử dụng',
+                    href: `/org/${orgSlug}/plan`,
+                    icon: CreditCard,
+                  },
+                  {
+                    name: 'Cài đặt',
+                    href: `/org/${orgSlug}/settings`,
+                    icon: Settings,
+                  },
+                ],
               },
             ]
           : []),
-        {
-          name: 'Nhóm & Đơn vị',
-          href: `/org/${orgSlug}/classes`,
-          icon: FolderKanban,
-        },
-        {
-          name: 'Báo cáo năng lực',
-          href: `/org/${orgSlug}/analytics`,
-          icon: BarChart2,
-        },
-      ],
-    },
-    {
-      label: 'KHẢO THÍ',
-      items: [
-        {
-          name: 'Đánh giá năng lực',
-          href: `/org/${orgSlug}/assessments`,
-          icon: CheckSquare,
-        },
-      ],
-    },
-    ...(!isAssessor
-      ? [
-          {
-            label: 'TÀI KHOẢN TỔ CHỨC',
-            items: [
-              {
-                name: 'Gói sử dụng',
-                href: `/org/${orgSlug}/plan`,
-                icon: CreditCard,
-              },
-              {
-                name: 'Cài đặt',
-                href: `/org/${orgSlug}/settings`,
-                icon: Settings,
-              },
-            ],
-          },
-        ]
-      : []),
-  ];
+      ];
 
   const isPrimaryActive = (item: NavItem) => {
     if (item.exact) {
@@ -162,9 +181,13 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
       name: 'Hoạt động khảo thí',
       href: `/org/${orgSlug}/campaigns`,
       icon: CalendarRange,
-      isActive:
-        pathname.startsWith(`/org/${orgSlug}/campaigns`) ||
-        pathname.startsWith(`/org/${orgSlug}/grading`),
+      isActive: pathname.startsWith(`/org/${orgSlug}/campaigns`),
+    },
+    {
+      name: 'Chấm bài',
+      href: `/org/${orgSlug}/grading`,
+      icon: ClipboardCheck,
+      isActive: pathname.startsWith(`/org/${orgSlug}/grading`),
     },
     {
       name: 'Phòng thi trực tiếp',

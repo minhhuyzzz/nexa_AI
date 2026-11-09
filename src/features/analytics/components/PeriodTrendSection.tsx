@@ -75,7 +75,7 @@ export function PeriodTrendSection({ trend, hasEnoughTrendData }: PeriodTrendSec
               <span>Điểm trung bình</span>
             </span>
             <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-neutral-500">
-              <span className="w-2.5 h-0.5 border-t border-dashed border-slate-400" />
+              <svg className="w-3 h-1" viewBox="0 0 12 2"><line x1="0" y1="1" x2="12" y2="1" stroke="currentColor" strokeDasharray="2,2" strokeWidth="1.5" className="text-slate-400" /></svg>
               <span>Chuẩn đạt (70đ)</span>
             </span>
           </div>

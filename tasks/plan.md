@@ -1,92 +1,72 @@
-# Kế Hoạch Triển Khai: Chuẩn Hóa Văn Bản & Tối Ưu SEO Toàn Hệ Thống (SaaS Anti-Bloat Plan)
+# Kế Hoạch Triển Khai: Tái Cấu Trúc Không Gian Tổ Chức Tinh Gọn (Phương Án A) & Chuẩn Hóa Quản Trị Admin B2B
 
-## 1. Mục Tiêu & Nguyên Tắc Tinh Gọn (Core Principles)
+## 1. Mục Tiêu & Triết Lý Thiết Kế
+Loại bỏ triệt để bước trung gian thừa thãi của trang `/personal/organizations`. Thống nhất toàn bộ hoạt động học tập, lớp học và tổ chức của người học tại một nơi duy nhất: **"Lớp & Nhóm" (`/personal/groups`)**; đồng thời giải quyết triệt để lỗi phân quyền và kích hoạt tổ chức tại Dashboard Quản trị nền tảng (`/admin/organizations`).
 
-Hệ thống NEXA đang gặp phải vấn đề câu từ dài dòng, lạm dụng từ tiếng Anh trong ngoặc, các đoạn giải thích lý thuyết thừa thãi làm loãng trọng tâm thao tác và giảm hiệu quả SEO. Kế hoạch này áp dụng triệt để nguyên tắc **(A) Rút gọn triệt để theo chuẩn SaaS hiện đại**:
-
-### Bộ quy tắc chuẩn hóa văn bản (Copywriting Standards)
-1. **Tiêu đề (Headings):** Độ dài từ 3 đến 5 từ, trực diện, nhấn mạnh giá trị hoặc hành động chính.
-2. **Mô tả bổ trợ (Subtitles / Descriptions):** Tối đa đúng 1 câu ngắn gọn (< 15 từ). Nếu tiêu đề đã tự giải thích rõ ràng thì lược bỏ mô tả.
-3. **Nút bấm / Thao tác (CTAs):** Chỉ gồm 2–3 từ hành động mạnh (VD: "Bắt đầu thi", "Tạo đề mới", "Lưu thay đổi", "Giao bài").
-4. **Cấm tuyệt đối (Strict Ban):**
-   - Không dùng từ tiếng Anh trong ngoặc (VD: `(FREE)`, `(PRO)`, `(VIP)`, `(Tab-Switch Guard)`, `(Active Warning)`, `(Dynamic Watermark)`).
-   - Không hiển thị số hiệu học thuật (`DigComp`, `DigComp 2.2`, `DigComp 3.0`) ra ngoài UI. Chỉ dùng: *"5 miền năng lực số"* hoặc *"Khung năng lực số 5 miền"*.
-   - Không đánh số cơ học kiểu lập trình (`T1..T11`, `Nhóm 1`, `Nhóm 2`).
-   - Không dùng văn mẫu giải thích dông dài ("Đây là nơi người dùng có thể...", "Học viên sẽ có đúng thời gian này...").
-5. **Quy chuẩn giao diện `AGENTS.md`:**
-   - **Không sử dụng đường viền ngang** (`border-b`, `border-t`, `divide-y`, `<hr />`). Dùng spacing (`space-y-*`, `gap-*`) và màu nền lớp tương phản nhẹ.
-   - Nền sáng `#FFFFFF`, nền tối `#000000`, chữ than trung tính `#171717` / `#F5F5F5`, điểm nhấn Cobalt Blue `#2563EB`.
+### Nguyên tắc cốt lõi:
+1. **Zero Redundancy:** Chủ sở hữu / Quản trị viên quản lý trường trực tiếp tại `/org/[slug]` qua Menu Avatar. Học viên sinh hoạt 100% tại `/personal/groups` và `/personal/submissions`. Không tạo trang rác trung gian.
+2. **Không lỗi phân quyền:** Bảng `organizations`, `organization_invitations` và `user_organizations` trên Postgres hoạt động ổn định, Admin kích hoạt tổ chức trơn tru không bị popup lỗi.
+3. **Tuân thủ quy chuẩn `AGENTS.md`:** Không sử dụng đường viền ngang (`border-b`, `border-t`, `divide-y`, `<hr>`), nền trắng sáng `#FFFFFF` / đen sâu `#000000`, chữ than trung tính và màu nhấn Cobalt Blue `#2563EB`.
 
 ---
 
-## 2. Phân Tách Nhiệm Vụ Theo Vertical Slices
+## 2. Các Lát Cắt Triển Khai (Vertical Slices)
 
+```mermaid
+flowchart TD
+    subgraph Slice1["Slice 1: Dọn Dẹp Trang Thừa & Tinh Gọn Sidebar / Menu"]
+        S1A["Xóa mục Tổ chức của tôi trên PersonalSidebar"]
+        S1B["Xóa liên kết Tổ chức của tôi trong PersonalAvatarMenu"]
+        S1C["Chuyển hướng an toàn /personal/organizations về /personal/groups"]
+    end
+
+    subgraph Slice2["Slice 2: Tích Hợp Tổ Chức Vào Lớp & Nhóm (/personal/groups)"]
+        S2A["Bổ sung nút Tham gia tổ chức cạnh nút Tham gia bằng mã"]
+        S2B["Banner / Widget hiển thị Tổ chức trực thuộc tinh tế ở đầu trang"]
+        S2C["Hiển thị huy hiệu Trường rõ ràng trên các thẻ lớp học của trường"]
+    end
+
+    subgraph Slice3["Slice 3: Tinh Chỉnh Avatar Workspace Switcher Chuẩn Vai Trò"]
+        S3A["Admin/Owner/Assessor: Hiện rõ vai trò thực tế + Chuyển sang /org/slug"]
+        S3B["Member: Hiện nhãn Đang trực thuộc + Nút Tham gia tổ chức khác"]
+    end
+
+    subgraph Slice4["Slice 4: Kiểm Thử & Hoàn Thiện Luồng Admin B2B (/admin/organizations)"]
+        S4A["Sửa lỗi email HBK và kích hoạt tổ chức HUY cho Bồng Bình"]
+        S4B["Kiểm tra nút Kích hoạt / Duyệt hồ sơ hoạt động 100% không văng lỗi"]
+        S4C["Kiểm thử End-to-End toàn bộ hệ thống"]
+    end
+
+    Slice1 --> Slice2 --> Slice3 --> Slice4
 ```
-Toàn hệ thống NEXA
-  │
-  ├── Slice 1: SEO, Metadata & Trang Công Khai (Landing Page, Header, Footer, Auth)
-  │
-  ├── Slice 2: Không Gian Cá Nhân (Personal Dashboard, 5 Miền, Lộ Trình, Khảo Thí)
-  │
-  ├── Slice 3: Không Gian Tổ Chức (Organization Business Dashboard, Đề Thi, Lớp, Chấm Bài)
-  │
-  ├── Slice 4: Không Gian Quản Trị Nền Tảng (Platform Admin Baseline, Content, Users, Gói)
-  │
-  └── Slice 5: Kiểm Thử Toàn Diện & Đảm Bảo Tính Toàn Vẹn (QA & Verification)
-```
 
 ---
 
-### Slice 1: SEO, Metadata & Trang Công Khai (Landing Page, Footer, Auth)
-- **Task 1.1: Chuẩn hóa Root Metadata & SEO Tags (`src/app/layout.tsx`, `page.tsx`)**
-  - Cập nhật Title, Meta Description, Keywords, OpenGraph chuẩn SEO cho từ khóa: Đánh giá năng lực số, 5 miền năng lực số, khảo thí AI.
-- **Task 1.2: Tinh giản Hero Section (`src/components/landing/HeroSection.tsx`)**
-  - Rút gọn tiêu đề và mô tả chính thành 1 câu đắt giá.
-  - Bỏ `divide-y` (viền ngang mobile) ở thanh giá trị nổi bật.
-- **Task 1.3: Tinh giản Core Highlights (`src/components/landing/CoreHighlightsSection.tsx`)**
-  - Rút gọn 3 thẻ giá trị thành các câu ngắn gọn, súc tích.
-  - Bỏ `border-b` ở header mockup lộ trình.
-- **Task 1.4: Tinh giản Header & Footer (`PublicHeader.tsx`, `PublicFooter.tsx`, Auth Pages)**
-  - Tinh gọn nhãn điều hướng và mô tả chân trang.
+## 3. Chi Tiết Từng Lát Cắt
 
----
+### Slice 1: Dọn Dẹp Trang Thừa & Tinh Gọn Sidebar / Menu
+* **Mục tiêu:** Xóa bỏ sự xuất hiện của trang `/personal/organizations` khỏi Sidebar và Menu Avatar; chuyển hướng an toàn mọi truy cập về `/personal/groups`.
+* **Tệp can thiệp:**
+  - `src/components/dashboard/personal/PersonalSidebar.tsx`: Loại bỏ mục `Tổ chức của tôi`.
+  - `src/components/dashboard/personal/PersonalAvatarMenu.tsx`: Loại bỏ link `Tổ chức của tôi`.
+  - `src/app/(dashboard)/personal/organizations/page.tsx`: Redirect về `/personal/groups`.
 
-### Slice 2: Không Gian Cá Nhân (Personal Dashboard `/personal/*`)
-- **Task 2.1: Tinh giản Tổng quan Cá nhân (`src/app/(dashboard)/personal/dashboard/page.tsx`)**
-  - Bỏ `(PTS)` trên card điểm tích lũy, đổi `Level 1: Basic` thành tiếng Việt chuẩn.
-  - Rút gọn banner "Thiết lập Hồ sơ Năng lực Số Ban Đầu" và mô tả 4 thẻ chỉ số.
-  - Bỏ `border-b` trong các vùng phân cách.
-- **Task 2.2: Tinh giản Lộ trình Bồi dưỡng (`src/app/(dashboard)/personal/learning-path/page.tsx`)**
-  - Đổi tên các cấp độ `Basic`, `Intermediate`, `Advanced`, `Highly Advanced` thành `Cơ bản`, `Trung cấp`, `Nâng cao`, `Chuyên sâu`.
-  - Bỏ chữ `(PRO)` trong các nhãn trạng thái chặng học, đổi thành `ĐÃ MỞ`, `GÓI CHUYÊN SÂU`.
-  - Bỏ các viền ngang `border-b`.
-- **Task 2.3: Tinh giản Hồ sơ Năng lực & Kho Đề Cá nhân (`/personal/profile`, `/personal/assessments`)**
-  - Rút gọn mô tả các bài thi, loại bỏ nhãn tiếng Anh thừa.
+### Slice 2: Tích Hợp Quản Lý Tổ Chức Trực Thuộc Vào `personal/groups`
+* **Mục tiêu:** Tại trang "Lớp & Nhóm", học viên thấy được mình đang trực thuộc trường nào (nếu có), có nút "Tham gia trường / tổ chức" nhanh bằng modal tinh gọn, và các lớp học của trường được phân biệt rõ ràng.
+* **Tệp can thiệp:**
+  - `src/app/(dashboard)/personal/groups/page.tsx`:
+    - Thêm Banner thông tin trường trực thuộc (kèm nút Rời trường an toàn nếu muốn).
+    - Thêm nút mở `JoinOrgModal` ngay trên thanh công cụ đầu trang.
 
----
+### Slice 3: Tinh Chỉnh Menu Avatar Chuẩn Vai Trò
+* **Mục tiêu:** Menu Avatar phản ánh đúng bản chất quyền hạn:
+  - Chủ sở hữu / Quản trị viên / Khảo thí viên: chuyển sang `/org/[slug]` mượt mà.
+  - Thành viên: chỉ ở không gian cá nhân.
+* **Tệp can thiệp:**
+  - `src/components/dashboard/AvatarWorkspaceSection.tsx`.
 
-### Slice 3: Không Gian Tổ Chức (Organization Business `/org/[slug]/*`)
-- **Task 3.1: Tinh giản Tổng quan Tổ chức (`/org/[slug]/page.tsx`, `OrgTodoCenter.tsx`)**
-  - Tinh gọn KPI cards, tiêu đề việc cần xử lý.
-- **Task 3.2: Tinh giản Quản lý Đề & Đợt thi (`/org/[slug]/assessments`, `/campaigns`)**
-  - Chuẩn hóa text tiếng Việt cho các nút hành động, trạng thái đợt thi.
-- **Task 3.3: Tinh giản Quản lý Lớp & Bàn chấm bài (`/org/[slug]/classes`, `/grading`)**
-  - Tinh gọn hướng dẫn chấm bài, tiêu chuẩn rubric.
-
----
-
-### Slice 4: Không Gian Quản Trị Nền Tảng (Platform Admin `/admin/*`)
-- **Task 4.1: Tinh giản Khảo thí Đầu vào & Đề chuẩn (`/admin/baseline`, `/admin/content`)**
-  - Bỏ các nhãn `(PRO)`, `(VIP)` thừa, chuẩn hóa thành `Miễn phí` vs `Gói Chuyên sâu`.
-- **Task 4.2: Tinh giản Quản trị Gói & Tổ chức (`/admin/plans`, `/admin/organizations`, `/admin/users`)**
-  - Chuẩn hóa bảng phân quyền và gói dịch vụ.
-
----
-
-### Slice 5: Kiểm Thử Toàn Diện & Đảm Bảo Tính Toàn Vẹn
-- **Task 5.1: Chạy kiểm thử tự động `vitest`**
-  - Đảm bảo 100% test suites (117+ tests) đều pass.
-- **Task 5.2: Kiểm tra kiểu TypeScript `npm run typecheck`**
-  - Đảm bảo 0 lỗi TypeScript trên toàn bộ project.
-- **Task 5.3: Cập nhật Knowledge Graph `graphify update .`**
-  - Đồng bộ lại đồ thị mã nguồn sau khi hoàn tất chỉnh sửa.
+### Slice 4: Kích Hoạt & Kiểm Thử Toàn Diện Luồng Admin B2B
+* **Mục tiêu:** Đảm bảo Admin tại `/admin/organizations` bấm duyệt / kích hoạt tổ chức thành công, người đại diện nhận đúng quyền `ORG_OWNER` và truy cập được Dashboard tổ chức.
+* **Tệp can thiệp:**
+  - `src/app/api/admin/organizations/route.ts`
+  - Sửa email typo `minhhuy868762@gmai.com` -> `minhhuy868762@gmail.com` trong database.

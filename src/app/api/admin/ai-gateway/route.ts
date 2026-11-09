@@ -28,6 +28,7 @@ const updateAiConfigSchema = z.object({
     })
     .optional(),
   costBudgetMonthlyUsd: z.number().positive().optional(),
+  monthlyBudgetUsd: z.number().positive().optional(),
   rateLimitRpm: z.number().int().positive().optional(),
   strictPiiScrub: z.boolean().optional(),
   sessionTimeoutMinutes: z.number().int().positive().optional(),
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest | Request) {
     const adminSupabase = createAdminClient();
     const url = new URL(request.url);
     const period = url.searchParams.get('period') || '7d';
+    const flow = url.searchParams.get('flow') || 'all'; // 'all' | 'personal' | 'org'
 
     let fromDate: string | null = null;
     const now = Date.now();
@@ -64,6 +66,13 @@ export async function GET(request: NextRequest | Request) {
       query = query.gte('created_at', fromDate);
     } else {
       query = query.limit(500);
+    }
+
+    // F35: Strictly isolate telemetry by dashboard flow
+    if (flow === 'personal') {
+      query = query.is('organization_id', null);
+    } else if (flow === 'org') {
+      query = query.not('organization_id', 'is', null);
     }
 
     const { data: events, error } = await query;
@@ -111,24 +120,38 @@ export async function GET(request: NextRequest | Request) {
       allEvents.length > 0 ? Math.round((errorCount / allEvents.length) * 1000) / 10 : 0;
     const estimatedCostVnd = Math.round(totalCostUsd * 25400);
 
-    // AI Gateway Settings persistently from platform_settings table (AI-02)
+    // AI Gateway Settings persistently from platform_settings table (AI-02 / F34)
     const currentConfig = await AIConfigService.getConfigAsync(adminSupabase);
     const maskedApiKey = currentConfig.apiKey
       ? currentConfig.apiKey.length > 8
         ? currentConfig.apiKey.slice(0, 4) + '••••••••' + currentConfig.apiKey.slice(-4)
         : '••••••••'
       : '';
+    const monthlyBudgetUsd = currentConfig.costBudgetMonthlyUsd ?? 200;
 
     return NextResponse.json({
       success: true,
       period,
+      flow,
       sampleSize: allEvents.length,
       config: {
         provider: currentConfig.provider,
         defaultModel: currentConfig.defaultModel,
         maskedApiKey,
+        apiKeyMasked: maskedApiKey,
+        costBudgetMonthlyUsd: monthlyBudgetUsd,
+        monthlyBudgetUsd,
         flows: currentConfig.flows,
         updatedAt: currentConfig.updatedAt,
+      },
+      summary: {
+        totalRequests: allEvents.length,
+        totalTokens: totalPromptTokens + totalCompletionTokens,
+        estimatedCostUsd: Number(totalCostUsd.toFixed(4)),
+        estimatedCostVnd,
+        averageLatencyMs: avgLatency,
+        errorRatePercent,
+        budgetUsd: monthlyBudgetUsd,
       },
       stats: {
         totalRequests: allEvents.length,
@@ -144,7 +167,10 @@ export async function GET(request: NextRequest | Request) {
         models: modelCounts,
         features: featureCounts,
       },
-      recentEvents: allEvents.slice(0, 25),
+      recentEvents: allEvents.slice(0, 50).map((ev: any) => ({
+        ...ev,
+        flow: ev.organization_id ? 'org' : 'personal',
+      })),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
@@ -171,7 +197,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { provider, apiKey, defaultModel, flows } = validation.data;
+    const {
+      provider,
+      apiKey,
+      defaultModel,
+      flows,
+      costBudgetMonthlyUsd,
+      monthlyBudgetUsd: inputMonthlyBudget,
+    } = validation.data;
 
     if (provider && provider !== 'GOOGLE_GEMINI') {
       return NextResponse.json(
@@ -193,6 +226,11 @@ export async function POST(request: NextRequest) {
 
     if (apiKey && !apiKey.includes('••••')) {
       patchPayload.apiKey = apiKey.trim();
+    }
+
+    const effectiveBudget = costBudgetMonthlyUsd ?? inputMonthlyBudget;
+    if (effectiveBudget !== undefined) {
+      patchPayload.costBudgetMonthlyUsd = effectiveBudget;
     }
 
     if (flows) {
@@ -221,9 +259,17 @@ export async function POST(request: NextRequest) {
       details: {
         provider: updated.provider,
         defaultModel: updated.defaultModel,
+        costBudgetMonthlyUsd: updated.costBudgetMonthlyUsd,
         updatedAt: updated.updatedAt,
       },
     });
+
+    const maskedApiKey = updated.apiKey
+      ? updated.apiKey.length > 8
+        ? updated.apiKey.slice(0, 4) + '••••••••' + updated.apiKey.slice(-4)
+        : '••••••••'
+      : '';
+    const monthlyBudgetUsd = updated.costBudgetMonthlyUsd ?? 200;
 
     return NextResponse.json({
       success: true,
@@ -231,9 +277,10 @@ export async function POST(request: NextRequest) {
       config: {
         provider: updated.provider,
         defaultModel: updated.defaultModel,
-        maskedApiKey: updated.apiKey
-          ? updated.apiKey.slice(0, 4) + '••••••••' + updated.apiKey.slice(-4)
-          : '',
+        maskedApiKey,
+        apiKeyMasked: maskedApiKey,
+        costBudgetMonthlyUsd: monthlyBudgetUsd,
+        monthlyBudgetUsd,
         flows: updated.flows,
         updatedAt: updated.updatedAt,
       },

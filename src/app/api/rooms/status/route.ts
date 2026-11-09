@@ -45,6 +45,12 @@ export async function GET(request: Request) {
         started_at,
         ended_at,
         created_at,
+        organization_id,
+        organizations (
+          id,
+          slug,
+          name
+        ),
         assessments (
           id,
           title,
@@ -177,6 +183,10 @@ export async function GET(request: Request) {
       success: true,
       room: {
         id: room.id,
+        organizationId: room.organization_id || null,
+        organizationSlug: Array.isArray(room.organizations)
+          ? (room.organizations[0] as any)?.slug || null
+          : (room.organizations as any)?.slug || null,
         roomCode: room.room_code,
         title: room.title,
         assessmentId: room.assessment_id,

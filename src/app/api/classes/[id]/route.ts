@@ -29,6 +29,7 @@ export async function GET(
         name,
         class_code,
         description,
+        settings,
         created_at,
         class_members (
           id,
@@ -109,6 +110,36 @@ export async function GET(
       }
     }
 
+    // Fetch active live room for this class if any
+    let activeLiveRoom: any = null;
+    try {
+      const roomQuery = supabase
+        .from('live_rooms')
+        .select('id, room_code, title, status, duration_minutes, scheduled_start');
+
+      if (typeof (roomQuery as any)?.eq === 'function') {
+        let q = (roomQuery as any).eq('class_id', classId);
+        if (typeof q?.in === 'function') {
+          q = q.in('status', ['WAITING', 'IN_PROGRESS']);
+        }
+        if (typeof q?.order === 'function') {
+          q = q.order('created_at', { ascending: false });
+        }
+        if (typeof q?.limit === 'function') {
+          q = q.limit(1);
+        }
+        if (typeof q?.maybeSingle === 'function') {
+          const { data: roomData } = await q.maybeSingle();
+          activeLiveRoom = roomData;
+        } else if (typeof q?.single === 'function') {
+          const { data: roomData } = await q.single();
+          activeLiveRoom = roomData;
+        }
+      }
+    } catch {
+      // Non-blocking resilient query
+    }
+
     return NextResponse.json({
       group: {
         id: cls.id,
@@ -120,9 +151,19 @@ export async function GET(
         createdAt: cls.created_at,
         memberCount: members.length,
         assignmentCount: cls.class_assignments?.length || 0,
+        settings: cls.settings || { allow_member_posts: true },
         members,
         assignments: cls.class_assignments || [],
         submissions: realSubmissions,
+        activeLiveRoom: activeLiveRoom
+          ? {
+              id: activeLiveRoom.id,
+              roomCode: activeLiveRoom.room_code,
+              title: activeLiveRoom.title,
+              status: activeLiveRoom.status,
+              durationMinutes: activeLiveRoom.duration_minutes,
+            }
+          : null,
       },
     });
   } catch (err: unknown) {
@@ -171,6 +212,15 @@ export async function PATCH(
     if (body.regenerateCode === true) {
       const rand = Math.floor(1000 + Math.random() * 9000);
       updatePayload.class_code = `CLS-${rand}`;
+    }
+    if (typeof body.allowMemberPosts === 'boolean') {
+      const { data: currentCls } = await supabase
+        .from('evaluator_classes')
+        .select('settings')
+        .eq('id', classId)
+        .single();
+      const prevSettings = (currentCls?.settings as Record<string, any>) || {};
+      updatePayload.settings = { ...prevSettings, allow_member_posts: body.allowMemberPosts };
     }
 
     if (Object.keys(updatePayload).length === 0) {

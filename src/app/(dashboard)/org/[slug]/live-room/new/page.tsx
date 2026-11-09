@@ -10,7 +10,12 @@ export default async function OrgNewLiveRoomPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { organization: org } = await requireOrgPagePermission(slug, 'VIEW_WORKSPACE');
+  const { organization: org } = await requireOrgPagePermission(slug, [
+    'ORG_OWNER',
+    'ORG_ADMIN',
+    'ASSESSOR',
+    'EVALUATOR',
+  ]);
 
   return (
     <Suspense

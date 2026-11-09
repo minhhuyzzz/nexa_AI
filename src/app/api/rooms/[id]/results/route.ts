@@ -90,7 +90,7 @@ export async function GET(
       return NextResponse.json({ error: 'Không thể tải kết quả thí sinh' }, { status: 500 });
     }
 
-    // 3. User profiles
+    // 3. User profiles & Submissions for Proctoring / Trust Flags
     const userIds = (participants || []).map((p) => p.user_id);
     let profilesMap: Record<string, { full_name?: string; avatar_url?: string; student_code?: string }> = {};
 
@@ -102,6 +102,19 @@ export async function GET(
 
       if (profiles) {
         profilesMap = Object.fromEntries(profiles.map((pr) => [pr.id, pr]));
+      }
+    }
+
+    const submissionIds = (participants || []).map((p) => p.submission_id).filter(Boolean);
+    let submissionsMap: Record<string, any> = {};
+    if (submissionIds.length > 0) {
+      const { data: subs } = await supabase
+        .from('assessment_submissions')
+        .select('id, proctoring_summary')
+        .in('id', submissionIds);
+
+      if (subs) {
+        submissionsMap = Object.fromEntries(subs.map((s) => [s.id, s]));
       }
     }
 
@@ -136,6 +149,9 @@ export async function GET(
       // Candidate student code mockup or sequential
       const studentCode = `K48-${String(idx + 1).padStart(3, '0')}`;
 
+      const sub = p.submission_id ? submissionsMap[p.submission_id] : null;
+      const proctoringSummary = sub?.proctoring_summary || null;
+
       return {
         id: p.id,
         userId: p.user_id,
@@ -150,6 +166,7 @@ export async function GET(
         timeTakenDisplay,
         timeTakenSeconds,
         isOnTime,
+        proctoringSummary,
       };
     });
 

@@ -31,6 +31,32 @@ export async function GET(
       return NextResponse.json({ error: 'Bạn không thuộc nhóm này' }, { status: 403 });
     }
 
+    // 1. Fetch manager user IDs for accurate author badges
+    const { data: cls } = await supabase
+      .from('evaluator_classes')
+      .select('id, evaluator_id, owner_user_id, organization_id, instructor_id, settings')
+      .eq('id', classId)
+      .maybeSingle();
+
+    const managerIds = new Set<string>();
+    if (cls) {
+      if (cls.evaluator_id) managerIds.add(cls.evaluator_id);
+      if (cls.owner_user_id) managerIds.add(cls.owner_user_id);
+      if (cls.instructor_id) managerIds.add(cls.instructor_id);
+
+      if (cls.organization_id) {
+        const { data: orgAdmins } = await supabase
+          .from('user_organizations')
+          .select('user_id')
+          .eq('organization_id', cls.organization_id)
+          .in('org_role', ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'])
+          .eq('status', 'ACTIVE');
+
+        (orgAdmins || []).forEach((oa: any) => managerIds.add(oa.user_id));
+      }
+    }
+
+    // 2. Query class posts
     const { data: posts, error } = await supabase
       .from('class_posts')
       .select(`
@@ -75,7 +101,21 @@ export async function GET(
       return NextResponse.json({ error: 'Không thể tải bảng tin' }, { status: 500 });
     }
 
-    return NextResponse.json({ posts: posts || [] });
+    const enrichedPosts = (posts || []).map((p: any) => ({
+      ...p,
+      is_author_manager: managerIds.has(p.author_id),
+      replies: (p.replies || []).map((r: any) => ({
+        ...r,
+        is_author_manager: managerIds.has(r.author_id),
+      })),
+    }));
+
+    const allowMemberPosts = (cls?.settings as Record<string, any>)?.allow_member_posts !== false;
+
+    return NextResponse.json({
+      posts: enrichedPosts,
+      allowMemberPosts,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Lỗi máy chủ';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -98,6 +138,23 @@ export async function POST(
     const access = await verifyClassAccess(supabase, classId, currentUser.id, currentUser.role);
     if (!access.hasAccess) {
       return NextResponse.json({ error: 'Bạn không có quyền đăng bài vào nhóm này' }, { status: 403 });
+    }
+
+    // Check if member posts are allowed
+    if (!access.isEvaluator) {
+      const { data: cls } = await supabase
+        .from('evaluator_classes')
+        .select('settings')
+        .eq('id', classId)
+        .maybeSingle();
+
+      const allowMemberPosts = (cls?.settings as Record<string, any>)?.allow_member_posts !== false;
+      if (!allowMemberPosts) {
+        return NextResponse.json(
+          { error: 'Quản trị viên đã tắt tính năng đăng thảo luận cho thành viên trong lớp học này' },
+          { status: 403 }
+        );
+      }
     }
 
     const body: unknown = await req.json();
@@ -148,7 +205,14 @@ export async function POST(
       return NextResponse.json({ error: error?.message || 'Không thể đăng bài viết' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, post: { ...newPost, replies: [] } });
+    return NextResponse.json({
+      success: true,
+      post: {
+        ...newPost,
+        is_author_manager: access.isEvaluator,
+        replies: [],
+      },
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Lỗi máy chủ';
     return NextResponse.json({ error: message }, { status: 500 });

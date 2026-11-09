@@ -153,7 +153,7 @@ export class AssessmentValidator {
           questionIndex: qNum,
           questionPrompt: q.prompt,
           type: 'WARNING',
-          message: `Câu số ${qNum}: Chưa gắn mã kỹ năng DigComp (ví dụ: 1.1, 2.3).`,
+          message: `Câu số ${qNum}: Chưa gắn mã năng lực số thành phần (ví dụ: 1.1, 2.3).`,
         });
       } else {
         const domainPrefix = q.skill_code.trim().split('.')[0];

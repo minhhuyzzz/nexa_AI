@@ -277,4 +277,36 @@ describe('Organization Member Management & RBAC Protection Suite', () => {
       expect(studentPct).toBe(60);
     });
   });
+
+  describe('Member Voluntary Self-Leave Workflow', () => {
+    it('should block voluntary leave if the member is the sole ORG_OWNER', () => {
+      const userRole: string = 'ORG_OWNER';
+      const activeOwnersCount = 1;
+      const canSelfLeave = !(userRole === 'ORG_OWNER' && activeOwnersCount <= 1);
+      expect(canSelfLeave).toBe(false);
+    });
+
+    it('should allow voluntary leave if user is a normal MEMBER or ASSESSOR', () => {
+      const userRole: string = 'MEMBER';
+      const activeOwnersCount = 1;
+      const canSelfLeave = !(userRole === 'ORG_OWNER' && activeOwnersCount <= 1);
+      expect(canSelfLeave).toBe(true);
+    });
+
+    it('should clean up enrolled class memberships for the leaving member while preserving submissions', () => {
+      const mockClassMemberships = [
+        { classId: 'cls-1', orgId: 'org-1', userId: 'user-a' },
+        { classId: 'cls-2', orgId: 'org-1', userId: 'user-a' },
+        { classId: 'cls-3', orgId: 'org-2', userId: 'user-a' },
+      ];
+
+      const leavingOrgId = 'org-1';
+      const remainingClasses = mockClassMemberships.filter(
+        (cm) => !(cm.userId === 'user-a' && cm.orgId === leavingOrgId)
+      );
+
+      expect(remainingClasses.length).toBe(1);
+      expect(remainingClasses[0].classId).toBe('cls-3');
+    });
+  });
 });

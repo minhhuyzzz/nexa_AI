@@ -5,6 +5,7 @@ import { OrgSidebar } from '@/components/dashboard/org/OrgSidebar';
 import { OrgTopbar } from '@/components/dashboard/org/OrgTopbar';
 import { OrgSuspendedView } from '@/components/dashboard/org/OrgSuspendedView';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,18 +54,13 @@ export default async function OrgLayout({
     redirect('/personal/dashboard');
   }
 
-  const userRole = isSuperadmin ? 'ORG_ADMIN' : membership?.org_role || 'MEMBER';
+  const rawRole = isSuperadmin ? 'ORG_ADMIN' : membership?.org_role || 'MEMBER';
+  const userRole = isSuperadmin ? 'ORG_ADMIN' : normalizeOrgRole(rawRole);
 
-  // Strict Spec Rule: Org Workspace is strictly for ORG_OWNER, ORG_ADMIN, and ASSESSOR.
-  // Members must use Personal Workspace exclusively.
-  if (
-    !isSuperadmin &&
-    userRole !== 'ORG_OWNER' &&
-    userRole !== 'ORG_ADMIN' &&
-    userRole !== 'ASSESSOR' &&
-    userRole !== 'EVALUATOR'
-  ) {
-    redirect('/personal/dashboard');
+  // RBAC Rule: Org Workspace allows ORG_OWNER, ORG_ADMIN, ASSESSOR. MEMBER redirected to Personal.
+  const ALLOWED_ROLES = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
+  if (!isSuperadmin && !ALLOWED_ROLES.includes(userRole)) {
+    redirect('/personal/groups?notice=org_restricted');
   }
 
   // 3. Organization Suspension & Contract Renewal Check
@@ -84,10 +80,10 @@ export default async function OrgLayout({
   }
 
   return (
-    <div className="dashboard-shell min-h-screen flex bg-white text-slate-900 transition-colors">
+    <div className="dashboard-shell min-h-screen flex bg-white dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
       <OrgSidebar orgSlug={org.slug} orgName={org.name} userRole={userRole} />
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
-        <OrgTopbar orgName={org.name} orgSlug={org.slug} />
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-black">
+        <OrgTopbar orgName={org.name} orgSlug={org.slug} userRole={userRole} />
         <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
           {children}
         </main>

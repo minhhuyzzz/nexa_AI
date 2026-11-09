@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { calculateTrustScore, ProctoringViolationEvent, ViolationType } from '@/features/assessments/types/security.types';
 
 const proctoringEventSchema = z.object({
   roomId: z.string().uuid('Mã phòng thi không hợp lệ'),
@@ -61,28 +62,73 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Không thể ghi nhận sự kiện giám sát' }, { status: 500 });
     }
 
-    // 3. Check if tab switching threshold is crossed to flag submission integrity
-    if (submissionId && (eventType === 'TAB_HIDDEN' || eventType === 'FULLSCREEN_EXIT')) {
-      const { count } = await supabase
-        .from('proctoring_events')
-        .select('id', { count: 'exact', head: true })
-        .eq('submission_id', submissionId)
-        .in('event_type', ['TAB_HIDDEN', 'FULLSCREEN_EXIT']);
+    // 3. Chuẩn hóa tính toán Trust Score và cờ liêm chính theo Layer 8
+    let updatedTrustScore = 100;
+    let updatedIntegrityFlag: 'HIGH_TRUST' | 'SUSPICIOUS' | 'FLAGGED' = 'HIGH_TRUST';
 
-      if ((count || 0) >= 2) {
-        await supabase
-          .from('assessment_submissions')
-          .update({
-            integrity_flag: 'TAB_SWITCH_SUSPICIOUS',
-          })
-          .eq('id', submissionId);
-      }
+    if (submissionId) {
+      // Tải toàn bộ các sự kiện giám sát đã ghi nhận của bài nộp này
+      const { data: allEvents } = await supabase
+        .from('proctoring_events')
+        .select('id, event_type, severity, details, created_at')
+        .eq('submission_id', submissionId);
+
+      const mappedEvents: ProctoringViolationEvent[] = (allEvents || []).map((e) => {
+        let vType: ViolationType = 'TAB_SWITCH';
+        if (e.event_type === 'FULLSCREEN_EXIT') vType = 'FULLSCREEN_EXIT';
+        else if (e.event_type === 'DEVTOOLS_OPENED') vType = 'DEVTOOLS_ATTEMPT';
+        else if (e.event_type === 'COPY_ATTEMPT') vType = 'COPY_ATTEMPT';
+
+        const d = (e.details as Record<string, any>) || {};
+        return {
+          id: e.id,
+          type: vType,
+          timestamp: e.created_at,
+          durationSeconds: typeof d.durationSeconds === 'number' ? d.durationSeconds : undefined,
+          details: typeof d.message === 'string' ? d.message : undefined,
+        };
+      });
+
+      const { data: subData } = await supabase
+        .from('assessment_submissions')
+        .select('id, assessment_id, assessments ( security_settings )')
+        .eq('id', submissionId)
+        .single();
+
+      const rawAssessment = Array.isArray(subData?.assessments) ? subData?.assessments[0] : subData?.assessments;
+      const settings = (rawAssessment as any)?.security_settings || {};
+
+      const trustResult = calculateTrustScore(mappedEvents, settings);
+      updatedTrustScore = trustResult.trustScore;
+      updatedIntegrityFlag = trustResult.integrityFlag;
+
+      await supabase
+        .from('assessment_submissions')
+        .update({
+          integrity_flag: updatedIntegrityFlag,
+          proctoring_summary: {
+            trustScore: trustResult.trustScore,
+            integrityFlag: trustResult.integrityFlag,
+            totalViolations: mappedEvents.length,
+            tabSwitchesCount: trustResult.tabSwitchesCount,
+            fullscreenExitsCount: trustResult.fullscreenExitsCount,
+            copyAttemptsCount: trustResult.copyAttemptsCount,
+            devtoolsAttemptsCount: trustResult.devtoolsAttemptsCount,
+            totalTimeOutOfFocusSeconds: trustResult.totalTimeOutOfFocusSeconds,
+            events: mappedEvents,
+            activeWarningMode: settings.active_warning ?? true,
+            submittedAt: new Date().toISOString(),
+          },
+        })
+        .eq('id', submissionId);
     }
 
     return NextResponse.json({
       success: true,
       eventId: eventRecord.id,
       timestamp: eventRecord.created_at,
+      trustScore: updatedTrustScore,
+      integrityFlag: updatedIntegrityFlag,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

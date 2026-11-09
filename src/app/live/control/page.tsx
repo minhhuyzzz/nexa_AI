@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  ShieldAlert,
   X,
   Sparkles,
   BarChart2,
@@ -62,6 +63,9 @@ interface Participant {
   seatNumber?: number;
   answersCount?: number;
   totalQuestions?: number;
+  trustScore?: number;
+  integrityFlag?: 'HIGH_TRUST' | 'SUSPICIOUS' | 'FLAGGED';
+  violationsCount?: number;
 }
 
 interface RoomData {
@@ -83,6 +87,7 @@ interface RoomData {
   elapsedSeconds?: number;
   remainingSeconds?: number;
   organizationId?: string | null;
+  organizationSlug?: string | null;
   classId?: string | null;
   scheduledStart?: string | null;
   scheduledEnd?: string | null;
@@ -234,8 +239,11 @@ function LiveControlContent() {
               studentCode: p.studentCode || `HV-${String(idx + 1).padStart(3, '0')}`,
               seatNumber: idx + 1,
               elapsedSeconds: p.elapsedSeconds || (data.room.elapsedSeconds || 0),
-              answersCount: p.answersCount ?? p.answers_count ?? (p.status === 'SUBMITTED' ? totalQ : Math.floor(Math.random() * (totalQ / 2))),
+              answersCount: p.answersCount ?? p.answers_count ?? (p.status === 'SUBMITTED' ? totalQ : 0),
               totalQuestions: p.totalQuestions ?? p.total_questions ?? totalQ,
+              trustScore: p.trustScore ?? p.trust_score ?? 100,
+              integrityFlag: p.integrityFlag ?? p.integrity_flag ?? 'HIGH_TRUST',
+              violationsCount: p.violationsCount ?? p.violations_count ?? 0,
             };
           });
 
@@ -291,7 +299,7 @@ function LiveControlContent() {
   useEffect(() => {
     if (!roomId) return;
     const supabase = createClient();
-    const channel = supabase.channel(`room:${roomId}:control`);
+    const channel = supabase.channel(`room:${roomId}`);
 
     channel
       .on('broadcast', { event: 'PARTICIPANT_JOIN' }, (payload) => {
@@ -300,7 +308,7 @@ function LiveControlContent() {
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setRecentEvents((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             time: timeStr,
             text: `${pName} đã tham gia sảnh chờ.`,
             type: 'CONNECTION',
@@ -309,13 +317,33 @@ function LiveControlContent() {
         ]);
         fetchRoomState(true);
       })
+      .on('broadcast', { event: 'PARTICIPANT_READY' }, (payload) => {
+        const pName = payload.payload?.fullName || 'Thí sinh';
+        const isR = payload.payload?.isReady;
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        setRecentEvents((prev) => [
+          {
+            id: crypto.randomUUID(),
+            time: timeStr,
+            text: `${pName} đã ${isR ? 'sẵn sàng' : 'chuyển sang chưa sẵn sàng'}.`,
+            type: 'CONNECTION',
+          },
+          ...prev.slice(0, 19),
+        ]);
+        fetchRoomState(true);
+      })
+      .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, () => {
+        fetchRoomState(true);
+      })
       .on('broadcast', { event: 'TAB_SWITCH_ALERT' }, (payload) => {
         const pName = payload.payload?.fullName || 'Thí sinh';
+        const targetUserId = payload.payload?.userId;
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setAlerts((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             title: `${pName} rời tab làm bài`,
             detail: `${timeStr} • Mất tiêu điểm cửa sổ khảo thí`,
             time: timeStr,
@@ -325,20 +353,47 @@ function LiveControlContent() {
         ]);
         setRecentEvents((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             time: timeStr,
             text: `Kỷ luật: ${pName} đã chuyển tab hoặc rời màn hình làm bài.`,
             type: 'TAB',
           },
           ...prev.slice(0, 19),
         ]);
+
+        // Cập nhật ngay trạng thái Participant thời gian thực
+        setParticipants((prev) =>
+          prev.map((p) => {
+            if ((targetUserId && p.userId === targetUserId) || p.fullName === pName) {
+              const newViolationsCount = (p.violationsCount || 0) + 1;
+              const newTrustScore = Math.max(0, (p.trustScore ?? 100) - 10);
+              let newFlag: 'HIGH_TRUST' | 'SUSPICIOUS' | 'FLAGGED' = 'HIGH_TRUST';
+              if (newTrustScore < 60 || newViolationsCount >= 3) {
+                newFlag = 'FLAGGED';
+              } else if (newTrustScore < 85 || newViolationsCount >= 1) {
+                newFlag = 'SUSPICIOUS';
+              }
+              const updated = {
+                ...p,
+                violationsCount: newViolationsCount,
+                trustScore: newTrustScore,
+                integrityFlag: newFlag,
+              };
+              if (selectedCandidate?.id === p.id) {
+                setSelectedCandidate(updated);
+              }
+              return updated;
+            }
+            return p;
+          })
+        );
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, fetchRoomState]);
+  }, [roomId, fetchRoomState, selectedCandidate]);
 
   // Derived Real Counts
   const totalJoined = participants.length;
@@ -354,7 +409,11 @@ function LiveControlContent() {
       if (activeTab === 'TAKING' && p.status !== 'TAKING') return false;
       if (activeTab === 'SUBMITTED' && p.status !== 'SUBMITTED') return false;
       if (activeTab === 'VIOLATION') {
-        const hasViolation = alerts.some((a) => a.candidateName === p.fullName);
+        const hasViolation =
+          alerts.some((a) => a.candidateName === p.fullName) ||
+          p.integrityFlag === 'SUSPICIOUS' ||
+          p.integrityFlag === 'FLAGGED' ||
+          (p.violationsCount || 0) > 0;
         if (!hasViolation) return false;
       }
       if (searchFilter.trim()) {
@@ -415,6 +474,14 @@ function LiveControlContent() {
           });
         }
         setCountdownSeconds((Number(lobbyDuration) || 45) * 60);
+        try {
+          const supabase = createClient();
+          await supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'ROOM_STATE_CHANGE',
+            payload: { action: 'START' },
+          });
+        } catch {}
         fetchRoomState(true);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -493,6 +560,29 @@ function LiveControlContent() {
     }
   };
 
+  // 2.1 Action: Tạm dừng / Tiếp tục ca thi
+  const handleTogglePause = async () => {
+    const nextPaused = !isTimerPaused;
+    const action = nextPaused ? 'PAUSE' : 'RESUME';
+    setIsTimerPaused(nextPaused);
+    try {
+      await fetch('/api/evaluator/rooms', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, action }),
+      });
+      const supabase = createClient();
+      await supabase.channel(`room:${roomId}`).send({
+        type: 'broadcast',
+        event: 'ROOM_STATE_CHANGE',
+        payload: { action },
+      });
+      showToast(nextPaused ? 'Đã tạm dừng ca thi.' : 'Đã tiếp tục ca thi.');
+    } catch {
+      setIsTimerPaused(!nextPaused);
+    }
+  };
+
   // 3. Action: Kết thúc ca thi & Chuyển sang trang kết quả
   const handleEndExam = async () => {
     if (!confirm('Bạn có chắc chắn muốn kết thúc ca thi này và thu bài của tất cả thí sinh?')) return;
@@ -505,6 +595,14 @@ function LiveControlContent() {
         body: JSON.stringify({ roomId, action: 'END' }),
       });
       if (res.ok) {
+        try {
+          const supabase = createClient();
+          await supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'ROOM_STATE_CHANGE',
+            payload: { action: 'END' },
+          });
+        } catch {}
         router.push(`/personal/live-room/${roomId}/results`);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -519,12 +617,40 @@ function LiveControlContent() {
   const handleBulkSubmitAll = async () => {
     if (!confirm('Bạn có chắc chắn muốn thu bài của TẤT CẢ thí sinh đang làm bài không?')) return;
     showToast('Đang thu bài toàn bộ phòng thi...');
-    setParticipants((prev) => prev.map((p) => ({ ...p, status: 'SUBMITTED' })));
+    try {
+      const res = await fetch('/api/evaluator/rooms', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          action: 'FORCE_SUBMIT_ALL',
+        }),
+      });
+
+      if (res.ok) {
+        setParticipants((prev) => prev.map((p) => ({ ...p, status: 'SUBMITTED' })));
+        try {
+          const supabase = createClient();
+          await supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'ROOM_STATE_CHANGE',
+            payload: { action: 'FORCE_SUBMIT_ALL' },
+          });
+        } catch {}
+        showToast('Đã thu bài toàn bộ phòng thi thành công.');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Không thể thu bài toàn bộ phòng thi.');
+      }
+    } catch {
+      alert('Lỗi kết nối khi thu bài.');
+    }
+
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     setRecentEvents((prev) => [
       {
-        id: Math.random().toString(),
+        id: crypto.randomUUID(),
         time: timeStr,
         text: 'Giám thị đã phát lệnh thu bài đồng loạt toàn phòng.',
         type: 'SYSTEM',
@@ -539,7 +665,7 @@ function LiveControlContent() {
     setSendingAnnounce(true);
     try {
       const supabase = createClient();
-      await supabase.channel(`room:${roomId}:control`).send({
+      await supabase.channel(`room:${roomId}`).send({
         type: 'broadcast',
         event: 'PROCTOR_ANNOUNCEMENT',
         payload: { content: announcementText.trim(), timestamp: new Date().toISOString() },
@@ -549,7 +675,7 @@ function LiveControlContent() {
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       setRecentEvents((prev) => [
         {
-          id: Math.random().toString(),
+          id: crypto.randomUUID(),
           time: timeStr,
           text: `Thông báo: "${announcementText.trim()}"`,
           type: 'ANNOUNCEMENT',
@@ -567,14 +693,42 @@ function LiveControlContent() {
   };
 
   // 6. Action: Gia hạn thời gian
-  const handleExtendTimeMinutes = (mins: number) => {
-    setCountdownSeconds((sec) => sec + mins * 60);
-    showToast(`Đã gia hạn thêm ${mins} phút làm bài.`);
+  const handleExtendTimeMinutes = async (mins: number) => {
+    try {
+      const res = await fetch('/api/evaluator/rooms', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          action: 'EXTEND_TIME',
+          payload: { additionalMinutes: mins },
+        }),
+      });
+
+      if (res.ok) {
+        setCountdownSeconds((sec) => sec + mins * 60);
+        try {
+          const supabase = createClient();
+          await supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'ROOM_STATE_CHANGE',
+            payload: { action: 'EXTEND_TIME', payload: { additionalMinutes: mins } },
+          });
+        } catch {}
+        showToast(`Đã gia hạn thêm ${mins} phút làm bài.`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Không thể gia hạn thời gian làm bài.');
+      }
+    } catch {
+      alert('Lỗi kết nối khi gia hạn thời gian.');
+    }
+
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     setRecentEvents((prev) => [
       {
-        id: Math.random().toString(),
+        id: crypto.randomUUID(),
         time: timeStr,
         text: `Đã gia hạn thêm ${mins} phút làm bài cho toàn phòng.`,
         type: 'SYSTEM',
@@ -585,8 +739,22 @@ function LiveControlContent() {
   };
 
   // 7. Action: Thao tác cá nhân trên 1 thí sinh
-  const handleForceSubmitCandidate = (candidate: Participant) => {
+  const handleForceSubmitCandidate = async (candidate: Participant) => {
     if (!confirm(`Thu bài ngay của thí sinh "${candidate.fullName}"?`)) return;
+    try {
+      const supabase = createClient();
+      await supabase
+        .from('room_participants')
+        .update({ status: 'SUBMITTED', submitted_at: new Date().toISOString() })
+        .eq('id', candidate.id);
+
+      await supabase.channel(`room:${roomId}`).send({
+        type: 'broadcast',
+        event: 'ROOM_STATE_CHANGE',
+        payload: { action: 'FORCE_SUBMIT', targetUserId: candidate.userId },
+      });
+    } catch {}
+
     setParticipants((prev) =>
       prev.map((p) => (p.id === candidate.id ? { ...p, status: 'SUBMITTED' } : p))
     );
@@ -594,15 +762,30 @@ function LiveControlContent() {
     setSelectedCandidate(null);
   };
 
-  const handleWarnCandidate = (candidate: Participant) => {
+  const handleWarnCandidate = async (candidate: Participant) => {
     const msg = prompt(`Nhập lời nhắc nhở gửi riêng tới ${candidate.fullName}:`, 'Nhắc nhở: Vui lòng tập trung làm bài, không chuyển tab trình duyệt.');
     if (!msg) return;
+
+    try {
+      const supabase = createClient();
+      await supabase.channel(`room:${roomId}`).send({
+        type: 'broadcast',
+        event: 'PROCTOR_ANNOUNCEMENT',
+        payload: {
+          targetUserId: candidate.userId,
+          candidateName: candidate.fullName,
+          content: msg,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch {}
+
     showToast(`Đã gửi nhắc nhở riêng tới ${candidate.fullName}`);
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     setRecentEvents((prev) => [
       {
-        id: Math.random().toString(),
+        id: crypto.randomUUID(),
         time: timeStr,
         text: `Nhắc nhở riêng ${candidate.fullName}: "${msg}"`,
         type: 'ANNOUNCEMENT',
@@ -621,8 +804,11 @@ function LiveControlContent() {
     showToast(`Đã sao chép mã PIN: ${code}`);
   };
 
-  // Back Link
-  const backToListUrl = room?.organizationId ? `/org/live-room` : `/personal/live-room`;
+  // Back Link: Ưu tiên quay về Org Live Room nếu phòng thi thuộc tổ chức
+  const orgSlugParam = searchParams.get('slug') || searchParams.get('orgSlug') || room?.organizationSlug;
+  const backToListUrl = orgSlugParam
+    ? `/org/${orgSlugParam}/live-room`
+    : '/personal/live-room';
 
   if (loading && !room) {
     return (
@@ -1303,7 +1489,7 @@ function LiveControlContent() {
                   <span className="font-semibold uppercase tracking-wider font-mono">THỜI GIAN CÒN LẠI</span>
                   <button
                     type="button"
-                    onClick={() => setIsTimerPaused(!isTimerPaused)}
+                    onClick={handleTogglePause}
                     className="text-[11px] font-semibold text-blue-600 hover:underline inline-flex items-center gap-1 cursor-pointer"
                   >
                     {isTimerPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
@@ -1486,7 +1672,8 @@ function LiveControlContent() {
                       return (
                         <div
                           key={p.id}
-                          className={`p-3 rounded-xl border transition-all ${
+                          onClick={() => setSelectedCandidate(p)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer ${
                             isSelected
                               ? 'border-blue-600 bg-blue-50/20 dark:bg-blue-950/30 ring-1 ring-blue-600'
                               : 'border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/40 hover:border-slate-200'
@@ -1543,13 +1730,23 @@ function LiveControlContent() {
                             </div>
                           </div>
 
-                          {/* Quick Intervention Controls */}
+                          {/* Quick Intervention Controls & Trust Badge */}
                           <div className="mt-3 pt-2 flex items-center justify-between text-[11px]">
                             <div className="flex items-center gap-1.5">
-                              {hasAlert && (
-                                <span className="text-[10px] text-amber-600 font-semibold inline-flex items-center gap-0.5">
-                                  <AlertTriangle className="w-3 h-3" />
-                                  <span>Rời tab</span>
+                              {p.integrityFlag === 'FLAGGED' ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
+                                  <AlertTriangle className="w-3 h-3 text-rose-600" />
+                                  <span>Vi phạm ({p.trustScore ?? 100}%)</span>
+                                </span>
+                              ) : p.integrityFlag === 'SUSPICIOUS' ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50">
+                                  <ShieldAlert className="w-3 h-3 text-amber-600" />
+                                  <span>Nghi vấn ({p.trustScore ?? 100}%)</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                  <span>Tin cậy ({p.trustScore ?? 100}%)</span>
                                 </span>
                               )}
                             </div>
@@ -1557,7 +1754,10 @@ function LiveControlContent() {
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => handleWarnCandidate(p)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleWarnCandidate(p);
+                                }}
                                 className="px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-700 dark:text-neutral-300 font-semibold cursor-pointer"
                                 title="Gửi nhắc nhở riêng"
                               >
@@ -1567,7 +1767,10 @@ function LiveControlContent() {
                               {p.status === 'TAKING' && (
                                 <button
                                   type="button"
-                                  onClick={() => handleForceSubmitCandidate(p)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleForceSubmitCandidate(p);
+                                  }}
                                   className="px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-100 font-semibold cursor-pointer"
                                   title="Thu bài ngay lập tức"
                                 >
@@ -1979,6 +2182,116 @@ function LiveControlContent() {
                   Thêm
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Thanh tra chuyên sâu thí sinh & Cờ tin cậy */}
+      {selectedCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center">
+                  {selectedCandidate.initials}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                    {selectedCandidate.fullName}
+                  </h3>
+                  <div className="text-[11px] font-mono text-slate-500 dark:text-neutral-400">
+                    {selectedCandidate.studentCode} &bull; Vị trí ghế {selectedCandidate.seatNumber}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCandidate(null)}
+                className="text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 cursor-pointer"
+                aria-label="Đóng"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Trust Score & Integrity Banner */}
+            <div
+              className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                selectedCandidate.integrityFlag === 'FLAGGED'
+                  ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200'
+                  : selectedCandidate.integrityFlag === 'SUSPICIOUS'
+                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-200'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {selectedCandidate.integrityFlag === 'FLAGGED' ? (
+                  <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                ) : selectedCandidate.integrityFlag === 'SUSPICIOUS' ? (
+                  <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                ) : (
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                )}
+                <div>
+                  <div className="text-xs font-bold">
+                    {selectedCandidate.integrityFlag === 'FLAGGED'
+                      ? 'Cảnh báo vi phạm liêm chính'
+                      : selectedCandidate.integrityFlag === 'SUSPICIOUS'
+                      ? 'Cần theo dõi thêm'
+                      : 'Độ tin cậy cao'}
+                  </div>
+                  <div className="text-[10px] opacity-80">
+                    {selectedCandidate.violationsCount || 0} sự kiện bất thường ghi nhận
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-[10px] font-medium opacity-80">Trust Score</div>
+                <div className="font-mono font-bold text-lg leading-tight">
+                  {selectedCandidate.trustScore ?? 100}%
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-0.5">
+                <span className="text-[10px] text-slate-500">Trạng thái làm bài</span>
+                <div className="font-bold text-neutral-900 dark:text-neutral-100">
+                  {selectedCandidate.status === 'SUBMITTED' ? 'Đã nộp bài' : selectedCandidate.status === 'TAKING' ? 'Đang làm bài' : 'Chờ thi'}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-0.5">
+                <span className="text-[10px] text-slate-500">Tiến độ câu trả lời</span>
+                <div className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                  {selectedCandidate.answersCount || 0} / {selectedCandidate.totalQuestions || 40} câu
+                </div>
+              </div>
+            </div>
+
+            {/* Actions in modal */}
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleWarnCandidate(selectedCandidate)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 text-slate-700 dark:text-neutral-300 font-semibold text-xs cursor-pointer"
+              >
+                Nhắc nhở riêng
+              </button>
+              {selectedCandidate.status === 'TAKING' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleForceSubmitCandidate(selectedCandidate);
+                    setSelectedCandidate(null);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs cursor-pointer"
+                >
+                  Thu bài thí sinh
+                </button>
+              )}
             </div>
           </div>
         </div>

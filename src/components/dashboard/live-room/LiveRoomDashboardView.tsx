@@ -27,8 +27,11 @@ import {
   Layers,
   ArrowRight,
   MoreVertical,
+  Link2,
 } from 'lucide-react';
 import { RoomThemeId, ROOM_THEMES } from '@/types/live-room';
+import { createClient } from '@/lib/supabase/client';
+import { InlinePinEntryCard } from './InlinePinEntryCard';
 
 interface ExamRoomItem {
   id: string;
@@ -66,6 +69,7 @@ export interface LiveRoomDashboardViewProps {
   organizationId?: string;
   orgSlug?: string;
   classId?: string;
+  userRole?: string;
   title?: string;
   description?: string;
 }
@@ -74,14 +78,49 @@ export function LiveRoomDashboardView({
   organizationId,
   orgSlug,
   classId,
+  userRole,
   title = 'Phòng thi trực tiếp',
   description = 'Tổ chức và giám sát các phiên thi, phòng thi hoặc đánh giá trực tuyến theo thời gian thực.',
 }: LiveRoomDashboardViewProps) {
+  const [resolvedRole, setResolvedRole] = useState<string | undefined>(userRole);
+
+  useEffect(() => {
+    if (userRole) {
+      setResolvedRole(userRole);
+      return;
+    }
+    if (!organizationId && !orgSlug) return;
+    async function detectRole() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+        let query = supabase.from('user_organizations').select('org_role');
+        if (organizationId) {
+          query = query.eq('organization_id', organizationId);
+        }
+        const { data } = await query.eq('user_id', user.id).maybeSingle();
+        if (data?.org_role) {
+          setResolvedRole(data.org_role);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    detectRole();
+  }, [userRole, organizationId, orgSlug]);
+
+  const currentRole = userRole || resolvedRole;
+  const isMember = currentRole === 'MEMBER';
+
   const [rooms, setRooms] = useState<ExamRoomItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrModalRoom, setQrModalRoom] = useState<ExamRoomItem | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
 
   // Filters & Search
@@ -192,6 +231,14 @@ export function LiveRoomDashboardView({
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const handleCopyLink = (pin: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://nexa.edu.vn';
+    const link = `${origin}/live/waiting-room?pin=${pin}`;
+    navigator.clipboard.writeText(link);
+    setCopiedLink(pin);
+    setTimeout(() => setCopiedLink(null), 2000);
+  };
+
   const handleDeleteRoom = async (roomId: string, roomTitle: string) => {
     if (!confirm(`Bạn có chắc chắn muốn đóng và xóa phòng thi "${roomTitle}" không?`)) return;
 
@@ -286,13 +333,15 @@ export function LiveRoomDashboardView({
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.75} />
           </button>
 
-          <Link
-            href={createRoomUrl}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4" strokeWidth={2} />
-            <span>Tạo phòng thi</span>
-          </Link>
+          {!isMember && (
+            <Link
+              href={createRoomUrl}
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+            >
+              <Plus className="w-4 h-4" strokeWidth={2} />
+              <span>Tạo phòng thi</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -381,6 +430,9 @@ export function LiveRoomDashboardView({
           </div>
         </div>
       </div>
+
+      {/* Prominent PIN Entry for Candidates / Members */}
+      {isMember && <InlinePinEntryCard className="shadow-xs" />}
 
       {/* ============================================================ */}
       {/* 3. DYNAMIC STATUS TABS & TOOLBAR                             */}
@@ -611,6 +663,28 @@ export function LiveRoomDashboardView({
                                     <Copy className="w-3 h-3" />
                                   )}
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyLink(room.roomCode)}
+                                  className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                                  title="Sao chép link mời thi trực tiếp"
+                                >
+                                  {copiedLink === room.roomCode ? (
+                                    <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                  ) : (
+                                    <Link2 className="w-3 h-3" />
+                                  )}
+                                </button>
+                                {copiedLink === room.roomCode && (
+                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold animate-in fade-in duration-150">
+                                    Đã chép link!
+                                  </span>
+                                )}
+                                {copiedCode === room.roomCode && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold animate-in fade-in duration-150">
+                                    Đã chép PIN!
+                                  </span>
+                                )}
                                 {room.assessmentTitle && (
                                   <span className="text-[11px] text-slate-400 dark:text-neutral-500 truncate max-w-[140px]">
                                     &bull; {room.assessmentTitle}
@@ -663,51 +737,83 @@ export function LiveRoomDashboardView({
                           {/* Thao tác */}
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="inline-flex items-center gap-1.5 justify-end">
-                              {room.status === 'IN_PROGRESS' || (room.isActive && room.startedAt) ? (
-                                <Link
-                                  href={`/live/control?roomId=${room.id}`}
-                                  className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1 shadow-2xs transition-colors"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                  <span>Giám sát</span>
-                                </Link>
-                              ) : room.status === 'ENDED' || room.status === 'RESULTS_PUBLISHED' || !room.isActive ? (
-                                <Link
-                                  href={`/personal/live-room/${room.id}/results`}
-                                  className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
-                                >
-                                  <BarChart3 className="w-3 h-3" />
-                                  <span>Kết quả</span>
-                                </Link>
+                              {isMember ? (
+                                <>
+                                  {room.status === 'IN_PROGRESS' || (room.isActive && room.startedAt) ? (
+                                    <Link
+                                      href={`/live/waiting-room?pin=${room.roomCode}`}
+                                      className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1 shadow-2xs transition-colors"
+                                    >
+                                      <Play className="w-3 h-3 fill-current" />
+                                      <span>Vào thi</span>
+                                    </Link>
+                                  ) : room.status === 'ENDED' || room.status === 'RESULTS_PUBLISHED' || !room.isActive ? (
+                                    <Link
+                                      href={`/personal/live-room/${room.id}/results`}
+                                      className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+                                    >
+                                      <BarChart3 className="w-3 h-3" />
+                                      <span>Kết quả</span>
+                                    </Link>
+                                  ) : (
+                                    <Link
+                                      href={`/live/waiting-room?pin=${room.roomCode}`}
+                                      className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1 shadow-2xs transition-colors"
+                                    >
+                                      <Radio className="w-3 h-3" />
+                                      <span>Vào phòng chờ</span>
+                                    </Link>
+                                  )}
+                                </>
                               ) : (
-                                <Link
-                                  href={`/personal/live-room/${room.id}/host`}
-                                  className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
-                                >
-                                  <Play className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                                  <span>Chi tiết</span>
-                                </Link>
+                                <>
+                                  {room.status === 'IN_PROGRESS' || (room.isActive && room.startedAt) ? (
+                                    <Link
+                                      href={`/live/control?roomId=${room.id}`}
+                                      className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1 shadow-2xs transition-colors"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                      <span>Giám sát</span>
+                                    </Link>
+                                  ) : room.status === 'ENDED' || room.status === 'RESULTS_PUBLISHED' || !room.isActive ? (
+                                    <Link
+                                      href={`/personal/live-room/${room.id}/results`}
+                                      className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+                                    >
+                                      <BarChart3 className="w-3 h-3" />
+                                      <span>Kết quả</span>
+                                    </Link>
+                                  ) : (
+                                    <Link
+                                      href={`/personal/live-room/${room.id}/host`}
+                                      className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+                                    >
+                                      <Play className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                      <span>Chi tiết</span>
+                                    </Link>
+                                  )}
+
+                                  {/* QR Code button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setQrModalRoom(room)}
+                                    className="p-1 rounded-md border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                                    title="Chiếu mã QR tham gia"
+                                  >
+                                    <QrCode className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Delete button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteRoom(room.id, room.title)}
+                                    className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                                    title="Xóa phòng thi"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
                               )}
-
-                              {/* QR Code button */}
-                              <button
-                                type="button"
-                                onClick={() => setQrModalRoom(room)}
-                                className="p-1 rounded-md border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors cursor-pointer"
-                                title="Chiếu mã QR tham gia"
-                              >
-                                <QrCode className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Delete button */}
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteRoom(room.id, room.title)}
-                                className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                                title="Xóa phòng thi"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -767,67 +873,125 @@ export function LiveRoomDashboardView({
 
         {/* RIGHT COLUMN: ACTION DOCK & FEATURES (Matching Image 5) (4 Cols) */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Card 1: Hướng dẫn tạo phòng thi 3 bước */}
-          <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-              Tạo phòng thi trực tiếp
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mb-4 leading-relaxed">
-              Thi, kiểm tra hoặc đánh giá năng lực số trực tuyến chỉ với 3 bước đơn giản:
-            </p>
+          {/* Card 1: Hướng dẫn thí sinh (MEMBER) hoặc Hướng dẫn tạo phòng thi (Host/Admin) */}
+          {isMember ? (
+            <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
+              <div className="flex items-center gap-2 mb-1">
+                <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Quy chế phòng thi trực tiếp
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mb-4 leading-relaxed">
+                Hướng dẫn và quy tắc dành cho thí sinh tham gia phòng thi trực tuyến:
+              </p>
 
-            <div className="space-y-3.5 mb-5 text-xs">
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
-                  1
-                </span>
-                <div>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    Chọn loại phòng
-                  </div>
-                  <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
-                    Bài thi chuẩn hóa, kiểm tra lớp hoặc khảo sát.
+              <div className="space-y-3.5 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      Mã PIN 6 chữ số
+                    </div>
+                    <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
+                      Nhập mã PIN do giám thị cung cấp hoặc bấm trực tiếp vào phòng đang mở trong danh sách.
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
-                  2
-                </span>
-                <div>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    Cấu hình phiên
-                  </div>
-                  <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
-                    Thời gian, đề thi, giám sát và quy tắc thi.
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      Đúng giờ &amp; sẵn sàng
+                    </div>
+                    <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
+                      Có mặt tại phòng chờ trước giờ thi và bấm &quot;Sẵn sàng&quot; trước khi phiên thi bắt đầu.
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
-                  3
-                </span>
-                <div>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    Mở phòng &amp; chia sẻ
-                  </div>
-                  <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
-                    Tạo mã PIN 6 số và mời học viên tham gia.
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      Giám sát thời gian thực
+                    </div>
+                    <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
+                      Nghiêm túc làm bài, không chuyển tab; hệ thống tự động nộp bài khi hết giờ.
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs">
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                Tạo phòng thi trực tiếp
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mb-4 leading-relaxed">
+                Thi, kiểm tra hoặc đánh giá năng lực số trực tuyến chỉ với 3 bước đơn giản:
+              </p>
 
-            <Link
-              href={createRoomUrl}
-              className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Bắt đầu tạo phòng</span>
-            </Link>
-          </div>
+              <div className="space-y-3.5 mb-5 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      Chọn loại phòng
+                    </div>
+                    <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
+                      Bài thi chuẩn hóa, kiểm tra lớp hoặc khảo sát.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      Cấu hình phiên
+                    </div>
+                    <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
+                      Thời gian, đề thi, giám sát và quy tắc thi.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      Mở phòng &amp; chia sẻ
+                    </div>
+                    <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
+                      Tạo mã PIN 6 số và mời học viên tham gia.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href={createRoomUrl}
+                className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Bắt đầu tạo phòng</span>
+              </Link>
+            </div>
+          )}
 
           {/* Card 2: Tính năng nổi bật (Matching Image 5) */}
           <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-4">
@@ -926,8 +1090,8 @@ export function LiveRoomDashboardView({
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
                 typeof window !== 'undefined'
-                  ? `${window.location.origin}/personal/live-pin?pin=${qrModalRoom.roomCode}`
-                  : `https://nexa.edu.vn/personal/live-pin?pin=${qrModalRoom.roomCode}`
+                  ? `${window.location.origin}/live/waiting-room?pin=${qrModalRoom.roomCode}`
+                  : `https://nexa.edu.vn/live/waiting-room?pin=${qrModalRoom.roomCode}`
               )}`}
               alt="QR Code Phòng Thi"
               width={200}
@@ -945,16 +1109,36 @@ export function LiveRoomDashboardView({
             </div>
 
             <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-              Thí sinh mở camera quét mã QR hoặc truy cập <strong>/personal/live-pin</strong> và nhập 6 số trên.
+              Thí sinh quét mã QR hoặc truy cập đường link để vào phòng chờ thi trực tiếp.
             </p>
 
-            <button
-              type="button"
-              onClick={() => setQrModalRoom(null)}
-              className="w-full py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-            >
-              Đóng
-            </button>
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handleCopyLink(qrModalRoom.roomCode)}
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              >
+                {copiedLink === qrModalRoom.roomCode ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Đã sao chép link mời thi!</span>
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>Sao chép liên kết mời thi</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setQrModalRoom(null)}
+                className="w-full py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

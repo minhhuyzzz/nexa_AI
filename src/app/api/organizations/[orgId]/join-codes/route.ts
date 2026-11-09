@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,7 +65,9 @@ async function checkOrgManager(user: { id: string; email?: string }, resolvedOrg
     .eq('status', 'ACTIVE')
     .single();
 
-  return Boolean(member && ['ORG_OWNER', 'ORG_ADMIN', 'EVALUATOR'].includes(member.org_role));
+  // Allowed manager roles: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR']
+  const norm = normalizeOrgRole(member?.org_role);
+  return Boolean(norm === 'ORG_OWNER' || norm === 'ORG_ADMIN' || norm === 'ASSESSOR');
 }
 
 /**
@@ -196,24 +199,12 @@ export async function POST(
     const origin = request.nextUrl.origin || 'http://localhost:3000';
     const joinUrl = `${origin}/join/org/${randomCode}`;
 
-    if (insertError) {
-      // Fallback return if RLS or DB schema hiccup
-      return NextResponse.json({
-        success: true,
-        message: 'Đã tạo mã tham gia thành công',
-        joinCode: {
-          id: `code-${Date.now()}`,
-          organization_id: resolvedOrgId,
-          code: randomCode,
-          title: title || 'Mã tham gia học viên',
-          max_uses: maxUses,
-          used_count: 0,
-          expires_at: expiresAt.toISOString(),
-          is_revoked: false,
-          created_by: user.id,
-          joinUrl,
-        },
-      });
+    if (insertError || !newCode) {
+      console.error('[JOIN_CODE_INSERT_ERROR]', insertError);
+      return NextResponse.json(
+        { error: 'Không thể lưu mã tham gia vào cơ sở dữ liệu', details: insertError?.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

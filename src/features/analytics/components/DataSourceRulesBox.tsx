@@ -42,7 +42,7 @@ export function DataSourceRulesBox() {
           </div>
 
           {/* Divider */}
-          <div className="hidden xl:block h-6 w-px bg-slate-200" />
+          <div className="hidden xl:block h-6 w-px bg-slate-200 dark:bg-zinc-800" />
 
           {/* Group 2: Báo cáo riêng */}
           <div className="flex items-center gap-2 flex-wrap">

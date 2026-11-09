@@ -99,6 +99,16 @@ export function AuthoringEditorTwoPane({
   const [publishPassingScore, setPublishPassingScore] = useState(70);
   const [publishIsVip, setPublishIsVip] = useState(false);
 
+  // AI & Quick Duration States (Quizizz UX Model)
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiActionType, setAiActionType] = useState<string | null>(null);
+  const [aiActionMessage, setAiActionMessage] = useState<string | null>(null);
+  const [isDurationPopoverOpen, setIsDurationPopoverOpen] = useState(false);
+  const [customMinutesInput, setCustomMinutesInput] = useState<string>('45');
+  const durationPopoverRef = useRef<HTMLDivElement>(null);
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+  const [isPublishSuccessOpen, setIsPublishSuccessOpen] = useState(false);
+
   // Polymorphic Modal States
   const [modalTab, setModalTab] = useState<'GENERAL' | 'SECURITY'>('GENERAL');
   const [orgScope, setOrgScope] = useState<'ORG_WIDE' | 'ASSIGNED_CLASSES' | 'ACCESS_PIN'>('ORG_WIDE');
@@ -138,7 +148,10 @@ export function AuthoringEditorTwoPane({
 
         if (asmError || !asm) throw new Error('Không tìm thấy đề đánh giá');
 
-        if (asm.duration_minutes) setPublishDuration(asm.duration_minutes);
+        if (asm.duration_minutes) {
+          setPublishDuration(asm.duration_minutes);
+          setCustomMinutesInput(asm.duration_minutes.toString());
+        }
         if (asm.passing_score) setPublishPassingScore(asm.passing_score);
         if (asm.is_vip !== undefined) setPublishIsVip(asm.is_vip);
         if (asm.security_settings) setSecuritySettings(asm.security_settings);
@@ -226,10 +239,10 @@ export function AuthoringEditorTwoPane({
                   ? options.length > 0
                     ? options
                     : [
-                        { id: 'opt-1', text: 'Phương án A', isCorrect: true },
-                        { id: 'opt-2', text: 'Phương án B', isCorrect: false },
-                        { id: 'opt-3', text: 'Phương án C', isCorrect: false },
-                        { id: 'opt-4', text: 'Phương án D', isCorrect: false },
+                        { id: 'opt-1', text: '', isCorrect: true },
+                        { id: 'opt-2', text: '', isCorrect: false },
+                        { id: 'opt-3', text: '', isCorrect: false },
+                        { id: 'opt-4', text: '', isCorrect: false },
                       ]
                   : undefined,
             };
@@ -295,6 +308,66 @@ export function AuthoringEditorTwoPane({
     [assessmentId]
   );
 
+  // Quick Duration change & Auto-save (F23 & F24 Quizizz Model)
+  const handleQuickDurationChange = useCallback(
+    async (newDuration: number) => {
+      const validDuration = Math.max(5, Math.min(300, Math.round(newDuration)));
+      setPublishDuration(validDuration);
+      setCustomMinutesInput(validDuration.toString());
+      setAssessment((prev) => (prev ? { ...prev, durationMinutes: validDuration } : null));
+
+      try {
+        const res = await fetch(`/api/personal/assessments/${assessmentId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ duration_minutes: validDuration }),
+        });
+
+        if (res.ok) {
+          const d = new Date();
+          const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d
+            .getMinutes()
+            .toString()
+            .padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+          setLastSavedTime(timeStr);
+        }
+      } catch {
+        // Keep state; user can continue or retry
+      }
+    },
+    [assessmentId]
+  );
+
+  const handleSelectPresetDuration = (mins: number) => {
+    handleQuickDurationChange(mins);
+    setIsDurationPopoverOpen(false);
+  };
+
+  const handleApplyCustomDuration = () => {
+    const val = parseInt(customMinutesInput, 10);
+    if (!isNaN(val) && val >= 5 && val <= 300) {
+      handleQuickDurationChange(val);
+      setIsDurationPopoverOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        durationPopoverRef.current &&
+        !durationPopoverRef.current.contains(event.target as Node)
+      ) {
+        setIsDurationPopoverOpen(false);
+      }
+    }
+    if (isDurationPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDurationPopoverOpen]);
+
   // Manual Auto-balance handler: distributes 100 points evenly across all questions
   const handleAutoBalance = () => {
     if (questions.length === 0) return;
@@ -316,21 +389,17 @@ export function AuthoringEditorTwoPane({
     const newQ: AuthoringQuestionItem = {
       id: `q-${Date.now()}`,
       type: isPractical ? 'PRACTICAL' : 'MCQ',
-      prompt: isPractical
-        ? 'Nhiệm vụ thực hành / Tự luận...'
-        : 'Nhập câu hỏi trắc nghiệm mới...',
+      prompt: '',
       points: defaultPts,
       domainCode: '01',
       allowedSubmissionModes: isPractical ? ['TEXT', 'FILE', 'URL'] : undefined,
-      practicalGuide: isPractical
-        ? 'Tiêu chuẩn đánh giá: Kiểm tra tính đúng đắn, đầy đủ và minh chứng nộp bài.'
-        : undefined,
+      practicalGuide: '',
       options: !isPractical
         ? [
-            { id: `opt-${Date.now()}-1`, text: 'Phương án A', isCorrect: true },
-            { id: `opt-${Date.now()}-2`, text: 'Phương án B', isCorrect: false },
-            { id: `opt-${Date.now()}-3`, text: 'Phương án C', isCorrect: false },
-            { id: `opt-${Date.now()}-4`, text: 'Phương án D', isCorrect: false },
+            { id: `opt-${Date.now()}-1`, text: '', isCorrect: true },
+            { id: `opt-${Date.now()}-2`, text: '', isCorrect: false },
+            { id: `opt-${Date.now()}-3`, text: '', isCorrect: false },
+            { id: `opt-${Date.now()}-4`, text: '', isCorrect: false },
           ]
         : undefined,
     };
@@ -412,7 +481,7 @@ export function AuthoringEditorTwoPane({
     const currentOpts = currentQ.options || [];
     const newOption: MCQOption = {
       id: `opt-${Date.now()}`,
-      text: `Phương án mới ${String.fromCharCode(65 + currentOpts.length)}`,
+      text: '',
       isCorrect: false,
     };
     updateCurrentQuestion({ options: [...currentOpts, newOption] });
@@ -446,50 +515,215 @@ export function AuthoringEditorTwoPane({
     updateCurrentQuestion({ options: updated });
   };
 
-  // Publish / Unpublish handler
+  // AI Action Handlers (Quizizz Model & 8-Layer Architecture)
+  const handleAiGenerateSimilar = async () => {
+    if (!currentQ) return;
+    setIsAiLoading(true);
+    setAiActionType('SIMILAR_QUESTION');
+    setAiActionMessage('AI đang phân tích và biên soạn câu hỏi tương tự...');
+
+    try {
+      const res = await fetch('/api/ai/authoring-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'SIMILAR_QUESTION',
+          currentQuestion: {
+            prompt: currentQ.prompt,
+            domainCode: currentQ.domainCode,
+            domainTitle: currentQ.domainTitle,
+            options: currentQ.options?.map((o) => ({
+              id: o.id,
+              text: o.text,
+              isCorrect: o.isCorrect,
+            })),
+          },
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'AI sinh câu hỏi thất bại');
+
+      const data = json.data;
+      if (data && data.prompt) {
+        const newQ: AuthoringQuestionItem = {
+          id: `q-ai-${Date.now()}`,
+          type: 'MCQ',
+          prompt: data.prompt,
+          points: data.points || 10,
+          domainCode: data.domainCode || currentQ.domainCode || '01',
+          domainTitle: data.domainTitle || currentQ.domainTitle,
+          options: Array.isArray(data.options)
+            ? data.options.map((opt: any, idx: number) => ({
+                id: `opt-ai-${Date.now()}-${idx}`,
+                text: opt.text || `Phương án ${idx + 1}`,
+                isCorrect: Boolean(opt.isCorrect),
+                explanation: opt.explanation,
+              }))
+            : [
+                { id: `opt-1`, text: 'Phương án A', isCorrect: true },
+                { id: `opt-2`, text: 'Phương án B', isCorrect: false },
+              ],
+        };
+
+        setQuestions((prev) => {
+          const updated = [...prev, newQ];
+          saveChanges(updated);
+          return updated;
+        });
+        setSelectedIndex(questions.length);
+        setAiActionMessage('Đã thêm 1 câu hỏi tương tự thành công!');
+        setTimeout(() => setAiActionMessage(null), 3000);
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Có lỗi khi gọi AI');
+    } finally {
+      setIsAiLoading(false);
+      setAiActionType(null);
+    }
+  };
+
+  const handleAiGenerateExplanations = async () => {
+    if (!currentQ || !currentQ.options?.length) return;
+    setIsAiLoading(true);
+    setAiActionType('EXPLAIN_OPTIONS');
+    setAiActionMessage('AI đang viết lời giải thích sư phạm cho từng phương án...');
+
+    try {
+      const res = await fetch('/api/ai/authoring-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'EXPLAIN_OPTIONS',
+          currentQuestion: {
+            prompt: currentQ.prompt,
+            domainCode: currentQ.domainCode,
+            domainTitle: currentQ.domainTitle,
+            options: currentQ.options?.map((o) => ({
+              id: o.id,
+              text: o.text,
+              isCorrect: o.isCorrect,
+            })),
+          },
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'AI tạo giải thích thất bại');
+
+      const explanationsList = json.data?.explanations;
+      if (Array.isArray(explanationsList)) {
+        const updatedOptions = currentQ.options.map((opt, idx) => {
+          const matched = explanationsList.find((e: any) => e.optionIndex === idx);
+          return matched ? { ...opt, explanation: matched.explanation } : opt;
+        });
+
+        updateCurrentQuestion({ options: updatedOptions });
+        setAiActionMessage('Đã cập nhật lời giải thích cho các phương án!');
+        setTimeout(() => setAiActionMessage(null), 3000);
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Có lỗi khi gọi AI');
+    } finally {
+      setIsAiLoading(false);
+      setAiActionType(null);
+    }
+  };
+
+  const handleAiGenerateByDomain = async (selectedDomainCode: string) => {
+    setIsAiLoading(true);
+    setAiActionType('GENERATE_BY_DOMAIN');
+    setIsDomainModalOpen(false);
+    setAiActionMessage('AI đang biên soạn câu hỏi theo miền năng lực số...');
+
+    try {
+      const res = await fetch('/api/ai/authoring-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'GENERATE_BY_DOMAIN',
+          domainCode: selectedDomainCode,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'AI sinh câu hỏi thất bại');
+
+      const data = json.data;
+      if (data && data.prompt) {
+        const newQ: AuthoringQuestionItem = {
+          id: `q-ai-dom-${Date.now()}`,
+          type: 'MCQ',
+          prompt: data.prompt,
+          points: data.points || 10,
+          domainCode: data.domainCode || selectedDomainCode,
+          domainTitle: data.domainTitle,
+          options: Array.isArray(data.options)
+            ? data.options.map((opt: any, idx: number) => ({
+                id: `opt-ai-dom-${Date.now()}-${idx}`,
+                text: opt.text,
+                isCorrect: Boolean(opt.isCorrect),
+                explanation: opt.explanation,
+              }))
+            : [],
+        };
+
+        setQuestions((prev) => {
+          const updated = [...prev, newQ];
+          saveChanges(updated);
+          return updated;
+        });
+        setSelectedIndex(questions.length);
+        setAiActionMessage('Đã thêm câu hỏi theo miền năng lực số thành công!');
+        setTimeout(() => setAiActionMessage(null), 3000);
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Có lỗi khi gọi AI');
+    } finally {
+      setIsAiLoading(false);
+      setAiActionType(null);
+    }
+  };
+
+  // Publish / Unpublish handler (Quizizz Model - Instant Save to Library, No Duplicate Time Modal)
   const handleTogglePublish = async () => {
     if (questions.length === 0) {
       alert('Vui lòng thêm ít nhất 1 câu hỏi trước khi phát hành đề thi.');
       return;
     }
 
-    // Nếu đang là bản nháp -> Mở modal cài đặt thời gian & phân hạng trước khi phát hành
-    if (!isPublished) {
-      setIsPublishModalOpen(true);
+    // Nếu đang phát hành -> Chuyển về trạng thái bản nháp
+    if (isPublished) {
+      setIsPublishing(true);
+      setErrorMessage(null);
+      try {
+        const res = await fetch(`/api/personal/assessments/${assessmentId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_published: false }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Cập nhật trạng thái thất bại');
+        setIsPublished(false);
+      } catch (err: unknown) {
+        setErrorMessage(err instanceof Error ? err.message : 'Có lỗi khi chuyển về bản nháp');
+      } finally {
+        setIsPublishing(false);
+      }
       return;
     }
 
-    // Nếu đang phát hành -> Chuyển về trạng thái bản nháp
-    setIsPublishing(true);
-    setErrorMessage(null);
-
-    try {
-      const res = await fetch(`/api/personal/assessments/${assessmentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_published: false }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Cập nhật trạng thái thất bại');
-      }
-
-      setIsPublished(false);
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Có lỗi khi cập nhật trạng thái đề thi');
-    } finally {
-      setIsPublishing(false);
-    }
+    // Nếu đang là bản nháp -> Xuất bản trực tiếp vào Kho đề với thời lượng đã cài đặt
+    await handleDirectPublish();
   };
 
-  // Xác nhận phát hành kèm cài đặt thời gian, ngưỡng đạt, phân hạng theo ngữ cảnh
-  const handleConfirmPublishWithSettings = async () => {
+  // Trực tiếp lưu và xuất bản đề vào Kho đề thi mà không bắt chọn lại thời gian
+  const handleDirectPublish = async () => {
     setIsPublishing(true);
     setErrorMessage(null);
 
     try {
-      // 1. Lưu câu hỏi mới nhất trước khi chuyển trạng thái
+      // 1. Lưu câu hỏi mới nhất
       await fetch(`/api/personal/assessments/${assessmentId}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -528,7 +762,7 @@ export function AuthoringEditorTwoPane({
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Phát hành đề thi nội bộ thất bại');
+        if (!res.ok) throw new Error(data.error || 'Lưu vào Kho đề thất bại');
       } else {
         // PERSONAL
         const res = await fetch(`/api/personal/assessments/${assessmentId}`, {
@@ -546,15 +780,18 @@ export function AuthoringEditorTwoPane({
       }
 
       setIsPublished(true);
-      setIsPublishModalOpen(false);
-
-      // Chuyển hướng về trang danh sách đề
-      router.push(returnUrl);
+      setIsPublishSuccessOpen(true);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Có lỗi khi phát hành đề thi');
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  // Xác nhận phát hành kèm cài đặt thời gian, ngưỡng đạt, phân hạng theo ngữ cảnh
+  const handleConfirmPublishWithSettings = async () => {
+    setIsPublishModalOpen(false);
+    await handleDirectPublish();
   };
 
   if (loading) {
@@ -642,18 +879,34 @@ export function AuthoringEditorTwoPane({
           </button>
 
 
-          {previewUrl && (
-            <Link
-              href={previewUrl}
-              target="_blank"
-              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            >
-              <Eye className="w-3.5 h-3.5 text-slate-500" />
-              <span>Xem trước</span>
-            </Link>
-          )}
+          {/* Cài đặt đề */}
+          <button
+            type="button"
+            onClick={() => setIsPublishModalOpen(true)}
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+            title="Cài đặt thông số bảo mật, ngưỡng đạt và giám thị"
+          >
+            <Sliders className="w-3.5 h-3.5 text-slate-500" />
+            <span>Cài đặt đề</span>
+          </button>
 
-          {/* Nút Phát hành đề thi */}
+          {/* Nút Xem trước: mở trực tiếp không gian làm bài thực tế của thí sinh */}
+          <Link
+            href={
+              previewUrl ||
+              (slug
+                ? `/org/${slug}/assessments/${assessmentId}/preview`
+                : `/personal/take/${assessmentId}?preview=true&returnUrl=${encodeURIComponent(returnUrl)}`)
+            }
+            target="_blank"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Mở màn hình làm bài thực tế của thí sinh trong tab mới"
+          >
+            <Eye className="w-3.5 h-3.5 text-slate-500" />
+            <span>Xem trước</span>
+          </Link>
+
+          {/* Nút Phát hành / Xuất bản đề thi */}
           <button
             type="button"
             onClick={handleTogglePublish}
@@ -661,9 +914,9 @@ export function AuthoringEditorTwoPane({
             className={`px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer ${
               isPublished
                 ? 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
-            title={isPublished ? 'Chuyển về trạng thái bản nháp' : 'Phát hành chính thức để đưa vào danh mục Đề thi sẵn sàng'}
+            title={isPublished ? 'Chuyển về trạng thái bản nháp' : 'Lưu và xuất bản đề vào Kho đề sẵn sàng khảo thí'}
           >
             {isPublishing ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -672,7 +925,7 @@ export function AuthoringEditorTwoPane({
             ) : (
               <Sparkles className="w-3.5 h-3.5" />
             )}
-            <span>{isPublishing ? 'Đang lưu...' : isPublished ? 'Chuyển về bản nháp' : 'Phát hành đề thi'}</span>
+            <span>{isPublishing ? 'Đang lưu...' : isPublished ? (effectiveMode === 'ORG' ? 'Đã lưu trong Kho đề' : 'Chuyển về bản nháp') : (effectiveMode === 'ORG' ? 'Lưu vào Kho đề' : 'Xuất bản đề thi')}</span>
           </button>
 
           {/* Nút Lưu nháp & Thoát */}
@@ -683,6 +936,86 @@ export function AuthoringEditorTwoPane({
             <span>{isPublished ? 'Thoát' : 'Lưu nháp & Thoát'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
+        </div>
+      </div>
+
+      {/* Sub-Header theo chuẩn Quizizz / Wayground: [X] Câu hỏi • [Y] Điểm • [Z] Phút */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
+        <div className="flex items-center gap-2.5 flex-wrap text-xs text-slate-600 dark:text-zinc-300">
+          <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+            {questions.length} Câu hỏi
+          </span>
+          <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
+          <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+            {currentTotalPoints} Điểm
+          </span>
+          <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
+          <div className="relative" ref={durationPopoverRef}>
+            <button
+              type="button"
+              onClick={() => setIsDurationPopoverOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-750 text-blue-600 dark:text-blue-400 font-bold font-mono transition-colors cursor-pointer"
+              title="Bấm để thay đổi thời lượng làm bài nhanh"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>{publishDuration} Phút</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {isDurationPopoverOpen && (
+              <div className="absolute left-0 top-full mt-1.5 z-40 w-64 p-3 bg-white dark:bg-[#111114] rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                <div className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-2">
+                  Thời lượng làm bài:
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 mb-2.5">
+                  {[15, 30, 45, 60, 90, 120].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => handleSelectPresetDuration(mins)}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold font-mono transition cursor-pointer ${
+                        publishDuration === mins
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      {mins}p
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <input
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={customMinutesInput}
+                    onChange={(e) => setCustomMinutesInput(e.target.value)}
+                    placeholder="Tùy chỉnh"
+                    className="flex-1 px-2 py-1 text-xs font-mono rounded-lg border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCustomDuration}
+                    className="px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
+                  >
+                    Lưu
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Nút Tạo câu hỏi nhanh */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleAddQuestion('MCQ')}
+            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+            <span>Tạo câu hỏi</span>
+          </button>
         </div>
       </div>
 
@@ -697,7 +1030,7 @@ export function AuthoringEditorTwoPane({
               : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          Danh sách câu hỏi ({questions.length})
+          Câu hỏi ({questions.length})
         </button>
         <button
           type="button"
@@ -718,32 +1051,26 @@ export function AuthoringEditorTwoPane({
         <div className={`lg:col-span-4 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3 ${
           mobileTab === 'editor' ? 'hidden lg:block' : 'block'
         }`}>
-          <div className="flex items-center justify-between pb-1">
-            <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Danh sách câu hỏi ({questions.length})
-            </span>
-
-            {/* Quick Add Buttons */}
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => handleAddQuestion('MCQ')}
-                className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
-                title="Thêm câu trắc nghiệm"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Trắc nghiệm</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddQuestion('PRACTICAL')}
-                className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
-                title="Thêm bài thực hành"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Thực hành</span>
-              </button>
-            </div>
+          {/* Quick Add Buttons directly at top without redundant header */}
+          <div className="flex items-center gap-1.5 pb-1">
+            <button
+              type="button"
+              onClick={() => handleAddQuestion('MCQ')}
+              className="flex-1 px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
+              title="Thêm câu trắc nghiệm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Trắc nghiệm</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAddQuestion('PRACTICAL')}
+              className="flex-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
+              title="Thêm bài thực hành"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Thực hành</span>
+            </button>
           </div>
 
           {/* Question Cards List */}
@@ -785,11 +1112,7 @@ export function AuthoringEditorTwoPane({
                   {/* Summary */}
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-1.5 text-[10px]">
-                      <span className="font-bold text-blue-600 dark:text-blue-400 font-mono">
-                        D{q.domainCode}
-                      </span>
-                      <span>•</span>
-                      <span className="font-medium text-slate-500">
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">
                         {q.type === 'PRACTICAL' || q.type === 'OPEN_RESPONSE' ? 'Tự luận / Thực hành' : 'Trắc nghiệm'}
                       </span>
                       <span>•</span>
@@ -852,7 +1175,7 @@ export function AuthoringEditorTwoPane({
             mobileTab === 'list' ? 'hidden lg:block' : 'block'
           }`}>
             {/* Meta bar for current question */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
               {/* Type */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-500 mb-1">Loại câu hỏi</label>
@@ -866,10 +1189,10 @@ export function AuthoringEditorTwoPane({
                       allowedSubmissionModes: isPractical ? ['TEXT', 'FILE', 'URL'] : undefined,
                       options: !isPractical && (!currentQ.options || currentQ.options.length === 0)
                         ? [
-                            { id: `opt-${Date.now()}-1`, text: 'Phương án A', isCorrect: true },
-                            { id: `opt-${Date.now()}-2`, text: 'Phương án B', isCorrect: false },
-                            { id: `opt-${Date.now()}-3`, text: 'Phương án C', isCorrect: false },
-                            { id: `opt-${Date.now()}-4`, text: 'Phương án D', isCorrect: false },
+                            { id: `opt-${Date.now()}-1`, text: '', isCorrect: true },
+                            { id: `opt-${Date.now()}-2`, text: '', isCorrect: false },
+                            { id: `opt-${Date.now()}-3`, text: '', isCorrect: false },
+                            { id: `opt-${Date.now()}-4`, text: '', isCorrect: false },
                           ]
                         : currentQ.options,
                     });
@@ -878,22 +1201,6 @@ export function AuthoringEditorTwoPane({
                 >
                   <option value="MCQ">Trắc nghiệm</option>
                   <option value="PRACTICAL">Tự luận / Thực hành</option>
-                </select>
-              </div>
-
-              {/* Domain */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Miền năng lực số</label>
-                <select
-                  value={currentQ.domainCode}
-                  onChange={(e) => updateCurrentQuestion({ domainCode: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="01">Miền 01: Dữ liệu &amp; Thông tin</option>
-                  <option value="02">Miền 02: Giao tiếp &amp; Hợp tác</option>
-                  <option value="03">Miền 03: Sáng tạo Nội dung &amp; AI</option>
-                  <option value="04">Miền 04: An toàn &amp; Bảo mật</option>
-                  <option value="05">Miền 05: Giải quyết Vấn đề</option>
                 </select>
               </div>
 
@@ -910,7 +1217,7 @@ export function AuthoringEditorTwoPane({
                       const val = Math.max(1, Math.min(100, Number(e.target.value) || 1));
                       updateCurrentQuestion({ points: val });
                     }}
-                    className="w-20 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-500 tabular-nums"
+                    className="w-24 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-500 tabular-nums"
                   />
                   <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">điểm</span>
                 </div>
@@ -1189,10 +1496,10 @@ export function AuthoringEditorTwoPane({
                 <div>
                   <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                     {effectiveMode === 'ORG'
-                      ? 'Cài đặt & Phát hành đề thi nội bộ'
+                      ? 'Cài đặt đề thi & Giám thị'
                       : effectiveMode === 'ADMIN'
-                      ? 'Cài đặt & Phát hành đề chuẩn Quốc gia'
-                      : 'Cài đặt & Xuất bản đề cá nhân'}
+                      ? 'Cài đặt đề chuẩn Quốc gia'
+                      : 'Cài đặt đề thi cá nhân'}
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                     {effectiveMode === 'ORG'
@@ -1224,7 +1531,7 @@ export function AuthoringEditorTwoPane({
                       : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                 >
-                  {effectiveMode === 'ORG' ? '1. Thông số & Phạm vi giao bài' : '1. Thông số & Phân hạng gói'}
+                  {effectiveMode === 'ORG' ? '1. Thông số đề trong Kho' : '1. Thông số & Phân hạng gói'}
                 </button>
                 <button
                   type="button"
@@ -1250,125 +1557,34 @@ export function AuthoringEditorTwoPane({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Thời lượng làm bài (Phút)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min={5}
-                        max={300}
-                        value={publishDuration}
-                        onChange={(e) => setPublishDuration(Number(e.target.value) || 45)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
-                      />
-                      <p className="text-[11px] text-slate-400">
-                        Đồng hồ đếm ngược khi làm bài.
-                      </p>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
-                        <Award className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Ngưỡng đạt tiêu chuẩn (%)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={publishPassingScore}
-                        onChange={(e) => setPublishPassingScore(Number(e.target.value) || 70)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
-                      />
-                      <p className="text-[11px] text-slate-400">
-                        Tỷ lệ điểm tối thiểu để xếp hạng ĐẠT.
-                      </p>
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Ngưỡng đạt tiêu chuẩn (%)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={publishPassingScore}
+                      onChange={(e) => setPublishPassingScore(Number(e.target.value) || 70)}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                    />
+                    <p className="text-[11px] text-slate-400">
+                      Tỷ lệ điểm tối thiểu để xếp hạng ĐẠT (mặc định 70%).
+                    </p>
                   </div>
 
                   {/* Context-specific Section */}
                   {effectiveMode === 'ORG' && (
-                    <div className="space-y-2">
-                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Phạm vi giao bài trong tổ chức</span>
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setOrgScope('ORG_WIDE')}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            orgScope === 'ORG_WIDE'
-                              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 font-bold'
-                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-xs">Toàn tổ chức</span>
-                          </div>
-                          <p className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                            Tất cả thành viên trong tổ chức đều thấy và làm bài.
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setOrgScope('ASSIGNED_CLASSES')}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            orgScope === 'ASSIGNED_CLASSES'
-                              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 font-bold'
-                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-xs">Chỉ định Lớp/Nhóm</span>
-                          </div>
-                          <p className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                            Chỉ học viên trong các lớp hoặc nhóm được phân công mới thấy đề.
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setOrgScope('ACCESS_PIN')}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            orgScope === 'ACCESS_PIN'
-                              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 font-bold'
-                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Key className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-xs">Mã PIN phòng thi</span>
-                          </div>
-                          <p className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                            Yêu cầu mã PIN bảo mật khi thí sinh vào làm bài.
-                          </p>
-                        </button>
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-2 text-xs">
+                      <div className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-neutral-100">
+                        <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span>Lưu vào Kho đề nội bộ của Tổ chức</span>
                       </div>
-
-                      {orgScope === 'ACCESS_PIN' && (
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-1.5">
-                          <label className="text-[11px] font-semibold text-neutral-800 dark:text-zinc-200">
-                            Mã PIN tham gia phòng thi (bắt buộc)
-                          </label>
-                          <input
-                            type="text"
-                            value={accessPin}
-                            onChange={(e) => setAccessPin(e.target.value.toUpperCase())}
-                            placeholder="VD: NEXA-EXAM-2026"
-                            className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-neutral-900 dark:text-neutral-100 font-mono tracking-wider uppercase text-xs"
-                          />
-                        </div>
-                      )}
-
-                      <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                        Đề thi tổ chức thuộc không gian quản lý nội bộ. Thành viên tổ chức làm bài theo quyền hạn phân bổ mà không bị giới hạn bởi các gói trả phí cá nhân.
-                      </div>
+                      <p className="text-slate-600 dark:text-zinc-400 text-[11px] leading-relaxed">
+                        Đề thi sau khi lưu sẽ sẵn sàng trong <strong>Kho đề của tổ chức</strong>. Bạn có thể sử dụng đề này để giao bài cho các Lớp học cụ thể hoặc mở phòng thi trực tiếp bất kỳ lúc nào.
+                      </p>
                     </div>
                   )}
 
@@ -1504,21 +1720,122 @@ export function AuthoringEditorTwoPane({
                 {isPublishing ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Đang phát hành...</span>
+                    <span>Đang lưu...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>
-                      {effectiveMode === 'ORG'
-                        ? 'Xác nhận & Phát hành Nội bộ'
-                        : effectiveMode === 'ADMIN'
-                        ? 'Xác nhận & Phát hành Toàn sàn'
-                        : 'Xác nhận & Xuất bản Đề cá nhân'}
-                    </span>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Lưu cài đặt</span>
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* 5. Modal Chọn 5 Miền Năng Lực Số để AI Biên Soạn */}
+      {isDomainModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-1">
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>AI Biên Soạn Câu Hỏi Theo 5 Miền</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsDomainModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
+              Chọn miền năng lực số mà bạn muốn AI thiết kế tình huống và câu hỏi trắc nghiệm đánh giá:
+            </p>
+
+            <div className="space-y-2 text-xs">
+              {[
+                { code: '01', title: 'Miền 1: Dữ liệu và Thông tin số', desc: 'Tìm kiếm, đánh giá độ tin cậy và quản lý dữ liệu' },
+                { code: '02', title: 'Miền 2: Giao tiếp và Hợp tác trong môi trường số', desc: 'Chia sẻ, quy tắc ứng xử Netiquette và cộng tác số' },
+                { code: '03', title: 'Miền 3: Sáng tạo nội dung số', desc: 'Sản xuất nội dung, bản quyền và tích hợp số' },
+                { code: '04', title: 'Miền 4: An toàn và Bảo mật số', desc: 'Bảo vệ thiết bị, dữ liệu cá nhân và phòng tránh lừa đảo' },
+                { code: '05', title: 'Miền 5: Giải quyết vấn đề trong môi trường số', desc: 'Xử lý sự cố kỹ thuật và tư duy số' },
+              ].map((d) => (
+                <button
+                  key={d.code}
+                  type="button"
+                  onClick={() => handleAiGenerateByDomain(d.code)}
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-zinc-900 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-left transition-all cursor-pointer group"
+                >
+                  <div className="font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                    {d.title}
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                    {d.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Modal Xuất bản Thành công với 3 Hướng Đi Tiếp Theo (Quizizz Completion Model) */}
+      {isPublishSuccessOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-6 h-6 stroke-[2]" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                {effectiveMode === 'ORG'
+                  ? 'Đã lưu vào Kho đề tổ chức thành công!'
+                  : effectiveMode === 'ADMIN'
+                  ? 'Đã phát hành Đề chuẩn Quốc gia toàn sàn!'
+                  : 'Đã xuất bản đề thi cá nhân thành công!'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+                {effectiveMode === 'ORG'
+                  ? `Đề "${assessment?.title}" đã sẵn sàng trong Kho đề (${questions.length} câu, ${publishDuration} phút). Bạn có thể giao cho lớp học hoặc tạo đợt khảo thí diện rộng ngay bây giờ.`
+                  : 'Đề thi đã sẵn sàng cho thí sinh thực hiện đánh giá năng lực số.'}
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2 text-xs">
+              {effectiveMode === 'ORG' && slug && (
+                <>
+                  <Link
+                    href={`/org/${slug}/classes`}
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center justify-center gap-2 shadow-xs transition"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Giao đề cho Lớp học ngay</span>
+                  </Link>
+
+                  <Link
+                    href={`/org/${slug}/campaigns/new?assessmentId=${assessmentId}`}
+                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 font-semibold flex items-center justify-center gap-2 transition"
+                  >
+                    <Layers className="w-4 h-4 text-blue-600" />
+                    <span>Tạo Đợt khảo thí (Campaign) diện rộng</span>
+                  </Link>
+                </>
+              )}
+
+              <Link
+                href={returnUrl}
+                className="w-full py-2 px-4 rounded-xl text-slate-500 hover:text-neutral-900 dark:hover:text-neutral-100 font-medium flex items-center justify-center gap-1.5 transition"
+              >
+                <span>Về Kho đề thi</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </div>
         </div>

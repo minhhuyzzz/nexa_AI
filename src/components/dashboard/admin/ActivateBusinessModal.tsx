@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Sparkles, Check, Copy, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { CelebrationCanvas } from '@/components/ui/CelebrationCanvas';
 
 export interface BusinessInquiryTarget {
   id: string;
@@ -121,6 +122,7 @@ export function ActivateBusinessModal({
         {/* Content */}
         {inviteUrl ? (
           <div className="p-6 space-y-4">
+            <CelebrationCanvas />
             <div className="p-4 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div>

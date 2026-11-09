@@ -14,6 +14,7 @@ export interface AIGatewaySettings {
   provider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI';
   apiKey: string;
   defaultModel: string;
+  costBudgetMonthlyUsd?: number;
   flows: {
     rubricGrading: AIFlowConfig;
     competencyAnalysis: AIFlowConfig;
@@ -32,6 +33,7 @@ export class AIConfigService {
       provider: 'GOOGLE_GEMINI',
       apiKey: process.env.GEMINI_API_KEY || '',
       defaultModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+      costBudgetMonthlyUsd: 200,
       flows: {
         rubricGrading: {
           enabled: true,

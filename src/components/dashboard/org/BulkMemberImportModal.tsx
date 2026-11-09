@@ -22,7 +22,7 @@ interface ParsedMember {
   email: string;
   fullName: string;
   studentId: string;
-  orgRole: 'MEMBER' | 'ORG_ADMIN';
+  orgRole: 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR';
   className?: string;
   isValid: boolean;
   error?: string;
@@ -52,7 +52,7 @@ export function BulkMemberImportModal({
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [parsedRows, setParsedRows] = useState<ParsedMember[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [defaultRole, setDefaultRole] = useState<'MEMBER' | 'ORG_ADMIN'>('MEMBER');
+  const [defaultRole, setDefaultRole] = useState<'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR'>('MEMBER');
   const [targetClassId, setTargetClassId] = useState<string>('');
   const [filterView, setFilterView] = useState<'ALL' | 'VALID' | 'INVALID'>('ALL');
   const [isPending, startTransition] = useTransition();
@@ -106,8 +106,9 @@ export function BulkMemberImportModal({
       const studentId = cols[2] || '';
       const roleRaw = cols[3]?.toUpperCase() || defaultRole;
 
-      let orgRole: 'MEMBER' | 'ORG_ADMIN' = defaultRole;
+      let orgRole: 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR' = defaultRole;
       if (roleRaw === 'ORG_ADMIN' || roleRaw === 'ADMIN') orgRole = 'ORG_ADMIN';
+      else if (roleRaw === 'ASSESSOR' || roleRaw === 'EVALUATOR') orgRole = 'ASSESSOR';
 
       if (!email) {
         rows.push({
@@ -393,11 +394,12 @@ export function BulkMemberImportModal({
                     id={defaultRoleSelectId}
                     value={defaultRole}
                     onChange={(e) =>
-                      setDefaultRole(e.target.value as 'MEMBER' | 'ORG_ADMIN')
+                      setDefaultRole(e.target.value as 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR')
                     }
                     className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded text-neutral-900 dark:text-neutral-100"
                   >
                     <option value="MEMBER">Thành viên (Mặc định)</option>
+                    <option value="ASSESSOR">Khảo thí viên</option>
                     <option value="ORG_ADMIN">Quản trị viên</option>
                   </select>
                   <p className="text-[11px] text-slate-400 mt-1">
@@ -534,7 +536,11 @@ export function BulkMemberImportModal({
                           </td>
                           <td className="py-2 px-3 text-[11px]">
                             <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-medium">
-                              {row.orgRole === 'ORG_ADMIN' ? 'Quản trị viên' : 'Thành viên'}
+                              {row.orgRole === 'ORG_ADMIN'
+                                ? 'Quản trị viên'
+                                : row.orgRole === 'ASSESSOR'
+                                ? 'Khảo thí viên'
+                                : 'Thành viên'}
                             </span>
                           </td>
                           <td className="py-2 px-3 text-[11px]">

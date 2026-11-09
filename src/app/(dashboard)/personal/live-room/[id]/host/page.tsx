@@ -146,7 +146,7 @@ export default function HostWaitingRoomPage() {
     if (!roomId) return;
     const supabase = createClient();
 
-    const channel = supabase.channel(`room:${roomId}:host`);
+    const channel = supabase.channel(`room:${roomId}`);
 
     channel
       .on('broadcast', { event: 'PARTICIPANT_JOIN' }, (payload) => {
@@ -155,7 +155,7 @@ export default function HostWaitingRoomPage() {
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setActivityLogs((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             time: timeStr,
             text: `${pName} đã vào phòng thi.`,
             iconType: 'JOIN',
@@ -171,7 +171,7 @@ export default function HostWaitingRoomPage() {
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setActivityLogs((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             time: timeStr,
             text: `${pName} đã ${isR ? 'sẵn sàng' : 'chuyển sang chưa sẵn sàng'}.`,
             iconType: 'READY',
@@ -237,6 +237,14 @@ export default function HostWaitingRoomPage() {
       });
 
       if (res.ok) {
+        try {
+          const supabase = createClient();
+          await supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'ROOM_STATE_CHANGE',
+            payload: { action: 'START' },
+          });
+        } catch {}
         router.push(`/live/control?roomId=${roomId}`);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -268,7 +276,7 @@ export default function HostWaitingRoomPage() {
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setActivityLogs((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             time: timeStr,
             text: nextLocked ? 'Đã khóa phòng thi không nhận thêm người.' : 'Đã mở khóa phòng thi.',
             iconType: 'SYS',
@@ -303,7 +311,7 @@ export default function HostWaitingRoomPage() {
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setActivityLogs((prev) => [
           {
-            id: Math.random().toString(),
+            id: crypto.randomUUID(),
             time: timeStr,
             text: `Bạn đã phát thông báo: "${announcementText.trim()}"`,
             iconType: 'ANNOUNCE',
@@ -646,8 +654,9 @@ export default function HostWaitingRoomPage() {
                       ✓ Sẵn sàng
                     </span>
                   ) : (
-                    <span className="w-full py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                      ⏱ Chưa sẵn sàng
+                    <span className="w-full py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center justify-center gap-1">
+                      <Clock className="w-2.5 h-2.5 stroke-[1.75]" />
+                      <span>Chưa sẵn sàng</span>
                     </span>
                   )}
                 </div>
@@ -674,8 +683,9 @@ export default function HostWaitingRoomPage() {
                         ✓ Sẵn sàng
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        ⏱ Chưa sẵn sàng
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 stroke-[1.75]" />
+                        <span>Chưa sẵn sàng</span>
                       </span>
                     )}
                   </div>

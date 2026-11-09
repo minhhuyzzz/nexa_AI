@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,16 @@ const updateOrgClassSchema = z.object({
 
 async function checkOrgPermission(userId: string, userEmail: string | undefined, orgId: string) {
   const isSuper = isSuperadminEmail(userEmail);
-  if (isSuper) return { isAllowed: true, isManager: true };
+  if (isSuper) {
+    return {
+      isAllowed: true,
+      role: 'ORG_OWNER',
+      normalizedRole: 'ORG_OWNER',
+      isOrgAdminOrOwner: true,
+      isManager: true,
+      isSuperadmin: true,
+    };
+  }
 
   const adminSupabase = createAdminClient();
   const { data: member } = await adminSupabase
@@ -32,10 +42,27 @@ async function checkOrgPermission(userId: string, userEmail: string | undefined,
     .eq('status', 'ACTIVE')
     .maybeSingle();
 
-  if (!member) return { isAllowed: false, isManager: false };
+  if (!member) {
+    return {
+      isAllowed: false,
+      role: null,
+      normalizedRole: null,
+      isOrgAdminOrOwner: false,
+      isManager: false,
+      isSuperadmin: false,
+    };
+  }
+
+  const normalizedRole = normalizeOrgRole(member.org_role);
+  const isOrgAdminOrOwner = normalizedRole === 'ORG_OWNER' || normalizedRole === 'ORG_ADMIN';
+
   return {
     isAllowed: true,
-    isManager: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(member.org_role),
+    role: member.org_role,
+    normalizedRole,
+    isOrgAdminOrOwner,
+    isManager: isOrgAdminOrOwner || normalizedRole === 'ASSESSOR',
+    isSuperadmin: false,
   };
 }
 
@@ -127,9 +154,33 @@ export async function PATCH(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { isAllowed, isManager } = await checkOrgPermission(user.id, user.email, orgId);
-    if (!isAllowed || !isManager) {
+    const perm = await checkOrgPermission(user.id, user.email, orgId);
+    if (!perm.isAllowed || !perm.isManager) {
       return NextResponse.json({ error: 'Bạn không có quyền chỉnh sửa lớp học này' }, { status: 403 });
+    }
+
+    const adminSupabase = createAdminClient();
+    const { data: existingClass, error: fetchError } = await adminSupabase
+      .from('evaluator_classes')
+      .select('instructor_id, evaluator_id')
+      .eq('id', classId)
+      .eq('organization_id', orgId)
+      .maybeSingle();
+
+    if (fetchError || !existingClass) {
+      return NextResponse.json({ error: 'Không tìm thấy lớp học' }, { status: 404 });
+    }
+
+    const isOrgAdminOrOwner = perm.isSuperadmin || perm.isOrgAdminOrOwner;
+    if (
+      !isOrgAdminOrOwner &&
+      existingClass.instructor_id !== user.id &&
+      existingClass.evaluator_id !== user.id
+    ) {
+      return NextResponse.json(
+        { error: 'Bạn chỉ có thể chỉnh sửa lớp học được phân công' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json().catch(() => null);
@@ -153,7 +204,6 @@ export async function PATCH(
     if (parsed.data.maxCapacity !== undefined) updateData.max_capacity = parsed.data.maxCapacity;
     if (parsed.data.settings !== undefined) updateData.settings = parsed.data.settings;
 
-    const adminSupabase = createAdminClient();
     const { data: updated, error } = await adminSupabase
       .from('evaluator_classes')
       .update(updateData)
@@ -193,8 +243,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { isAllowed, isManager } = await checkOrgPermission(user.id, user.email, orgId);
-    if (!isAllowed || !isManager) {
+    const perm = await checkOrgPermission(user.id, user.email, orgId);
+    if (!perm.isAllowed || (!perm.isSuperadmin && !perm.isOrgAdminOrOwner)) {
       return NextResponse.json({ error: 'Bạn không có quyền xóa lớp học này' }, { status: 403 });
     }
 

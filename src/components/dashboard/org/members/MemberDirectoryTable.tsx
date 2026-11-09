@@ -1,22 +1,36 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Download, Upload, MoreHorizontal, User, Shield, ChevronLeft, ChevronRight, Trash2, Crown } from 'lucide-react';
-import type { OrgMemberItem, OrgRoleType } from './types';
+import {
+  Search,
+  Download,
+  Upload,
+  MoreHorizontal,
+  Shield,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Crown,
+  PauseCircle,
+  PlayCircle,
+} from 'lucide-react';
+import type { OrgMemberItem } from './types';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 interface MemberDirectoryTableProps {
   members: OrgMemberItem[];
-  onSelectMember: (member: OrgMemberItem) => void;
   isManager: boolean;
   isOwner?: boolean;
   currentUserRole?: string;
+  onOpenRoleModal: (member: OrgMemberItem) => void;
+  onToggleStatus?: (member: OrgMemberItem) => void;
   onRequestDelete?: (member: OrgMemberItem) => void;
   onOpenBulkImport?: () => void;
 }
 
 const ROLE_BADGES: Record<string, { label: string; badgeClass: string; dotClass: string }> = {
   ORG_OWNER: {
-    label: 'Quản trị viên',
+    label: 'Chủ sở hữu',
     badgeClass: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
     dotClass: 'bg-blue-600',
   },
@@ -30,16 +44,6 @@ const ROLE_BADGES: Record<string, { label: string; badgeClass: string; dotClass:
     badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
     dotClass: 'bg-emerald-600',
   },
-  EVALUATOR: {
-    label: 'Khảo thí viên',
-    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-    dotClass: 'bg-emerald-600',
-  },
-  REPORT_VIEWER: {
-    label: 'Khảo thí viên',
-    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-    dotClass: 'bg-emerald-600',
-  },
   MEMBER: {
     label: 'Thành viên',
     badgeClass: 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border-slate-200 dark:border-zinc-700',
@@ -49,10 +53,11 @@ const ROLE_BADGES: Record<string, { label: string; badgeClass: string; dotClass:
 
 export function MemberDirectoryTable({
   members,
-  onSelectMember,
   isManager,
   isOwner = false,
   currentUserRole,
+  onOpenRoleModal,
+  onToggleStatus,
   onRequestDelete,
   onOpenBulkImport,
 }: MemberDirectoryTableProps) {
@@ -92,13 +97,13 @@ export function MemberDirectoryTable({
       return;
     }
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const menuHeight = 110;
+    const menuHeight = 135;
     const spaceBelow = window.innerHeight - rect.bottom;
     const placement: 'top' | 'bottom' = spaceBelow < menuHeight && rect.top > menuHeight ? 'top' : 'bottom';
 
     setDropdownMenu({
       id: member.membershipId,
-      top: placement === 'bottom' ? rect.bottom + 4 : rect.top - 4,
+      top: placement === 'bottom' ? rect.bottom + 6 : rect.top - 6,
       right: window.innerWidth - rect.right,
       placement,
       member,
@@ -111,14 +116,15 @@ export function MemberDirectoryTable({
       const matchSearch =
         m.nickname.toLowerCase().includes(search.toLowerCase()) ||
         m.email.toLowerCase().includes(search.toLowerCase());
+      const normRole = normalizeOrgRole(m.role);
       const matchRole =
         roleFilter === 'ALL'
           ? true
           : roleFilter === 'ADMIN'
-          ? m.role === 'ORG_ADMIN' || m.role === 'ORG_OWNER'
+          ? normRole === 'ORG_ADMIN' || normRole === 'ORG_OWNER'
           : roleFilter === 'ASSESSOR'
-          ? m.role === 'ASSESSOR' || m.role === 'EVALUATOR'
-          : m.role === 'MEMBER';
+          ? normRole === 'ASSESSOR'
+          : normRole === 'MEMBER';
       const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
       return matchSearch && matchRole && matchStatus;
     });
@@ -171,7 +177,7 @@ export function MemberDirectoryTable({
   };
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3.5 font-sans">
       {/* Toolbar: Search & Filters */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 flex-1">
@@ -257,7 +263,7 @@ export function MemberDirectoryTable({
                       selectedIds.length === paginatedMembers.length
                     }
                     onChange={toggleSelectAll}
-                    className="rounded text-blue-600 focus:ring-blue-500"
+                    className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </th>
                 <th className="py-2.5 px-4">Thành viên</th>
@@ -277,8 +283,9 @@ export function MemberDirectoryTable({
                 </tr>
               ) : (
                 paginatedMembers.map((m) => {
-                  const roleConfig = ROLE_BADGES[m.role] || {
-                    label: m.role,
+                  const normRole = normalizeOrgRole(m.role);
+                  const roleConfig = ROLE_BADGES[normRole] || {
+                    label: normRole,
                     badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
                     dotClass: 'bg-slate-400',
                   };
@@ -287,10 +294,9 @@ export function MemberDirectoryTable({
                   return (
                     <tr
                       key={m.membershipId}
-                      className={`hover:bg-slate-50/70 dark:hover:bg-zinc-900/60 transition-colors cursor-pointer ${
+                      className={`hover:bg-slate-50/70 dark:hover:bg-zinc-900/60 transition-colors ${
                         isSelected ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
                       }`}
-                      onClick={() => onSelectMember(m)}
                     >
                       <td
                         className="py-3 px-4"
@@ -303,7 +309,7 @@ export function MemberDirectoryTable({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {}}
-                          className="rounded text-blue-600 focus:ring-blue-500"
+                          className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </td>
 
@@ -335,13 +341,13 @@ export function MemberDirectoryTable({
                       <td className="py-3 px-4">
                         <div className="inline-flex items-center gap-1.5 flex-wrap">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${roleConfig.badgeClass}`}
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${roleConfig.badgeClass}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${roleConfig.dotClass}`} />
                             <span>{roleConfig.label}</span>
                           </span>
                           {m.role === 'ORG_OWNER' && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800 tracking-tight">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800 tracking-tight font-mono">
                               <Crown className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
                               <span>Chủ sở hữu</span>
                             </span>
@@ -369,8 +375,9 @@ export function MemberDirectoryTable({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
+                          type="button"
                           onClick={(e) => handleOpenDropdown(e, m)}
-                          className="p-1 rounded hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
                           title="Tùy chọn thao tác"
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -394,7 +401,7 @@ export function MemberDirectoryTable({
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 border border-slate-200 dark:border-zinc-800 rounded bg-white dark:bg-[#111114] text-xs"
+              className="px-2 py-1 border border-slate-200 dark:border-zinc-800 rounded bg-white dark:bg-[#111114] text-xs cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -407,7 +414,7 @@ export function MemberDirectoryTable({
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1 rounded border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+              className="p-1 rounded border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -417,7 +424,7 @@ export function MemberDirectoryTable({
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1 rounded border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+              className="p-1 rounded border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -425,7 +432,7 @@ export function MemberDirectoryTable({
         </div>
       </div>
 
-      {/* 3-dots Dropdown Menu (Fixed position to avoid table overflow clipping) */}
+      {/* 3-dots Dropdown Menu (Chỉ chứa các hành động bấm được, không tiêu đề thừa) */}
       {dropdownMenu && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -436,24 +443,92 @@ export function MemberDirectoryTable({
             right: dropdownMenu.right,
             zIndex: 9999,
           }}
-          className="w-52 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100"
+          className="w-48 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#18181B] shadow-xl p-1 text-xs animate-in fade-in zoom-in-95 duration-100 font-sans space-y-0.5"
         >
-          {/* Xem hồ sơ & phân quyền */}
-          <button
-            type="button"
-            onClick={() => {
-              const mem = dropdownMenu.member;
-              setDropdownMenu(null);
-              onSelectMember(mem);
-            }}
-            className="w-full flex items-center gap-2 px-3.5 py-2 text-neutral-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 transition text-left cursor-pointer"
-          >
-            <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-            <span>Xem hồ sơ &amp; phân quyền</span>
-          </button>
+          {/* Phân quyền vai trò -> Mở modal phân quyền */}
+          {isManager && (() => {
+            const mem = dropdownMenu.member;
+            const isTargetOwner = mem.role === 'ORG_OWNER';
+            const isTargetSelf = mem.isCurrentUser;
+            const isTargetAdmin = mem.role === 'ORG_ADMIN';
+            const cannotEditRole = isTargetOwner || isTargetSelf || (!isOwner && isTargetAdmin);
+
+            let roleEditReason = '';
+            if (isTargetOwner) roleEditReason = 'Chủ sở hữu chỉ chuyển giao tại Cài đặt';
+            else if (isTargetSelf) roleEditReason = 'Không thể tự đổi vai trò của chính mình';
+            else if (!isOwner && isTargetAdmin) roleEditReason = 'Không thể đổi vai trò Quản trị viên khác';
+
+            return (
+              <button
+                type="button"
+                disabled={cannotEditRole}
+                title={roleEditReason || 'Phân quyền vai trò'}
+                onClick={() => {
+                  if (cannotEditRole) return;
+                  setDropdownMenu(null);
+                  onOpenRoleModal(mem);
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition font-medium ${
+                  cannotEditRole
+                    ? 'text-slate-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
+                    : 'text-neutral-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span className="truncate">{cannotEditRole && roleEditReason ? roleEditReason : 'Phân quyền vai trò'}</span>
+              </button>
+            );
+          })()}
+
+          {/* Tạm ngưng hoạt động / Kích hoạt lại */}
+          {isManager && (() => {
+            const mem = dropdownMenu.member;
+            const isTargetOwner = mem.role === 'ORG_OWNER';
+            const isTargetSelf = mem.isCurrentUser;
+            const isTargetAdmin = mem.role === 'ORG_ADMIN';
+            const cannotChangeStatus = isTargetOwner || isTargetSelf || (!isOwner && isTargetAdmin);
+            const isSuspended = mem.status === 'SUSPENDED';
+
+            let reason = '';
+            if (isTargetOwner) reason = 'Chủ sở hữu không thể bị tạm ngưng';
+            else if (isTargetSelf) reason = 'Không thể tự tạm ngưng chính mình';
+            else if (!isOwner && isTargetAdmin) reason = 'Không thể đổi trạng thái Quản trị viên khác';
+
+            return (
+              <button
+                type="button"
+                disabled={cannotChangeStatus}
+                title={reason || (isSuspended ? 'Kích hoạt lại tài khoản' : 'Tạm ngưng tài khoản')}
+                onClick={() => {
+                  if (cannotChangeStatus) return;
+                  setDropdownMenu(null);
+                  onToggleStatus?.(mem);
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition font-medium ${
+                  cannotChangeStatus
+                    ? 'text-slate-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
+                    : isSuspended
+                    ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer'
+                    : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer'
+                }`}
+              >
+                {isSuspended ? (
+                  <>
+                    <PlayCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>Kích hoạt lại</span>
+                  </>
+                ) : (
+                  <>
+                    <PauseCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>Tạm ngưng hoạt động</span>
+                  </>
+                )}
+              </button>
+            );
+          })()}
 
           {/* Xóa khỏi tổ chức */}
-          {(() => {
+          {isManager && (() => {
             const mem = dropdownMenu.member;
             const isTargetOwner = mem.role === 'ORG_OWNER';
             const isTargetSelf = mem.isCurrentUser;
@@ -461,32 +536,29 @@ export function MemberDirectoryTable({
             const cannotDelete = isTargetOwner || isTargetSelf || (!isOwner && isTargetAdmin);
 
             let reason = '';
-            if (isTargetOwner) reason = 'Chủ sở hữu tổ chức không thể bị xóa';
-            else if (isTargetSelf) reason = 'Bạn không thể tự xóa chính mình';
-            else if (!isOwner && isTargetAdmin) reason = 'Quản trị viên không thể xóa Quản trị viên khác';
+            if (isTargetOwner) reason = 'Chủ sở hữu không thể bị xóa';
+            else if (isTargetSelf) reason = 'Không thể tự xóa chính mình';
+            else if (!isOwner && isTargetAdmin) reason = 'Không thể xóa Quản trị viên khác';
 
             return (
-              <>
-                <div className="my-1" />
-                <button
-                  type="button"
-                  disabled={cannotDelete}
-                  title={reason || 'Xóa thành viên khỏi tổ chức'}
-                  onClick={() => {
-                    if (cannotDelete) return;
-                    setDropdownMenu(null);
-                    onRequestDelete?.(mem);
-                  }}
-                  className={`w-full flex items-center gap-2 px-3.5 py-2 text-left transition ${
-                    cannotDelete
-                      ? 'text-slate-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
-                      : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer font-medium'
-                  }`}
-                >
-                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{cannotDelete && reason ? reason : 'Xóa khỏi tổ chức'}</span>
-                </button>
-              </>
+              <button
+                type="button"
+                disabled={cannotDelete}
+                title={reason || 'Xóa thành viên khỏi tổ chức'}
+                onClick={() => {
+                  if (cannotDelete) return;
+                  setDropdownMenu(null);
+                  onRequestDelete?.(mem);
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                  cannotDelete
+                    ? 'text-slate-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
+                    : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer font-medium'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{cannotDelete && reason ? reason : 'Xóa khỏi tổ chức'}</span>
+              </button>
             );
           })()}
         </div>

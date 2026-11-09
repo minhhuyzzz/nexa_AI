@@ -56,8 +56,8 @@ function LiveSubmittedContent() {
 
   // Current user submission stats
   const [submitTimeStr, setSubmitTimeStr] = useState<string>('');
-  const [answeredCount, setAnsweredCount] = useState<number>(30);
-  const [totalQuestions, setTotalQuestions] = useState<number>(32);
+  const [answeredCount, setAnsweredCount] = useState<number>(0);
+  const [totalQuestions, setTotalQuestions] = useState<number>(0);
   const [myScore, setMyScore] = useState<number | null>(null);
 
   // Host published status
@@ -82,10 +82,36 @@ function LiveSubmittedContent() {
           .single();
         if (profile?.full_name) setUserName(profile.full_name);
         if (profile?.avatar_url) setUserAvatar(profile.avatar_url);
+
+        if (roomId) {
+          const { data: myParticipant } = await supabase
+            .from('room_participants')
+            .select('answers_count, total_questions, score, submitted_at')
+            .eq('room_id', roomId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (myParticipant) {
+            if (typeof myParticipant.answers_count === 'number') {
+              setAnsweredCount(myParticipant.answers_count);
+            }
+            if (typeof myParticipant.total_questions === 'number') {
+              setTotalQuestions(myParticipant.total_questions);
+            }
+            if (myParticipant.score !== null && myParticipant.score !== undefined) {
+              setMyScore(Number(myParticipant.score));
+            }
+            if (myParticipant.submitted_at) {
+              const dt = new Date(myParticipant.submitted_at);
+              const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}, ${dt.toLocaleDateString('vi-VN')}`;
+              setSubmitTimeStr(timeStr);
+            }
+          }
+        }
       }
     }
     loadUser();
-  }, []);
+  }, [roomId]);
 
   // 2. Fetch room status & peers
   const fetchStatus = useCallback(async () => {
@@ -136,7 +162,7 @@ function LiveSubmittedContent() {
     if (!roomId) return;
     const supabase = createClient();
 
-    const channel = supabase.channel(`room:${roomId}:candidate`);
+    const channel = supabase.channel(`room:${roomId}`);
 
     channel
       .on('broadcast', { event: 'RESULTS_PUBLISHED' }, () => {
@@ -376,7 +402,7 @@ function LiveSubmittedContent() {
 
       {/* 3. Footer */}
       <footer className="text-center text-[11px] opacity-50">
-        NEXA Live Assessment System &bull; Khảo thí chuẩn hóa DigComp
+        NEXA Live Assessment System &bull; Khảo thí chuẩn 5 miền năng lực số
       </footer>
     </div>
   );

@@ -27,7 +27,10 @@ import {
   Sparkles,
   AlertCircle,
   RefreshCw,
+  Link2,
+  ChevronDown,
 } from 'lucide-react';
+import { InlinePinEntryCard } from '@/components/dashboard/live-room/InlinePinEntryCard';
 
 interface LiveRoomItem {
   id: string;
@@ -56,6 +59,8 @@ export function PersonalLiveRoomDashboardView() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'IN_PROGRESS' | 'SCHEDULED' | 'COMPLETED'>('ALL');
   const [modeFilter, setModeFilter] = useState<'ALL' | 'OPEN' | 'GROUP_ONLY'>('ALL');
   const [copiedPin, setCopiedPin] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [isPinEntryOpen, setIsPinEntryOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
@@ -122,6 +127,15 @@ export function PersonalLiveRoomDashboardView() {
     navigator.clipboard.writeText(pin);
     setCopiedPin(pin);
     setTimeout(() => setCopiedPin(null), 2000);
+  };
+
+  // Copy Direct Link helper
+  const handleCopyLink = (pin: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://nexa.edu.vn';
+    const link = `${origin}/live/waiting-room?pin=${pin}`;
+    navigator.clipboard.writeText(link);
+    setCopiedLink(pin);
+    setTimeout(() => setCopiedLink(null), 2000);
   };
 
   // KPI Calculations
@@ -284,15 +298,36 @@ export function PersonalLiveRoomDashboardView() {
 
         <button
           type="button"
+          onClick={() => setIsPinEntryOpen((prev) => !prev)}
+          className={`px-3.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-2xs ${
+            isPinEntryOpen
+              ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200'
+          }`}
+        >
+          <Radio className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <span>Vào phòng bằng PIN</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isPinEntryOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        <button
+          type="button"
           onClick={() => {
             alert('Xem hướng dẫn tổ chức phòng thi trực tiếp chuẩn 5 miền năng lực số.');
           }}
-          className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-2 transition-colors shadow-2xs"
+          className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-2 transition-colors shadow-2xs cursor-pointer"
         >
           <BookOpen className="w-4 h-4 text-slate-500" />
           <span>Xem hướng dẫn</span>
         </button>
       </div>
+
+      {/* Prominent Direct PIN Entry Card for Learners (collapsible dropdown) */}
+      {isPinEntryOpen && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-150">
+          <InlinePinEntryCard className="shadow-xs" />
+        </div>
+      )}
 
       {/* 4. Main Content: Table (Left) + Side Cards (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -472,26 +507,43 @@ export function PersonalLiveRoomDashboardView() {
                             )}
                           </td>
 
-                          {/* PIN */}
-                          <td className="py-3 px-3 text-center whitespace-nowrap min-w-[110px]">
-                            <div className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-neutral-800 dark:text-neutral-200 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                              <span>{room.roomCode}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyPIN(room.roomCode)}
-                                className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                title="Sao chép PIN"
-                              >
-                                {copiedPin === room.roomCode ? (
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </button>
+                          {/* PIN & Link */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap min-w-[120px]">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-neutral-800 dark:text-neutral-200 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                                <span>{room.roomCode}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyPIN(room.roomCode)}
+                                  className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                  title="Sao chép PIN"
+                                >
+                                  {copiedPin === room.roomCode ? (
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyLink(room.roomCode)}
+                                  className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                  title="Sao chép link mời thi trực tiếp"
+                                >
+                                  {copiedLink === room.roomCode ? (
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  ) : (
+                                    <Link2 className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </div>
+                              {copiedPin === room.roomCode && (
+                                <div className="text-[9px] text-emerald-600 font-sans">Đã chép mã PIN</div>
+                              )}
+                              {copiedLink === room.roomCode && (
+                                <div className="text-[9px] text-blue-600 font-sans">Đã chép link mời</div>
+                              )}
                             </div>
-                            {copiedPin === room.roomCode && (
-                              <div className="text-[9px] text-emerald-600 font-sans">Đã chép</div>
-                            )}
                           </td>
 
                           {/* Thao tác */}

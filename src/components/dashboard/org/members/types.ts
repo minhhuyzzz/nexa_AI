@@ -1,9 +1,7 @@
-export type OrgRoleType =
-  | 'ORG_OWNER'
-  | 'ORG_ADMIN'
-  | 'ASSESSOR'
-  | 'EVALUATOR'
-    | 'MEMBER';
+import type { OrgRole, StandardOrgRole } from '@/lib/auth/org-roles';
+
+export type OrgRoleType = OrgRole;
+export type { StandardOrgRole };
 
 export interface OrgMemberItem {
   membershipId: string;

@@ -18,6 +18,7 @@ import {
   Fingerprint,
   ExternalLink,
   Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface OrgSettingsViewProps {
@@ -38,6 +39,7 @@ interface OrgSettingsViewProps {
   currentMembers?: number;
   userRole?: string;
   isManager?: boolean;
+  availableAdmins?: Array<{ id: string; name: string; email: string }>;
 }
 
 const ORG_TYPES = [
@@ -54,6 +56,7 @@ export function OrgSettingsView({
   org,
   userRole = 'ORG_ADMIN',
   isManager = true,
+  availableAdmins = [],
 }: OrgSettingsViewProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +98,58 @@ export function OrgSettingsView({
   const [errorMessage, setErrorMessage] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState(false);
+
+  // Transfer Ownership State
+  const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [confirmSlugInput, setConfirmSlugInput] = useState('');
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferError, setTransferError] = useState('');
+  const [transferSuccess, setTransferSuccess] = useState(false);
+  const [adminsList, setAdminsList] = useState<Array<{ id: string; name: string; email: string }>>(
+    availableAdmins || []
+  );
+
+  useEffect(() => {
+    if (availableAdmins) {
+      setAdminsList(availableAdmins);
+    }
+  }, [availableAdmins]);
+
+  const handleTransferOwnership = async () => {
+    if (!selectedAdminId || isTransferring || userRole !== 'ORG_OWNER') return;
+    if (confirmSlugInput.trim() !== org.slug.trim()) {
+      setTransferError(`Vui lòng nhập chính xác mã slug "@${org.slug}" để xác nhận.`);
+      return;
+    }
+
+    setIsTransferring(true);
+    setTransferError('');
+
+    try {
+      const res = await fetch(`/api/org/${org.slug}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'TRANSFER_OWNERSHIP',
+          targetOwnerId: selectedAdminId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Có lỗi xảy ra khi chuyển quyền sở hữu.');
+      }
+
+      setTransferSuccess(true);
+      setTimeout(() => {
+        window.location.href = `/org/${org.slug}`;
+      }, 1500);
+    } catch (err: any) {
+      setTransferError(err.message || 'Lỗi hệ thống khi chuyển giao quyền sở hữu.');
+    } finally {
+      setIsTransferring(false);
+    }
+  };
 
   // Beforeunload prompt when unsaved changes exist
   useEffect(() => {
@@ -642,7 +697,147 @@ export function OrgSettingsView({
       </section>
 
       {/* ============================================================ */}
-      {/* 5. BOTTOM ACTION BAR (Sticky on scroll when dirty)          */}
+      {/* 5. GROUP D: CHUYỂN GIAO QUYỀN SỞ HỮU (CHỈ DÀNH CHO ORG_OWNER) */}
+      {/* ============================================================ */}
+      {userRole === 'ORG_OWNER' && (
+        <section className="rounded-xl border border-rose-200/80 dark:border-rose-950/60 bg-white dark:bg-[#111114] p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Chuyển giao quyền Chủ sở hữu
+                </h2>
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60">
+                  Chỉ dành cho Chủ sở hữu
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                Chuyển giao toàn quyền quản trị cao nhất của tổ chức cho một Quản trị viên (ORG_ADMIN). Sau khi chuyển giao, tài khoản của bạn sẽ trở thành Quản trị viên.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-lg border border-amber-200/80 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold">Lưu ý bảo mật:</span> Thao tác này có hiệu lực ngay lập tức và không thể tự đảo ngược. Người nhận chuyển giao phải là Quản trị viên (ORG_ADMIN) đang hoạt động trong tổ chức.
+            </div>
+          </div>
+
+          {transferSuccess ? (
+            <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div className="text-xs sm:text-sm font-medium">
+                Đã chuyển giao quyền Chủ sở hữu tổ chức thành công. Đang làm mới quyền truy cập...
+              </div>
+            </div>
+          ) : adminsList.length === 0 ? (
+            <div className="p-4 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 text-center">
+              <User className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+              <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                Chưa có Quản trị viên nào trong tổ chức
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1 max-w-md mx-auto">
+                Để chuyển giao quyền sở hữu, tổ chức cần có ít nhất một thành viên khác mang vai trò Quản trị viên (ORG_ADMIN). Vui lòng phân quyền tại mục Quản lý Thành viên trước.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="target-admin-select"
+                  className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5"
+                >
+                  Chọn Quản trị viên nhận chuyển giao <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  id="target-admin-select"
+                  value={selectedAdminId}
+                  onChange={(e) => {
+                    setSelectedAdminId(e.target.value);
+                    setTransferError('');
+                  }}
+                  disabled={isTransferring}
+                  className="w-full px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-rose-600 dark:focus:border-rose-500 transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  <option value="">-- Chọn một Quản trị viên (ORG_ADMIN) --</option>
+                  {adminsList.map((admin) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.name} ({admin.email || admin.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedAdminId && (
+                <div className="space-y-3 p-4 rounded-lg border border-rose-200/60 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/20">
+                  <div>
+                    <label
+                      htmlFor="confirm-slug-input"
+                      className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1"
+                    >
+                      Nhập chính xác mã slug của tổ chức <code className="font-mono text-rose-600 dark:text-rose-400 font-bold">@{org.slug}</code> để xác nhận:
+                    </label>
+                    <input
+                      id="confirm-slug-input"
+                      type="text"
+                      value={confirmSlugInput}
+                      onChange={(e) => setConfirmSlugInput(e.target.value)}
+                      disabled={isTransferring}
+                      placeholder={org.slug}
+                      className="w-full px-3 py-2 rounded-lg text-xs font-mono font-medium border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-hidden focus:border-rose-600 dark:focus:border-rose-500 transition-colors"
+                    />
+                  </div>
+
+                  {transferError && (
+                    <div className="p-3 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 text-xs font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                      <span>{transferError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAdminId('');
+                        setConfirmSlugInput('');
+                        setTransferError('');
+                      }}
+                      disabled={isTransferring}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleTransferOwnership}
+                      disabled={isTransferring || !selectedAdminId || confirmSlugInput.trim() !== org.slug.trim()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isTransferring ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Đang chuyển giao...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          <span>Xác nhận chuyển giao quyền sở hữu</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ============================================================ */}
+      {/* 6. BOTTOM ACTION BAR (Sticky on scroll when dirty)          */}
       {/* ============================================================ */}
       <div className="pt-2 flex items-center justify-between">
         <div className="text-xs text-slate-500 dark:text-neutral-400">

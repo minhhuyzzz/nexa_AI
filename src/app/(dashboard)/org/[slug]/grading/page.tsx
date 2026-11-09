@@ -35,11 +35,11 @@ export default async function OrgGradingPage({
     classQuery.or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
   }
 
-  const [{ data: orgClasses }, { data: orgCampaigns }, { data: orgAssessments }] = await Promise.all([
+  const [{ data: orgClasses }, { data: rawCampaigns }, { data: orgAssessments }] = await Promise.all([
     classQuery.order('name'),
     adminSupabase
       .from('assessment_campaigns')
-      .select('id, title')
+      .select('id, title, assessor_ids, class_ids')
       .eq('organization_id', org.id)
       .order('title'),
     adminSupabase
@@ -48,9 +48,16 @@ export default async function OrgGradingPage({
       .eq('organization_id', org.id),
   ]);
 
+  // Phân quyền chiến dịch: Assessor chỉ thấy đợt mình được phân công chấm
+  const orgCampaigns = isOrgAdminOrOwner
+    ? (rawCampaigns || [])
+    : (rawCampaigns || []).filter((camp: any) => {
+        const ids = Array.isArray(camp.assessor_ids) ? camp.assessor_ids : [];
+        return ids.includes(user.id);
+      });
+
   const classIds = (orgClasses || []).map((c) => c.id);
   const campaignIds = (orgCampaigns || []).map((c) => c.id);
-  const assessmentIds = (orgAssessments || []).map((a) => a.id);
 
   const assignmentIds: string[] = [];
   const classAssignmentMap: Record<string, string> = {}; // assignmentId -> classId
@@ -73,8 +80,12 @@ export default async function OrgGradingPage({
   if (campaignIds.length > 0) {
     conditions.push(`campaign_id.in.(${campaignIds.join(',')})`);
   }
-  if (assessmentIds.length > 0) {
-    conditions.push(`assessment_id.in.(${assessmentIds.join(',')})`);
+  // Chỉ Org Admin/Owner mới nạp dự phòng toàn bộ bài nộp theo đề thi cấp tổ chức
+  if (isOrgAdminOrOwner) {
+    const assessmentIds = (orgAssessments || []).map((a) => a.id);
+    if (assessmentIds.length > 0) {
+      conditions.push(`assessment_id.in.(${assessmentIds.join(',')})`);
+    }
   }
 
   let submissions: SubmissionItem[] = [];

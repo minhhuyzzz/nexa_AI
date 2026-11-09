@@ -83,7 +83,7 @@ export function CreateLiveRoomWizardView({
       setLoadingAssessments(true);
       try {
         const promises: Promise<any>[] = [
-          fetch('/api/assessments').then((r) => (r.ok ? r.json() : null)),
+          fetch(`/api/assessments${orgId ? `?orgId=${orgId}` : ''}`).then((r) => (r.ok ? r.json() : null)),
           fetch('/api/personal/assessments').then((r) => (r.ok ? r.json() : null)),
         ];
 
@@ -112,15 +112,16 @@ export function CreateLiveRoomWizardView({
           });
         }
 
-        // 2. Process System Canonical Assessments
+        // 2. Process System & Organization Bank Assessments
         if (sysData && Array.isArray(sysData.assessments)) {
           sysData.assessments.forEach((sa: any) => {
             if (!list.some((item) => item.id === sa.id)) {
+              const isOrgTest = Boolean(sa.isOrgBank || sa.organizationId || sa.organization_id);
               list.push({
                 id: sa.id,
                 title: sa.title,
-                domain: sa.domain || sa.domainName || 'Đa Miền Năng Lực Số',
-                domainName: sa.domainName || sa.domain || 'Đa Miền Năng Lực Số',
+                domain: isOrgTest ? 'Kho đề tổ chức' : (sa.domain || sa.domainName || 'Đa Miền Năng Lực Số'),
+                domainName: isOrgTest ? 'Kho đề tổ chức' : (sa.domainName || sa.domain || 'Đa Miền Năng Lực Số'),
                 description: sa.description || 'Đánh giá 5 miền năng lực số chuẩn hóa.',
                 duration_minutes: sa.duration_minutes || 45,
                 passing_score: sa.passing_score || 70,
@@ -129,7 +130,7 @@ export function CreateLiveRoomWizardView({
                 types: sa.types || ['MCQ'],
                 isVip: Boolean(sa.isVip),
                 accessTier: sa.accessTier || 'FREE',
-                origin: 'SYSTEM',
+                origin: isOrgTest ? 'MY_ASSESSMENT' : 'SYSTEM',
               });
             }
           });
@@ -373,19 +374,17 @@ export function CreateLiveRoomWizardView({
                 >
                   Tất cả ({assessments.length})
                 </button>
-                {!isOrg && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('MY')}
-                    className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                      activeTab === 'MY'
-                        ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                        : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900'
-                    }`}
-                  >
-                    Đề của tôi ({assessments.filter((a) => a.origin === 'MY_ASSESSMENT').length})
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('MY')}
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                    activeTab === 'MY'
+                      ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900'
+                  }`}
+                >
+                  {isOrg ? 'Kho đề tổ chức' : 'Đề của tôi'} ({assessments.filter((a) => a.origin === 'MY_ASSESSMENT').length})
+                </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('CANONICAL')}

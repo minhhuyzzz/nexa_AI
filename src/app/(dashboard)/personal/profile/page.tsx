@@ -734,9 +734,9 @@ function LearnerProfileContent() {
                       }}
                       className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs text-neutral-800 dark:text-zinc-200 rounded-md px-3 py-1.5 pr-8 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 shadow-xs appearance-none cursor-pointer"
                     >
-                      <option value="PUBLIC">🌐 Công khai</option>
-                      <option value="PRIVATE">🔒 Riêng tư</option>
-                      <option value="ORG_ONLY">🏢 Chỉ tổ chức</option>
+                      <option value="PUBLIC">Công khai</option>
+                      <option value="PRIVATE">Riêng tư</option>
+                      <option value="ORG_ONLY">Chỉ tổ chức</option>
                     </select>
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>

@@ -4,7 +4,14 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from './superadmin';
 
-export type OrgRole = 'ORG_OWNER' | 'ORG_ADMIN' | 'ASSESSOR' | 'EVALUATOR' | 'MEMBER';
+export * from './org-roles';
+import {
+  type StandardOrgRole,
+  type OrgRole,
+  normalizeOrgRole,
+  STANDARD_ROLE_LABELS,
+  getOrgRoleLabel,
+} from './org-roles';
 
 export type OrgPermissionAction =
   | 'VIEW_WORKSPACE'
@@ -41,17 +48,17 @@ export interface OrgAuthContext {
   errorResponse?: NextResponse;
 }
 
-const ACTION_ROLE_MAP: Record<OrgPermissionAction, OrgRole[]> = {
-  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+export const ACTION_ROLE_MAP: Record<OrgPermissionAction, OrgRole[]> = {
+  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
   MANAGE_MEMBERS: ['ORG_OWNER', 'ORG_ADMIN'],
-  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
-  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
-  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
-  VIEW_AI_QUOTA: ['ORG_OWNER', 'ORG_ADMIN'],
-  MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
-  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
-  MANAGE_SETTINGS: ['ORG_OWNER', 'ORG_ADMIN'],
-  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  VIEW_AI_QUOTA: ['ORG_OWNER'],
+  MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  MANAGE_SETTINGS: ['ORG_OWNER'],
+  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
 };
 
 /**
@@ -117,7 +124,7 @@ export async function getOrgAuthContext(
     };
   }
 
-  const role = (membership.org_role as OrgRole) || 'MEMBER';
+  const role = normalizeOrgRole(membership.org_role);
 
   return {
     isAuthorized: true,
@@ -154,11 +161,16 @@ export async function requireOrgPagePermission(
 
   const allowedRoles = Array.isArray(actionOrRoles)
     ? actionOrRoles
-    : ACTION_ROLE_MAP[actionOrRoles];
+    : ACTION_ROLE_MAP[actionOrRoles] || [];
 
   if (!context.isSuperadmin && !allowedRoles.includes(context.role)) {
-    // Insufficient permissions -> redirect safely to personal dashboard (Org console is Admin only)
-    redirect('/personal/dashboard');
+    // Authenticated active member lacks permission for this specific page:
+    // MEMBER is redirected to their dedicated results hub (/org/${slug}/my-results)
+    // Other operational roles (ORG_ADMIN, ASSESSOR, EVALUATOR) fallback to the organization root (/org/${slug})
+    if (context.role === 'MEMBER') {
+      redirect('/personal/groups?notice=org_restricted');
+    }
+    redirect(`/org/${slug}`);
   }
 
   return context;
@@ -210,7 +222,7 @@ export async function requireOrgApiPermission(
 
   const allowedRoles = Array.isArray(actionOrRoles)
     ? actionOrRoles
-    : ACTION_ROLE_MAP[actionOrRoles];
+    : ACTION_ROLE_MAP[actionOrRoles] || [];
 
   if (!context.isSuperadmin && !allowedRoles.includes(context.role)) {
     return {

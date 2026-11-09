@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function GET(
   request: Request,
@@ -7,6 +8,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const url = new URL(request.url);
+    const isPreview = url.searchParams.get('preview') === 'true';
     const supabase = await createClient();
 
     // 1. Check authentication
@@ -24,8 +27,11 @@ export async function GET(
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     let query = supabase
       .from('assessments')
-      .select('id, title, description, duration_minutes, passing_score, point_reward, is_vip, access_tier, organization_id, security_settings')
-      .eq('is_published', true);
+      .select('id, title, description, duration_minutes, passing_score, point_reward, is_vip, access_tier, organization_id, security_settings');
+
+    if (!isPreview) {
+      query = query.eq('is_published', true);
+    }
 
     if (isBaseline) {
       query = query.or('is_system_baseline.eq.true,id.eq.a0000000-0000-0000-0000-000000000001');
@@ -33,7 +39,31 @@ export async function GET(
       query = query.eq('id', id);
     }
 
-    const { data: assessment, error: assessmentError } = await query.limit(1).maybeSingle();
+    let { data: assessment, error: assessmentError } = await query.limit(1).maybeSingle();
+
+    // Fallback in preview mode: query via admin client if draft / org RLS
+    if ((assessmentError || !assessment) && isPreview) {
+      try {
+        const adminClient = createAdminClient();
+        let adminQuery = adminClient
+          .from('assessments')
+          .select('id, title, description, duration_minutes, passing_score, point_reward, is_vip, access_tier, organization_id, security_settings');
+
+        if (isBaseline) {
+          adminQuery = adminQuery.or('is_system_baseline.eq.true,id.eq.a0000000-0000-0000-0000-000000000001');
+        } else if (isUUID) {
+          adminQuery = adminQuery.eq('id', id);
+        }
+
+        const adminRes = await adminQuery.limit(1).maybeSingle();
+        if (adminRes.data) {
+          assessment = adminRes.data;
+          assessmentError = null;
+        }
+      } catch (adminErr) {
+        console.warn('[PREVIEW_ADMIN_FALLBACK_WARN]:', adminErr);
+      }
+    }
 
     if (assessmentError || !assessment) {
       return NextResponse.json(
@@ -42,14 +72,14 @@ export async function GET(
       );
     }
 
-    // 2b. Rule: Baseline assessment can only be taken ONCE per learner account
+    // 2b. Rule: Baseline assessment can only be taken ONCE per learner account (skipped in preview mode)
     const isBaselineAssessment = Boolean(
       isBaseline ||
       assessment.id === 'a0000000-0000-0000-0000-000000000001' ||
       assessment.title?.toLowerCase().includes('đầu vào')
     );
 
-    if (isBaselineAssessment) {
+    if (isBaselineAssessment && !isPreview) {
       try {
         const subQuery = supabase.from('assessment_submissions');
         if (subQuery && typeof subQuery.select === 'function') {
@@ -81,10 +111,9 @@ export async function GET(
       }
     }
 
-    // 3. Server-Side Access Control: Check Free vs VIP/Premium Tier
+    // 3. Server-Side Access Control: Check Free vs VIP/Premium Tier (skipped in preview mode)
     const isVipAssessment = Boolean(assessment.is_vip || assessment.access_tier === 'VIP');
-    if (isVipAssessment) {
-      const url = new URL(request.url);
+    if (isVipAssessment && !isPreview) {
       const assignmentId = url.searchParams.get('assignmentId') || url.searchParams.get('classAssignmentId');
       const campaignId = url.searchParams.get('campaignId');
 
@@ -153,14 +182,27 @@ export async function GET(
       }
     }
 
-    // 4. Fetch questions and options via leak-proof RPC (Zero is_correct / explanation leaks)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_assessment_for_candidate', {
-      p_assessment_id: assessment.id,
-    });
+    // 4. Fetch questions and options
+    let responseItems: any[] = [];
 
-    if (rpcError || !rpcData) {
-      console.warn('[GET_ASSESSMENT_RPC_FALLBACK] Falling back to sanitized direct query:', rpcError);
-      const { data: directItems, error: directError } = await supabase
+    // For regular exam takers, attempt the leak-proof RPC
+    if (!isPreview) {
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_assessment_for_candidate', {
+          p_assessment_id: assessment.id,
+        });
+        if (!rpcError && rpcData && Array.isArray((rpcData as any)?.items) && (rpcData as any).items.length > 0) {
+          responseItems = (rpcData as any).items;
+        }
+      } catch (rpcErr) {
+        console.warn('[GET_ASSESSMENT_RPC_ERR]', rpcErr);
+      }
+    }
+
+    // Direct query fallback (or primary for preview mode / drafts)
+    if (responseItems.length === 0) {
+      const fetchClient = isPreview ? createAdminClient() : supabase;
+      const { data: directItems, error: directError } = await fetchClient
         .from('assessment_items')
         .select(`
           id,
@@ -170,45 +212,57 @@ export async function GET(
           order_index,
           difficulty_level,
           competency_id,
+          scenario_context,
+          rubric_guide,
           competencies (
             skill_code,
-            title
+            title,
+            competency_domains (
+              code,
+              title
+            )
           ),
           item_options (
             id,
             content,
-            order_index
+            order_index,
+            is_correct,
+            explanation
           )
         `)
         .eq('assessment_id', assessment.id)
         .order('order_index', { ascending: true });
 
       if (directError || !directItems || directItems.length === 0) {
-        return NextResponse.json({ error: 'Không thể tải danh sách câu hỏi' }, { status: 500 });
+        return NextResponse.json(
+          { error: 'Bài khảo thí chưa có câu hỏi hoặc chưa được kích hoạt' },
+          { status: directError ? 500 : 404 }
+        );
       }
 
-      const sanitizedItems = directItems.map((item: any) => ({
+      responseItems = directItems.map((item: any) => ({
         ...item,
-        options: (item.item_options || []).sort((a: any, b: any) => a.order_index - b.order_index),
+        options: (item.item_options || [])
+          .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+          .map((opt: any) => ({
+            id: opt.id,
+            content: opt.content,
+            order_index: opt.order_index,
+            is_correct: isPreview ? opt.is_correct : undefined,
+            explanation: isPreview ? opt.explanation : undefined,
+          })),
       }));
-
-      return NextResponse.json({
-        assessment,
-        items: sanitizedItems,
-      });
     }
 
     const responseData = {
-      assessment: {
-        ...assessment,
-        ...((rpcData as { assessment?: Record<string, unknown> })?.assessment || {}),
-      },
-      items: (rpcData as { items?: unknown[] })?.items || [],
+      assessment,
+      items: responseItems,
     };
     console.log('[GET_ASSESSMENT_API_SUCCESS]:', {
       id,
       assessmentId: assessment.id,
       itemsCount: responseData.items.length,
+      isPreview,
     });
     return NextResponse.json(responseData);
   } catch (err) {

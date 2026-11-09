@@ -155,43 +155,6 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
             />
           </div>
 
-          {/* Thời lượng & Điểm chuẩn đạt */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-1.5">
-                Thời lượng làm bài (phút)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min={5}
-                  max={300}
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">phút</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-1.5">
-                Điểm chuẩn đạt (thang 100)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={passingScore}
-                  onChange={(e) => setPassingScore(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">/ 100 điểm</span>
-              </div>
-            </div>
-          </div>
-
           {/* Phạm vi 5 miền năng lực số */}
           <div>
             <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-2">
@@ -299,12 +262,11 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
 
               <div className="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-neutral-400">
                 <div className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{durationMinutes} phút</span>
+                  <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{selectedDomains.length} miền năng lực số</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Award className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Đạt: {passingScore}/100</span>
+                <div className="text-[10px] text-slate-400">
+                  Thời lượng điều chỉnh ở Bước 2
                 </div>
               </div>
             </div>

@@ -57,7 +57,8 @@ export async function GET(
         profiles (
           id,
           email,
-          raw_user_meta_data
+          full_name,
+          nickname
         )
       `)
       .eq('organization_id', orgId)
@@ -69,9 +70,7 @@ export async function GET(
 
     const members = (userOrgs || []).map((uo: any) => {
       const profile = uo.profiles;
-      const meta = profile?.raw_user_meta_data || {};
-      const nickname =
-        meta.full_name || meta.name || profile?.email?.split('@')[0] || 'Thành viên';
+      const nickname = profile?.full_name || profile?.nickname || profile?.email?.split('@')[0] || 'Thành viên';
 
       return {
         membershipId: uo.id,

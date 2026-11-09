@@ -14,10 +14,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Check,
-  Sparkles,
+  Copy,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { RoomThemeId, ROOM_THEMES } from '@/types/live-room';
 
 interface Participant {
   id: string;
@@ -37,31 +36,11 @@ interface RoomData {
   assessmentTitle: string;
   durationMinutes: number;
   passingScore: number;
-  themeId: RoomThemeId;
   hasStarted: boolean;
   startedAt?: string | null;
   scheduledStart?: string | null;
+  assessmentItemCount?: number;
 }
-
-// Coordinate anchors for radial participant orbit around center
-const RADIAL_ANCHORS = [
-  { x: -180, y: -80 },
-  { x: 170, y: -90 },
-  { x: -210, y: 70 },
-  { x: 200, y: 60 },
-  { x: -80, y: -160 },
-  { x: 90, y: -150 },
-  { x: -90, y: 150 },
-  { x: 80, y: 140 },
-  { x: -290, y: -20 },
-  { x: 280, y: -10 },
-  { x: -260, y: -130 },
-  { x: 250, y: -140 },
-  { x: -250, y: 130 },
-  { x: 260, y: 140 },
-  { x: 0, y: -220 },
-  { x: 0, y: 220 },
-];
 
 function WaitingRoomContent() {
   const router = useRouter();
@@ -76,6 +55,7 @@ function WaitingRoomContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingNotice, setStartingNotice] = useState(false);
+  const [copiedPin, setCopiedPin] = useState(false);
 
   // Current User & Ready Toggle
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -116,14 +96,15 @@ function WaitingRoomContent() {
     loadUser();
   }, []);
 
-  // Poll room status every 2.5s
+  // Poll room status
   const fetchStatus = useCallback(async () => {
     if (!pin && !roomId) return;
     try {
       const res = await fetch(`/api/rooms/status?roomId=${roomId}&pin=${pin}`);
       if (!res.ok) {
         if (!room) {
-          setError('Không tìm thấy thông tin phòng thi hoặc phòng thi đã kết thúc.');
+          const errData = await res.json().catch(() => ({}));
+          setError(errData.error || 'Không tìm thấy thông tin phòng thi hoặc phòng thi đã kết thúc.');
         }
         return;
       }
@@ -155,26 +136,66 @@ function WaitingRoomContent() {
         // Trigger auto-redirect when Evaluator starts exam
         if (data.room.hasStarted || data.room.status === 'IN_PROGRESS') {
           setStartingNotice(true);
-          const targetAsmId = data.room.assessmentId || assessmentId || 'asm-01';
+          const targetAsmId = data.room.assessmentId || assessmentId || 'baseline';
           setTimeout(() => {
             router.push(
-              `/personal/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode}`
+              `/personal/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode || pin}`
             );
-          }, 800);
+          }, 400);
         }
       }
     } catch {
-      // keep retrying silently on connection jitter
+      // Keep offline resilient
     } finally {
       setLoading(false);
     }
-  }, [roomId, pin, assessmentId, router, room, currentUserId]);
+  }, [pin, roomId, currentUserId, assessmentId, router, room]);
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 2500);
-    return () => clearInterval(interval);
+    const timer = setInterval(fetchStatus, 3000);
+    return () => clearInterval(timer);
   }, [fetchStatus]);
+
+  // Unified Realtime Supabase Channel
+  useEffect(() => {
+    const activeRoomId = room?.id || roomId;
+    if (!activeRoomId) return;
+
+    const supabase = createClient();
+    const channel = supabase.channel(`room:${activeRoomId}`);
+
+    channel
+      .on('broadcast', { event: 'ROOM_STATE_CHANGE' }, (payload) => {
+        const action = payload.payload?.action;
+        if (action === 'START') {
+          setStartingNotice(true);
+          const targetAsmId = room?.assessmentId || assessmentId || 'baseline';
+          const roomCode = room?.roomCode || pin;
+          setTimeout(() => {
+            router.push(
+              `/personal/take/${targetAsmId}?roomId=${activeRoomId}&pin=${roomCode}`
+            );
+          }, 300);
+        } else {
+          fetchStatus();
+        }
+      })
+      .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, () => {
+        fetchStatus();
+      })
+      .on('broadcast', { event: 'PARTICIPANT_JOIN' }, () => {
+        fetchStatus();
+      })
+      .on('broadcast', { event: 'PARTICIPANT_READY' }, () => {
+        fetchStatus();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [room?.id, roomId, room?.assessmentId, room?.roomCode, assessmentId, pin, router, fetchStatus]);
 
   // Handle Ready Toggle
   const handleToggleReady = async () => {
@@ -194,13 +215,34 @@ function WaitingRoomContent() {
       });
 
       if (!res.ok) {
-        setIsReady(!nextState); // rollback on error
+        setIsReady(!nextState);
+      } else {
+        try {
+          const supabase = createClient();
+          await supabase.channel(`room:${room.id}`).send({
+            type: 'broadcast',
+            event: 'PARTICIPANT_READY',
+            payload: {
+              userId: currentUserId,
+              fullName: currentUserName,
+              isReady: nextState,
+            },
+          });
+        } catch {}
       }
     } catch {
       setIsReady(!nextState);
     } finally {
       setTogglingReady(false);
     }
+  };
+
+  const handleCopyPin = () => {
+    const rawPin = room?.roomCode || pin;
+    if (!rawPin) return;
+    navigator.clipboard.writeText(rawPin);
+    setCopiedPin(true);
+    setTimeout(() => setCopiedPin(false), 2000);
   };
 
   const formatCountdown = (totalSec: number) => {
@@ -212,13 +254,13 @@ function WaitingRoomContent() {
 
   if (loading && !room) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full p-8 rounded-md bg-white border border-slate-200 text-center space-y-4 shadow-xs">
-          <RefreshCw className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
-          <div className="text-sm font-semibold text-neutral-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black p-6">
+        <div className="max-w-md w-full p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-3 shadow-xs">
+          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto" />
+          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             Đang kết nối phòng chờ thi trực tiếp...
           </div>
-          <div className="text-xs text-slate-500 font-mono">Mã PIN: {pin}</div>
+          <div className="text-xs text-slate-400 font-mono">Mã PIN: {pin}</div>
         </div>
       </div>
     );
@@ -226,99 +268,80 @@ function WaitingRoomContent() {
 
   if (error && !room) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full p-8 rounded-md bg-white border border-slate-200 text-center space-y-4 shadow-xs">
-          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-          <div className="text-base font-bold text-neutral-900">{error}</div>
-          <p className="text-xs text-slate-500">
-            Vui lòng kiểm tra lại mã PIN do người tổ chức cung cấp.
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black p-6">
+        <div className="max-w-md w-full p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-4 shadow-xs">
+          <AlertCircle className="w-9 h-9 text-rose-500 mx-auto" />
+          <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">{error}</div>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+            Vui lòng kiểm tra lại mã PIN do Giám thị cung cấp hoặc xác nhận bạn đã tham gia đúng lớp học của ca thi.
           </p>
-          <Link
-            href="/personal/live-pin"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold"
-          >
-            Nhập mã PIN khác
-          </Link>
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <Link
+              href="/personal/dashboard"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            >
+              Về bảng điều khiển
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  const isSpaceTheme = room?.themeId === 'space_blue' || room?.themeId === 'aurora' || room?.themeId === 'dark_professional';
+  const rawPin = room?.roomCode || pin;
+  const readyParticipants = participants.filter((p) => p.isReady);
 
   return (
-    <div
-      className={`min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8 select-none transition-colors duration-500 ${
-        isSpaceTheme
-          ? 'bg-gradient-to-b from-slate-950 via-blue-950 to-black text-white'
-          : 'bg-white text-neutral-900'
-      }`}
-    >
-      {/* 1. Top Metadata Banner (Screen 11) */}
-      <header
-        className={`p-4 rounded-xl border backdrop-blur-md shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-          isSpaceTheme
-            ? 'bg-white/10 border-white/15 text-white'
-            : 'bg-slate-50 border-slate-200 text-neutral-900'
-        }`}
-      >
+    <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 lg:p-8 transition-colors">
+      {/* 1. Header Ca Thi Chuẩn Tinh Gọn */}
+      <header className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-950 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span
-              className={`text-[11px] font-bold uppercase tracking-wider ${
-                isSpaceTheme ? 'text-blue-300' : 'text-blue-700'
-              }`}
-            >
+            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
               PHÒNG CHỜ KHẢO THÍ TRỰC TIẾP
             </span>
           </div>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             {room?.title || 'Phòng Khảo Thí Trực Tiếp'}
           </h1>
-          <div
-            className={`text-xs flex items-center gap-3 flex-wrap ${
-              isSpaceTheme ? 'text-slate-300' : 'text-slate-500'
-            }`}
-          >
+          <div className="text-xs flex items-center gap-2 flex-wrap text-slate-500 dark:text-neutral-400">
             <span>{room?.assessmentTitle}</span>
             <span>&bull;</span>
             <span>Thời lượng: {room?.durationMinutes || 45} phút</span>
             <span>&bull;</span>
-            <span className="font-semibold text-emerald-500">
-              {participants.length} người trong phòng
+            <span className="font-semibold text-blue-600 dark:text-blue-400">
+              {participants.length} thí sinh trực tuyến
             </span>
           </div>
         </div>
 
         {/* PIN Badge & Exit Action */}
         <div className="flex items-center gap-3">
-          <div
-            className={`px-4 py-2 rounded-lg border text-center ${
-              isSpaceTheme
-                ? 'bg-white/10 border-white/20'
-                : 'bg-white border-slate-200'
-            }`}
+          <button
+            type="button"
+            onClick={handleCopyPin}
+            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group"
+            title="Nhấn để sao chép mã PIN"
           >
-            <span
-              className={`text-[10px] uppercase font-bold tracking-wider block ${
-                isSpaceTheme ? 'text-blue-300' : 'text-slate-400'
-              }`}
-            >
+            <span className="text-[10px] uppercase font-bold tracking-wider block text-slate-400 dark:text-neutral-500">
               MÃ PIN
             </span>
-            <span className="text-xl font-extrabold font-mono text-blue-500 tracking-widest">
-              {room?.roomCode ? `${room.roomCode.slice(0, 3)} ${room.roomCode.slice(3)}` : pin}
-            </span>
-          </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 tracking-wider">
+                {rawPin.length === 6 ? `${rawPin.slice(0, 3)} ${rawPin.slice(3)}` : rawPin}
+              </span>
+              {copiedPin ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 shrink-0" />
+              )}
+            </div>
+          </button>
 
           <Link
-            href="/personal/live-pin"
-            className={`px-3 py-2 rounded-md border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
-              isSpaceTheme
-                ? 'border-white/20 hover:bg-white/10 text-slate-200'
-                : 'border-slate-200 hover:bg-slate-100 text-slate-700'
-            }`}
+            href="/personal/dashboard"
+            className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-neutral-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Rời phòng</span>
@@ -328,193 +351,147 @@ function WaitingRoomContent() {
 
       {/* Starting Exam Trigger Banner */}
       {startingNotice && (
-        <div className="my-3 p-4 rounded-lg bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 animate-bounce">
+        <div className="my-3 p-4 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 animate-pulse shadow-xs">
           <CheckCircle2 className="w-4 h-4" />
           <span>Giám thị đã phát đề! Đang chuyển hướng bạn vào màn hình làm bài ngay...</span>
         </div>
       )}
 
-      {/* 2. Main Center Arena: Countdown & Radial Orbit Cluster (Screen 11) */}
-      <main className="my-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        {/* Left 8 Cols: Countdown Timer & Planetary Orbit Arena */}
-        <div className="lg:col-span-8 flex flex-col items-center justify-center relative min-h-[460px] p-6 rounded-2xl overflow-hidden">
-          {/* Central Countdown Box */}
-          <div className="text-center space-y-2 z-20 mb-6">
-            <span
-              className={`text-xs uppercase tracking-widest font-semibold block ${
-                isSpaceTheme ? 'text-blue-200' : 'text-slate-500'
-              }`}
-            >
-              Thời gian còn lại đến khi bắt đầu
+      {/* 2. Main Body: 2 Cột Đối Xứng */}
+      <main className="my-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Cột Trái: Đồng hồ đếm ngược, Thí sinh cá nhân & Danh sách phòng (8 cols) */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* Card Đồng Hồ Đếm Ngược */}
+          <div className="p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-3 shadow-xs">
+            <span className="text-xs uppercase tracking-widest font-semibold block text-slate-500 dark:text-neutral-400 font-mono">
+              Thời gian còn lại đến khi bắt đầu ca thi
             </span>
 
-            <div
-              className={`text-4xl sm:text-5xl font-mono font-extrabold tracking-widest ${
-                isSpaceTheme ? 'text-white drop-shadow-[0_0_20px_rgba(59,130,246,0.6)]' : 'text-neutral-900'
-              }`}
-            >
+            <div className="text-5xl sm:text-6xl font-mono font-bold tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {formatCountdown(countdownSeconds)}
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <Users className="w-3.5 h-3.5" />
-              <span>{participants.length} người đã vào phòng</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-850 text-slate-700 dark:text-neutral-300">
+              <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{participants.length} người đã vào phòng ({readyParticipants.length} đã sẵn sàng)</span>
             </div>
           </div>
 
-          {/* Central Radial Participant Arena */}
-          <div className="relative w-full max-w-xl h-72 flex items-center justify-center">
-            {/* Concentric Orbit Rings */}
-            <div
-              className={`absolute w-72 h-44 rounded-full border border-dashed pointer-events-none ${
-                isSpaceTheme ? 'border-blue-500/30' : 'border-slate-300'
-              }`}
-            />
-            <div
-              className={`absolute w-96 h-60 rounded-full border border-dashed pointer-events-none ${
-                isSpaceTheme ? 'border-blue-500/20' : 'border-slate-200'
-              }`}
-            />
+          {/* Card Trạng Thái Cá Nhân & Nút Sẵn Sàng */}
+          <div className="p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm font-mono shadow-xs shrink-0">
+                  {currentUserInitials}
+                </div>
+                <div className="space-y-0.5">
+                  <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                    {currentUserName}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+                    <span>{isReady ? 'Trạng thái: Đã sẵn sàng nhận đề' : 'Trạng thái: Chưa sẵn sàng'}</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Central Learner (YOU) */}
-            <div className="relative z-30 flex flex-col items-center">
-              <div
-                className={`w-20 h-20 rounded-full flex items-center justify-center font-extrabold text-lg border-2 shadow-lg transition-transform ${
+              <button
+                type="button"
+                onClick={handleToggleReady}
+                disabled={togglingReady}
+                className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-xs inline-flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
                   isReady
-                    ? 'bg-blue-600 border-white text-white ring-4 ring-emerald-500/50 scale-105'
-                    : 'bg-blue-500 border-white text-white'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
-                {currentUserInitials}
-              </div>
-              <div
-                className={`mt-2 px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-xs flex items-center gap-1.5 ${
-                  isReady ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-200'
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    isReady ? 'bg-white' : 'bg-amber-400'
-                  }`}
-                />
-                <span>{currentUserName} ({isReady ? 'Đã sẵn sàng' : 'Chưa sẵn sàng'})</span>
-              </div>
+                <Check className="w-4 h-4 stroke-[2.5]" />
+                <span>{isReady ? 'Đã xác nhận sẵn sàng' : 'Tôi đã sẵn sàng'}</span>
+              </button>
             </div>
 
-            {/* Surrounding Other Participants (Real data from DB) */}
-            {participants
-              .filter((p) => p.userId !== currentUserId)
-              .slice(0, 16)
-              .map((p, idx) => {
-                const anchor = RADIAL_ANCHORS[idx % RADIAL_ANCHORS.length];
-                return (
-                  <div
-                    key={p.id}
-                    className="absolute z-20 flex flex-col items-center pointer-events-none transition-all duration-500"
-                    style={{
-                      transform: `translate(${anchor.x}px, ${anchor.y}px)`,
-                    }}
-                  >
+            {/* Danh sách các thí sinh khác */}
+            <div className="pt-2 space-y-2">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 font-semibold">
+                <span>Thí sinh cùng phòng thi ({participants.length})</span>
+                <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400">
+                  {readyParticipants.length}/{participants.length} sẵn sàng
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                {participants.map((p) => {
+                  const isMe = p.userId === currentUserId;
+                  return (
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold border shadow-xs ${
-                        isSpaceTheme
-                          ? 'bg-slate-900 border-blue-400/40 text-blue-200'
-                          : 'bg-white border-slate-300 text-slate-800'
-                      }`}
-                    >
-                      {p.initials}
-                    </div>
-                    <div
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full mt-1 border truncate max-w-[80px] ${
+                      key={p.id}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
                         p.isReady
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                          : isSpaceTheme
-                          ? 'bg-slate-900/80 text-slate-400 border-slate-700'
-                          : 'bg-white/90 text-slate-600 border-slate-200'
+                          ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300'
+                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-neutral-300'
                       }`}
                     >
-                      {p.fullName.split(' ').slice(-1)[0]}
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.isReady ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      <span className="truncate max-w-[130px]">
+                        {p.fullName} {isMe ? '(Bạn)' : ''}
+                      </span>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right 4 Cols: Pre-Exam Readiness Checklist Panel (Screen 11) */}
-        <div
-          className={`lg:col-span-4 p-6 rounded-2xl border shadow-sm space-y-4 text-xs ${
-            isSpaceTheme
-              ? 'bg-white/10 backdrop-blur-md border-white/15 text-white'
-              : 'bg-slate-50 border-slate-200 text-neutral-900'
-          }`}
-        >
-          <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px]">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Trước khi bắt đầu, hãy đảm bảo:</span>
+        {/* Cột Phải: Quy chế & Hướng Dẫn Phòng Thi (4 cols) */}
+        <div className="lg:col-span-4 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-4 shadow-xs text-xs">
+          <div className="flex items-center gap-2 font-bold text-sm text-neutral-900 dark:text-neutral-100">
+            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span>Quy Chế &amp; Hướng Dẫn Làm Bài</span>
           </div>
 
-          <div className="space-y-3.5">
+          <div className="space-y-3 text-slate-600 dark:text-neutral-300 leading-relaxed">
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <span className="leading-relaxed">Kết nối Internet ổn định suốt thời gian làm bài.</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+              <span>Không chuyển tab hoặc thoát toàn màn hình trong suốt thời gian làm bài.</span>
             </div>
 
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <span className="leading-relaxed">
-                Đã đọc và hiểu hướng dẫn, quy chế của kỳ thi trực tiếp.
-              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+              <span>Đáp án được hệ thống lưu tự động theo thời gian thực (Auto-save) sau mỗi lựa chọn.</span>
             </div>
 
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <span className="leading-relaxed">
-                Thiết bị hoạt động tốt (chuột, bàn phím, màn hình hiển thị).
-              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+              <span>Khi Giám thị bấm phát đề thi, màn hình làm bài sẽ tự động mở tức thì.</span>
             </div>
 
             <div className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <span className="leading-relaxed">
-                Bạn đã sẵn sàng và ở trong không gian yên tĩnh, không bị phân tâm.
-              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+              <span>Bài thi tự động thu và chấm điểm khi hết giờ hoặc khi giám thị kết thúc ca thi.</span>
             </div>
           </div>
 
-          {/* Toggle Ready Button */}
-          <div className="pt-4 space-y-2">
-            <button
-              onClick={handleToggleReady}
-              disabled={togglingReady}
-              className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all ${
-                isReady
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-4 ring-emerald-500/30'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>{isReady ? '✓ Tôi đã sẵn sàng (Đã xác nhận)' : 'Tôi đã sẵn sàng'}</span>
-            </button>
-
-            <p className="text-[11px] text-center opacity-70">
-              Bấm nút trên để giám thị biết bạn đã sẵn sàng nhận đề thi.
-            </p>
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900 space-y-2 text-[11px] text-slate-500 dark:text-neutral-400 font-medium">
+            <div className="flex justify-between">
+              <span>Thời lượng làm bài:</span>
+              <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">{room?.durationMinutes || 45} phút</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Ngưỡng đạt tiêu chuẩn:</span>
+              <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">70% (Chuẩn 5 miền)</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Chế độ giám sát:</span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">Ghi nhận rời tab &amp; thời gian thực</span>
+            </div>
           </div>
         </div>
       </main>
 
-      {/* 3. Bottom Footer Note */}
-      <footer className="text-center text-[11px] opacity-60">
-        NEXA Live Assessment System &bull; Khảo thí năng lực số thời gian thực chuẩn hóa DigComp
+      {/* 3. Footer Chuẩn Tinh Gọn */}
+      <footer className="text-center text-[11px] text-slate-400 dark:text-neutral-500 font-mono py-2">
+        Hệ thống Khảo thí Thời gian thực NEXA &bull; Khảo thí chuẩn hóa 5 miền năng lực số
       </footer>
     </div>
   );
@@ -522,7 +499,7 @@ function WaitingRoomContent() {
 
 export default function WaitingRoomPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải phòng chờ...</div>}>
       <WaitingRoomContent />
     </Suspense>
   );

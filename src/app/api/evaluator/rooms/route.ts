@@ -332,6 +332,8 @@ const updateRoomSchema = z.object({
     'PUBLISH_RESULTS',
     'UPDATE_SETTINGS',
     'SCHEDULE',
+    'EXTEND_TIME',
+    'FORCE_SUBMIT_ALL',
   ]),
   payload: z.record(z.any()).optional(),
 });
@@ -546,6 +548,86 @@ export async function PATCH(request: Request) {
       }
 
       return NextResponse.json({ success: true, action: 'SCHEDULE', room: updatedRoom });
+    }
+
+    if (action === 'EXTEND_TIME') {
+      const additionalMinutes = Number(payload?.additionalMinutes || payload?.addedMinutes || 5);
+
+      const { data: currentRoom, error: fetchError } = await supabase
+        .from('exam_rooms')
+        .select('id, scheduled_end, duration_minutes, created_by')
+        .eq('id', roomId)
+        .single();
+
+      if (fetchError || !currentRoom) {
+        return NextResponse.json({ error: 'Không tìm thấy phòng thi' }, { status: 404 });
+      }
+
+      if (currentRoom.created_by !== user.id) {
+        return NextResponse.json({ error: 'Bạn không có quyền gia hạn phòng thi' }, { status: 403 });
+      }
+
+      const currentEnd = currentRoom.scheduled_end ? new Date(currentRoom.scheduled_end) : new Date();
+      const newScheduledEnd = new Date(currentEnd.getTime() + additionalMinutes * 60000).toISOString();
+      const newDuration = (currentRoom.duration_minutes || 45) + additionalMinutes;
+
+      const { data: updatedRoom, error: updateError } = await supabase
+        .from('exam_rooms')
+        .update({
+          scheduled_end: newScheduledEnd,
+          duration_minutes: newDuration,
+        })
+        .eq('id', roomId)
+        .eq('created_by', user.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedRoom) {
+        return NextResponse.json({ error: 'Không thể gia hạn phòng thi' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        action: 'EXTEND_TIME',
+        additionalMinutes,
+        newScheduledEnd,
+        room: updatedRoom,
+      });
+    }
+
+    if (action === 'FORCE_SUBMIT_ALL') {
+      const { data: currentRoom, error: fetchError } = await supabase
+        .from('exam_rooms')
+        .select('id, created_by')
+        .eq('id', roomId)
+        .single();
+
+      if (fetchError || !currentRoom) {
+        return NextResponse.json({ error: 'Không tìm thấy phòng thi' }, { status: 404 });
+      }
+
+      if (currentRoom.created_by !== user.id) {
+        return NextResponse.json({ error: 'Bạn không có quyền thu bài phòng thi' }, { status: 403 });
+      }
+
+      const { error: updateError } = await supabase
+        .from('room_participants')
+        .update({
+          status: 'SUBMITTED',
+          submitted_at: now,
+        })
+        .eq('room_id', roomId)
+        .neq('status', 'SUBMITTED');
+
+      if (updateError) {
+        return NextResponse.json({ error: 'Không thể thu bài toàn bộ phòng thi' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        action: 'FORCE_SUBMIT_ALL',
+        submittedAt: now,
+      });
     }
 
     return NextResponse.json({ error: 'Hành động không hỗ trợ' }, { status: 400 });

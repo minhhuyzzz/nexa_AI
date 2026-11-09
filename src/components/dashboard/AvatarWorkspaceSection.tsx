@@ -14,7 +14,12 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { JoinOrgModal } from './JoinOrgModal';
+import { OrgDetailModal } from './org/OrgDetailModal';
 import { OrgInviteModal } from './org/OrgInviteModal';
+import {
+  getOrgRoleLabel,
+  type OrgRole as OrgRoleType,
+} from '@/lib/auth/org-roles';
 
 export interface OrganizationInfo {
   id: string;
@@ -22,14 +27,14 @@ export interface OrganizationInfo {
   slug?: string;
   code?: string;
   plan_tier?: string;
+  status?: string;
 }
 
-export type OrgRoleType =
-  | 'ORG_OWNER'
-  | 'ORG_ADMIN'
-  | 'ASSESSOR'
-  | 'EVALUATOR'
-    | 'MEMBER';
+export type { OrgRoleType };
+
+export function getRoleDisplayName(role: OrgRoleType | string): string {
+  return getOrgRoleLabel(role);
+}
 
 export interface WorkspaceItem {
   membershipId: string;
@@ -82,6 +87,12 @@ export function AvatarWorkspaceSection({
   const router = useRouter();
   const pathname = usePathname();
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [selectedDetailOrg, setSelectedDetailOrg] = useState<{
+    id: string;
+    name: string;
+    code?: string;
+    role?: string;
+  } | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Instant state initialization from in-memory cache or sessionStorage
@@ -186,17 +197,28 @@ export function AvatarWorkspaceSection({
     }
   };
 
-  // Organizations accessible by this user (ADMIN, ASSESSOR, EVALUATOR). Excludes MEMBER.
-  const orgWorkspaces = workspaces.filter(
-    (w) => w.role !== 'MEMBER'
-  );
+  // Cho phép mọi tổ chức (bao gồm vai trò MEMBER) hiển thị và chuyển đổi không gian làm việc
+  const manageableRoles: OrgRoleType[] = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
+  const orgWorkspaces = workspaces.filter((w) => manageableRoles.includes(w.role));
+  const memberWorkspaces = workspaces.filter((w) => w.role === 'MEMBER');
 
-  const isPersonalActive = pathname?.startsWith('/personal') || activeWorkspaceId === 'personal';
-  const currentActiveOrg = orgWorkspaces.find((w) =>
-    pathname?.startsWith(`/org/${w.organization.slug}`) || activeWorkspaceId === `org_${w.organization.id}`
-  );
+  const isPersonalRoute = pathname?.startsWith('/personal');
+  const isOrgRoute = pathname?.startsWith('/org/');
+  const isAdminRoute = pathname?.startsWith('/admin');
+  const routeOrgSlug = pathname?.startsWith('/org/') ? pathname.split('/')[2] : null;
 
-  const activeName = currentActiveOrg ? currentActiveOrg.organization.name : 'Cá nhân';
+  const isPersonalActive = !isOrgRoute && !isAdminRoute && (isPersonalRoute || activeWorkspaceId === 'personal');
+  const currentActiveOrg = !isPersonalRoute && !isAdminRoute
+    ? (routeOrgSlug
+        ? orgWorkspaces.find((w) => w.organization.slug === routeOrgSlug)
+        : orgWorkspaces.find((w) => activeWorkspaceId === `org_${w.organization.id}` || activeWorkspaceId === w.organization.id))
+    : undefined;
+
+  const activeName = currentActiveOrg
+    ? currentActiveOrg.organization.name
+    : isOrgRoute
+      ? 'Tổ chức'
+      : 'Cá nhân';
   const inviteCode = currentActiveOrg?.organization.code || currentActiveOrg?.organization.slug || '';
 
   const handleCopyInviteCode = () => {
@@ -246,7 +268,7 @@ export function AvatarWorkspaceSection({
           aria-label="Chuyển đổi không gian làm việc"
         >
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
-            {currentActiveOrg ? (
+            {currentActiveOrg || isOrgRoute ? (
               <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
             ) : (
               <User className="w-4 h-4 text-slate-600 dark:text-neutral-400 shrink-0" strokeWidth={1.75} />
@@ -257,8 +279,10 @@ export function AvatarWorkspaceSection({
               </span>
               <span className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
                 {currentActiveOrg
-                  ? (currentActiveOrg.organization.plan_tier?.toUpperCase() === 'ENTERPRISE' ? 'Enterprise' : 'Business')
-                  : (personalPlan === 'PRO' ? 'Pro' : 'Miễn phí')}
+                  ? getRoleDisplayName(currentActiveOrg.role)
+                  : isOrgRoute
+                    ? 'Đang tải...'
+                    : (personalPlan === 'PRO' ? 'Pro' : 'Miễn phí')}
               </span>
             </div>
           </div>
@@ -316,16 +340,17 @@ export function AvatarWorkspaceSection({
                 )}
               </button>
 
-              {/* Option 2+: Các tổ chức (Chỉ hiển thị cho ORG_OWNER / ORG_ADMIN / ASSESSOR) */}
+              {/* Option 2+: Các tổ chức có quyền quản lý (ORG_OWNER / ORG_ADMIN / ASSESSOR) */}
               {orgWorkspaces.map((ws) => {
                 const isOrgActive =
-                  pathname?.startsWith(`/org/${ws.organization.slug}`) ||
-                  activeWorkspaceId === `org_${ws.organization.id}` ||
-                  activeWorkspaceId === ws.organization.id;
+                  !isPersonalRoute &&
+                  !isAdminRoute &&
+                  (routeOrgSlug
+                    ? ws.organization.slug === routeOrgSlug
+                    : (activeWorkspaceId === `org_${ws.organization.id}` ||
+                       activeWorkspaceId === ws.organization.id));
 
-                const planLabel = ws.organization.plan_tier?.toUpperCase() === 'ENTERPRISE'
-                  ? 'Enterprise'
-                  : 'Business';
+                const roleLabel = getRoleDisplayName(ws.role);
 
                 return (
                   <button
@@ -346,7 +371,7 @@ export function AvatarWorkspaceSection({
                         {ws.organization.name}
                       </span>
                       <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                        {planLabel}
+                        {roleLabel}
                       </span>
                     </div>
                     {isOrgActive && (
@@ -355,46 +380,103 @@ export function AvatarWorkspaceSection({
                   </button>
                 );
               })}
+
+              {/* Option 3+: Danh sách tổ chức trực thuộc (cho vai trò MEMBER) */}
+              {memberWorkspaces.length > 0 && (
+                <div className="pt-2 pb-0.5 px-2 text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                  Tổ chức bạn tham gia (Học viên)
+                </div>
+              )}
+              {memberWorkspaces.map((ws) => (
+                <button
+                  key={ws.membershipId}
+                  type="button"
+                  onClick={() => {
+                    setIsFlyoutOpen(false);
+                    setSelectedDetailOrg({
+                      id: ws.organization.id,
+                      name: ws.organization.name,
+                      code: ws.organization.code,
+                      role: getRoleDisplayName(ws.role),
+                    });
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-700 dark:text-zinc-300 transition-colors text-left cursor-pointer"
+                >
+                  <div className="flex flex-col min-w-0 pr-2">
+                    <span className="text-xs font-medium text-slate-800 dark:text-zinc-200 truncate">
+                      {ws.organization.name}
+                    </span>
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+                      Thành viên • Xem chi tiết
+                    </span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                </button>
+              ))}
             </div>
 
             {/* Hành động dưới cùng của Menu Chuyển đổi */}
             <div className="pt-1.5 mt-1.5">
               {currentActiveOrg ? (
-                /* Khi đang ở Tổ chức: Hiển thị "Mời thành viên" */
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsFlyoutOpen(false);
-                    if (onOpenInviteModal && currentActiveOrg) {
-                      onClose();
-                      onOpenInviteModal(currentActiveOrg.organization);
-                    } else {
-                      setShowInviteModal(true);
-                    }
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer text-left"
-                >
-                  <UserPlus className="w-4 h-4 shrink-0" strokeWidth={2} />
-                  <span>Mời thành viên</span>
-                </button>
+                /* Khi đang ở Tổ chức: Chỉ ORG_OWNER và ORG_ADMIN mới có quyền mời thành viên */
+                (currentActiveOrg.role === 'ORG_OWNER' || currentActiveOrg.role === 'ORG_ADMIN') ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFlyoutOpen(false);
+                      if (onOpenInviteModal && currentActiveOrg) {
+                        onClose();
+                        onOpenInviteModal(currentActiveOrg.organization);
+                      } else {
+                        setShowInviteModal(true);
+                      }
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer text-left"
+                  >
+                    <UserPlus className="w-4 h-4 shrink-0" strokeWidth={2} />
+                    <span>Mời thành viên</span>
+                  </button>
+                ) : currentActiveOrg.role === 'MEMBER' ? (
+                  /* Cho phép thành viên mở modal chi tiết/rời tổ chức */
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFlyoutOpen(false);
+                      setSelectedDetailOrg({
+                        id: currentActiveOrg.organization.id,
+                        name: currentActiveOrg.organization.name,
+                        code: currentActiveOrg.organization.code,
+                        role: getRoleDisplayName(currentActiveOrg.role),
+                      });
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-850 transition-colors cursor-pointer text-left"
+                  >
+                    <Building2 className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                    <span>Thông tin &amp; Rời tổ chức</span>
+                  </button>
+                ) : null
               ) : (
-                /* Khi đang ở Cá nhân: Hiển thị "Tham gia tổ chức khác" */
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsFlyoutOpen(false);
-                    if (onOpenJoinModal) {
-                      onClose();
-                      onOpenJoinModal();
-                    } else {
-                      setShowJoinModal(true);
-                    }
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer text-left"
-                >
-                  <Plus className="w-4 h-4 shrink-0" strokeWidth={2} />
-                  <span>Tham gia tổ chức khác</span>
-                </button>
+                /* Khi đang ở Cá nhân: Hiển thị "Tham gia tổ chức khác" và "Quản lý tổ chức" */
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFlyoutOpen(false);
+                      if (onOpenJoinModal) {
+                        onClose();
+                        onOpenJoinModal();
+                      } else {
+                        setShowJoinModal(true);
+                      }
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer text-left"
+                  >
+                    <Plus className="w-4 h-4 shrink-0" strokeWidth={2} />
+                    <span>Tham gia tổ chức khác</span>
+                  </button>
+
+
+                </div>
               )}
             </div>
           </div>
@@ -416,6 +498,33 @@ export function AvatarWorkspaceSection({
           onClose={() => setShowInviteModal(false)}
           organization={currentActiveOrg.organization}
           userRole={currentActiveOrg.role}
+        />
+      )}
+      {selectedDetailOrg && (
+        <OrgDetailModal
+          isOpen={Boolean(selectedDetailOrg)}
+          onClose={() => setSelectedDetailOrg(null)}
+          orgId={selectedDetailOrg.id}
+          orgName={selectedDetailOrg.name}
+          orgCode={selectedDetailOrg.code}
+          role={selectedDetailOrg.role}
+          onLeaveSuccess={() => {
+            setSelectedDetailOrg(null);
+            cachedWorkspaces = null;
+            isPrefetched = false;
+            try {
+              sessionStorage.removeItem('nexa_cached_workspaces');
+            } catch {}
+            fetch('/api/organizations/my')
+              .then((r) => (r.ok ? r.json() : null))
+              .then((data) => {
+                if (data?.workspaces) {
+                  cachedWorkspaces = data.workspaces;
+                  setWorkspaces(data.workspaces);
+                }
+              });
+            router.refresh();
+          }}
         />
       )}
     </div>

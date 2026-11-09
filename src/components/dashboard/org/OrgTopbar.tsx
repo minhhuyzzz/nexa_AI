@@ -8,9 +8,10 @@ import { Building2 } from 'lucide-react';
 interface OrgTopbarProps {
   orgName: string;
   orgSlug?: string;
+  userRole?: string;
 }
 
-export function OrgTopbar({ orgName, orgSlug }: OrgTopbarProps) {
+export function OrgTopbar({ orgName, orgSlug, userRole }: OrgTopbarProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function OrgTopbar({ orgName, orgSlug }: OrgTopbarProps) {
       {/* Right: Notification and Avatar */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         <NotificationBell />
-        <OrgAvatarMenu orgSlug={orgSlug} orgName={orgName} />
+        <OrgAvatarMenu orgSlug={orgSlug} orgName={orgName} userRole={userRole} />
       </div>
     </header>
   );

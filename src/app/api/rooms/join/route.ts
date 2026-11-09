@@ -76,8 +76,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Enforce Group / Class Membership for GROUP_ONLY rooms
-    if (room.access_policy === 'GROUP_ONLY' && room.class_id) {
+    // 4. Enforce Group / Class Membership if room is bound to a class
+    if (room.class_id) {
       const { data: membership } = await supabase
         .from('class_members')
         .select('id')

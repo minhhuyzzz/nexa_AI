@@ -61,7 +61,7 @@ const QUICK_TITLE_SUGGESTIONS = [
   'Khảo sát giữa kỳ',
   'Đánh giá định kỳ Q1',
   'Đánh giá định kỳ Q2',
-  'Khảo thí chuẩn DigComp',
+  'Khảo thí 5 miền năng lực số',
   'Thi thực hành cuối khóa',
 ];
 
@@ -78,7 +78,9 @@ export function CampaignWizardClient({
   const router = useRouter();
 
   // Form state
-  const [title, setTitle] = useState('');
+  const targetInitialClass = classes.find(c => c.id === initialClassId);
+  const initialAsm = assessments.find(a => a.id === initialAssessmentId) || assessments[0];
+  const [title, setTitle] = useState(initialAsm ? (targetInitialClass ? `${initialAsm.title} - ${targetInitialClass.name}` : initialAsm.title) : '');
   const [description, setDescription] = useState('');
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 10));
   const [endsAt, setEndsAt] = useState(
@@ -119,8 +121,9 @@ export function CampaignWizardClient({
   const handleCreateCampaign = async () => {
     setErrorMsg(null);
 
-    if (!title.trim() || title.trim().length < 3) {
-      setErrorMsg('Vui lòng nhập tên đợt đánh giá (tối thiểu 3 ký tự).');
+    const effectiveTitle = title.trim() || (selectedAssessment ? `${selectedAssessment.title}${targetInitialClass ? ' - ' + targetInitialClass.name : ''}` : 'Đợt khảo thí');
+    if (effectiveTitle.length < 2) {
+      setErrorMsg('Vui lòng nhập tên đợt đánh giá hợp lệ.');
       return;
     }
 
@@ -146,7 +149,7 @@ export function CampaignWizardClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: title.trim(),
+          title: effectiveTitle,
           description: description.trim() || undefined,
           assessmentId: selectedAssessmentId,
           classIds: selectedClassIds,
@@ -300,7 +303,11 @@ export function CampaignWizardClient({
                   return (
                     <div
                       key={ass.id}
-                      onClick={() => setSelectedAssessmentId(ass.id)}
+                      onClick={() => {
+                        setSelectedAssessmentId(ass.id);
+                        const cls = classes.find(c => selectedClassIds.includes(c.id));
+                        setTitle(cls ? `${ass.title} - ${cls.name}` : ass.title);
+                      }}
                       className={`p-3.5 rounded-lg border text-xs cursor-pointer transition flex items-center justify-between gap-3 ${
                         isSelected
                           ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500/20'

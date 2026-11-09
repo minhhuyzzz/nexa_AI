@@ -10,7 +10,6 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  User,
   ShieldCheck,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -48,12 +47,11 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
 
   // Form submission state
   const [fullName, setFullName] = useState('');
-  const [studentId, setStudentId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Auto-fetch profile name for pre-filling
+  // Auto-fetch profile name for background submission
   useEffect(() => {
     if (!isOpen) return;
 
@@ -73,6 +71,8 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
 
           if (profile?.full_name) {
             setFullName(profile.full_name);
+          } else if (user.user_metadata?.full_name) {
+            setFullName(user.user_metadata.full_name);
           }
         }
       } catch {
@@ -90,7 +90,6 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
       setChecking(false);
       setCheckResult(null);
       setErrorMessage('');
-      setStudentId('');
       setSubmitting(false);
       setIsSuccess(false);
       setSuccessMsg('');
@@ -131,11 +130,6 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
     e.preventDefault();
     if (!checkResult?.valid || !code.trim()) return;
 
-    if (!fullName.trim()) {
-      setErrorMessage('Vui lòng nhập họ và tên của bạn.');
-      return;
-    }
-
     setSubmitting(true);
     setErrorMessage('');
 
@@ -145,8 +139,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: fullName.trim(),
-          studentId: studentId.trim() || undefined,
+          fullName: fullName.trim() || undefined,
         }),
       });
 
@@ -296,20 +289,20 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                 </p>
               </div>
 
-              {/* Step 2: Org Info & Identity Confirmation (Visible after valid check) */}
+              {/* Step 2: Org Info & Instant Confirmation (Zero-friction) */}
               {checkResult && checkResult.organization && (
-                <div className="space-y-3 pt-2 animate-in fade-in duration-150">
+                <div className="space-y-4 pt-1 animate-in fade-in duration-150">
                   {/* Org Banner Card */}
-                  <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-slate-900 dark:text-neutral-100 truncate">
                           {checkResult.organization.name}
                         </div>
-                        <div className="text-[11px] text-blue-600 dark:text-blue-400 font-mono mt-0.5">
+                        <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5">
                           {checkResult.joinCode?.title || 'Đơn vị thành viên'}
                         </div>
                       </div>
@@ -319,36 +312,12 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                     </div>
                   </div>
 
-                  {/* Profile inputs */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-neutral-300 mb-1">
-                      Họ và tên hiển thị trong tổ chức *
-                    </label>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Nguyễn Văn A"
-                      required
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-blue-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-neutral-300 mb-1">
-                      Mã số sinh viên / Mã nhân viên (tùy chọn)
-                    </label>
-                    <input
-                      type="text"
-                      value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
-                      placeholder="VD: PH12345 / NV-098"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-neutral-100 text-xs font-mono focus:outline-none focus:border-blue-600"
-                    />
-                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                    Hồ sơ tài khoản của bạn sẽ tự động kết nối với tổ chức này dưới vai trò <strong>Thành viên</strong>.
+                  </p>
 
                   {/* Submit Button */}
-                  <div className="pt-2">
+                  <div className="pt-1">
                     <button
                       type="submit"
                       disabled={submitting}

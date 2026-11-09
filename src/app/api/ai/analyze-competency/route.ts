@@ -427,7 +427,8 @@ export async function POST(request: Request) {
 
     const domainScores: DomainScoreInput[] = Object.values(domainAgg).map((d) => {
 
-      const percentage = d.max > 0 ? (d.earned / d.max) * 100 : 70;
+      const hasItems = d.max > 0;
+      const percentage = hasItems ? (d.earned / d.max) * 100 : null;
 
       return {
 
@@ -439,7 +440,7 @@ export async function POST(request: Request) {
 
         maxScore: Number(d.max.toFixed(1)),
 
-        percentage: Number(percentage.toFixed(1)),
+        percentage: percentage !== null ? Number(percentage.toFixed(1)) : (null as unknown as number),
 
       };
 

@@ -188,7 +188,7 @@ export function AnalyticsInsightPanel({
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>✨ Phân tích chuyên sâu với NEXA AI</span>
+                    <span>Phân tích chuyên sâu với NEXA AI</span>
                   </>
                 )}
               </button>

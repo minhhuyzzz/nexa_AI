@@ -39,6 +39,16 @@ const ROLE_PERMISSIONS: Record<
     allowed: ['Tham gia lớp, học tập và làm bài đánh giá', 'Xem kết quả và phản hồi cá nhân'],
     denied: ['Quản lý người dùng, phân quyền', 'Cấu hình hệ thống và tổ chức'],
   },
+  ASSESSOR: {
+    label: 'Khảo thí viên',
+    allowed: [
+      'Quản lý lớp học được phân công',
+      'Giao đề khảo thí và mở phòng thi trực tiếp',
+      'Chấm bài tự luận và đánh giá bằng chứng',
+      'Xem báo cáo lớp phụ trách',
+    ],
+    denied: ['Quản lý thành viên toàn tổ chức', 'Cài đặt tổ chức và gói dịch vụ'],
+  },
   ORG_ADMIN: {
     label: 'Quản trị viên',
     allowed: ['Quản lý thành viên và duyệt yêu cầu', 'Tạo và điều hành đợt đánh giá', 'Quản lý lớp học và bàn chấm bài', 'Xem toàn bộ báo cáo và hạn ngạch'],
@@ -349,6 +359,7 @@ export function InviteMemberDrawer({
                         className="w-full px-3 py-1.5 text-xs border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none"
                       >
                         <option value="MEMBER">Thành viên</option>
+                        <option value="ASSESSOR">Khảo thí viên</option>
                         <option value="ORG_ADMIN">Quản trị viên</option>
                       </select>
                     </div>

@@ -19,7 +19,7 @@ export default async function OrgPlanPage({
   const { slug } = await params;
   const { organization: org, user, role, isSuperadmin } = await requireOrgPagePermission(
     slug,
-    'VIEW_ANALYTICS'
+    'MANAGE_SETTINGS'
   );
 
   const adminSupabase = createAdminClient();

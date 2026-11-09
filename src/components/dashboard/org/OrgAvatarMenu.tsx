@@ -9,6 +9,7 @@ import {
   User,
   Building2,
   Settings,
+  CreditCard,
   Sun,
   Moon,
   MessageSquare,
@@ -24,9 +25,10 @@ import { OrgInviteModal } from './OrgInviteModal';
 interface OrgAvatarMenuProps {
   orgSlug?: string;
   orgName?: string;
+  userRole?: string;
 }
 
-export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
+export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
@@ -39,6 +41,8 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
   const [displayEmail, setDisplayEmail] = useState('');
   const [displayInitials, setDisplayInitials] = useState('TC');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  const isOwner = userRole?.toUpperCase() === 'ORG_OWNER';
 
   useEffect(() => {
     async function fetchUser() {
@@ -162,15 +166,25 @@ export function OrgAvatarMenu({ orgSlug, orgName }: OrgAvatarMenuProps) {
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">
-                {orgSlug && (
-                  <Link
-                    href={`/org/${orgSlug}/settings`}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
-                  >
-                    <Settings className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                    <span>Cài đặt Tổ chức</span>
-                  </Link>
+                {orgSlug && isOwner && (
+                  <>
+                    <Link
+                      href={`/org/${orgSlug}/settings`}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                      <span>Cài đặt Tổ chức</span>
+                    </Link>
+                    <Link
+                      href={`/org/${orgSlug}/plan`}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                    >
+                      <CreditCard className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                      <span>Gói sử dụng</span>
+                    </Link>
+                  </>
                 )}
 
                 <Link

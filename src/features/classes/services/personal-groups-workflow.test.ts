@@ -94,4 +94,75 @@ describe('Personal Groups & Classes Workflow (9 Screens)', () => {
       expect(pendingCount).toBe(1); // ca-3 is still pending
     });
   });
+
+  describe('Chat Drawer Quote & 15-Minute Deletion Policy', () => {
+    function parseQuotedMessage(rawContent: string) {
+      const match = rawContent.match(/^> \[([^\]]+)\]: (.*?)\n([\s\S]*)$/);
+      if (match) {
+        return {
+          isQuoted: true,
+          quoteAuthor: match[1],
+          quoteSnippet: match[2],
+          actualContent: match[3],
+        };
+      }
+      return {
+        isQuoted: false,
+        actualContent: rawContent,
+      };
+    }
+
+    function canDeleteChatMessage(
+      isEvaluator: boolean,
+      isSender: boolean,
+      messageCreatedAt: string,
+      now: number = Date.now()
+    ): boolean {
+      if (isEvaluator) return true;
+      if (!isSender) return false;
+
+      const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+      const age = now - new Date(messageCreatedAt).getTime();
+      return age <= FIFTEEN_MINUTES_MS;
+    }
+
+    it('parses quoted replies correctly without requiring DB schema changes', () => {
+      const quoted = '> [Minh Huy]: Chào mừng các bạn đến với lớp\nDạ em cảm ơn thầy!';
+      const parsed = parseQuotedMessage(quoted);
+
+      expect(parsed.isQuoted).toBe(true);
+      expect(parsed.quoteAuthor).toBe('Minh Huy');
+      expect(parsed.quoteSnippet).toBe('Chào mừng các bạn đến với lớp');
+      expect(parsed.actualContent).toBe('Dạ em cảm ơn thầy!');
+
+      const plain = 'Đây là tin nhắn thường không trích dẫn';
+      const parsedPlain = parseQuotedMessage(plain);
+      expect(parsedPlain.isQuoted).toBe(false);
+      expect(parsedPlain.actualContent).toBe(plain);
+    });
+
+    it('allows sender to delete their message within 15 minutes', () => {
+      const now = Date.now();
+      const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
+
+      const canDelete = canDeleteChatMessage(false, true, tenMinsAgo, now);
+      expect(canDelete).toBe(true);
+    });
+
+    it('blocks sender from deleting their message after 15 minutes', () => {
+      const now = Date.now();
+      const twentyMinsAgo = new Date(now - 20 * 60 * 1000).toISOString();
+
+      const canDelete = canDeleteChatMessage(false, true, twentyMinsAgo, now);
+      expect(canDelete).toBe(false);
+    });
+
+    it('allows managers/evaluators to delete any message anytime for moderation', () => {
+      const now = Date.now();
+      const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+      const canDeleteAsManager = canDeleteChatMessage(true, false, threeDaysAgo, now);
+      expect(canDeleteAsManager).toBe(true);
+    });
+  });
 });

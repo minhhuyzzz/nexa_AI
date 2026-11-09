@@ -1,15 +1,11 @@
 import { cookies } from 'next/headers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole, type OrgRole, type StandardOrgRole } from '@/lib/auth/org-guard';
 
 export type WorkspaceType = 'PERSONAL' | 'ORGANIZATION' | 'PLATFORM_ADMIN';
 
-export type OrgRole =
-  | 'ORG_OWNER'
-  | 'ORG_ADMIN'
-  | 'ASSESSOR'
-  | 'EVALUATOR'
-    | 'MEMBER';
+export type { OrgRole, StandardOrgRole };
 
 export interface UserOrganizationMembership {
   organization_id: string;
@@ -103,7 +99,7 @@ export async function getEffectiveUser(supabase: SupabaseClient): Promise<Effect
         organization_id: m.organization_id,
         organization_name: m.organizations!.name,
         organization_slug: m.organizations!.slug,
-        org_role: m.org_role as OrgRole,
+        org_role: normalizeOrgRole(m.org_role),
       }));
 
     // 3. Xác định Active Workspace từ cookie hoặc mặc định

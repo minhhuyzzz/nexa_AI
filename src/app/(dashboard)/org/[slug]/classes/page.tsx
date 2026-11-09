@@ -11,11 +11,12 @@ export default async function OrgClassesPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { organization: org } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
+  const { organization: org, role, user, isSuperadmin } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
+  const isManager = ['ORG_OWNER', 'ORG_ADMIN'].includes(role) || Boolean(isSuperadmin);
   const adminSupabase = createAdminClient();
 
   // 1. Fetch organization classes with relations
-  const { data: rawClasses } = await adminSupabase
+  let classQuery = adminSupabase
     .from('evaluator_classes')
     .select(`
       id,
@@ -33,8 +34,13 @@ export default async function OrgClassesPage({
       class_members ( id ),
       class_assignments ( id )
     `)
-    .eq('organization_id', org.id)
-    .order('created_at', { ascending: false });
+    .eq('organization_id', org.id);
+
+  if (!isManager) {
+    classQuery = classQuery.or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
+  }
+
+  const { data: rawClasses } = await classQuery.order('created_at', { ascending: false });
 
   // 2. Fetch real pending submissions count per class (No fake numbers)
   const classIds = (rawClasses || []).map((c: any) => c.id);
@@ -86,7 +92,7 @@ export default async function OrgClassesPage({
       organizationName={org.name}
       slug={slug}
       initialClasses={initialClasses}
-      isManager={true}
+      isManager={isManager}
     />
   );
 }

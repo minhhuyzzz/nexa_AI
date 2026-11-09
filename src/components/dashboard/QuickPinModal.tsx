@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
     }
     setError('');
     onClose();
-    router.push(`/personal/live-pin?pin=${cleanPin}`);
+    router.push(`/live/waiting-room?pin=${cleanPin}`);
   };
 
   return (
@@ -33,12 +33,12 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
       <div className="bg-white dark:bg-zinc-950 rounded-md border border-slate-200 dark:border-zinc-800 shadow-sm max-w-sm w-full p-6 text-slate-900 dark:text-zinc-100">
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-100 dark:border-sky-850">
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900">
               <KeyRound className="w-4 h-4" strokeWidth={1.75} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">Vào phòng thi nhanh</h3>
-              <p className="text-[11px] text-slate-500 dark:text-zinc-400">Nhập mã PIN 6 số do giảng viên cung cấp</p>
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Vào phòng thi trực tiếp</h3>
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400">Nhập mã PIN 6 số do giám thị cung cấp</p>
             </div>
           </div>
           <button
@@ -51,7 +51,7 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-medium text-slate-700 dark:text-neutral-300 mb-1.5">
               Mã PIN phòng thi (6 số)
             </label>
             <input
@@ -62,9 +62,9 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
                 setPin(e.target.value.replace(/[^0-9]/g, ''));
                 setError('');
               }}
-              placeholder="Ví dụ: 849201"
+              placeholder="Ví dụ: 309210"
               autoFocus
-              className="w-full text-center text-xl font-bold tracking-[0.25em] text-slate-900 dark:text-zinc-100 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 py-3 focus:bg-white dark:focus:bg-zinc-900 focus:border-sky-500 focus:outline-none transition-colors placeholder:text-slate-300 dark:placeholder:text-zinc-600 placeholder:tracking-normal placeholder:font-sans placeholder:text-sm font-mono"
+              className="w-full text-center text-xl font-bold tracking-[0.25em] text-neutral-900 dark:text-neutral-100 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 py-3 focus:bg-white dark:focus:bg-zinc-900 focus:border-blue-500 focus:outline-none transition-colors placeholder:text-slate-300 dark:placeholder:text-zinc-600 placeholder:tracking-normal placeholder:font-sans placeholder:text-sm font-mono"
             />
             {error && (
               <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5 font-medium">{error}</p>
@@ -75,15 +75,16 @@ export function QuickPinModal({ isOpen, onClose }: QuickPinModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors"
+              className="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={pin.length < 6}
-              className="px-4 py-2 rounded-lg text-xs font-medium bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white transition-colors inline-flex items-center gap-1.5 shadow-xs"
+              className="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition-colors inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
+              <Radio className="w-3.5 h-3.5" />
               <span>Vào thi ngay</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>

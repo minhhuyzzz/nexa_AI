@@ -20,7 +20,9 @@ interface ClassSettingsTabProps {
   initialName: string;
   initialDescription: string;
   initialCode: string;
-  onUpdated?: (updated: { name: string; description: string; code?: string }) => void;
+  initialAllowMemberPosts?: boolean;
+  onUpdated?: (updated: { name: string; description: string; code?: string; allowMemberPosts?: boolean }) => void;
+  onClose?: () => void;
 }
 
 export function ClassSettingsTab({
@@ -28,17 +30,15 @@ export function ClassSettingsTab({
   initialName,
   initialDescription,
   initialCode,
+  initialAllowMemberPosts = true,
   onUpdated,
+  onClose,
 }: ClassSettingsTabProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [code, setCode] = useState(initialCode);
-
-  // Policies (Mocked/persisted locally & sent to API)
-  const [requiresApproval, setRequiresApproval] = useState(false);
-  const [allowMemberPost, setAllowMemberPost] = useState(true);
-  const [allowMemberUpload, setAllowMemberUpload] = useState(true);
+  const [allowMemberPosts, setAllowMemberPosts] = useState(initialAllowMemberPosts);
 
   // States
   const [saving, setSaving] = useState(false);
@@ -67,6 +67,7 @@ export function ClassSettingsTab({
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
+          allowMemberPosts,
         }),
       });
 
@@ -75,7 +76,11 @@ export function ClassSettingsTab({
 
       setSaveSuccess(true);
       if (onUpdated) {
-        onUpdated({ name: data.class.name, description: data.class.description });
+        onUpdated({
+          name: data.class.name,
+          description: data.class.description,
+          allowMemberPosts,
+        });
       }
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: unknown) {
@@ -153,12 +158,23 @@ export function ClassSettingsTab({
                 Cập nhật tên gọi và mục tiêu học tập của lớp học.
               </p>
             </div>
-            {saveSuccess && (
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" />
-                <span>Đã lưu thành công</span>
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {saveSuccess && (
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Đã lưu thành công</span>
+                </span>
+              )}
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-neutral-300 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Đóng cài đặt
+                </button>
+              )}
+            </div>
           </div>
 
           {saveError && (
@@ -191,9 +207,42 @@ export function ClassSettingsTab({
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
+
+            {/* Discussion Permission Toggle */}
+            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/50 flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block">
+                  Quyền thảo luận &amp; Đặt câu hỏi của thành viên
+                </label>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                  {allowMemberPosts
+                    ? 'Đang bật: Thành viên có thể đăng câu hỏi, chia sẻ tài liệu và thảo luận cùng lớp.'
+                    : 'Đang tắt: Chỉ Quản trị viên mới được đăng thông báo. Thành viên chỉ xem và phản hồi.'}
+                </p>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                <input
+                  type="checkbox"
+                  checked={allowMemberPosts}
+                  onChange={(e) => setAllowMemberPosts(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-slate-300 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
           </div>
 
-          <div className="pt-3 flex justify-end">
+          <div className="pt-3 flex justify-end gap-2">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-700 dark:text-zinc-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            )}
             <button
               type="submit"
               disabled={saving}
@@ -205,93 +254,7 @@ export function ClassSettingsTab({
           </div>
         </form>
 
-        {/* Section 2: Quyền tham gia & Hoạt động */}
-        <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
-          <div className="pb-3">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-              Quyền tham gia &amp; Hoạt động trong lớp
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Thiết lập quy chế kiểm duyệt thành viên và quyền đăng tải nội dung.
-            </p>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-800">
-              <div>
-                <strong className="text-neutral-900 dark:text-neutral-100 block">
-                  Yêu cầu phê duyệt thành viên trước khi vào lớp
-                </strong>
-                <span className="text-[11px] text-slate-400 dark:text-neutral-500 block mt-0.5">
-                  Thành viên nhập mã sẽ vào danh sách chờ duyệt thay vì vào lớp trực tiếp.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setRequiresApproval(!requiresApproval)}
-                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                  requiresApproval ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                    requiresApproval ? 'left-5.5' : 'left-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-800">
-              <div>
-                <strong className="text-neutral-900 dark:text-neutral-100 block">
-                  Cho phép thành viên đăng bài lên Bảng tin
-                </strong>
-                <span className="text-[11px] text-slate-400 dark:text-neutral-500 block mt-0.5">
-                  Học viên có thể chủ động tạo bài thảo luận mới trên luồng tin chung.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAllowMemberPost(!allowMemberPost)}
-                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                  allowMemberPost ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                    allowMemberPost ? 'left-5.5' : 'left-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-800">
-              <div>
-                <strong className="text-neutral-900 dark:text-neutral-100 block">
-                  Cho phép thành viên tải tài liệu lên kho học liệu
-                </strong>
-                <span className="text-[11px] text-slate-400 dark:text-neutral-500 block mt-0.5">
-                  Chia sẻ file học tập và liên kết tài liệu tham khảo nội bộ lớp.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAllowMemberUpload(!allowMemberUpload)}
-                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                  allowMemberUpload ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                    allowMemberUpload ? 'left-5.5' : 'left-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: Danger Zone */}
+        {/* Section 2: Danger Zone */}
         <div className="p-6 rounded-2xl border border-rose-200 dark:border-rose-950/80 bg-rose-50/20 dark:bg-rose-950/10 space-y-4">
           <div className="flex items-center gap-2 pb-3 text-rose-700 dark:text-rose-400">
             <AlertTriangle className="w-4 h-4 shrink-0" />

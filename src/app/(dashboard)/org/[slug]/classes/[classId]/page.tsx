@@ -16,7 +16,8 @@ export default async function OrgClassDetailPage({
   params: Promise<{ slug: string; classId: string }>;
 }) {
   const { slug, classId } = await params;
-  const { organization: org, user } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
+  const { organization: org, user, role, isSuperadmin } = await requireOrgPagePermission(slug, 'MANAGE_CLASSES');
+  const isManager = ['ORG_OWNER', 'ORG_ADMIN'].includes(role) || Boolean(isSuperadmin);
   const adminSupabase = createAdminClient();
 
   // 1. Fetch class record (scoped to organization, support UUID or class_code)
@@ -32,6 +33,10 @@ export default async function OrgClassDetailPage({
     classQuery = classQuery.eq('id', classId);
   } else {
     classQuery = classQuery.eq('class_code', classId);
+  }
+
+  if (!isManager) {
+    classQuery = classQuery.or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
   }
 
   const { data: classRecord } = await classQuery.maybeSingle();
@@ -50,16 +55,15 @@ export default async function OrgClassDetailPage({
       role_in_class,
       sub_group,
       student_code,
-      profiles ( id, email, nickname, raw_user_meta_data )
+      profiles ( id, email, full_name, nickname )
     `)
     .eq('class_id', realClassId)
     .order('joined_at', { ascending: false });
 
   const members: ClassMemberItem[] = (membersRaw || []).map((m: any) => {
     const prof = m.profiles;
-    const meta = prof?.raw_user_meta_data || {};
-    const fullName = meta.full_name || meta.name || prof?.nickname || 'Thành viên';
-    const studentId = m.student_code || meta.student_id || `PH${m.user_id.slice(0, 5).toUpperCase()}`;
+    const fullName = prof?.full_name || prof?.nickname || prof?.email?.split('@')[0] || 'Thành viên';
+    const studentId = m.student_code || `PH${m.user_id.slice(0, 5).toUpperCase()}`;
 
     return {
       id: m.id,
@@ -135,7 +139,7 @@ export default async function OrgClassDetailPage({
     .select(`
       user_id,
       org_role,
-      profiles ( id, email, nickname, raw_user_meta_data )
+      profiles ( id, email, full_name, nickname )
     `)
     .eq('organization_id', org.id)
     .eq('status', 'ACTIVE');
@@ -145,12 +149,12 @@ export default async function OrgClassDetailPage({
     .filter((u: any) => !enrolledUserIds.has(u.user_id))
     .map((u: any) => {
       const prof = u.profiles;
-      const meta = prof?.raw_user_meta_data || {};
-      const fullName = meta.full_name || meta.name || prof?.nickname || 'Nhân sự';
+      const fullName = prof?.full_name || prof?.nickname || prof?.email?.split('@')[0] || 'Nhân sự';
       return {
         userId: u.user_id,
         fullName,
         email: prof?.email || '',
+        orgRole: u.org_role,
         suggestedRole: u.org_role === 'ASSESSOR' ? 'ASSISTANT_TEACHER' : 'STUDENT',
       };
     });
@@ -161,14 +165,24 @@ export default async function OrgClassDetailPage({
     .select('id, title, duration_minutes, assessment_items(id)')
     .or(`organization_id.eq.${org.id},organization_id.is.null`)
     .order('created_at', { ascending: false })
-    .limit(20);
+    .limit(30);
+
+  // 6. Check active live exam room for this class
+  const { data: activeLiveRoom } = await adminSupabase
+    .from('live_rooms')
+    .select('id, room_code, title, status, duration_minutes')
+    .eq('class_id', realClassId)
+    .in('status', ['WAITING', 'IN_PROGRESS'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const availableAssessments = (rawAssessments || []).map((ass: any) => ({
     id: ass.id,
     title: ass.title,
     durationMinutes: ass.duration_minutes || 60,
     questionCount: Array.isArray(ass.assessment_items) ? ass.assessment_items.length : 0,
-    rubricTitle: 'Thang điểm 100 DigComp',
+    rubricTitle: 'Thang điểm 100 — 5 miền năng lực số',
   }));
 
   const formattedClass: OrgClassItem = {
@@ -201,7 +215,18 @@ export default async function OrgClassDetailPage({
       orgCandidates={orgCandidates}
       availableAssessments={availableAssessments}
       currentUserId={user.id}
-      isManager={true}
+      isManager={isManager}
+      activeLiveRoom={
+        activeLiveRoom
+          ? {
+              id: activeLiveRoom.id,
+              roomCode: activeLiveRoom.room_code,
+              title: activeLiveRoom.title,
+              status: activeLiveRoom.status,
+              durationMinutes: activeLiveRoom.duration_minutes,
+            }
+          : null
+      }
     />
   );
 }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ const createOrgClassSchema = z.object({
   term: z.string().trim().optional(),
   instructorId: z.string().uuid().optional().nullable(),
   instructorName: z.string().trim().optional(),
-  maxCapacity: z.number().int().min(1).max(2000).default(50),
+  maxCapacity: z.number().int().min(1).max(100000).optional(),
   settings: z
     .object({
       allowJoinCode: z.boolean().default(true),
@@ -26,7 +27,15 @@ const createOrgClassSchema = z.object({
 
 async function checkOrgPermission(userId: string, userEmail: string | undefined, orgId: string) {
   const isSuper = isSuperadminEmail(userEmail);
-  if (isSuper) return { isAllowed: true, role: 'ORG_OWNER', isSuperadmin: true };
+  if (isSuper) {
+    return {
+      isAllowed: true,
+      role: 'ORG_OWNER',
+      normalizedRole: 'ORG_OWNER',
+      isOrgAdminOrOwner: true,
+      isSuperadmin: true,
+    };
+  }
 
   const adminSupabase = createAdminClient();
   const { data: member } = await adminSupabase
@@ -37,11 +46,24 @@ async function checkOrgPermission(userId: string, userEmail: string | undefined,
     .eq('status', 'ACTIVE')
     .maybeSingle();
 
-  if (!member) return { isAllowed: false, role: null, isSuperadmin: false };
+  if (!member) {
+    return {
+      isAllowed: false,
+      role: null,
+      normalizedRole: null,
+      isOrgAdminOrOwner: false,
+      isSuperadmin: false,
+    };
+  }
+
+  const normalizedRole = normalizeOrgRole(member.org_role);
+  const isOrgAdminOrOwner = normalizedRole === 'ORG_OWNER' || normalizedRole === 'ORG_ADMIN';
+
   return {
     isAllowed: true,
     role: member.org_role,
-    isManager: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(member.org_role),
+    normalizedRole,
+    isOrgAdminOrOwner,
     isSuperadmin: false,
   };
 }
@@ -62,8 +84,8 @@ export async function GET(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { isAllowed } = await checkOrgPermission(user.id, user.email, orgId);
-    if (!isAllowed) {
+    const perm = await checkOrgPermission(user.id, user.email, orgId);
+    if (!perm.isAllowed) {
       return NextResponse.json({ error: 'Bạn không thuộc tổ chức này' }, { status: 403 });
     }
 
@@ -105,6 +127,11 @@ export async function GET(
       `)
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false });
+
+    // Restrict classes for ASSESSOR / EVALUATOR to assigned classes only
+    if (!perm.isSuperadmin && !perm.isOrgAdminOrOwner) {
+      query = query.or(`instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
+    }
 
     if (statusParam !== 'ALL') {
       query = query.eq('status', statusParam);
@@ -184,8 +211,8 @@ export async function POST(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    const { isAllowed, isManager } = await checkOrgPermission(user.id, user.email, orgId);
-    if (!isAllowed || !isManager) {
+    const perm = await checkOrgPermission(user.id, user.email, orgId);
+    if (!perm.isAllowed || (!perm.isSuperadmin && !perm.isOrgAdminOrOwner)) {
       return NextResponse.json(
         { error: 'Bạn không có quyền tạo lớp/nhóm trong tổ chức này' },
         { status: 403 }
@@ -257,7 +284,7 @@ export async function POST(
         term: term?.trim() || null,
         instructor_id: instructorId || null,
         instructor_name: instructorName?.trim() || null,
-        max_capacity: maxCapacity || 1000,
+        max_capacity: maxCapacity || 10000,
         settings: settings || {
           allowJoinCode: true,
           isActiveListed: true,

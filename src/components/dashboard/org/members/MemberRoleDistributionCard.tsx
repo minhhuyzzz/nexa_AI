@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, Mail, ChevronRight, Lightbulb, Check } from 'lucide-react';
 import type { OrgMemberItem } from './types';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 interface MemberRoleDistributionCardProps {
   members: OrgMemberItem[];
@@ -18,9 +19,9 @@ export function MemberRoleDistributionCard({
   const total = members.length || 1;
 
   // Calculate role counts
-  const adminCount = members.filter((m) => ['ORG_OWNER', 'ORG_ADMIN'].includes(m.role)).length;
-  const teacherCount = members.filter((m) => ['ASSESSOR', 'EVALUATOR'].includes(m.role)).length;
-  const studentCount = members.filter((m) => m.role === 'MEMBER').length;
+  const adminCount = members.filter((m) => ['ORG_OWNER', 'ORG_ADMIN'].includes(normalizeOrgRole(m.role))).length;
+  const teacherCount = members.filter((m) => normalizeOrgRole(m.role) === 'ASSESSOR').length;
+  const studentCount = members.filter((m) => normalizeOrgRole(m.role) === 'MEMBER').length;
   const otherCount = members.length - adminCount - teacherCount - studentCount;
 
   const adminPct = Math.round((adminCount / total) * 100);

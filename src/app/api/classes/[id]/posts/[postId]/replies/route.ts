@@ -68,6 +68,23 @@ export async function POST(
       return NextResponse.json({ error: 'Từ chối quyền truy cập' }, { status: 403 });
     }
 
+    // If member, check if class settings allow member discussion / replies
+    if (!access.isEvaluator) {
+      const { data: cls } = await supabase
+        .from('evaluator_classes')
+        .select('settings')
+        .eq('id', classId)
+        .maybeSingle();
+
+      const allowMemberPosts = (cls?.settings as Record<string, any>)?.allow_member_posts !== false;
+      if (!allowMemberPosts) {
+        return NextResponse.json(
+          { error: 'Quản trị viên đã tạm khóa tính năng phản hồi và thảo luận của thành viên.' },
+          { status: 403 }
+        );
+      }
+    }
+
     const body: unknown = await req.json();
     const parsed = createReplySchema.safeParse(body);
     if (!parsed.success) {

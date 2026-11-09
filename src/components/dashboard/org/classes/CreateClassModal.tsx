@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   GraduationCap,
-  Users,
   Layers,
   Building2,
   Check,
@@ -20,17 +19,6 @@ interface CreateClassModalProps {
   organizationId: string;
   onSuccess: () => void;
 }
-
-const TERM_SUGGESTIONS = [
-  'Học kỳ 1',
-  'Học kỳ 2',
-  'Học kỳ Fall 2026',
-  'Học kỳ Spring 2026',
-  'Đợt 1',
-  'Đợt 2',
-  'Q1 2026',
-  'Q2 2026',
-];
 
 export function CreateClassModal({
   isOpen,
@@ -79,7 +67,7 @@ export function CreateClassModal({
           name: name.trim(),
           groupType,
           description: description.trim() || undefined,
-          term: term.trim() || undefined,
+          term: groupType === 'CLASS' ? (term.trim() || undefined) : undefined,
           settings: {
             allowJoinCode,
             isActiveListed: true,
@@ -103,40 +91,61 @@ export function CreateClassModal({
   };
 
   const getPlaceholderByName = () => {
-    if (groupType === 'DEPARTMENT') return 'Ví dụ: Phòng Kỹ thuật & Công nghệ';
-    if (groupType === 'PROJECT_GROUP') return 'Ví dụ: Đội Dự án Chuyển đổi số 2026';
-    return 'Ví dụ: Lớp K66 – Khoa CNTT';
+    switch (groupType) {
+      case 'DEPARTMENT':
+        return 'Ví dụ: Phòng Kỹ thuật & CNTT, Ban Đào tạo...';
+      case 'PROJECT_GROUP':
+        return 'Ví dụ: Đội thi Olympic Tin học, Nhóm nghiên cứu AI...';
+      default:
+        return 'Ví dụ: Lớp K66 - Khoa CNTT';
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl max-w-xl w-full flex flex-col max-h-[92vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-class-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+    >
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal Dialog */}
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150 font-sans">
+        {/* Modal Header */}
+        <div className="p-5 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-zinc-900/40">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-              <Users className="w-4 h-4" strokeWidth={2} />
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+              <Plus className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+              <h2
+                id="create-class-modal-title"
+                className="text-base font-bold text-neutral-900 dark:text-neutral-100"
+              >
                 Tạo lớp / nhóm mới
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                 Thiết lập không gian để tổ chức thành viên và giao bài khảo thí.
               </p>
             </div>
           </div>
 
           <button
-            type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+            aria-label="Đóng"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" strokeWidth={1.75} />
           </button>
         </div>
 
-        {/* Modal Form Body */}
+        {/* Modal Body Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs">
           {error && (
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 flex items-center gap-2">
@@ -145,7 +154,7 @@ export function CreateClassModal({
             </div>
           )}
 
-          {/* 1. Loại nhóm (3 Cards) */}
+          {/* 1. Loại không gian (3 Cards) */}
           <div>
             <label className="block font-medium text-slate-900 dark:text-neutral-200 mb-1.5">
               Loại không gian <span className="text-red-500">*</span>
@@ -155,7 +164,7 @@ export function CreateClassModal({
               <button
                 type="button"
                 onClick={() => setGroupType('CLASS')}
-                className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   groupType === 'CLASS'
                     ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/30 ring-1 ring-blue-600'
                     : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/40'
@@ -181,7 +190,7 @@ export function CreateClassModal({
               <button
                 type="button"
                 onClick={() => setGroupType('DEPARTMENT')}
-                className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   groupType === 'DEPARTMENT'
                     ? 'border-purple-600 bg-purple-50/40 dark:bg-purple-950/30 ring-1 ring-purple-600'
                     : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/40'
@@ -207,7 +216,7 @@ export function CreateClassModal({
               <button
                 type="button"
                 onClick={() => setGroupType('PROJECT_GROUP')}
-                className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   groupType === 'PROJECT_GROUP'
                     ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 ring-1 ring-emerald-600'
                     : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/40'
@@ -231,7 +240,7 @@ export function CreateClassModal({
             </div>
           </div>
 
-          {/* 2. Tên lớp/nhóm (Toàn bộ chiều rộng, hệ thống tự động cấp mã duy nhất) */}
+          {/* 2. Tên lớp/nhóm */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block font-medium text-slate-900 dark:text-neutral-200">
@@ -247,55 +256,30 @@ export function CreateClassModal({
               placeholder={getPlaceholderByName()}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition"
+              className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition"
             />
           </div>
 
-          {/* 3. Đợt / Học kỳ (Tự do nhập hoặc chọn nhanh suggestion) */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block font-medium text-slate-900 dark:text-neutral-200">
-                Đợt / Học kỳ (tùy chọn)
-              </label>
-              <span className="text-[11px] text-slate-400 dark:text-neutral-500">
-                Tự do đặt tên theo đợt vận hành
-              </span>
+          {/* 3. Đợt / Học kỳ (Chỉ hiển thị khi loại không gian là Lớp học) */}
+          {groupType === 'CLASS' && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-medium text-slate-900 dark:text-neutral-200">
+                  Đợt / Học kỳ (tùy chọn)
+                </label>
+                <span className="text-[11px] text-slate-400 dark:text-neutral-500">
+                  Để trống nếu không phân đợt
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="Ví dụ: Học kỳ 1, Đợt 1, Fall 2026..."
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Ví dụ: Học kỳ Fall 2026, Đợt 1 - Tuyển dụng, Q2/2026..."
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition mb-1.5"
-            />
-            {/* Quick Suggestions Chips */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] text-slate-400 dark:text-neutral-500">Gợi ý nhanh:</span>
-              {TERM_SUGGESTIONS.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setTerm(item)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
-                    term === item
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-              {term && (
-                <button
-                  type="button"
-                  onClick={() => setTerm('')}
-                  className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
-                >
-                  Xóa
-                </button>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* 4. Mô tả */}
           <div>
@@ -307,13 +291,13 @@ export function CreateClassModal({
               placeholder="Mục tiêu đào tạo, phạm vi công việc hoặc nội dung sinh hoạt..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition resize-none"
+              className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition resize-none"
             />
           </div>
 
           {/* 5. Cài đặt thành viên */}
-          <div className="pt-2">
-            <label className="flex items-start gap-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-850/50 cursor-pointer transition">
+          <div className="pt-1">
+            <label className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-850/50 cursor-pointer transition">
               <input
                 type="checkbox"
                 checked={allowJoinCode}
@@ -332,30 +316,26 @@ export function CreateClassModal({
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-4 flex items-center justify-end gap-2.5">
+          <div className="pt-3 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
             >
               Hủy
             </button>
-
             <button
               type="submit"
               disabled={loading || !name.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition shadow-xs cursor-pointer"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang khởi tạo...</span>
+                  <span>Đang tạo...</span>
                 </>
               ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
-                  <span>Tạo lớp / nhóm</span>
-                </>
+                <span>+ Tạo lớp / nhóm</span>
               )}
             </button>
           </div>

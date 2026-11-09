@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Sparkles,
   ArrowRight,
@@ -30,17 +30,45 @@ import {
 
 function CompetencyAnalysisContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const submissionId = searchParams.get('submissionId');
 
   const [loading, setLoading] = useState(true);
+  const [resolvingSubmission, setResolvingSubmission] = useState(!submissionId);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<CompetencyAnalysisOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [noSubmissionsFound, setNoSubmissionsFound] = useState(false);
+
+  // Auto-fetch latest submissionId if not specified in searchParams
+  useEffect(() => {
+    if (!submissionId) {
+      setResolvingSubmission(true);
+      fetch('/api/personal/competency-profile')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.latestSubmissionId) {
+            router.replace(`/personal/competency/analysis?submissionId=${data.latestSubmissionId}`);
+          } else {
+            setResolvingSubmission(false);
+            setNoSubmissionsFound(true);
+            setLoading(false);
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not auto-fetch latestSubmissionId:', err);
+          setResolvingSubmission(false);
+          setNoSubmissionsFound(true);
+          setLoading(false);
+        });
+    } else {
+      setResolvingSubmission(false);
+    }
+  }, [submissionId, router]);
 
   // Fetch or trigger analysis
   const fetchAnalysis = useCallback(async () => {
     if (!submissionId) {
-      setLoading(false);
       return;
     }
 
@@ -63,8 +91,10 @@ function CompetencyAnalysisContent() {
   }, [submissionId]);
 
   useEffect(() => {
-    fetchAnalysis();
-  }, [fetchAnalysis]);
+    if (submissionId) {
+      fetchAnalysis();
+    }
+  }, [submissionId, fetchAnalysis]);
 
   const handleTriggerAnalysis = async () => {
     if (!submissionId) return;
@@ -149,6 +179,7 @@ function CompetencyAnalysisContent() {
                 points={ringPoints}
                 fill="none"
                 stroke="#E2E8F0"
+                className="dark:stroke-zinc-800"
                 strokeWidth="1"
               />
             );
@@ -165,6 +196,7 @@ function CompetencyAnalysisContent() {
                 x2={pt.x}
                 y2={pt.y}
                 stroke="#CBD5E1"
+                className="dark:stroke-zinc-700"
                 strokeWidth="1"
                 strokeDasharray="2 2"
               />
@@ -176,6 +208,7 @@ function CompetencyAnalysisContent() {
             points={benchmarkPoints}
             fill="none"
             stroke="#94A3B8"
+            className="dark:stroke-zinc-500"
             strokeWidth="1.5"
             strokeDasharray="4 3"
           />
@@ -200,6 +233,7 @@ function CompetencyAnalysisContent() {
                 r="3.5"
                 fill="#2563EB"
                 stroke="#FFFFFF"
+                className="dark:stroke-black"
                 strokeWidth="1.5"
               />
             );
@@ -215,7 +249,7 @@ function CompetencyAnalysisContent() {
                 y={labelPt.y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="text-[10px] font-sans font-semibold fill-slate-700"
+                className="text-[10px] font-sans font-semibold fill-slate-700 dark:fill-neutral-300"
               >
                 {d.domainName.length > 18 ? d.domainName.slice(0, 18) + '...' : d.domainName}
               </text>
@@ -226,11 +260,11 @@ function CompetencyAnalysisContent() {
         {/* Legend */}
         <div className="flex items-center gap-6 mt-4 text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-sm bg-blue-600/30 border border-sky-600 inline-block" />
+            <span className="w-3 h-3 rounded-sm bg-blue-600/30 border border-blue-600 inline-block" />
             <span className="text-neutral-700 dark:text-zinc-300 font-medium">Bạn đạt được</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-0.5 bg-slate-400 border-t border-dashed border-slate-500 inline-block" />
+            <span className="w-3 h-0.5 bg-slate-400 dark:bg-zinc-500 inline-block" />
             <span className="text-slate-500 dark:text-neutral-400">Chuẩn NEXA (70.0)</span>
           </div>
         </div>
@@ -239,18 +273,29 @@ function CompetencyAnalysisContent() {
   };
 
   if (!submissionId) {
+    if (resolvingSubmission) {
+      return (
+        <div className="p-12 text-center bg-white dark:bg-[#111114] rounded-xl border border-slate-200/80 dark:border-zinc-800">
+          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-2" strokeWidth={1.75} />
+          <p className="text-xs text-slate-500 dark:text-neutral-400">Đang tìm bài đánh giá mới nhất của bạn...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="p-12 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-center max-w-md mx-auto mt-12 space-y-4">
         <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" strokeWidth={1.5} />
         <div>
-          <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Thiếu thông tin bài thi</h2>
+          <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+            {noSubmissionsFound ? 'Chưa có bài thi nào' : 'Thiếu thông tin bài thi'}
+          </h2>
           <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
             Vui lòng hoàn thành bài đánh giá hoặc chọn bài thi từ lịch sử để xem chẩn đoán năng lực.
           </p>
         </div>
         <Link
           href="/personal/assessments"
-          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-sky-700 transition-colors inline-block"
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 transition-colors inline-block"
         >
           Đến danh sách bài thi
         </Link>
@@ -273,7 +318,7 @@ function CompetencyAnalysisContent() {
             href="/personal/learning-path"
             className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-xs inline-flex items-center gap-1.5"
           >
-            <Compass className="w-3.5 h-3.5 text-sky-400" strokeWidth={1.75} />
+            <Compass className="w-3.5 h-3.5 text-blue-400" strokeWidth={1.75} />
             Đến Lộ trình học liệu
           </Link>
         </div>
@@ -287,7 +332,7 @@ function CompetencyAnalysisContent() {
       ) : !analysis ? (
         /* On-Demand Trigger State (Rule 6 compliant) */
         <div className="p-8 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-xs text-center max-w-2xl mx-auto space-y-4">
-          <div className="w-12 h-12 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto">
+          <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto">
             <Sparkles className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
@@ -310,7 +355,7 @@ function CompetencyAnalysisContent() {
             <button
               onClick={handleTriggerAnalysis}
               disabled={analyzing}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-xs disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-xs disabled:opacity-50"
             >
               <Sparkles
                 className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`}
@@ -346,7 +391,7 @@ function CompetencyAnalysisContent() {
                 {analysis.radarData.map((d) => (
                   <div
                     key={d.domainCode}
-                    className="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between"
+                    className="p-2 rounded bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800 flex items-center justify-between"
                   >
                     <span className="text-slate-500 dark:text-neutral-400 truncate mr-1">{d.domainName}:</span>
                     <span
@@ -377,7 +422,7 @@ function CompetencyAnalysisContent() {
                         ? 'Highly Advanced'
                         : analysis.overallLevel}
                     </span>
-                    <span className="px-2.5 py-1 rounded bg-sky-50 text-sky-700 border border-sky-200 text-xs font-semibold">
+                    <span className="px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 text-xs font-semibold">
                       Chuẩn Năng Lực Số
                     </span>
                   </div>
@@ -411,7 +456,7 @@ function CompetencyAnalysisContent() {
               </div>
 
               {/* Pedagogical Advice */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-neutral-900 dark:text-neutral-100">
                   <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
                   Lời khuyên Sư phạm từ Chuyên gia Khảo thí AI
@@ -440,7 +485,7 @@ function CompetencyAnalysisContent() {
             </div>
 
             {analysis.skillGaps.length === 0 ? (
-              <div className="p-6 text-center rounded border border-slate-200/80 dark:border-zinc-800 bg-slate-50 text-xs text-slate-500 dark:text-neutral-400">
+              <div className="p-6 text-center rounded border border-slate-200/80 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 text-xs text-slate-500 dark:text-neutral-400">
                 Xuất sắc! Bạn không có kỹ năng nào dưới 60%.
               </div>
             ) : (
@@ -489,7 +534,7 @@ function CompetencyAnalysisContent() {
                     <div className="pt-2">
                       <Link
                         href="/personal/learning-path"
-                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-sky-700 inline-flex items-center gap-1"
+                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1"
                       >
                         Học module bổ khuyết
                         <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -519,7 +564,7 @@ function CompetencyAnalysisContent() {
                       Được AI chọn lọc trực tiếp từ kho học liệu chuẩn hóa để giải quyết các khoảng trống năng lực số đã phát hiện.
                     </p>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded bg-sky-50 text-sky-700 border border-sky-200 font-semibold self-start sm:self-auto font-mono">
+                  <span className="text-xs px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 font-semibold self-start sm:self-auto font-mono">
                     {coursesToDisplay.length} KHÓA HỌC PHÙ HỢP
                   </span>
                 </div>
@@ -553,8 +598,8 @@ function CompetencyAnalysisContent() {
                           {course.description}
                         </p>
 
-                        <div className="p-2 rounded bg-slate-50 border border-slate-100 text-[11px] text-neutral-700 dark:text-zinc-300 leading-snug">
-                          <span className="font-semibold text-sky-700">Lý do đề xuất: </span>
+                        <div className="p-2 rounded bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800 text-[11px] text-neutral-700 dark:text-zinc-300 leading-snug">
+                          <span className="font-semibold text-blue-700 dark:text-blue-300">Lý do đề xuất: </span>
                           {course.recommendationReason}
                         </div>
                       </div>
@@ -565,7 +610,7 @@ function CompetencyAnalysisContent() {
                         </span>
                         <Link
                           href={course.actionUrl || `/personal/learning-path?courseId=${course.id}`}
-                          className="px-3 py-1.5 rounded bg-blue-600 hover:bg-sky-700 text-white text-xs font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
+                          className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
                         >
                           Vào học ngay
                           <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -596,7 +641,7 @@ function CompetencyAnalysisContent() {
               {analysis.learningPathway.map((step) => (
                 <div
                   key={step.stepNumber}
-                  className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 flex flex-col justify-between space-y-3"
+                  className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 flex flex-col justify-between space-y-3"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -610,7 +655,7 @@ function CompetencyAnalysisContent() {
                     </div>
 
                     <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mb-1">{step.title}</h4>
-                    <div className="text-[11px] text-sky-700 mb-2">
+                    <div className="text-[11px] text-blue-700 dark:text-blue-300 mb-2">
                       {step.targetSkill}
                     </div>
 
@@ -627,7 +672,7 @@ function CompetencyAnalysisContent() {
                   <div className="pt-2">
                     <Link
                       href="/personal/learning-path"
-                      className="w-full py-1.5 rounded bg-white dark:bg-[#111114] hover:bg-slate-100 border border-slate-200/80 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                      className="w-full py-1.5 rounded bg-white dark:bg-[#111114] hover:bg-slate-100 dark:hover:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
                     >
                       <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
                       Bắt đầu học ngay

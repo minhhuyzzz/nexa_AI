@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Cpu,
@@ -21,11 +21,9 @@ import {
   Building2,
   Check,
   ChevronRight,
+  X,
+  ExternalLink,
 } from 'lucide-react';
-import {
-  AdminKpiCard,
-  AdminPagination,
-} from '@/components/dashboard/admin/AdminUIComponents';
 
 interface AiGatewayStats {
   totalRequests: number;
@@ -51,23 +49,60 @@ interface AiEventLog {
   latency_ms: number;
   cost_estimated: number;
   created_at: string;
+  status?: string;
 }
+
+interface AiGatewayConfig {
+  provider: string;
+  defaultModel: string;
+  maskedApiKey: string;
+  costBudgetMonthlyUsd?: number;
+  monthlyBudgetUsd?: number;
+  flows?: Record<string, any>;
+  updatedAt?: string;
+}
+
+const FEATURE_LABELS: Record<string, string> = {
+  RUBRIC_GRADING: 'Chấm Rubric & Đánh giá Minh chứng',
+  COMPETENCY_ANALYSIS: 'Phân tích Năng lực 5 Miền & Lộ trình',
+  AUTHORING_ASSIST: 'Trợ lý Soạn Đề AI (Quizizz/Wayground)',
+  SIMILAR_QUESTION: 'Tạo câu hỏi tương tự',
+  EXPLAIN_OPTIONS: 'Giải thích đáp án',
+  GENERATE_BY_DOMAIN: 'Sinh câu hỏi 5 miền',
+  HEALTH_CHECK: 'Kiểm tra Sức khỏe Gateway',
+  OTHER: 'Nghiệp vụ khác / Hệ thống',
+};
 
 export default function AdminAiGatewayPage() {
   const [stats, setStats] = useState<AiGatewayStats | null>(null);
   const [events, setEvents] = useState<AiEventLog[]>([]);
+  const [config, setConfig] = useState<AiGatewayConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('24h');
+  const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
+  const [flow, setFlow] = useState<'all' | 'personal' | 'org'>('all');
   const [searchLog, setSearchLog] = useState('');
 
-  const fetchData = async (selectedPeriod = period) => {
+  // Modal configuration
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [editingApiKey, setEditingApiKey] = useState('');
+  const [editingModel, setEditingModel] = useState('gemini-2.5-flash');
+  const [editingBudget, setEditingBudget] = useState(200);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configSuccessMsg, setConfigSuccessMsg] = useState('');
+
+  const fetchData = async (selectedPeriod = period, selectedFlow = flow) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin/ai-gateway?period=${selectedPeriod}`);
+      const res = await fetch(`/api/admin/ai-gateway?period=${selectedPeriod}&flow=${selectedFlow}`);
       const data = await res.json();
       if (data.stats) {
         setStats(data.stats);
         setEvents(data.recentEvents || []);
+      }
+      if (data.config) {
+        setConfig(data.config);
+        setEditingModel(data.config.defaultModel || 'gemini-2.5-flash');
+        setEditingBudget(data.config.costBudgetMonthlyUsd ?? data.config.monthlyBudgetUsd ?? 200);
       }
     } catch (e) {
       console.error('Failed to load AI gateway stats', e);
@@ -77,139 +112,219 @@ export default function AdminAiGatewayPage() {
   };
 
   useEffect(() => {
-    fetchData(period);
-  }, [period]);
+    fetchData(period, flow);
+  }, [period, flow]);
 
-  const totalReq = stats?.totalRequests || 284720;
-  const errorRate = stats?.errorRatePercent ? stats.errorRatePercent.toFixed(2) : '0,42';
-  const totalTokensDisplay = stats?.totalTokens
-    ? (stats.totalTokens / 1_000_000).toFixed(1) + 'M'
-    : '169,3M';
-  const avgLatency = stats?.avgLatencyMs || 812;
-  const p95Latency = stats?.p95LatencyMs || 2943;
-  const totalCostDisplay = stats?.totalCostVnd
-    ? (stats.totalCostVnd / 1_000_000).toFixed(1) + ' triệu đ'
-    : '128,4 triệu đ';
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    setConfigSuccessMsg('');
+    try {
+      const payload: Record<string, any> = {
+        provider: 'GOOGLE_GEMINI',
+        defaultModel: editingModel,
+        costBudgetMonthlyUsd: Number(editingBudget),
+      };
+      if (editingApiKey.trim()) {
+        payload.apiKey = editingApiKey.trim();
+      }
+      const res = await fetch('/api/admin/ai-gateway', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setConfigSuccessMsg('Đã lưu cấu hình AI Gateway thành công');
+        setEditingApiKey('');
+        setTimeout(() => {
+          setIsConfigModalOpen(false);
+          setConfigSuccessMsg('');
+        }, 1200);
+        fetchData(period, flow);
+      } else {
+        alert(result.error || 'Lỗi khi lưu cấu hình');
+      }
+    } catch (err) {
+      console.error('Save config error', err);
+      alert('Không thể kết nối đến máy chủ lưu cấu hình');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
-  const defaultModelsList = [
-    { name: 'gpt-4o', calls: '132.984', percent: 46.7, cost: '78,6' },
-    { name: 'gpt-4o-mini', calls: '78.431', percent: 27.5, cost: '28,9' },
-    { name: 'claude-3.7-sonnet', calls: '36.108', percent: 12.7, cost: '15,2' },
-    { name: 'gemini-2.5-pro', calls: '22.367', percent: 7.9, cost: '9,1' },
-    { name: 'deepseek-r1', calls: '14.830', percent: 5.2, cost: '4,6' },
-  ];
+  // Real KPI metrics from Database
+  const totalReq = stats?.totalRequests ?? 0;
+  const errorRate = stats?.errorRatePercent ? stats.errorRatePercent.toFixed(2) : '0,00';
+  const totalTokens = stats?.totalTokens ?? 0;
+  const totalTokensDisplay =
+    totalTokens >= 1_000_000
+      ? (totalTokens / 1_000_000).toFixed(2) + 'M'
+      : totalTokens >= 1_000
+      ? (totalTokens / 1_000).toFixed(1) + 'k'
+      : totalTokens.toLocaleString('vi-VN');
+  const avgLatency = stats?.avgLatencyMs ?? 0;
+  const p95Latency = stats?.p95LatencyMs ?? 0;
+  const totalCostUsd = stats?.totalCostUsd ?? 0;
+  const totalCostVnd = stats?.totalCostVnd ?? 0;
+  const totalCostDisplay =
+    totalCostVnd >= 1_000_000
+      ? (totalCostVnd / 1_000_000).toFixed(2) + ' triệu đ'
+      : `${totalCostVnd.toLocaleString('vi-VN')} đ`;
 
-  const defaultFeaturesList = [
-    { name: 'Tư vấn học tập (AI Coach)', calls: '117.296', percent: 41.2, cost: '58,1' },
-    { name: 'Sinh đề & đánh giá', calls: '62.891', percent: 22.1, cost: '32,4' },
-    { name: 'Phân tích năng lực', calls: '43.076', percent: 15.1, cost: '18,5' },
-    { name: 'Hỗ trợ nội dung', calls: '29.630', percent: 10.4, cost: '11,6' },
-    { name: 'Nghiệp vụ khác', calls: '31.827', percent: 11.2, cost: '7,8' },
-  ];
+  // Real dynamic breakdown of models
+  const modelsList = useMemo(() => {
+    const raw = stats?.models || {};
+    return Object.entries(raw)
+      .map(([name, count]) => {
+        const percent = totalReq > 0 ? Number(((count / totalReq) * 100).toFixed(1)) : 0;
+        return {
+          name,
+          calls: count.toLocaleString('vi-VN'),
+          percent,
+        };
+      })
+      .sort((a, b) => b.percent - a.percent);
+  }, [stats?.models, totalReq]);
 
-  const sampleLogs = [
-    {
-      feature: 'Tư vấn học tập (AI Coach)',
-      model: 'gpt-4o',
-      tokens: '2.864 / 1.207',
-      latency: '793 ms',
-      cost: '581 đ',
-      time: 'Hôm nay, 14:26:07',
-    },
-    {
-      feature: 'Sinh đề & đánh giá',
-      model: 'gpt-4o-mini',
-      tokens: '1.205 / 842',
-      latency: '418 ms',
-      cost: '244 đ',
-      time: 'Hôm nay, 14:24:51',
-    },
-    {
-      feature: 'Phân tích năng lực',
-      model: 'claude-3.7-sonnet',
-      tokens: '3.101 / 1.894',
-      latency: '1.237 ms',
-      cost: '1.148 đ',
-      time: 'Hôm nay, 14:23:19',
-    },
-    {
-      feature: 'Hỗ trợ nội dung',
-      model: 'gemini-2.5-pro',
-      tokens: '2.476 / 1.036',
-      latency: '1.045 ms',
-      cost: '795 đ',
-      time: 'Hôm nay, 14:21:03',
-    },
-    {
-      feature: 'Chấm Rubric AI',
-      model: 'deepseek-r1',
-      tokens: '3.902 / 1.655',
-      latency: '1.298 ms',
-      cost: '320 đ',
-      time: 'Hôm nay, 14:20:18',
-    },
-    {
-      feature: 'Nghiệp vụ khác / Hệ thống',
-      model: 'llama-3.3-70b',
-      tokens: '678 / 233',
-      latency: '362 ms',
-      cost: '110 đ',
-      time: 'Hôm nay, 14:18:40',
-    },
-  ];
+  // Real dynamic breakdown of features
+  const featuresList = useMemo(() => {
+    const raw = stats?.features || {};
+    return Object.entries(raw)
+      .map(([code, count]) => {
+        const percent = totalReq > 0 ? Number(((count / totalReq) * 100).toFixed(1)) : 0;
+        return {
+          name: FEATURE_LABELS[code] || code,
+          calls: count.toLocaleString('vi-VN'),
+          percent,
+        };
+      })
+      .sort((a, b) => b.percent - a.percent);
+  }, [stats?.features, totalReq]);
+
+  // Filter logs by search term
+  const filteredEvents = useMemo(() => {
+    if (!searchLog.trim()) return events;
+    const term = searchLog.toLowerCase();
+    return events.filter((ev) => {
+      const featLabel = (FEATURE_LABELS[ev.feature] || ev.feature).toLowerCase();
+      return (
+        featLabel.includes(term) ||
+        ev.model?.toLowerCase().includes(term) ||
+        ev.id?.toLowerCase().includes(term)
+      );
+    });
+  }, [events, searchLog]);
+
+  // Budget calculations (real usage vs monthly quota)
+  const monthlyBudgetUsd = config?.costBudgetMonthlyUsd ?? config?.monthlyBudgetUsd ?? 200.0;
+  const budgetUsedPercent = Math.min(
+    100,
+    Number(((totalCostUsd / monthlyBudgetUsd) * 100).toFixed(1))
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header (Chuẩn Ảnh 9) */}
+      {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản trị AI Gateway &amp; chi phí
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Quản trị AI Gateway &amp; Chi phí
+            </h1>
+            <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-md">
+              Dữ liệu thực tế 100%
+            </span>
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Giám sát lưu lượng AI, hiệu năng mô hình và chi phí theo nghiệp vụ hệ thống.
+            Giám sát lưu lượng AI, chi phí USD/VND theo lượt gọi thực tế từ cơ sở dữ liệu telemetry.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
-            onClick={() => alert('Mở bảng cấu hình khóa API (OpenAI, Gemini, DeepSeek, Anthropic).')}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
+            onClick={() => setIsConfigModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
           >
             <Key className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cấu hình model keys</span>
+            <span>Cấu hình Model &amp; API Keys</span>
           </button>
           <button
-            onClick={() => fetchData(period)}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2"
+            onClick={() => fetchData(period, flow)}
+            disabled={loading}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2 disabled:opacity-50"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Period Filter Tabs (Chuẩn Ảnh 9) */}
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl w-fit text-xs font-semibold">
-        {(['24h', '7d', '30d', 'all'] as const).map((p) => {
-          const label = p === '24h' ? '24 giờ' : p === '7d' ? '7 ngày' : p === '30d' ? '30 ngày' : 'Toàn thời gian';
-          return (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
-                period === p
-                  ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
+      {/* 2. Filter Controls: Flow Isolation Pills & Period Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Flow Selector Pills: Tất cả luồng | Cá nhân | Tổ chức */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl w-fit text-xs font-semibold">
+          <button
+            onClick={() => setFlow('all')}
+            className={`px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+              flow === 'all'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>Tất cả luồng</span>
+          </button>
+          <button
+            onClick={() => setFlow('personal')}
+            className={`px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+              flow === 'personal'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>Cá nhân</span>
+          </button>
+          <button
+            onClick={() => setFlow('org')}
+            className={`px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+              flow === 'org'
+                ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>Tổ chức</span>
+          </button>
+        </div>
+
+        {/* Period Filter Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl w-fit text-xs font-semibold">
+          {(['24h', '7d', '30d', 'all'] as const).map((p) => {
+            const label =
+              p === '24h'
+                ? '24 giờ qua'
+                : p === '7d'
+                ? '7 ngày qua'
+                : p === '30d'
+                ? '30 ngày qua'
+                : 'Toàn thời gian';
+            return (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  period === p
+                    ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 3. 6 Key Metrics Cards (Chuẩn Ảnh 9) */}
+      {/* 3. 6 Key Metrics Cards (Real telemetry) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
@@ -217,12 +332,11 @@ export default function AdminAiGatewayPage() {
               <Layers className="w-3.5 h-3.5" />
               <span>Tổng lượt gọi AI</span>
             </div>
-            <span className="text-blue-600 font-semibold text-[10px]">↗ +6,8%</span>
           </div>
           <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {totalReq.toLocaleString('vi-VN')}
+            {loading ? '...' : totalReq.toLocaleString('vi-VN')}
           </div>
-          <div className="text-[10px] text-slate-400">So với 24 giờ trước</div>
+          <div className="text-[10px] text-slate-400">Chu kỳ {period}</div>
         </div>
 
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
@@ -231,26 +345,24 @@ export default function AdminAiGatewayPage() {
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>Tỷ lệ lỗi</span>
             </div>
-            <span className="text-emerald-600 font-semibold text-[10px]">↘ -0,18%</span>
           </div>
           <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {errorRate}%
+            {loading ? '...' : `${errorRate}%`}
           </div>
-          <div className="text-[10px] text-slate-400">So với 24 giờ trước</div>
+          <div className="text-[10px] text-slate-400">Lỗi mạng/API</div>
         </div>
 
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
             <div className="flex items-center gap-1.5">
               <Database className="w-3.5 h-3.5" />
-              <span>Tổng token tiêu thụ</span>
+              <span>Token tiêu thụ</span>
             </div>
-            <span className="text-blue-600 font-semibold text-[10px]">↗ +7,1%</span>
           </div>
           <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {totalTokensDisplay}
+            {loading ? '...' : totalTokensDisplay}
           </div>
-          <div className="text-[10px] text-slate-400">So với 24 giờ trước</div>
+          <div className="text-[10px] text-slate-400">Prompt + Output</div>
         </div>
 
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
@@ -259,12 +371,11 @@ export default function AdminAiGatewayPage() {
               <Zap className="w-3.5 h-3.5" />
               <span>Độ trễ trung bình</span>
             </div>
-            <span className="text-emerald-600 font-semibold text-[10px]">↘ -8,9%</span>
           </div>
           <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {avgLatency} ms
+            {loading ? '...' : `${avgLatency} ms`}
           </div>
-          <div className="text-[10px] text-slate-400">So với 24 giờ trước</div>
+          <div className="text-[10px] text-slate-400">Thời gian phản hồi</div>
         </div>
 
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
@@ -273,12 +384,11 @@ export default function AdminAiGatewayPage() {
               <BarChart3 className="w-3.5 h-3.5" />
               <span>P95 latency</span>
             </div>
-            <span className="text-emerald-600 font-semibold text-[10px]">↘ -11,2%</span>
           </div>
           <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {p95Latency.toLocaleString('vi-VN')} ms
+            {loading ? '...' : `${p95Latency.toLocaleString('vi-VN')} ms`}
           </div>
-          <div className="text-[10px] text-slate-400">So với 24 giờ trước</div>
+          <div className="text-[10px] text-slate-400">95% cuộc gọi dưới ngưỡng</div>
         </div>
 
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
@@ -287,16 +397,17 @@ export default function AdminAiGatewayPage() {
               <DollarSign className="w-3.5 h-3.5" />
               <span>Chi phí AI thực tế</span>
             </div>
-            <span className="text-blue-600 font-semibold text-[10px]">↗ +4,6%</span>
           </div>
           <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {totalCostDisplay}
+            {loading ? '...' : totalCostDisplay}
           </div>
-          <div className="text-[10px] text-slate-400">So với 24 giờ trước</div>
+          <div className="text-[10px] text-slate-400 font-mono">
+            ~${totalCostUsd.toFixed(4)} USD
+          </div>
         </div>
       </div>
 
-      {/* 4. Middle Grid: Phân bổ theo mô hình & Phân bổ theo nghiệp vụ (Chuẩn Ảnh 9) */}
+      {/* 4. Middle Grid: Phân bổ theo mô hình & Phân bổ theo nghiệp vụ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left: Phân bổ theo mô hình */}
         <div className="lg:col-span-6 bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-4">
@@ -305,45 +416,47 @@ export default function AdminAiGatewayPage() {
               Phân bổ theo mô hình
             </h3>
             <p className="text-[11px] text-slate-400">
-              Tỷ lệ lượt gọi, token và chi phí theo từng mô hình AI.
+              Tỷ lệ lượt gọi và thống kê thực tế theo từng mô hình AI trong hệ thống.
             </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead>
-                <tr className="text-slate-400 text-[11px] font-medium">
-                  <th className="py-2.5 pr-2">Mô hình</th>
-                  <th className="py-2.5 px-2">Lượt gọi</th>
-                  <th className="py-2.5 px-2">Tỷ lệ</th>
-                  <th className="py-2.5 pl-2 text-right">Chi phí (triệu đ)</th>
-                </tr>
-              </thead>
-              <tbody className="">
-                {defaultModelsList.map((m, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40">
-                    <td className="py-2.5 pr-2 font-mono font-medium text-neutral-800 dark:text-zinc-200">
-                      {m.name}
-                    </td>
-                    <td className="py-2.5 px-2 tabular-nums text-slate-600 dark:text-zinc-300">
-                      {m.calls}
-                    </td>
-                    <td className="py-2.5 px-2">
-                      <div className="flex items-center gap-2">
-                        <span className="tabular-nums text-slate-500 w-10 text-[11px]">{m.percent}%</span>
-                        <div className="w-20 h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-                          <div className="h-full bg-blue-600 rounded-full" style={{ width: `${m.percent}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 pl-2 text-right font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
-                      {m.cost}
-                    </td>
+          {modelsList.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs">
+              Chưa có dữ liệu gọi mô hình AI trong chu kỳ này.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="text-slate-400 text-[11px] font-medium">
+                    <th className="py-2.5 pr-2">Mô hình</th>
+                    <th className="py-2.5 px-2">Lượt gọi</th>
+                    <th className="py-2.5 pl-2 text-right">Tỷ lệ</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {modelsList.map((m, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40">
+                      <td className="py-2.5 pr-2 font-mono font-medium text-neutral-800 dark:text-zinc-200">
+                        {m.name}
+                      </td>
+                      <td className="py-2.5 px-2 tabular-nums text-slate-600 dark:text-zinc-300">
+                        {m.calls}
+                      </td>
+                      <td className="py-2.5 pl-2 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="tabular-nums text-slate-500 w-10 text-[11px]">{m.percent}%</span>
+                          <div className="w-16 h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                            <div className="h-full bg-blue-600 rounded-full" style={{ width: `${m.percent}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Right: Phân bổ theo nghiệp vụ */}
@@ -353,58 +466,81 @@ export default function AdminAiGatewayPage() {
               Phân bổ theo nghiệp vụ
             </h3>
             <p className="text-[11px] text-slate-400">
-              Tỷ trọng sử dụng AI theo các nghiệp vụ hệ thống.
+              Tỷ trọng sử dụng AI theo từng tính năng trong nền tảng NEXA.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
-            {/* Donut graphic */}
-            <div className="w-28 h-28 rounded-full flex flex-col items-center justify-center shrink-0">
-              <span className="text-base font-bold text-neutral-900 dark:text-white tabular-nums">284.720</span>
-              <span className="text-[10px] text-slate-400">lượt gọi</span>
+          {featuresList.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs">
+              Chưa có dữ liệu nghiệp vụ AI trong chu kỳ này.
             </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+              {/* Counter summary */}
+              <div className="w-28 h-28 rounded-full border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center shrink-0">
+                <span className="text-base font-bold text-neutral-900 dark:text-white tabular-nums">
+                  {totalReq.toLocaleString('vi-VN')}
+                </span>
+                <span className="text-[10px] text-slate-400">lượt gọi</span>
+              </div>
 
-            {/* List */}
-            <div className="flex-1 w-full space-y-2 text-xs">
-              {defaultFeaturesList.map((f, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
-                    <span className="text-slate-600 dark:text-zinc-300 truncate max-w-[140px]">{f.name}</span>
+              {/* List */}
+              <div className="flex-1 w-full space-y-2 text-xs">
+                {featuresList.map((f, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                      <span className="text-slate-600 dark:text-zinc-300 truncate max-w-[170px]" title={f.name}>
+                        {f.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] tabular-nums">
+                      <span className="text-slate-400">{f.calls} lượt</span>
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{f.percent}%</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] tabular-nums">
-                    <span className="text-slate-400">{f.calls} ({f.percent}%)</span>
-                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">{f.cost} tr</span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* 5. Provider & Routing + Quota Controls (Chuẩn Ảnh 11) */}
+      {/* 5. Provider & Routing + Quota Controls */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Provider card */}
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Provider &amp; điều phối
+              Provider &amp; Kết nối
             </h3>
-            <span className="text-[10px] text-slate-400">Ưu tiên &amp; tình trạng</span>
+            <span className="text-[10px] text-slate-400">Kiến trúc 8 lớp</span>
           </div>
           <div className="space-y-2 pt-1 text-xs">
             <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 flex items-center justify-between border border-slate-100 dark:border-zinc-800">
-              <span className="font-semibold text-neutral-800 dark:text-zinc-200">Google Gemini</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">● Đang hoạt động</span>
+              <div>
+                <div className="font-semibold text-neutral-800 dark:text-zinc-200">Google Gemini</div>
+                <div className="text-[10px] text-slate-400 font-mono">
+                  {config?.defaultModel || 'gemini-2.5-flash'}
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
+                ● Đang hoạt động
+              </span>
             </div>
             <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 flex items-center justify-between border border-slate-100 dark:border-zinc-800">
-              <span className="font-semibold text-neutral-800 dark:text-zinc-200">DeepSeek AI</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">● Đang hoạt động</span>
-            </div>
-            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 flex items-center justify-between border border-slate-100 dark:border-zinc-800">
-              <span className="font-semibold text-neutral-800 dark:text-zinc-200">OpenAI</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">Dự phòng</span>
+              <div>
+                <div className="font-semibold text-neutral-800 dark:text-zinc-200">Khóa API kết nối</div>
+                <div className="text-[10px] text-slate-400 font-mono">
+                  {config?.maskedApiKey || 'Đã cấu hình qua môi trường'}
+                </div>
+              </div>
+              <button
+                onClick={() => setIsConfigModalOpen(true)}
+                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+              >
+                Đổi khóa
+              </button>
             </div>
           </div>
         </div>
@@ -412,24 +548,26 @@ export default function AdminAiGatewayPage() {
         {/* Model assignment card */}
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-3">
           <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-            Phân bổ mô hình theo nghiệp vụ
+            Mô hình theo luồng nghiệp vụ
           </h3>
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Chấm Rubric AI</span>
-              <span className="font-mono font-semibold text-blue-600">deepseek-r1</span>
+              <span className="text-slate-600 dark:text-zinc-400">Chấm Rubric &amp; Minh chứng</span>
+              <span className="font-mono font-semibold text-blue-600">
+                {config?.flows?.rubricGrading?.model || 'gemini-2.5-flash'}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Gợi ý phản hồi</span>
-              <span className="font-mono font-semibold text-slate-700 dark:text-zinc-300">gemini-2.0-flash</span>
+              <span className="text-slate-600 dark:text-zinc-400">Phân tích Năng lực 5 Miền</span>
+              <span className="font-mono font-semibold text-blue-600">
+                {config?.flows?.competencyAnalysis?.model || 'gemini-2.5-flash'}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Sinh câu hỏi</span>
-              <span className="font-mono font-semibold text-slate-700 dark:text-zinc-300">gemini-2.5-flash</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Phân tích năng lực</span>
-              <span className="font-mono font-semibold text-blue-600">gemini-2.5-pro</span>
+              <span className="text-slate-600 dark:text-zinc-400">Trợ lý Soạn Đề AI</span>
+              <span className="font-mono font-semibold text-blue-600">
+                {config?.defaultModel || 'gemini-2.5-flash'}
+              </span>
             </div>
           </div>
         </div>
@@ -438,34 +576,41 @@ export default function AdminAiGatewayPage() {
         <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Kiểm soát chi phí &amp; hạn mức
+              Kiểm soát Chi phí &amp; Hạn mức
             </h3>
-            <span className="text-[10px] text-slate-400">Ngân sách tháng</span>
+            <span className="text-[10px] text-slate-400">Ngân sách định mức</span>
           </div>
           <div>
             <div className="flex items-baseline justify-between text-xs mb-1.5">
-              <span className="font-bold text-neutral-900 dark:text-neutral-100 text-base tabular-nums">200,00 USD</span>
-              <span className="text-slate-500 text-[11px]">Đã dùng: 122,84 USD (61,4%)</span>
+              <span className="font-bold text-neutral-900 dark:text-neutral-100 text-base tabular-nums">
+                ${monthlyBudgetUsd.toFixed(2)} USD
+              </span>
+              <span className="text-slate-500 text-[11px]">
+                Đã dùng: ${totalCostUsd.toFixed(2)} USD ({budgetUsedPercent}%)
+              </span>
             </div>
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full" style={{ width: '61.4%' }} />
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all"
+                style={{ width: `${budgetUsedPercent}%` }}
+              />
             </div>
           </div>
           <div className="pt-2 text-[11px] text-slate-500">
-            Ngưỡng cảnh báo: <strong className="text-neutral-800 dark:text-neutral-200">80% (160,00 USD)</strong>
+            Tương đương: <strong className="text-neutral-800 dark:text-neutral-200">{totalCostDisplay}</strong> trên dữ liệu đo lường.
           </div>
         </div>
       </div>
 
-      {/* 6. Request Logs Table (Chuẩn Ảnh 9) */}
+      {/* 6. Request Logs Table */}
       <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs space-y-4 p-5">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-              Nhật ký yêu cầu (Logs AI Gateway)
+              Nhật ký Yêu cầu AI (Telemetry Logs)
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Chi tiết các lượt gọi AI qua gateway, hỗ trợ tra cứu và đối soát chi phí.
+              Chi tiết các lượt gọi AI thực tế được ghi nhận vào bảng <code className="text-blue-600 font-mono">ai_usage_events</code>.
             </p>
           </div>
 
@@ -475,8 +620,8 @@ export default function AdminAiGatewayPage() {
               type="text"
               value={searchLog}
               onChange={(e) => setSearchLog(e.target.value)}
-              placeholder="Tìm theo nghiệp vụ, model, request id..."
-              className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 w-64"
+              placeholder="Tìm theo nghiệp vụ, mô hình, ID..."
+              className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white w-64 focus:outline-none focus:ring-1 focus:ring-blue-600"
             />
           </div>
         </div>
@@ -486,51 +631,202 @@ export default function AdminAiGatewayPage() {
             <thead>
               <tr className="text-slate-400 font-medium">
                 <th className="py-2.5 pr-4">Nghiệp vụ</th>
+                <th className="py-2.5 px-3">Luồng</th>
                 <th className="py-2.5 px-4">Mô hình</th>
-                <th className="py-2.5 px-4">Prompt / Completion (token)</th>
+                <th className="py-2.5 px-4">Prompt / Completion</th>
                 <th className="py-2.5 px-4">Độ trễ</th>
-                <th className="py-2.5 px-4">Chi phí</th>
+                <th className="py-2.5 px-4">Chi phí ước tính</th>
                 <th className="py-2.5 pl-4 text-right">Thời gian</th>
               </tr>
             </thead>
-            <tbody className="">
-              {sampleLogs.map((log, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40">
-                  <td className="py-3 pr-4 font-semibold text-neutral-900 dark:text-neutral-100">
-                    {log.feature}
-                  </td>
-                  <td className="py-3 px-4 font-mono text-slate-700 dark:text-zinc-300">
-                    {log.model}
-                  </td>
-                  <td className="py-3 px-4 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
-                    {log.tokens}
-                  </td>
-                  <td className="py-3 px-4 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
-                    {log.latency}
-                  </td>
-                  <td className="py-3 px-4 tabular-nums font-semibold text-neutral-800 dark:text-zinc-200">
-                    {log.cost}
-                  </td>
-                  <td className="py-3 pl-4 text-right text-slate-500 whitespace-nowrap">
-                    {log.time}
+            <tbody>
+              {filteredEvents.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                    {searchLog
+                      ? 'Không tìm thấy nhật ký yêu cầu nào phù hợp với từ khóa.'
+                      : 'Chưa có nhật ký yêu cầu AI nào được ghi nhận trong chu kỳ này.'}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredEvents.map((log) => {
+                  const costVnd = Math.round((log.cost_estimated || 0) * 25400);
+                  const isFailed = log.status === 'FAILED';
+                  return (
+                    <tr
+                      key={log.id}
+                      className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40 transition-colors"
+                    >
+                      <td className="py-3 pr-4 font-semibold text-neutral-900 dark:text-neutral-100">
+                        <div className="flex items-center gap-1.5">
+                          {isFailed && (
+                            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" title="Yêu cầu thất bại" />
+                          )}
+                          <span>{FEATURE_LABELS[log.feature] || log.feature}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                            (log as any).organization_id || (log as any).flow === 'org'
+                              ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
+                              : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                          }`}
+                        >
+                          {(log as any).organization_id || (log as any).flow === 'org' ? 'Tổ chức' : 'Cá nhân'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-700 dark:text-zinc-300">
+                        {log.model}
+                      </td>
+                      <td className="py-3 px-4 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
+                        {(log.prompt_tokens || 0).toLocaleString('vi-VN')} /{' '}
+                        {(log.completion_tokens || 0).toLocaleString('vi-VN')}
+                      </td>
+                      <td className="py-3 px-4 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
+                        {log.latency_ms} ms
+                      </td>
+                      <td className="py-3 px-4 tabular-nums font-semibold text-neutral-800 dark:text-zinc-200">
+                        {costVnd > 0 ? `${costVnd.toLocaleString('vi-VN')} đ` : '< 1 đ'}
+                        <span className="text-[10px] text-slate-400 font-normal ml-1">
+                          (${Number(log.cost_estimated || 0).toFixed(5)})
+                        </span>
+                      </td>
+                      <td className="py-3 pl-4 text-right text-slate-500 whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleString('vi-VN')}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="pt-3 flex items-center justify-between text-xs text-slate-400">
-          <div>Hiển thị 1–6 trong 284.720 bản ghi</div>
-          <div className="flex items-center gap-1">
-            <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>
-            <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
-            <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">3</span>
-            <span className="px-1">...</span>
-            <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">47.454</span>
+          <div>
+            Hiển thị {filteredEvents.length} trong tổng số {events.length} sự kiện gần nhất (chu kỳ {period})
           </div>
         </div>
       </div>
+
+      {/* 7. Modal Cấu hình Model Keys */}
+      {isConfigModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  Cấu hình AI Gateway &amp; Model Keys
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                  Cập nhật khóa API và mô hình AI mặc định cho toàn bộ nền tảng.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsConfigModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {configSuccessMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                <Check className="w-4 h-4 shrink-0" />
+                <span>{configSuccessMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveConfig} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
+                  Nhà cung cấp (Provider)
+                </label>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-neutral-800 dark:text-zinc-200 font-semibold flex items-center justify-between">
+                  <span>Google Gemini (Adapter chính thức)</span>
+                  <span className="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded font-mono">
+                    Hoạt động
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
+                  Mô hình mặc định (Default Model)
+                </label>
+                <select
+                  value={editingModel}
+                  onChange={(e) => setEditingModel(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="gemini-2.5-flash">gemini-2.5-flash (Cân bằng tốc độ &amp; chi phí tối ưu)</option>
+                  <option value="gemini-2.5-pro">gemini-2.5-pro (Phân tích chuyên sâu 5 miền năng lực)</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash (Độ trễ thấp, sinh câu hỏi nhanh)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
+                  Khóa API Gemini (GEMINI_API_KEY)
+                </label>
+                <input
+                  type="password"
+                  value={editingApiKey}
+                  onChange={(e) => setEditingApiKey(e.target.value)}
+                  placeholder={config?.maskedApiKey || 'Nhập khóa API mới để ghi đè...'}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Khóa hiện tại: <span className="font-mono">{config?.maskedApiKey || 'Chưa lưu trong DB (đang dùng biến môi trường)'}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
+                  Ngân sách định mức tháng (USD)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max="10000"
+                    step="10"
+                    value={editingBudget}
+                    onChange={(e) => setEditingBudget(Number(e.target.value))}
+                    placeholder="200"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                    USD / tháng
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Định mức chi phí dùng để tính toán thanh tiến độ và cảnh báo hạn mức nền tảng.
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsConfigModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingConfig}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50 inline-flex items-center gap-2"
+                >
+                  {savingConfig && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Lưu cấu hình</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

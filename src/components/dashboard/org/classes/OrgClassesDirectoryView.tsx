@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   LayoutGrid,
@@ -41,6 +42,7 @@ export function OrgClassesDirectoryView({
   onOpenCreateClass,
   onRefresh,
 }: OrgClassesDirectoryViewProps) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<'ALL' | ClassStatus>('ALL');
   const [groupTypeFilter, setGroupTypeFilter] = useState<'ALL' | GroupType>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -273,21 +275,17 @@ export function OrgClassesDirectoryView({
                 return (
                   <div
                     key={cls.id}
-                    className="p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-750 transition-all shadow-xs hover:shadow-sm flex flex-col justify-between group relative"
+                    onClick={() => router.push(`/org/${slug}/classes/${cls.id}`)}
+                    className="p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 hover:border-blue-500/80 dark:hover:border-blue-500/80 bg-white dark:bg-[#111114] transition-all shadow-xs hover:shadow-md flex flex-col justify-between group relative cursor-pointer"
                   >
                     <div>
-                      {/* Top Bar: Monogram + Class Code + Group Type + 3-Dots Menu */}
+                      {/* Top Bar: Monogram + Group Type + 3-Dots Menu */}
                       <div className="flex items-center justify-between mb-3.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-2xs shrink-0 select-none">
-                            {monogram}
-                          </div>
-                          <span className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200/80 dark:border-blue-900 tracking-wider">
-                            {cls.classCode}
-                          </span>
+                        <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-2xs shrink-0 select-none">
+                          {monogram}
                         </div>
 
-                        <div className="flex items-center gap-1.5" data-class-menu>
+                        <div className="flex items-center gap-1.5" data-class-menu onClick={(e) => e.stopPropagation()}>
                           {getGroupTypeBadge(cls.groupType)}
 
                           {/* 3-dots action dropdown */}
@@ -388,24 +386,17 @@ export function OrgClassesDirectoryView({
 
                     {/* Bottom Action & Stats */}
                     <div className="pt-4 flex items-center justify-between gap-2 mt-auto">
-                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-neutral-400">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold tabular-nums">
-                          {cls.assignmentsCount} đề
-                        </span>
+                      <div>
                         {cls.pendingGradingCount ? (
-                          <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-900 tabular-nums">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-900 text-[11px] font-mono tabular-nums">
                             {cls.pendingGradingCount} bài nộp
                           </span>
                         ) : null}
                       </div>
 
-                      <Link
-                        href={`/org/${slug}/classes/${cls.id}`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-xl border border-blue-200/80 dark:border-blue-900 transition-colors shrink-0"
-                      >
-                        <span>Vào lớp</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+                      <div className="text-slate-400 dark:text-neutral-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
                 );
@@ -440,7 +431,7 @@ export function OrgClassesDirectoryView({
                   </tr>
                 ) : (
                   paginatedClasses.map((cls) => (
-                    <tr key={cls.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-850/50 transition">
+                    <tr key={cls.id} onClick={() => router.push(`/org/${slug}/classes/${cls.id}`)} className="hover:bg-slate-50/80 dark:hover:bg-zinc-850/60 transition cursor-pointer">
                       <td className="py-3 px-4">
                         <Link
                           href={`/org/${slug}/classes/${cls.id}`}
@@ -461,7 +452,7 @@ export function OrgClassesDirectoryView({
                       </td>
                       <td className="py-3 px-4 text-center font-mono">{cls.membersCount}</td>
                       <td className="py-3 px-4 text-center font-mono">{cls.assignmentsCount}</td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
@@ -479,13 +470,7 @@ export function OrgClassesDirectoryView({
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <Link
-                            href={`/org/${slug}/classes/${cls.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:underline"
-                          >
-                            <span>Vào</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </Link>
+
                         </div>
                       </td>
                     </tr>

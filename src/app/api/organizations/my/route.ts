@@ -78,3 +78,57 @@ export async function GET() {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { organizationId } = body;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Thiếu mã định danh tổ chức' }, { status: 400 });
+    }
+
+    const { data: membership } = await supabase
+      .from('user_organizations')
+      .select('id, org_role')
+      .eq('user_id', user.id)
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Bạn không thuộc tổ chức này' }, { status: 404 });
+    }
+
+    if (membership.org_role === 'ORG_OWNER') {
+      return NextResponse.json(
+        { error: 'Chủ sở hữu không thể rời tổ chức. Vui lòng chuyển nhượng quyền trước.' },
+        { status: 400 }
+      );
+    }
+
+    const adminSupabase = createAdminClient();
+    const { error: deleteErr } = await adminSupabase
+      .from('user_organizations')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('organization_id', organizationId);
+
+    if (deleteErr) {
+      return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Đã rời khỏi tổ chức thành công' });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

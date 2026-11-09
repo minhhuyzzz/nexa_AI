@@ -96,7 +96,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
             <p className="text-xs text-slate-500 leading-relaxed">
-              Giải pháp cấp quyền Giảng viên không giới hạn, đồng loạt kích hoạt quyền VIP cho sinh viên và xuất báo cáo dữ liệu 5 Miền DigComp phục vụ kiểm định chất lượng đào tạo.
+              Giải pháp cấp quyền Giảng viên không giới hạn, đồng loạt kích hoạt quyền VIP cho sinh viên và xuất báo cáo dữ liệu 5 miền năng lực số phục vụ kiểm định chất lượng đào tạo.
             </p>
 
             {errorMsg && (

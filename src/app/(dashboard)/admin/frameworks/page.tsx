@@ -185,7 +185,7 @@ export default function AdminFrameworksPage() {
         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400">
           <Info className="w-4 h-4 text-blue-600 shrink-0" />
           <span>
-            Khung năng lực số được chuẩn hóa theo EU DigComp 2.2 và định hướng Việt Nam, bảo đảm tính quốc tế, phù hợp bối cảnh, và sử dụng thống nhất trên toàn nền tảng.
+            Khung năng lực số được chuẩn hóa theo tiêu chuẩn năng lực số quốc tế và định hướng Việt Nam, bảo đảm tính quốc tế, phù hợp bối cảnh, và sử dụng thống nhất trên toàn nền tảng.
           </span>
         </div>
       </div>

@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { DashboardHeroIllustration } from '@/components/dashboard/personal/DashboardHeroIllustration';
+import { InlinePinEntryCard } from '@/components/dashboard/live-room/InlinePinEntryCard';
 
 interface RealAssessment {
   id: string;
@@ -365,7 +366,7 @@ export default function LearnerDashboardPage() {
               {loadingStats ? (
                 <span className="inline-block w-48 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse align-middle" />
               ) : (
-                `Xin chào, ${stats.fullName && stats.fullName !== 'Học viên' ? stats.fullName : stats.nickname}! 👋`
+                `Xin chào, ${stats.fullName && stats.fullName !== 'Học viên' ? stats.fullName : stats.nickname}!`
               )}
             </h1>
             {!loadingStats && stats.newLoginToday && (
@@ -519,6 +520,9 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Quick Live Room PIN Entry Card */}
+      <InlinePinEntryCard compact />
 
       {/* 3. Four Key Metric Cards — Trung tính làm chủ đạo, xanh Cobalt nhấn hành động */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

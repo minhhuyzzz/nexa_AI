@@ -229,7 +229,7 @@ export function AssessmentDetailTabs({
               <span>&bull;</span>
               <span className="flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                Bao phủ: <strong className="font-mono text-blue-600 dark:text-blue-400">{coveredDomainsCount}/5 Miền DigComp</strong>
+                Bao phủ: <strong className="font-mono text-blue-600 dark:text-blue-400">{coveredDomainsCount}/5 miền năng lực số</strong>
               </span>
             </div>
           </div>

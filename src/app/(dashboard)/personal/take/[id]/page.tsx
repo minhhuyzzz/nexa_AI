@@ -98,7 +98,19 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
+export interface AssessmentTakeContentProps {
+  assessmentId: string;
+  overrideReturnUrl?: string;
+  isPreviewMode?: boolean;
+  workspaceTitle?: string;
+}
+
+export function AssessmentTakeContent({
+  assessmentId,
+  overrideReturnUrl,
+  isPreviewMode = false,
+  workspaceTitle,
+}: AssessmentTakeContentProps) {
   const effectiveId = assessmentId === 'baseline' ? CANONICAL_BASELINE_ID : assessmentId;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -106,6 +118,13 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
   const pin = searchParams.get('pin');
   const assignmentId = searchParams.get('assignmentId');
   const campaignId = searchParams.get('campaignId');
+  const isPreview = isPreviewMode || searchParams.get('preview') === 'true';
+  const returnUrlParam = searchParams.get('returnUrl');
+  const orgSlugParam = searchParams.get('orgSlug');
+  const effectiveReturnUrl =
+    overrideReturnUrl ||
+    returnUrlParam ||
+    (orgSlugParam ? `/org/${orgSlugParam}/assessments/${assessmentId}/edit` : null);
 
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -128,6 +147,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(2700);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRoomPaused, setIsRoomPaused] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [submittedResult, setSubmittedResult] = useState<any | null>(null);
@@ -151,13 +171,17 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
     scorePercentage?: number;
   } | null>(null);
 
-  const [candidateUser, setCandidateUser] = useState<{ id?: string; email?: string }>({});
+  const [candidateUser, setCandidateUser] = useState<{ id?: string; email?: string; fullName?: string }>({});
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        setCandidateUser({ id: user.id, email: user.email });
+        setCandidateUser({
+          id: user.id,
+          email: user.email,
+          fullName: (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || user.email,
+        });
       }
     });
   }, []);
@@ -169,8 +193,52 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
     candidateInfo: {
       userId: candidateUser.id,
       email: candidateUser.email,
+      fullName: candidateUser.fullName,
     },
     enabled: Boolean(assessment && !submittedResult),
+    onViolation: (event) => {
+      // Nếu đang trong phòng thi Live trực tiếp, phát broadcast và ghi nhận sự kiện máy chủ
+      if (roomId) {
+        try {
+          const supabase = createClient();
+          supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'TAB_SWITCH_ALERT',
+            payload: {
+              userId: candidateUser.id,
+              fullName: candidateUser.fullName || candidateUser.email || 'Thí sinh',
+              eventType: event.type,
+              durationSeconds: event.durationSeconds,
+              timestamp: event.timestamp,
+              details: event.details,
+            },
+          });
+        } catch (e) {
+          console.warn('[PROCTORING_BROADCAST_ERR]', e);
+        }
+
+        fetch('/api/rooms/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId,
+            submissionId: alreadyCompletedInfo?.submissionId || undefined,
+            eventType:
+              event.type === 'FULLSCREEN_EXIT'
+                ? 'FULLSCREEN_EXIT'
+                : event.type === 'DEVTOOLS_ATTEMPT'
+                ? 'DEVTOOLS_OPENED'
+                : 'TAB_HIDDEN',
+            severity: event.type === 'DEVTOOLS_ATTEMPT' ? 'HIGH' : 'MEDIUM',
+            details: {
+              durationSeconds: event.durationSeconds,
+              message: event.details,
+              violationType: event.type,
+            },
+          }),
+        }).catch((err) => console.warn('[PROCTORING_EVENT_LOG_ERR]', err));
+      }
+    },
   });
 
   const toggleFlagQuestion = (qId: string) => {
@@ -181,6 +249,10 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
   };
 
   const handleExit = () => {
+    if (effectiveReturnUrl) {
+      router.push(effectiveReturnUrl);
+      return;
+    }
     router.push('/personal/dashboard');
   };
 
@@ -239,6 +311,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
         if (campaignId) qp.set('campaignId', campaignId);
         if (roomId) qp.set('roomId', roomId);
         if (pin) qp.set('pin', pin);
+        if (isPreview) qp.set('preview', 'true');
         const qs = qp.toString() ? `?${qp.toString()}` : '';
 
         const res = await fetch(`/api/assessments/${effectiveId}${qs}`);
@@ -415,7 +488,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
 
   // 2. Countdown Timer (Only for Formal Time-Limited Exams, NEVER for Intake Assessment)
   useEffect(() => {
-    if (isBaseline || loading || timeRemaining <= 0 || isSubmitting || submittedResult) return;
+    if (isBaseline || loading || timeRemaining <= 0 || isSubmitting || submittedResult || isRoomPaused) return;
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -429,7 +502,72 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult]);
+  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult, isRoomPaused]);
+
+  // 2.1 Live Room Realtime Sync (room:${roomId})
+  useEffect(() => {
+    if (!roomId) return;
+    const supabase = createClient();
+    const channel = supabase.channel(`room:${roomId}`);
+
+    channel
+      .on('broadcast', { event: 'ROOM_STATE_CHANGE' }, (payload) => {
+        const action = payload.payload?.action;
+        const subPayload = payload.payload?.payload;
+
+        if (action === 'EXTEND_TIME') {
+          const additionalMinutes = Number(subPayload?.additionalMinutes || payload.payload?.additionalMinutes || 5);
+          setTimeRemaining((prev) => prev + additionalMinutes * 60);
+        } else if (action === 'FORCE_SUBMIT_ALL') {
+          handleFinalSubmitRef.current?.();
+        } else if (action === 'FORCE_SUBMIT') {
+          if (!payload.payload?.targetUserId || payload.payload?.targetUserId === candidateUser.id) {
+            handleFinalSubmitRef.current?.();
+          }
+        } else if (action === 'PAUSE') {
+          setIsRoomPaused(true);
+        } else if (action === 'RESUME') {
+          setIsRoomPaused(false);
+        } else if (action === 'END') {
+          handleFinalSubmitRef.current?.();
+        }
+      })
+      .on('broadcast', { event: 'PROCTOR_ANNOUNCEMENT' }, (payload) => {
+        const targetUserId = payload.payload?.targetUserId;
+        const content = payload.payload?.content;
+        if (!targetUserId || targetUserId === candidateUser.id) {
+          if (content) {
+            alert(`[Thông báo từ Giám thị]: ${content}`);
+          }
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, candidateUser.id]);
+
+  // 2.2 Sync real answers count to live room participants table
+  useEffect(() => {
+    if (!roomId || !candidateUser.id) return;
+    const answeredCount = Object.keys(selectedAnswers).length + Object.keys(textAnswers).filter((k) => textAnswers[k]?.trim()).length;
+    const debounceTimer = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('room_participants')
+          .update({
+            answers_count: answeredCount,
+            total_questions: questions.length,
+          })
+          .eq('room_id', roomId)
+          .eq('user_id', candidateUser.id);
+      } catch {}
+    }, 800);
+
+    return () => clearTimeout(debounceTimer);
+  }, [roomId, candidateUser.id, selectedAnswers, textAnswers, questions.length]);
 
   // 3. Smart Proctoring (Only for Formal Live Exam Rooms with PIN, NEVER for Intake Assessment)
   useEffect(() => {
@@ -538,6 +676,29 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
 
   const activeQuestionsList = activeStage === 'STAGE_1_OBJECTIVE' ? stage1Questions : stage2Questions;
   const currentQ = activeQuestionsList[currentIndex] || activeQuestionsList[0];
+
+  const answeredCount = Object.keys(selectedAnswers).length;
+  const flaggedCount = Object.values(flaggedQuestions).filter(Boolean).length;
+
+  const answeredIndices = useMemo(() => {
+    const set = new Set<number>();
+    activeQuestionsList.forEach((q, idx) => {
+      if (selectedAnswers[q.id] || textAnswers[q.id] || evidenceUrls[q.id] || liveUrls[q.id]) {
+        set.add(idx);
+      }
+    });
+    return set;
+  }, [activeQuestionsList, selectedAnswers, textAnswers, evidenceUrls, liveUrls]);
+
+  const flaggedIndices = useMemo(() => {
+    const set = new Set<number>();
+    activeQuestionsList.forEach((q, idx) => {
+      if (flaggedQuestions[q.id]) {
+        set.add(idx);
+      }
+    });
+    return set;
+  }, [activeQuestionsList, flaggedQuestions]);
 
   // Auto-Save Draft every 15s
   useEffect(() => {
@@ -660,36 +821,63 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       const totalPracticalPoints = stage2Questions.reduce((acc, q) => acc + (q.points || 20), 0);
       const totalExamPoints = totalObjectivePoints + totalPracticalPoints;
 
-      // Call real backend submit API
-      const answersPayload = questions.map((q) => ({
-        itemId: q.id,
-        selectedOptionId: selectedAnswers[q.id] || null,
-        textResponse: textAnswers[q.id] || '',
-        evidenceUrl: evidenceUrls[q.id] || null,
-        liveUrl: liveUrls[q.id] || null,
-      }));
+      let submitData: any = null;
 
-      const totalSec = (assessment?.duration_minutes || 45) * 60;
-      const timeSpent = Math.max(0, totalSec - timeRemaining);
+      if (isPreview) {
+        // Evaluate locally in preview mode (zero-pollution of production submissions)
+        const percentage = totalObjectivePoints > 0 ? Math.round((objectiveEarned / totalObjectivePoints) * 100) : 100;
+        submitData = {
+          totalScore: objectiveEarned,
+          maxScore: totalObjectivePoints,
+          percentage,
+          isPassed: percentage >= (assessment?.passing_score || 70),
+          domainScores: { '01': percentage, '02': percentage, '03': percentage, '04': percentage, '05': percentage },
+          evaluations: questions.map((q) => {
+            const correctOpt = q.options?.find((o: any) => o.is_correct);
+            const userOptId = selectedAnswers[q.id];
+            const isCorrect = Boolean(correctOpt && correctOpt.id === userOptId);
+            return {
+              itemId: q.id,
+              selectedOptionId: userOptId || null,
+              correctOptionId: correctOpt?.id || null,
+              isCorrect,
+              scoreAwarded: isCorrect ? (q.points || 1) : 0,
+              explanation: (q as any).explanation || correctOpt?.explanation || null,
+            };
+          }),
+        };
+      } else {
+        // Call real backend submit API
+        const answersPayload = questions.map((q) => ({
+          itemId: q.id,
+          selectedOptionId: selectedAnswers[q.id] || null,
+          textResponse: textAnswers[q.id] || '',
+          evidenceUrl: evidenceUrls[q.id] || null,
+          liveUrl: liveUrls[q.id] || null,
+        }));
 
-      const submitRes = await fetch(`/api/assessments/${effectiveId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          classAssignmentId: assignmentId || undefined,
-          campaignId: campaignId || undefined,
-          timeSpentSeconds: timeSpent,
-          answers: answersPayload,
-          proctoringEvents: proctoring.events,
-        }),
-      });
+        const totalSec = (assessment?.duration_minutes || 45) * 60;
+        const timeSpent = Math.max(0, totalSec - timeRemaining);
 
-      const submitData = await submitRes.json();
-      if (!submitRes.ok) {
-        if (submitRes.status === 403 && submitData.code === 'UPGRADE_REQUIRED') {
-          setIsUpgradeRequired(true);
+        const submitRes = await fetch(`/api/assessments/${effectiveId}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            classAssignmentId: assignmentId || undefined,
+            campaignId: campaignId || undefined,
+            timeSpentSeconds: timeSpent,
+            answers: answersPayload,
+            proctoringEvents: proctoring.events,
+          }),
+        });
+
+        submitData = await submitRes.json();
+        if (!submitRes.ok) {
+          if (submitRes.status === 403 && submitData.code === 'UPGRADE_REQUIRED') {
+            setIsUpgradeRequired(true);
+          }
+          throw new Error(submitData.error || 'Nộp bài thất bại');
         }
-        throw new Error(submitData.error || 'Nộp bài thất bại');
       }
 
       if (submitData.unlockedFreeDomain) {
@@ -982,7 +1170,7 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
             {isAuthError ? (
               <Link
-                href={`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/personal/dashboard')}`}
+                href={`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : (effectiveReturnUrl || '/personal/dashboard'))}`}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
               >
                 <span>Đăng Nhập Lại Ngay</span>
@@ -990,11 +1178,11 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
               </Link>
             ) : (
               <Link
-                href="/personal/dashboard"
+                href={effectiveReturnUrl || "/personal/dashboard"}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Quay lại Bảng điều khiển</span>
+                <span>{effectiveReturnUrl ? 'Quay lại soạn đề' : 'Quay lại Bảng điều khiển'}</span>
               </Link>
             )}
           </div>
@@ -1305,11 +1493,11 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
           {/* Nút Điều Hướng CTA */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <Link
-              href="/personal/dashboard"
+              href={effectiveReturnUrl || "/personal/dashboard"}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 font-semibold hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Về Bảng Điều Khiển</span>
+              <span>{effectiveReturnUrl ? 'Quay lại soạn đề' : 'Về Bảng Điều Khiển'}</span>
             </Link>
 
             <Link
@@ -1325,29 +1513,6 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
       </div>
     );
   }
-
-  const answeredCount = Object.keys(selectedAnswers).length;
-  const flaggedCount = Object.values(flaggedQuestions).filter(Boolean).length;
-
-  const answeredIndices = useMemo(() => {
-    const set = new Set<number>();
-    activeQuestionsList.forEach((q, idx) => {
-      if (selectedAnswers[q.id] || textAnswers[q.id] || evidenceUrls[q.id] || liveUrls[q.id]) {
-        set.add(idx);
-      }
-    });
-    return set;
-  }, [activeQuestionsList, selectedAnswers, textAnswers, evidenceUrls, liveUrls]);
-
-  const flaggedIndices = useMemo(() => {
-    const set = new Set<number>();
-    activeQuestionsList.forEach((q, idx) => {
-      if (flaggedQuestions[q.id]) {
-        set.add(idx);
-      }
-    });
-    return set;
-  }, [activeQuestionsList, flaggedQuestions]);
 
   // 0. READINESS / CONFIRMATION SCREEN (FOR INTAKE ASSESSMENT)
   if (isBaseline && !hasStarted && answeredCount === 0) {
@@ -1674,17 +1839,23 @@ function AssessmentTakeContent({ assessmentId }: { assessmentId: string }) {
             type="button"
             onClick={handleExit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors text-xs font-semibold cursor-pointer shrink-0"
-            title="Thoát về Bảng điều khiển (Esc)"
+            title={effectiveReturnUrl ? 'Quay lại trình soạn đề' : 'Thoát về Bảng điều khiển (Esc)'}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Rời khỏi</span>
+            <span className="hidden sm:inline">{effectiveReturnUrl ? 'Quay lại soạn đề' : 'Rời khỏi'}</span>
           </button>
 
           <div className="h-5 w-px bg-slate-200 dark:bg-zinc-800 shrink-0" />
 
-          <span className="px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold uppercase tracking-wider shrink-0 border border-blue-200/60 dark:border-blue-900/40">
-            {isBaseline ? 'Khảo thí đầu vào' : assessment?.access_tier === 'VIP' ? 'Đề VIP / PRO' : 'Đề Chuẩn NEXA'}
-          </span>
+          {isPreview ? (
+            <span className="px-2.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wider shrink-0 border border-amber-200/60 dark:border-amber-900/40">
+              {workspaceTitle ? `Xem trước • ${workspaceTitle}` : 'Xem trước đề thi'}
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold uppercase tracking-wider shrink-0 border border-blue-200/60 dark:border-blue-900/40">
+              {isBaseline ? 'Khảo thí đầu vào' : assessment?.access_tier === 'VIP' ? 'Đề VIP / PRO' : 'Đề Chuẩn NEXA'}
+            </span>
+          )}
 
           <h1 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate max-w-[180px] sm:max-w-xs md:max-w-md lg:max-w-lg">
             {assessment?.title || (isBaseline ? 'Đánh Giá Năng Lực Số Ban Đầu' : 'Khảo Thí Năng Lực Số Chuẩn Hóa')}
