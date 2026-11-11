@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  async redirects() {
+    return [
+      { source: '/personal/exams', destination: '/personal/authoring', permanent: true },
+      { source: '/personal/item-bank', destination: '/personal/authoring', permanent: true },
+      { source: '/personal/live-pin', destination: '/live/waiting-room', permanent: false },
+      { source: '/personal/accept-invite', destination: '/accept-invite', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

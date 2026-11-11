@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NexaLogo } from '@/components/brand/NexaLogo';
 import { FeedbackModal } from '@/components/dashboard/FeedbackModal';
+import { SidebarFeedbackCard } from '@/components/dashboard/SidebarFeedbackCard';
+import { SidebarFloatingTooltip, type TooltipState } from '@/components/dashboard/SidebarFloatingTooltip';
 import {
   LayoutGrid,
   ClipboardCheck,
@@ -12,8 +14,6 @@ import {
   Award,
   Users,
   ListChecks,
-  Building2,
-  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   FilePlus2,
@@ -22,9 +22,16 @@ import {
   Trophy,
   Compass,
   FileCheck,
+  LucideIcon,
 } from 'lucide-react';
 
-const learningNavItems = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+const learningNavItems: NavItem[] = [
   { name: 'Tổng quan', href: '/personal/dashboard', icon: LayoutGrid },
   { name: 'Hồ sơ năng lực', href: '/personal/competency', icon: Compass },
   { name: 'Bài đánh giá', href: '/personal/assessments', icon: ClipboardCheck },
@@ -33,12 +40,12 @@ const learningNavItems = [
   { name: 'Chứng chỉ', href: '/personal/credentials', icon: Award },
 ];
 
-const workNavItems = [
+const workNavItems: NavItem[] = [
   { name: 'Lớp & Nhóm', href: '/personal/groups', icon: Users },
   { name: 'Bài được giao', href: '/personal/submissions', icon: ListChecks },
 ];
 
-const creatorNavItems = [
+const creatorNavItems: NavItem[] = [
   { name: 'Đề đánh giá của tôi', href: '/personal/authoring', icon: FilePlus2 },
   { name: 'Phòng thi trực tiếp', href: '/personal/live-room', icon: Radio },
   { name: 'Góp đề cộng đồng', href: '/personal/contribute', icon: Share2 },
@@ -49,6 +56,7 @@ export function PersonalSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [canGrade, setCanGrade] = useState(false);
+  const [hoveredTooltip, setHoveredTooltip] = useState<TooltipState | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,166 +87,142 @@ export function PersonalSidebar() {
     return pathname === href || pathname.startsWith(href + '/');
   };
 
+  const renderNavGroup = (title: string, items: NavItem[]) => (
+    <div className="space-y-1">
+      {!isCollapsed ? (
+        <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+          {title}
+        </div>
+      ) : (
+        <div className="h-2" />
+      )}
+      <div className="space-y-1">
+        {items.map((item) => {
+          const active = isRouteActive(item.href);
+          const Icon = item.icon;
+
+          if (isCollapsed) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.name}
+                title={item.name}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredTooltip({ name: item.name, top: rect.top + rect.height / 2 });
+                }}
+                onMouseLeave={() => setHoveredTooltip(null)}
+                className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-all duration-150 relative group ${
+                  active
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs ring-1 ring-blue-500/25'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
+                }`}
+              >
+                <Icon
+                  className={`w-4 h-4 shrink-0 transition-colors ${
+                    active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400 group-hover:text-neutral-900 dark:group-hover:text-white'
+                  }`}
+                  strokeWidth={1.75}
+                />
+              </Link>
+            );
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
+                active
+                  ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
+                  : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
+              }`}
+            >
+              <Icon
+                className={`w-4 h-4 shrink-0 transition-colors ${
+                  active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                }`}
+                strokeWidth={1.75}
+              />
+              <span className="truncate">{item.name}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <aside
         className={`border-r border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0B] flex flex-col justify-between shrink-0 h-screen sticky top-0 transition-all duration-300 ease-in-out z-30 select-none ${
-          isCollapsed ? 'w-20' : 'w-64'
+          isCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         <div className="flex flex-col h-full min-h-0">
           {/* Brand header */}
-          <div className="h-16 px-4 flex items-center justify-between shrink-0">
-            <Link
-              href="/personal/dashboard"
-              className="flex items-center gap-2 overflow-hidden"
-              title="NEXA AI Platform"
-            >
-              <NexaLogo size={28} showText={!isCollapsed} />
-            </Link>
-
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-md text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors"
-              title={isCollapsed ? 'Mở rộng menu' : 'Thu nhỏ menu'}
-              aria-label={isCollapsed ? 'Mở rộng menu' : 'Thu nhỏ menu'}
-            >
-              {isCollapsed ? (
+          {isCollapsed ? (
+            <div className="h-16 flex items-center justify-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredTooltip({ name: 'Mở rộng menu', top: rect.top + rect.height / 2 });
+                }}
+                onMouseLeave={() => setHoveredTooltip(null)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                title="Mở rộng menu"
+                aria-label="Mở rộng menu"
+              >
                 <PanelLeftOpen className="w-4 h-4" strokeWidth={1.75} />
-              ) : (
+              </button>
+            </div>
+          ) : (
+            <div className="h-16 px-3.5 flex items-center justify-between shrink-0">
+              <Link
+                href="/personal/dashboard"
+                className="flex items-center gap-2 overflow-hidden"
+                title="NEXA AI Platform"
+              >
+                <NexaLogo size={28} showText={true} />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                title="Thu nhỏ menu"
+                aria-label="Thu nhỏ menu"
+              >
                 <PanelLeftClose className="w-4 h-4" strokeWidth={1.75} />
-              )}
-            </button>
-          </div>
-
-          {/* Navigation Items (Scrollable) */}
-          <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-            {/* 1. Học tập & Phát triển */}
-            <div>
-              {!isCollapsed && (
-                <div className="px-3 mb-2 text-[11px] uppercase tracking-wider text-slate-400 dark:text-neutral-400 font-semibold">
-                  Học tập &amp; Phát triển
-                </div>
-              )}
-              <div className="space-y-0.5">
-                {learningNavItems.map((item) => {
-                  const active = isRouteActive(item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      title={isCollapsed ? item.name : undefined}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                        isCollapsed ? 'justify-center px-0' : ''
-                      } ${
-                        active
-                          ? 'bg-blue-50/70 dark:bg-zinc-900/90 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                          : 'text-neutral-700 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900'
-                      }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-neutral-300'}`}
-                        strokeWidth={1.75}
-                      />
-                      {!isCollapsed && <span className="truncate">{item.name}</span>}
-                    </Link>
-                  );
-                })}
-              </div>
+              </button>
             </div>
+          )}
 
-            {/* Spacing between groups */}
-            <div className="my-2" />
-
-            {/* 2. Nhóm & Công việc */}
-            <div>
-              {!isCollapsed && (
-                <div className="px-3 mb-2 text-[11px] uppercase tracking-wider text-slate-400 dark:text-neutral-400 font-semibold">
-                  Nhóm &amp; Công việc
-                </div>
-              )}
-              <div className="space-y-0.5">
-                {dynamicWorkNavItems.map((item) => {
-                  const active = isRouteActive(item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      title={isCollapsed ? item.name : undefined}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                        isCollapsed ? 'justify-center px-0' : ''
-                      } ${
-                        active
-                          ? 'bg-blue-50/70 dark:bg-zinc-900/90 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                          : 'text-neutral-700 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900'
-                      }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-neutral-300'}`}
-                        strokeWidth={1.75}
-                      />
-                      {!isCollapsed && <span className="truncate">{item.name}</span>}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Spacing between groups */}
-            <div className="my-2" />
-
-            {/* 3. Công cụ tạo & Tổ chức */}
-            <div>
-              {!isCollapsed && (
-                <div className="px-3 mb-2 text-[11px] uppercase tracking-wider text-slate-400 dark:text-neutral-400 font-semibold">
-                  Công cụ tạo &amp; Tổ chức
-                </div>
-              )}
-              <div className="space-y-0.5">
-                {creatorNavItems.map((item) => {
-                  const active = isRouteActive(item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      title={isCollapsed ? item.name : undefined}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                        isCollapsed ? 'justify-center px-0' : ''
-                      } ${
-                        active
-                          ? 'bg-blue-50/70 dark:bg-zinc-900/90 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                          : 'text-neutral-700 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900'
-                      }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-neutral-300'}`}
-                        strokeWidth={1.75}
-                      />
-                      {!isCollapsed && <span className="truncate">{item.name}</span>}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+          {/* Navigation Items (Scrollable without native scrollbar) */}
+          <nav
+            onScroll={() => setHoveredTooltip(null)}
+            className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2 space-y-3"
+          >
+            {renderNavGroup('Học tập & Phát triển', learningNavItems)}
+            {renderNavGroup('Nhóm & Công việc', dynamicWorkNavItems)}
+            {renderNavGroup('Công cụ tạo & Tổ chức', creatorNavItems)}
           </nav>
 
-          {/* Footer Items: Feedback only (Cài đặt đã chuyển lên Menu Avatar) */}
-          <div className="p-3 shrink-0">
-            <button
-              onClick={() => setShowFeedback(true)}
-              title="Đóng góp ý kiến cho NEXA"
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors ${
-                isCollapsed ? 'justify-center px-0' : ''
-              }`}
-            >
-              <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
-              {!isCollapsed && <span>Góp ý kiến</span>}
-            </button>
-          </div>
+          {/* Blue Feedback Box at bottom */}
+          <SidebarFeedbackCard
+            isCollapsed={isCollapsed}
+            onOpenFeedback={() => setShowFeedback(true)}
+            onHoverTooltip={setHoveredTooltip}
+            title="Đóng góp ý kiến"
+            description="Ý kiến của bạn giúp NEXA ngày một hoàn thiện hơn."
+          />
         </div>
+
+        {/* Floating Tooltip outside scroll container */}
+        <SidebarFloatingTooltip tooltip={isCollapsed ? hoveredTooltip : null} />
       </aside>
 
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />

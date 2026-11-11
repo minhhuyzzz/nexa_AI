@@ -65,19 +65,28 @@ export async function GET(request: Request) {
     updates.full_name = googleName;
   }
 
+  if (profile && profile.is_onboarded === false) {
+    updates.is_onboarded = true;
+  }
+
   if (Object.keys(updates).length > 0) {
     updates.updated_at = new Date().toISOString();
-    await supabase.from('profiles').update(updates).eq('id', data.user.id);
+    // Tạo client authenticated mang theo cookie phiên đăng nhập vừa sinh để thỏa mãn RLS auth.uid() = id
+    const authedClient = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookiesToSet;
+        },
+        setAll() {},
+      },
+    });
+    await authedClient.from('profiles').update(updates).eq('id', data.user.id);
   }
 
   const isSuperadmin = isSuperadminEmail(data.user.email);
 
   let targetPath = '/personal/dashboard';
-  if (isSuperadmin) {
-    targetPath = '/admin/dashboard';
-  } else if (profile && profile.is_onboarded === false) {
-    targetPath = '/onboarding';
-  } else if (profile?.role === 'ADMIN') {
+  if (isSuperadmin || profile?.role === 'ADMIN') {
     targetPath = '/admin/dashboard';
   } else {
     targetPath = '/personal/dashboard';

@@ -29,20 +29,26 @@ export async function GET() {
       return NextResponse.json({ error: 'Không tìm thấy hồ sơ người dùng' }, { status: 404 });
     }
 
-    // Sync Google OAuth name if profile.full_name is missing or placeholder
+    // Sync Google OAuth name and avatar if missing or updated
     const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name;
     const googleAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
     let effectiveFullName = profile.full_name;
 
+    const profileUpdates: Record<string, any> = {};
     if (googleName && (!profile.full_name || profile.full_name === 'Người dùng Nexa')) {
       effectiveFullName = googleName;
+      profileUpdates.full_name = googleName;
+    }
+    if (googleAvatar && profile.avatar_url !== googleAvatar) {
+      profileUpdates.avatar_url = googleAvatar;
+      profile.avatar_url = googleAvatar;
+    }
+
+    if (Object.keys(profileUpdates).length > 0) {
+      profileUpdates.updated_at = new Date().toISOString();
       await supabase
         .from('profiles')
-        .update({
-          full_name: googleName,
-          ...(googleAvatar && !profile.avatar_url ? { avatar_url: googleAvatar } : {}),
-          updated_at: new Date().toISOString(),
-        })
+        .update(profileUpdates)
         .eq('id', effectiveUserId);
     }
 
@@ -75,6 +81,7 @@ export async function GET() {
           total_login_days: totalLoginDays,
           login_streak: loginStreak,
           last_login_date: todayStr,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', effectiveUserId);
     } else {

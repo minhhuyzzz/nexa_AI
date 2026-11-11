@@ -369,13 +369,34 @@
 
 @keyframes border-beam-spin {
   from {
-    transform: rotate(0deg);
+    transform: translate(-50%, -50%) rotate(0deg);
   }
   to {
-    transform: rotate(360deg);
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
 .animate-border-beam {
   animation: border-beam-spin 3s linear infinite;
+}
+
+.border-beam-light {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(96, 165, 250, 0.4) 310deg,
+    #60a5fa 335deg,
+    #bfdbfe 350deg,
+    #ffffff 360deg
+  );
+}
+
+/* Custom scrollbar utility to hide ugly native scrollbars while preserving scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

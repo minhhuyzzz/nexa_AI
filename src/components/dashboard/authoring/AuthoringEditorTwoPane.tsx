@@ -22,7 +22,7 @@ import {
   Link2,
   FileCode,
   Sliders,
-  Scale,
+  GripVertical,
   Send,
   Loader2,
   Eye,
@@ -97,6 +97,7 @@ export function AuthoringEditorTwoPane({
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [publishDuration, setPublishDuration] = useState(45);
   const [publishPassingScore, setPublishPassingScore] = useState(70);
+  const [publishPointReward, setPublishPointReward] = useState(50);
   const [publishIsVip, setPublishIsVip] = useState(false);
 
   // AI & Quick Duration States (Quizizz UX Model)
@@ -120,7 +121,9 @@ export function AuthoringEditorTwoPane({
 
   // Score computation & Validation
   const currentTotalPoints = questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
-  const isScaleBalanced = Math.round(currentTotalPoints) === 100;
+  const [isBatchPointsOpen, setIsBatchPointsOpen] = useState(false);
+  const [customPointsInput, setCustomPointsInput] = useState('');
+  const batchPointsPopoverRef = useRef<HTMLDivElement>(null);
 
   // 1. Load Assessment & Items
   useEffect(() => {
@@ -138,6 +141,7 @@ export function AuthoringEditorTwoPane({
             is_published,
             is_vip,
             access_tier,
+            point_reward,
             organization_id,
             security_settings,
             created_at,
@@ -153,6 +157,7 @@ export function AuthoringEditorTwoPane({
           setCustomMinutesInput(asm.duration_minutes.toString());
         }
         if (asm.passing_score) setPublishPassingScore(asm.passing_score);
+        if (asm.point_reward !== undefined) setPublishPointReward(asm.point_reward || 50);
         if (asm.is_vip !== undefined) setPublishIsVip(asm.is_vip);
         if (asm.security_settings) setSecuritySettings(asm.security_settings);
 
@@ -359,33 +364,37 @@ export function AuthoringEditorTwoPane({
       ) {
         setIsDurationPopoverOpen(false);
       }
+      if (
+        batchPointsPopoverRef.current &&
+        !batchPointsPopoverRef.current.contains(event.target as Node)
+      ) {
+        setIsBatchPointsOpen(false);
+      }
     }
-    if (isDurationPopoverOpen) {
+    if (isDurationPopoverOpen || isBatchPointsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isDurationPopoverOpen]);
+  }, [isDurationPopoverOpen, isBatchPointsOpen]);
 
-  // Manual Auto-balance handler: distributes 100 points evenly across all questions
-  const handleAutoBalance = () => {
-    if (questions.length === 0) return;
-    const count = questions.length;
-    const basePts = Math.floor(100 / count);
-    const remainder = 100 - basePts * count;
-    const balanced = questions.map((q, idx) => ({
+  // Batch set points handler: sets specified points across all questions
+  const handleBatchSetPoints = (pts: number) => {
+    if (questions.length === 0 || pts <= 0) return;
+    const updated = questions.map((q) => ({
       ...q,
-      points: idx === count - 1 ? basePts + remainder : basePts,
+      points: pts,
     }));
-    setQuestions(balanced);
-    saveChanges(balanced);
+    setQuestions(updated);
+    saveChanges(updated);
+    setIsBatchPointsOpen(false);
   };
 
   // Question manipulation helpers
   const handleAddQuestion = (type: QuestionType) => {
     const isPractical = type === 'PRACTICAL' || type === 'OPEN_RESPONSE';
-    const defaultPts = questions.length > 0 ? Math.max(1, Math.floor(100 / (questions.length + 1))) : 100;
+    const defaultPts = questions.length > 0 ? (questions[0].points || 1) : 1;
     const newQ: AuthoringQuestionItem = {
       id: `q-${Date.now()}`,
       type: isPractical ? 'PRACTICAL' : 'MCQ',
@@ -445,6 +454,50 @@ export function AuthoringEditorTwoPane({
     if (selectedIndex >= questions.length - 1) {
       setSelectedIndex(Math.max(0, questions.length - 2));
     }
+  };
+
+  // Drag & Drop reordering state and handlers
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `${index}`);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    setQuestions((prev) => {
+      const copy = [...prev];
+      const [movedItem] = copy.splice(draggedIndex, 1);
+      copy.splice(targetIndex, 0, movedItem);
+      saveChanges(copy);
+      return copy;
+    });
+
+    setSelectedIndex(targetIndex);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleMoveQuestion = (idx: number, direction: 'UP' | 'DOWN') => {
@@ -742,6 +795,7 @@ export function AuthoringEditorTwoPane({
             is_published: true,
             duration_minutes: Number(publishDuration) || 45,
             passing_score: Number(publishPassingScore) || 70,
+            point_reward: Number(publishPointReward) || 50,
             is_vip: publishIsVip,
             access_tier: publishIsVip ? 'VIP' : 'FREE',
             security_settings: securitySettings,
@@ -809,10 +863,11 @@ export function AuthoringEditorTwoPane({
         <div className="flex items-center gap-3">
           <Link
             href={returnUrl}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold transition-colors shrink-0"
             title="Quay lại danh sách đề"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Quay lại</span>
           </Link>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -840,43 +895,86 @@ export function AuthoringEditorTwoPane({
 
         {/* Right actions: Balance Status + Auto-balance + Tools + Next */}
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          {/* Total score balance indicator */}
-          <div
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold font-mono flex items-center gap-1.5 tabular-nums transition ${
-              isScaleBalanced
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                : currentTotalPoints < 100
-                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-            }`}
-          >
-            {isScaleBalanced ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>100/100 điểm</span>
-              </>
-            ) : currentTotalPoints < 100 ? (
-              <>
-                <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>{currentTotalPoints}/100đ (Thiếu {100 - currentTotalPoints}đ)</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                <span>{currentTotalPoints}/100đ (Thừa {currentTotalPoints - 100}đ)</span>
-              </>
+          {/* Total Points & Quick Batch Set Dropdown */}
+          <div className="relative inline-flex items-center shadow-2xs rounded-xl" ref={batchPointsPopoverRef}>
+            <div className="px-3 py-2 rounded-l-xl border border-r-0 border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-xs font-bold font-mono text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 tabular-nums">
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>Tổng: {currentTotalPoints} điểm</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsBatchPointsOpen((prev) => !prev)}
+              className="px-2.5 py-2 rounded-r-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 inline-flex items-center gap-1 cursor-pointer transition-colors"
+              title="Đổi điểm cho tất cả các câu hỏi"
+            >
+              <span>Đổi điểm tất cả</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            {isBatchPointsOpen && (
+              <div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-3.5 bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+                  <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    Đổi điểm tất cả câu hỏi
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-500 dark:text-neutral-400">
+                    {questions.length} câu
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 dark:text-neutral-400 mb-1.5">
+                    Mức điểm phổ biến:
+                  </label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[1, 2, 5, 10].map((pts) => (
+                      <button
+                        key={pts}
+                        type="button"
+                        onClick={() => handleBatchSetPoints(pts)}
+                        className="py-1.5 px-2 rounded-lg text-xs font-semibold font-mono border border-slate-200 dark:border-zinc-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer text-center"
+                      >
+                        {pts}đ
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-zinc-800/80">
+                  <label className="block text-[11px] font-medium text-slate-500 dark:text-neutral-400">
+                    Hoặc nhập số điểm cụ thể:
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={customPointsInput}
+                      onChange={(e) => setCustomPointsInput(e.target.value)}
+                      placeholder="VD: 3"
+                      className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!customPointsInput || Number(customPointsInput) <= 0}
+                      onClick={() => {
+                        const val = Number(customPointsInput);
+                        if (val > 0) handleBatchSetPoints(val);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-semibold whitespace-nowrap cursor-pointer transition shadow-xs"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-500 dark:text-neutral-400 leading-normal pt-1">
+                  Đổi điểm sẽ gán đồng loạt cho {questions.length} câu. Bạn vẫn có thể tùy chỉnh điểm từng câu sau đó.
+                </p>
+              </div>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={handleAutoBalance}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
-            title="Tự động chia đều điểm các câu sao cho tổng bằng 100"
-          >
-            <Scale className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Cân bằng về 100</span>
-          </button>
 
 
           {/* Cài đặt đề */}
@@ -927,27 +1025,14 @@ export function AuthoringEditorTwoPane({
             )}
             <span>{isPublishing ? 'Đang lưu...' : isPublished ? (effectiveMode === 'ORG' ? 'Đã lưu trong Kho đề' : 'Chuyển về bản nháp') : (effectiveMode === 'ORG' ? 'Lưu vào Kho đề' : 'Xuất bản đề thi')}</span>
           </button>
-
-          {/* Nút Lưu nháp & Thoát */}
-          <Link
-            href={returnUrl}
-            className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
-          >
-            <span>{isPublished ? 'Thoát' : 'Lưu nháp & Thoát'}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
       </div>
 
-      {/* Sub-Header theo chuẩn Quizizz / Wayground: [X] Câu hỏi • [Y] Điểm • [Z] Phút */}
+      {/* Sub-Header theo chuẩn Quizizz / Wayground: [X] Câu hỏi • [Z] Phút */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
         <div className="flex items-center gap-2.5 flex-wrap text-xs text-slate-600 dark:text-zinc-300">
           <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
             {questions.length} Câu hỏi
-          </span>
-          <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
-          <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
-            {currentTotalPoints} Điểm
           </span>
           <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
           <div className="relative" ref={durationPopoverRef}>
@@ -1004,18 +1089,6 @@ export function AuthoringEditorTwoPane({
               </div>
             )}
           </div>
-        </div>
-
-        {/* Nút Tạo câu hỏi nhanh */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => handleAddQuestion('MCQ')}
-            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
-            <span>Tạo câu hỏi</span>
-          </button>
         </div>
       </div>
 
@@ -1088,16 +1161,33 @@ export function AuthoringEditorTwoPane({
               return (
                 <div
                   key={q.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => {
                     setSelectedIndex(idx);
                     setMobileTab('editor');
                   }}
-                  className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-start gap-2.5 ${
-                    isSelected
+                  className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-start gap-2 select-none ${
+                    draggedIndex === idx ? 'opacity-40 scale-[0.98]' : ''
+                  } ${
+                    dragOverIndex === idx && draggedIndex !== idx
+                      ? 'border-blue-500 ring-2 ring-blue-500/30'
+                      : isSelected
                       ? 'border-blue-600 dark:border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-1 ring-blue-500/20'
                       : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
                   }`}
                 >
+                  {/* Drag Handle */}
+                  <div
+                    className="p-1 -ml-1 text-slate-300 hover:text-slate-600 dark:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing shrink-0"
+                    title="Nắm kéo để di chuyển vị trí câu hỏi"
+                  >
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </div>
+
                   {/* Number pill */}
                   <span
                     className={`w-6 h-6 rounded-md font-mono text-[10px] font-bold flex items-center justify-center shrink-0 ${
@@ -1519,8 +1609,8 @@ export function AuthoringEditorTwoPane({
               </button>
             </div>
 
-            {/* Navigation Pill for ORG and ADMIN */}
-            {effectiveMode !== 'PERSONAL' && (
+            {/* Navigation Pill only for ORG (Enterprise/School with proctoring) */}
+            {effectiveMode === 'ORG' && (
               <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl">
                 <button
                   type="button"
@@ -1531,7 +1621,7 @@ export function AuthoringEditorTwoPane({
                       : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                 >
-                  {effectiveMode === 'ORG' ? '1. Thông số đề trong Kho' : '1. Thông số & Phân hạng gói'}
+                  1. Thông số đề trong Kho
                 </button>
                 <button
                   type="button"
@@ -1542,13 +1632,13 @@ export function AuthoringEditorTwoPane({
                       : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                 >
-                  2. Giám thị & Bảo mật
+                  2. Giám thị &amp; Bảo mật
                 </button>
               </div>
             )}
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
-              {modalTab === 'SECURITY' && effectiveMode !== 'PERSONAL' ? (
+              {modalTab === 'SECURITY' && effectiveMode === 'ORG' ? (
                 <div className="py-1">
                   <SecuritySettingsCard
                     value={securitySettings}
@@ -1557,21 +1647,54 @@ export function AuthoringEditorTwoPane({
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Thời lượng làm bài (Phút)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min={5}
+                        max={300}
+                        value={publishDuration}
+                        onChange={(e) => setPublishDuration(Number(e.target.value) || 45)}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Ngưỡng đạt tiêu chuẩn (%)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={publishPassingScore}
+                        onChange={(e) => setPublishPassingScore(Number(e.target.value) || 70)}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Điểm thưởng hoàn thành (PTS) cho Admin & Personal */}
                   <div className="space-y-1.5">
                     <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5 text-amber-500" />
-                      <span>Ngưỡng đạt tiêu chuẩn (%)</span>
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Điểm thưởng hoàn thành (XP / PTS)</span>
                     </label>
                     <input
                       type="number"
                       min={0}
-                      max={100}
-                      value={publishPassingScore}
-                      onChange={(e) => setPublishPassingScore(Number(e.target.value) || 70)}
+                      max={1000}
+                      value={publishPointReward}
+                      onChange={(e) => setPublishPointReward(Number(e.target.value) || 50)}
                       className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
                     />
                     <p className="text-[11px] text-slate-400">
-                      Tỷ lệ điểm tối thiểu để xếp hạng ĐẠT (mặc định 70%).
+                      Điểm tích lũy ghi nhận vào hồ sơ người học khi làm bài đạt chuẩn.
                     </p>
                   </div>
 
@@ -1694,8 +1817,15 @@ export function AuthoringEditorTwoPane({
                         </button>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                        Đề thi phát hành từ trang Quản trị Nền tảng là đề khảo thí chuẩn của toàn hệ thống, tự động phân phối đến kho khảo thí người học.
+                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 space-y-2 text-xs">
+                        <div className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>Quy chế khảo thí hướng đến phát triển năng lực</span>
+                        </div>
+                        <div className="space-y-1 text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+                          <div>&bull; <strong>Tự do gắn cờ xem lại:</strong> Cho phép thí sinh đánh dấu câu hỏi chưa chắc chắn để rà soát trước khi nộp.</div>
+                          <div>&bull; <strong>Mở khóa giải thích &amp; lộ trình:</strong> Tự động phân tích 5 miền năng lực số và mở khóa giải thích chi tiết sau khi nộp bài để bù đắp kiến thức.</div>
+                        </div>
                       </div>
                     </div>
                   )}

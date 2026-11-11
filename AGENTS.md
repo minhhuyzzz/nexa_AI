@@ -30,14 +30,15 @@
 - Thông tin Personal, Organization A và Organization B phải cách ly. Chỉ chuyển dữ liệu hoặc chia sẻ khi có quy tắc và quyền cụ thể; việc một người tham gia tổ chức không làm tổ chức sở hữu toàn bộ dữ liệu Personal của họ.
 - Sidebar có thể khác nhau theo vai trò, nhưng **ẩn nút/ẩn menu không phải kiểm tra phân quyền**.
 
-### 2.1. Chỉ đánh giá **5 miền năng lực số**
+### 2.1. Đánh giá **các miền năng lực số**
 
-- **Khung DigComp 2.2 / 3.0 chỉ là cơ sở học thuật và tiêu chuẩn nền tảng bên trong hệ thống.** Tuyệt đối không phô bày các thuật ngữ kỹ thuật, mã khung hay số hiệu phiên bản (`DigComp`, `DigComp 2.2`, `DigComp 3.0`...) ra ngoài giao diện người dùng (UI), tránh làm người dùng bối rối hoặc làm giao diện trở nên nặng tính giáo điều. Trên UI chỉ dùng các cách gọi tự nhiên, dễ hiểu: **"5 miền năng lực số"**, **"Khung năng lực số 5 miền"** hoặc **"Hồ sơ năng lực 5 miền"**.
-- Chỉ có **5 điểm miền** được chấm, tổng hợp, hiển thị Radar, so sánh và dùng xác định lộ trình. Không thiết kế UX đánh giá 21 kỹ năng thành phần.
+- **Khung DigComp 2.2 / 3.0 chỉ là cơ sở học thuật và tiêu chuẩn nền tảng bên trong hệ thống.** Tuyệt đối không phô bày các thuật ngữ kỹ thuật, mã khung hay số hiệu phiên bản (`DigComp`, `DigComp 2.2`, `DigComp 3.0`...) ra ngoài giao diện người dùng (UI), tránh làm người dùng bối rối hoặc làm giao diện trở nên nặng tính giáo điều. Trên UI dùng các cách gọi tự nhiên, dễ hiểu: **"các miền năng lực số"**, **"Khung năng lực số"** hoặc **"Hồ sơ năng lực số"** (không cứng nhắc lặp lại từ "5 miền" khắp nơi).
+- Điểm các miền được chấm, tổng hợp, hiển thị trực quan (tiến độ các miền, phân tích khoảng trống), so sánh và dùng xác định lộ trình. Không thiết kế UX đánh giá 21 kỹ năng thành phần. Tránh lạm dụng vẽ biểu đồ Radar ở mọi màn hình gây đơn điệu, nhàn chán; phân biệt rõ hiển thị tổng quan ở Dashboard với giao diện chi tiết phân tích sau bài thi.
 - Cấu trúc kỹ năng thành phần nếu vẫn có trong DB chỉ là **phân loại/ánh xạ câu hỏi và tương thích dữ liệu nội bộ**, không biến thành điểm hoặc KPI sản phẩm cho người dùng.
-- `score: null` = **chưa có bằng chứng hợp lệ**; `score: 0` = **đã có đánh giá hợp lệ với kết quả 0**. Không thay `null` bằng `0`, không vẽ Radar 0% giả.
-- **Không gán điểm tổng bài cho cả 5 miền**. Chỉ tính điểm miền từ câu hỏi/bằng chứng được ánh xạ và chấm hợp lệ, kèm số lượng/độ bao phủ khi cần.
-- Một lần làm bài, điểm hồ sơ năng lực theo thời gian, XP, xếp hạng và chứng chỉ là **các đại lượng riêng biệt**. Chứng chỉ phải có bản ghi/quy tắc cấp phát hợp lệ; không tự mở khóa vì đủ XP hoặc mua gói.
+- `score: null` = **chưa có bằng chứng hợp lệ**; `score: 0` = **đã có đánh giá hợp lệ với kết quả 0**. Không thay `null` bằng `0`, không vẽ chỉ số 0% giả.
+- **Không gán điểm tổng bài cho tất cả các miền**. Chỉ tính điểm miền từ câu hỏi/bằng chứng được ánh xạ và chấm hợp lệ, kèm số lượng/độ bao phủ khi cần.
+- Một lần làm bài, điểm hồ sơ năng lực theo thời gian, XP/PTS, xếp hạng và chứng chỉ là **các đại lượng riêng biệt**.
+- **Cơ chế tích lũy Radar/Hồ sơ năng lực lâu dài:** Chỉ các bài khảo thí do admin nền tảng phát hành và các bài luyện tập trong lộ trình học tập khi đạt chuẩn $\ge 70\%$ mới được ghi nhận vào hồ sơ năng lực lâu dài. Điểm năng lực được tăng lũy tiến từng nấc nhỏ (1-2% theo bằng chứng học tập), không nhảy vọt đột ngột.
 - Ngưỡng mục tiêu như `70%` là **chính sách NEXA cấu hình**, không tự gán là chuẩn chính thức của DigComp nếu chưa có nguồn xác nhận.
 - Bài đánh giá đầu vào phải là bản ghi đã phát hành, có câu hỏi và quyền làm bài thật; **không trả về ID giả** khi DB trống.
 

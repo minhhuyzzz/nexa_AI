@@ -7,7 +7,6 @@ export async function middleware(request: NextRequest) {
 
   // 1. Identify route categories
   const isAuthPage = pathname === '/login' || pathname === '/register';
-  const isOnboardingPage = pathname === '/onboarding';
   const isSuspendedPage = pathname === '/account-suspended';
   const isAdminRoute = pathname.startsWith('/admin');
   const isProtectedDashboard =
@@ -18,13 +17,17 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/evaluator') ||
     isAdminRoute;
 
-  // 2. Backward-compatibility redirect: /learner/* -> /personal/*
+  // 2. Backward-compatibility redirects
+  if (pathname === '/onboarding') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/personal/dashboard';
+    return NextResponse.redirect(url, 307);
+  }
   if (pathname.startsWith('/learner/')) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace('/learner/', '/personal/');
     return NextResponse.redirect(url, 307);
   }
-  // Backward-compatibility redirect: /learner -> /personal/dashboard
   if (pathname === '/learner') {
     const url = request.nextUrl.clone();
     url.pathname = '/personal/dashboard';
@@ -64,7 +67,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Fast Short-Circuit: Public pages require ZERO auth checks or remote calls
-  if (!isAuthPage && !isOnboardingPage && !isProtectedDashboard) {
+  if (!isAuthPage && !isProtectedDashboard) {
     return NextResponse.next({ request });
   }
 
@@ -72,8 +75,8 @@ export async function middleware(request: NextRequest) {
   const cookies = request.cookies.getAll();
   const hasAuthCookie = cookies.some((c) => c.name.includes('-auth-token'));
 
-  // If visiting protected dashboard or onboarding without any auth cookie
-  if ((isProtectedDashboard || isOnboardingPage) && !hasAuthCookie) {
+  // If visiting protected dashboard without any auth cookie
+  if (isProtectedDashboard && !hasAuthCookie) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('redirect', pathname);
@@ -178,16 +181,6 @@ export async function middleware(request: NextRequest) {
   // Superadmin Master Authority: email whitelist only
   const isSuperadmin = isSuperadminEmail(user.email);
 
-  // If user has not completed onboarding, force them to /onboarding
-  if (profile && profile.is_onboarded === false) {
-    if (!isOnboardingPage) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/onboarding';
-      return NextResponse.redirect(url);
-    }
-    return supabaseResponse;
-  }
-
   // Helper to resolve user dashboard based on active workspace
   const activeWs = request.cookies.get('nexa_active_workspace')?.value;
   const orgSlug = request.cookies.get('nexa_active_org_slug')?.value;
@@ -196,13 +189,6 @@ export async function middleware(request: NextRequest) {
     : activeWs?.startsWith('org_') && orgSlug
     ? `/org/${orgSlug}`
     : '/personal/dashboard';
-
-  // If user is already onboarded but visits /onboarding, redirect to their dashboard
-  if (isOnboardingPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = targetDashboard;
-    return NextResponse.redirect(url);
-  }
 
   // If on /login or /register, redirect to corresponding dashboard
   if (isAuthPage) {

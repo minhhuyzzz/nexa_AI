@@ -574,13 +574,13 @@ describe('Milestone 1 Route & Guard Empirical Challenger Suite', () => {
       expect(viewContent).toContain('<span>Vào phòng chờ</span>');
     });
 
-    it('TC-T3-03: Personal dashboard and personal live-room embed InlinePinEntryCard', () => {
+    it('TC-T3-03: Personal live-room embeds InlinePinEntryCard while personal dashboard stays focused', () => {
       const personalDashPath = path.resolve(
         process.cwd(),
         'src/app/(dashboard)/personal/dashboard/page.tsx'
       );
       const personalDashContent = fs.readFileSync(personalDashPath, 'utf8');
-      expect(personalDashContent).toContain('<InlinePinEntryCard compact />');
+      expect(personalDashContent).not.toContain('<InlinePinEntryCard');
 
       const personalLiveRoomPath = path.resolve(
         process.cwd(),

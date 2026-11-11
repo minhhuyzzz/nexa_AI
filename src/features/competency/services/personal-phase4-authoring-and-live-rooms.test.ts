@@ -218,8 +218,11 @@ describe('Personal User Phase 4: Authoring & Live Rooms (UC-P13, UC-P14, UC-P15,
                 eq: vi.fn().mockResolvedValue({ error: null }),
               }),
               insert: vi.fn().mockReturnValue({
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({ data: { id: 'item-1' }, error: null }),
+                select: vi.fn().mockImplementation(() => {
+                  const items = [{ id: 'item-1', order_index: 0 }];
+                  const promise = Promise.resolve({ data: items, error: null });
+                  (promise as any).single = vi.fn().mockResolvedValue({ data: items[0], error: null });
+                  return promise;
                 }),
               }),
             };

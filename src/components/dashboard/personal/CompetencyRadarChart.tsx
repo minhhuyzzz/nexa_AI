@@ -12,6 +12,7 @@ export interface DomainScore {
 
 interface CompetencyRadarChartProps {
   data?: DomainScore[];
+  baselineData?: DomainScore[];
   size?: number;
   showLegend?: boolean;
   showPercentages?: boolean;
@@ -28,6 +29,7 @@ const defaultDomains: DomainScore[] = [
 
 export function CompetencyRadarChart({
   data = defaultDomains,
+  baselineData,
   showLegend = true,
   showPercentages = true,
   variant = 'default',
@@ -75,6 +77,23 @@ export function CompetencyRadarChart({
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(' ');
+
+  // Baseline snapshot polygon (Vạch xuất phát ban đầu T0)
+  const hasBaseline = Boolean(
+    baselineData &&
+    baselineData.length === count &&
+    baselineData.some((d) => d.score !== null && d.score > 0)
+  );
+
+  const baselinePolygon = hasBaseline
+    ? baselineData!
+        .map((d, i) => {
+          const val = d.score !== null ? d.score / 100 : 0;
+          const { x, y } = getPoint(i, val);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        })
+        .join(' ')
+    : '';
 
   // Calibrated positions for each domain label
   const getLabelConfig = (index: number) => {
@@ -273,6 +292,35 @@ export function CompetencyRadarChart({
           </g>
         )}
 
+        {/* Layer 1: Baseline Starting Point (Vạch xuất phát ban đầu - nét đứt mờ T0) */}
+        {hasBaseline && (
+          <g>
+            <polygon
+              points={baselinePolygon}
+              fill="none"
+              stroke="#94A3B8"
+              strokeWidth={isHero ? '1.75' : '1.5'}
+              strokeDasharray="4,4"
+              opacity={0.85}
+            />
+            {baselineData!.map((d, i) => {
+              if (d.score === null || d.score === 0) return null;
+              const pt = getPoint(i, d.score / 100);
+              return (
+                <circle
+                  key={`base-pt-${i}`}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="2.5"
+                  fill="#94A3B8"
+                  stroke="#FFFFFF"
+                  strokeWidth="1"
+                />
+              );
+            })}
+          </g>
+        )}
+
         {/* Target Benchmark (dashed slate line) */}
         <polygon
           points={targetPolygon}
@@ -399,11 +447,17 @@ export function CompetencyRadarChart({
 
       {/* Legend */}
       {showLegend && (
-        <div className="flex items-center gap-6 mt-3 text-xs text-slate-500 dark:text-zinc-400">
+        <div className="flex items-center gap-4 sm:gap-6 mt-3 text-xs text-slate-500 dark:text-zinc-400 flex-wrap justify-center">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
             <span className="text-slate-700 dark:text-zinc-200 font-medium">Năng lực thực tế</span>
           </div>
+          {hasBaseline && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 border-t border-dashed border-slate-400" />
+              <span className="text-slate-600 dark:text-zinc-300 font-medium">Vạch xuất phát</span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 border-t border-dashed border-slate-400 dark:border-zinc-600" />
             <span className="text-slate-500 dark:text-zinc-400">Chuẩn mục tiêu (70%)</span>

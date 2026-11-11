@@ -62,6 +62,7 @@ export interface UserCompetencySummary {
   overallScore: number | null;
   overallLevel: string;
   radarData: DomainScoreSummary[];
+  baselineRadarData?: DomainScoreSummary[];
   gapDomainCodes: string[];
   latestSubmissionId: string | null;
   totalEvidenceCount: number;
@@ -94,7 +95,7 @@ export class DomainAssessmentSummaryService {
     // 1. Fetch completed submissions for this learner
     const { data: submissions } = await supabase
       .from('assessment_submissions')
-      .select('id, total_score, max_score, percentage, is_passed, submitted_at')
+      .select('id, assessment_id, total_score, max_score, percentage, is_passed, submitted_at')
       .eq('user_id', userId)
       .in('status', ['SUBMITTED', 'EVALUATED'])
       .order('submitted_at', { ascending: false });
@@ -104,7 +105,97 @@ export class DomainAssessmentSummaryService {
     const hasTakenAssessment = submissionIds.length > 0;
     const latestSubmissionId = submissionList[0]?.id ?? null;
 
-    // 2. Query direct competency evidence
+    // Identify baseline diagnostic assessments so that intake exam does NOT artificially inflate
+    // the accumulated mastery radar on the main dashboard (per explicit product rule & user requirement).
+    const uniqueAssessmentIds = Array.from(
+      new Set(submissionList.map((s: any) => s.assessment_id).filter(Boolean))
+    );
+    const baselineAssessmentIdSet = new Set<string>();
+    baselineAssessmentIdSet.add('a0000000-0000-0000-0000-000000000001');
+
+    if (uniqueAssessmentIds.length > 0) {
+      try {
+        const { data: asmRecords } = await supabase
+          .from('assessments')
+          .select('id, title, is_system_baseline, system_code')
+          .in('id', uniqueAssessmentIds);
+
+        (asmRecords || []).forEach((asm: any) => {
+          if (
+            asm.is_system_baseline ||
+            asm.system_code === 'BASELINE_DIGCOMP' ||
+            asm.title?.toLowerCase().includes('đầu vào') ||
+            asm.title?.toLowerCase().includes('khảo sát')
+          ) {
+            baselineAssessmentIdSet.add(asm.id);
+          }
+        });
+      } catch {
+        // Fallback gracefully
+      }
+    }
+
+    const isBaselineSubmission = (s: any) => {
+      if (!s.assessment_id) return false;
+      return (
+        baselineAssessmentIdSet.has(s.assessment_id) ||
+        s.assessment_id === 'a0000000-0000-0000-0000-000000000001'
+      );
+    };
+
+    const baselineSubmissions = submissionList.filter(isBaselineSubmission);
+    const nonBaselineSubmissions = submissionList.filter((s) => !isBaselineSubmission(s));
+    const nonBaselineSubmissionIds = nonBaselineSubmissions.map((s) => s.id);
+    const baselineSubmissionIds = baselineSubmissions.map((s) => s.id);
+
+    // Track baseline domain scores specifically for the baseline starting point (Layer 1 dashed line)
+    const baselineDomainScores: Record<number, { earned: number; max: number }> = {
+      1: { earned: 0, max: 0 },
+      2: { earned: 0, max: 0 },
+      3: { earned: 0, max: 0 },
+      4: { earned: 0, max: 0 },
+      5: { earned: 0, max: 0 },
+    };
+
+    if (baselineSubmissionIds.length > 0) {
+      try {
+        const { data: baselineAnswers } = await supabase
+          .from('submission_answers')
+          .select(`
+            id,
+            score_awarded,
+            assessment_items (
+              id,
+              points,
+              competencies (
+                id,
+                competency_domains (
+                  domain_index
+                )
+              )
+            )
+          `)
+          .in('submission_id', baselineSubmissionIds);
+
+        if (baselineAnswers) {
+          for (const ans of baselineAnswers) {
+            if (ans.score_awarded === null || ans.score_awarded === undefined) continue;
+            const item = ans.assessment_items as unknown as ItemCompetencyDomainJoin | null;
+            const domainIndex = item?.competencies?.competency_domains?.domain_index ?? 0;
+            const points = Number(item?.points || 1);
+            const scoreAwarded = Number(ans.score_awarded);
+            if (domainIndex >= 1 && domainIndex <= 5) {
+              baselineDomainScores[domainIndex].earned += scoreAwarded;
+              baselineDomainScores[domainIndex].max += points;
+            }
+          }
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
+
+    // 2. Query direct competency evidence for accumulated mastery
     const { data: directEvidence } = await supabase
       .from('competency_evidence')
       .select(`
@@ -121,7 +212,7 @@ export class DomainAssessmentSummaryService {
       `)
       .eq('user_id', userId);
 
-    // Domain aggregators: index 1..5
+    // Domain aggregators: index 1..5 for ACCUMULATED mastery (excluding baseline diagnostic exam)
     const domainAccumulators: Record<
       number,
       { earned: number; max: number; evidenceCount: number; questionsCount: number }
@@ -151,8 +242,8 @@ export class DomainAssessmentSummaryService {
       }
     }
 
-    // Process submission answers for question-level mapping
-    if (submissionIds.length > 0) {
+    // Process post-learning course submissions ONLY (baseline diagnostic is decoupled from accumulated radar)
+    if (nonBaselineSubmissionIds.length > 0) {
       const { data: answers } = await supabase
         .from('submission_answers')
         .select(`
@@ -173,12 +264,11 @@ export class DomainAssessmentSummaryService {
             )
           )
         `)
-        .in('submission_id', submissionIds);
+        .in('submission_id', nonBaselineSubmissionIds);
 
       if (answers) {
         for (const ans of answers) {
           // P0: Do not accumulate question if it is pending rubric grading (score_awarded is null/undefined)
-          // Otherwise, adding points to max with 0 earned artificially degrades the domain score.
           if (ans.score_awarded === null || ans.score_awarded === undefined) {
             continue;
           }
@@ -197,40 +287,153 @@ export class DomainAssessmentSummaryService {
       }
     }
 
-    // 3. Compute final domain summary scores
+    // 3. Query baseline snapshot for comparative progression (Layer 1 of Radar)
+    let baselineRadarData: DomainScoreSummary[] | undefined = undefined;
+    try {
+      const snapTable = supabase.from('learner_competency_snapshots');
+      if (snapTable && typeof snapTable.select === 'function') {
+        const { data: baseSnap } = await snapTable
+          .select('domain_scores, overall_score, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (baseSnap && baseSnap.domain_scores) {
+          const bScores = baseSnap.domain_scores as Record<string, number | null>;
+          baselineRadarData = CANONICAL_DIGCOMP_DOMAINS.map((domain) => {
+            const raw = bScores[domain.code] ?? bScores[`0${domain.domainIndex}`] ?? bScores[String(domain.domainIndex)];
+            const bScore = raw !== null && raw !== undefined ? Number(raw) : null;
+            return {
+              index: domain.domainIndex,
+              code: domain.code,
+              name: domain.name,
+              score: bScore,
+              level: bScore !== null ? (bScore >= 70 ? 'Đạt chuẩn' : 'Khởi đầu') : 'Chưa đánh giá',
+              target: 70,
+              status: bScore !== null ? (bScore >= 70 ? 'PROFICIENT' : 'DEVELOPING') : 'INSUFFICIENT_DATA',
+              hasData: bScore !== null,
+              evidenceCount: 1,
+              questionsCount: 5,
+            };
+          });
+        }
+      }
+    } catch {
+      // Graceful fallback
+    }
+
+    // Fallback compute baselineRadarData directly from baseline answers if snapshot was missing
+    if (!baselineRadarData && baselineSubmissions.length > 0) {
+      baselineRadarData = CANONICAL_DIGCOMP_DOMAINS.map((domain) => {
+        const b = baselineDomainScores[domain.domainIndex];
+        const bScore = b && b.max > 0 ? Math.round((b.earned / b.max) * 100) : null;
+        return {
+          index: domain.domainIndex,
+          code: domain.code,
+          name: domain.name,
+          score: bScore,
+          level: bScore !== null ? (bScore >= 70 ? 'Đạt chuẩn' : 'Khởi đầu') : 'Chưa đánh giá',
+          target: 70,
+          status: bScore !== null ? (bScore >= 70 ? 'PROFICIENT' : 'DEVELOPING') : 'INSUFFICIENT_DATA',
+          hasData: bScore !== null,
+          evidenceCount: 1,
+          questionsCount: 5,
+        };
+      });
+    }
+
+    // 4. Query completed modules for progressive pathway mastery (50% pillar)
+    const pathwayCompletedByDomain: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    try {
+      const progTable = supabase.from('user_learning_progress');
+      if (progTable && typeof progTable.select === 'function') {
+        const { data: progressItems } = await progTable
+          .select('module_id, is_completed, learning_modules(domain_code)')
+          .eq('user_id', userId)
+          .eq('is_completed', true);
+
+        (progressItems || []).forEach((item: any) => {
+          const codeStr = item.learning_modules?.domain_code;
+          if (codeStr) {
+            const match = String(codeStr).match(/(\d+)/);
+            const dIdx = match ? parseInt(match[1], 10) : 1;
+            if (dIdx >= 1 && dIdx <= 5) {
+              pathwayCompletedByDomain[dIdx] = (pathwayCompletedByDomain[dIdx] || 0) + 1;
+            }
+          }
+        });
+      }
+    } catch {
+      // Graceful fallback
+    }
+
+    // 5. Compute progressive domain summary scores
     let assessedScoreSum = 0;
     let assessedDomainsCount = 0;
     const gapDomainCodes: string[] = [];
 
+    // Gap domain codes are extracted from baseline diagnostic (or accumulated deficits)
+    if (baselineRadarData) {
+      baselineRadarData.forEach((d) => {
+        if (d.score !== null && d.score < 70) {
+          gapDomainCodes.push(d.code);
+        }
+      });
+    }
+
     const radarData: DomainScoreSummary[] = CANONICAL_DIGCOMP_DOMAINS.map((domain) => {
       const acc = domainAccumulators[domain.domainIndex];
-      const hasData = acc.max > 0;
+      const completedPathwayModules = pathwayCompletedByDomain[domain.domainIndex] || 0;
+      const hasCourseAssessments = acc.max > 0;
+
       let score: number | null = null;
       let status: DomainScoreSummary['status'] = 'INSUFFICIENT_DATA';
       let level = 'Chưa đánh giá';
+      let hasData = false;
 
-      if (hasData) {
-        score = Math.min(100, Math.max(0, Math.round((acc.earned / acc.max) * 100)));
+      if (completedPathwayModules > 0 || hasCourseAssessments) {
+        hasData = true;
+        if (completedPathwayModules > 0 && hasCourseAssessments) {
+          // Hybrid Model: 50% Pathway progress + 50% Assessment verification
+          const pathwayScore = Math.min(50, Math.round((completedPathwayModules / 4) * 50));
+          const rawCourseScore = Math.min(100, Math.max(0, Math.round((acc.earned / acc.max) * 100)));
+          const assessScore = Math.round(rawCourseScore * 0.5);
+          score = Math.min(100, pathwayScore + assessScore);
+        } else if (completedPathwayModules > 0) {
+          // Pathway progression only: 4 tiers (25%, 50%, 75%, 100%)
+          score = Math.min(100, Math.round((completedPathwayModules / 4) * 100));
+        } else {
+          // Specialized post-learning course assessment only
+          score = Math.min(100, Math.max(0, Math.round((acc.earned / acc.max) * 100)));
+        }
+
         assessedScoreSum += score;
         assessedDomainsCount += 1;
 
-        if (score < 70) {
-          gapDomainCodes.push(domain.code);
-        }
-
         if (score >= 85) {
           status = 'MASTERED';
-          level = 'Level 4: Rất nâng cao';
+          level = 'Thành thạo';
         } else if (score >= 70) {
           status = 'PROFICIENT';
-          level = 'Level 3: Nâng cao (Đạt chuẩn)';
-        } else if (score >= 55) {
+          level = 'Đạt chuẩn';
+        } else if (score > 0) {
           status = 'DEVELOPING';
-          level = 'Level 2: Trung cấp';
+          level = 'Đang bồi dưỡng';
         } else {
           status = 'DEVELOPING';
-          level = 'Level 1: Cơ bản';
+          level = 'Khởi đầu';
         }
+      } else if (hasTakenAssessment) {
+        // Learner has completed intake diagnostic baseline exam.
+        // Profile is established, but accumulated mastery for this domain starts cleanly at 0% (Khởi đầu).
+        // Intake diagnostic does NOT count as accumulated mastery on the main dashboard radar.
+        hasData = true;
+        score = 0;
+        status = 'DEVELOPING';
+        level = 'Khởi đầu';
+        assessedScoreSum += 0;
+        assessedDomainsCount += 1;
       }
 
       return {
@@ -247,28 +450,48 @@ export class DomainAssessmentSummaryService {
       };
     });
 
-    // 4. Overall score is the honest average of assessed domains only
+    // 6. Overall score is the honest average of assessed domains only
     const overallScore = assessedDomainsCount > 0
       ? Math.round(assessedScoreSum / assessedDomainsCount)
       : null;
 
     let overallLevel = 'Chưa có đánh giá';
     if (overallScore !== null) {
-      if (overallScore >= 85) overallLevel = 'Level 4: Rất nâng cao';
-      else if (overallScore >= 70) overallLevel = 'Level 3: Nâng cao (Đạt chuẩn)';
-      else if (overallScore >= 55) overallLevel = 'Level 2: Trung cấp';
-      else overallLevel = 'Level 1: Cơ bản';
+      if (overallScore >= 85) overallLevel = 'Thành thạo';
+      else if (overallScore >= 70) overallLevel = 'Đạt chuẩn';
+      else if (overallScore > 0) overallLevel = 'Đang bồi dưỡng';
+      else overallLevel = 'Khởi đầu';
     }
+
+    // 7. Số bài thi hoàn thành chỉ tính các bài nộp hợp lệ đạt chuẩn quy định (is_passed = true hoặc điểm >= 70%)
+    const passedSubmissions = submissionList.filter((s: any) => {
+      if (s.is_passed === true) return true;
+      if (s.percentage !== null && s.percentage !== undefined) {
+        return Number(s.percentage) >= 70;
+      }
+      if (s.max_score && Number(s.max_score) > 0 && s.total_score !== null) {
+        return Math.round((Number(s.total_score) / Number(s.max_score)) * 100) >= 70;
+      }
+      return false;
+    });
+
+    const uniquePassedAssessmentIds = new Set(
+      passedSubmissions.map((s: any) => s.assessment_id).filter(Boolean)
+    );
+    const totalAssessmentsCompleted = uniquePassedAssessmentIds.size > 0
+      ? uniquePassedAssessmentIds.size
+      : passedSubmissions.length;
 
     return {
       userId,
       hasTakenAssessment,
-      totalAssessmentsCompleted: submissionList.length,
-      assessedDomainsCount,
+      totalAssessmentsCompleted,
+      assessedDomainsCount: radarData.filter((d) => (d.score ?? 0) >= 70).length,
       totalDomainsCount: 5,
       overallScore,
       overallLevel,
       radarData,
+      baselineRadarData,
       gapDomainCodes,
       latestSubmissionId,
       totalEvidenceCount,

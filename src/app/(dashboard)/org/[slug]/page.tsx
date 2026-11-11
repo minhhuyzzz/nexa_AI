@@ -170,7 +170,7 @@ export default async function OrgOverviewPage({
         {/* Background Banner Image with Refined Contrast Overlay */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <Image
-            src="/images/dashboard/Banner Tổng quan.jpg"
+            src="/images/dashboard/banner-tong-quan.jpg"
             alt="NEXA Organization Banner"
             fill
             priority

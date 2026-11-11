@@ -29,22 +29,22 @@ export function NexaLogo({
   const isWhite = variant === 'white';
   const isAccent = variant === 'accent';
 
-  // Primary facet colors
-  const primaryClass = isWhite
+  // Kinetic Monolith colors
+  const blade1Class = isWhite
     ? 'fill-white'
     : isAccent
-    ? 'fill-sky-600'
-    : 'fill-slate-900 dark:fill-white';
-  const shadowClass = isWhite
-    ? 'fill-slate-400'
+    ? 'fill-blue-600'
+    : 'fill-neutral-900 dark:fill-white';
+  const blade2Class = isWhite
+    ? 'fill-blue-400'
     : isAccent
-    ? 'fill-sky-700'
-    : 'fill-slate-600 dark:fill-zinc-400';
-  const textColor = isWhite ? 'text-white' : 'text-slate-900 dark:text-white';
+    ? 'fill-blue-800'
+    : 'fill-blue-600 dark:fill-blue-400';
+  const textColor = isWhite ? 'text-white' : 'text-neutral-900 dark:text-neutral-100';
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
-      {/* Precision Isometric 3D 'N' Emblem */}
+      {/* Precision Kinetic Monolith 'N' Emblem (Two Interlocking Blades + 45° Negative Space Slit) */}
       <svg
         width={iconSize}
         height={iconSize}
@@ -53,53 +53,20 @@ export function NexaLogo({
         xmlns="http://www.w3.org/2000/svg"
         className="shrink-0 transition-transform duration-200"
       >
-        {/* Left Vertical 3D Column */}
-        {/* Front Face */}
-        <polygon
-          points="18,36 36,33 26,76 8,79"
-          className={primaryClass}
-        />
-        {/* Top/Side Extrusion Facet */}
-        <polygon
-          points="8,79 26,76 34,84 16,87"
-          className={shadowClass}
-        />
-        <polygon
-          points="18,36 26,34 36,33 28,35"
-          className={shadowClass}
-        />
-
-        {/* Right Chevron & Diagonal 3D Ribbon */}
-        {/* Top Horizontal Hook */}
-        <polygon
-          points="52,28 88,24 88,30 54,34"
-          className={primaryClass}
-        />
-        {/* Main Folding Ribbon (Diagonal Down-stroke) */}
-        <polygon
-          points="52,28 66,31 46,75 32,72"
-          className={primaryClass}
-        />
-        {/* Lower Right Fold / Return */}
-        <polygon
-          points="46,75 72,71 72,77 46,81"
-          className={primaryClass}
-        />
-        {/* Inner 3D Extruded Shadow Facet */}
-        <polygon
-          points="54,34 66,31 46,75 34,78"
-          className={shadowClass}
-        />
+        {/* Blade 1: Diagnostic Foundation & Evidence */}
+        <path d="M18 18 H36 V48 L58 70 V82 H40 L18 60 Z" className={blade1Class} />
+        {/* Blade 2: Digital Mastery & AI Ascent */}
+        <path d="M82 82 H64 V52 L42 30 V18 H60 L82 40 Z" className={blade2Class} />
       </svg>
 
       {/* Refined Bespoke Geometric Wordmark */}
       {showText && variant !== 'icon' && (
         <span
-          className={`font-extrabold tracking-[0.18em] uppercase ${textSize} ${textColor} leading-none flex items-center`}
+          className={`font-extrabold tracking-[0.16em] uppercase ${textSize} ${textColor} leading-none flex items-center`}
           style={{ letterSpacing: '0.15em' }}
         >
           NEXA
-          <span className="text-sky-600 font-bold ml-0.5">.</span>
+          <span className="text-blue-600 dark:text-blue-400 font-bold ml-0.5">.</span>
         </span>
       )}
     </div>

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NexaLogo } from '@/components/brand/NexaLogo';
 import { FeedbackModal } from '@/components/dashboard/FeedbackModal';
+import { SidebarFeedbackCard } from '@/components/dashboard/SidebarFeedbackCard';
+import { SidebarFloatingTooltip, type TooltipState } from '@/components/dashboard/SidebarFloatingTooltip';
 import {
   Building2,
   Users,
@@ -15,14 +17,13 @@ import {
   PanelLeftOpen,
   FolderKanban,
   FilePlus,
-  Calendar,
-  MessageSquare,
   CreditCard,
   Plus,
   ChevronRight,
   CalendarRange,
   Radio,
   ClipboardCheck,
+  LucideIcon,
 } from 'lucide-react';
 import {
   normalizeOrgRole,
@@ -45,7 +46,7 @@ const ROLE_LABELS: Record<StandardOrgRole, string> = {
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   exact?: boolean;
 }
 
@@ -57,6 +58,7 @@ interface NavGroup {
 export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSidebarProps) {
   const pathname = usePathname();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [hoveredTooltip, setHoveredTooltip] = useState<TooltipState | null>(null);
 
   const normalizedRole = normalizeOrgRole(userRole);
   const isOwner = normalizedRole === 'ORG_OWNER';
@@ -66,7 +68,6 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   const roleLabel = ROLE_LABELS[normalizedRole] || 'Quản trị viên';
 
   // Xác định xem người dùng có đang ở trong phân hệ Khảo thí không
-  // Báo cáo năng lực (/analytics) nay đã thuộc Menu chính nên không còn kích hoạt Rail phụ.
   const isAssessmentRoute =
     !isMember &&
     (pathname.startsWith(`/org/${orgSlug}/assessments`) ||
@@ -74,7 +75,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
       pathname.startsWith(`/org/${orgSlug}/grading`) ||
       pathname.startsWith(`/org/${orgSlug}/live-room`));
 
-  // Khi vào phân hệ Khảo thí, Sidebar chính tự động chuyển thành Icon Rail (w-20)
+  // Khi vào phân hệ Khảo thí, Sidebar chính tự động chuyển thành Icon Rail (w-16)
   // Khi ở các trang khác, Sidebar chính mở rộng (w-64)
   const [isPrimaryCollapsed, setIsPrimaryCollapsed] = useState(isAssessmentRoute);
 
@@ -85,7 +86,6 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   // MENU CHÍNH (PRIMARY):
   // [F21 Note]: Dead code for isMember pruned per F21 (MEMBER redirected to /personal/groups).
   // Historical reference: label: 'CÁ NHÂN', name: 'Phòng thi trực tiếp', href: `/org/${orgSlug}/live-room`
-  // Báo cáo năng lực số nằm ở Menu chính; Đánh giá năng lực dẫn vào phân hệ Khảo thí.
   const navGroups: NavGroup[] = [
     {
       label: 'ĐIỀU HÀNH',
@@ -96,66 +96,66 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
           icon: Building2,
           exact: true,
         },
-            ...(isOwner || isAdmin
-              ? [
-                  {
-                    name: 'Thành viên',
-                    href: `/org/${orgSlug}/members`,
-                    icon: Users,
-                  },
-                ]
-              : []),
-            {
-              name: 'Nhóm & Đơn vị',
-              href: `/org/${orgSlug}/classes`,
-              icon: FolderKanban,
-            },
-            {
-              name: 'Báo cáo năng lực',
-              href: `/org/${orgSlug}/analytics`,
-              icon: BarChart2,
-            },
-          ],
-        },
-        {
-          label: 'KHẢO THÍ',
-          items: [
-            {
-              name: 'Đánh giá năng lực',
-              href: `/org/${orgSlug}/assessments`,
-              icon: CheckSquare,
-            },
-            ...(isAssessor
-              ? [
-                  {
-                    name: 'Chấm bài',
-                    href: `/org/${orgSlug}/grading`,
-                    icon: ClipboardCheck,
-                  },
-                ]
-              : []),
-          ],
-        },
-        ...(isOwner
+        ...(isOwner || isAdmin
           ? [
               {
-                label: 'TÀI KHOẢN TỔ CHỨC',
-                items: [
-                  {
-                    name: 'Gói sử dụng',
-                    href: `/org/${orgSlug}/plan`,
-                    icon: CreditCard,
-                  },
-                  {
-                    name: 'Cài đặt',
-                    href: `/org/${orgSlug}/settings`,
-                    icon: Settings,
-                  },
-                ],
+                name: 'Thành viên',
+                href: `/org/${orgSlug}/members`,
+                icon: Users,
               },
             ]
           : []),
-      ];
+        {
+          name: 'Nhóm & Đơn vị',
+          href: `/org/${orgSlug}/classes`,
+          icon: FolderKanban,
+        },
+        {
+          name: 'Báo cáo năng lực',
+          href: `/org/${orgSlug}/analytics`,
+          icon: BarChart2,
+        },
+      ],
+    },
+    {
+      label: 'KHẢO THÍ',
+      items: [
+        {
+          name: 'Đánh giá năng lực',
+          href: `/org/${orgSlug}/assessments`,
+          icon: CheckSquare,
+        },
+        ...(isAssessor
+          ? [
+              {
+                name: 'Chấm bài',
+                href: `/org/${orgSlug}/grading`,
+                icon: ClipboardCheck,
+              },
+            ]
+          : []),
+      ],
+    },
+    ...(isOwner
+      ? [
+          {
+            label: 'TÀI KHOẢN TỔ CHỨC',
+            items: [
+              {
+                name: 'Gói sử dụng',
+                href: `/org/${orgSlug}/plan`,
+                icon: CreditCard,
+              },
+              {
+                name: 'Cài đặt',
+                href: `/org/${orgSlug}/settings`,
+                icon: Settings,
+              },
+            ],
+          },
+        ]
+      : []),
+  ];
 
   const isPrimaryActive = (item: NavItem) => {
     if (item.exact) {
@@ -169,7 +169,6 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   };
 
   // MENU THỨ 2 (SECONDARY SUB-SIDEBAR):
-  // Hiển thị khi vào phân hệ Khảo thí gồm: Kho đề thi, Hoạt động khảo thí, Phòng thi trực tiếp
   const assessmentSubNavItems = [
     {
       name: 'Kho đề thi',
@@ -198,126 +197,179 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   ];
 
   return (
-    <div className="flex h-screen sticky top-0 z-30 shrink-0">
+    <div className="flex h-screen sticky top-0 z-30 shrink-0 select-none">
       {/* 1. PRIMARY SIDEBAR / ICON RAIL */}
       <aside
-        className={`border-r border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0B] flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-in-out select-none ${
-          isPrimaryCollapsed ? 'w-20' : 'w-64'
+        className={`border-r border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0B] flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-in-out relative ${
+          isPrimaryCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         <div className="flex flex-col h-full min-h-0">
           {/* Brand & Toggle Button */}
-          <div
-            className={`h-16 flex items-center shrink-0 ${
-              isPrimaryCollapsed ? 'justify-center px-2 flex-col gap-1' : 'justify-between px-4'
-            }`}
-          >
-            <Link
-              href={`/org/${orgSlug}`}
-              className="flex items-center gap-2 overflow-hidden"
-              title={orgName}
-            >
-              <NexaLogo size={28} showText={!isPrimaryCollapsed} />
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => setIsPrimaryCollapsed(!isPrimaryCollapsed)}
-              className="p-1.5 rounded-md text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
-              title={isPrimaryCollapsed ? 'Mở rộng Sidebar chính' : 'Thu gọn Sidebar chính'}
-              aria-label={isPrimaryCollapsed ? 'Mở rộng Sidebar chính' : 'Thu gọn Sidebar chính'}
-            >
-              {isPrimaryCollapsed ? (
+          {isPrimaryCollapsed ? (
+            <div className="h-16 flex items-center justify-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsPrimaryCollapsed(!isPrimaryCollapsed)}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredTooltip({ name: 'Mở rộng Sidebar chính', top: rect.top + rect.height / 2 });
+                }}
+                onMouseLeave={() => setHoveredTooltip(null)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                title="Mở rộng Sidebar chính"
+                aria-label="Mở rộng Sidebar chính"
+              >
                 <PanelLeftOpen className="w-4 h-4" strokeWidth={1.75} />
-              ) : (
+              </button>
+            </div>
+          ) : (
+            <div className="h-16 px-3.5 flex items-center justify-between shrink-0">
+              <Link
+                href={`/org/${orgSlug}`}
+                className="flex items-center gap-2 overflow-hidden"
+                title={orgName}
+              >
+                <NexaLogo size={28} showText={true} />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsPrimaryCollapsed(!isPrimaryCollapsed)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                title="Thu gọn Sidebar chính"
+                aria-label="Thu gọn Sidebar chính"
+              >
                 <PanelLeftClose className="w-4 h-4" strokeWidth={1.75} />
-              )}
-            </button>
-          </div>
+              </button>
+            </div>
+          )}
 
           {/* Current Organization Info Card (khi mở rộng) */}
           {!isPrimaryCollapsed && (
-            <div className="p-3 bg-slate-50/60 dark:bg-zinc-900/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                  <Building2 className="w-4 h-4" strokeWidth={1.75} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate" title={orgName}>
-                    {orgName}
+            <div className="px-3 pb-1">
+              <div className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-2xs">
+                    <Building2 className="w-4 h-4" strokeWidth={1.75} />
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-0.5">
-                    Business &bull; <span className="text-neutral-700 dark:text-zinc-300 font-medium">{roleLabel}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate" title={orgName}>
+                      {orgName}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1.5 mt-0.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      <span>Business</span>
+                      <span className="text-slate-300 dark:text-zinc-600">•</span>
+                      <span className="text-neutral-700 dark:text-zinc-300 truncate">{roleLabel}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Navigation Groups List */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+          {/* Navigation Groups List (Hidden scrollbar) */}
+          <div
+            onScroll={() => setHoveredTooltip(null)}
+            className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2 space-y-4"
+          >
             {navGroups.map((group, groupIdx) => (
               <div key={groupIdx} className="space-y-1">
-                {!isPrimaryCollapsed && group.label && (
-                  <div className="px-3 pt-1 pb-1 text-[10px] font-bold font-mono tracking-wider text-slate-400 dark:text-neutral-500 uppercase">
+                {!isPrimaryCollapsed && group.label ? (
+                  <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
                     {group.label}
                   </div>
+                ) : (
+                  isPrimaryCollapsed && <div className="h-2" />
                 )}
-                {group.items.map((item) => {
-                  const active = isPrimaryActive(item);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                        active
-                          ? 'bg-blue-50/70 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                          : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-900'
-                      } ${isPrimaryCollapsed ? 'justify-center px-0' : ''}`}
-                      title={isPrimaryCollapsed ? item.name : undefined}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-                      {!isPrimaryCollapsed && <span className="truncate">{item.name}</span>}
-                    </Link>
-                  );
-                })}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const active = isPrimaryActive(item);
+                    const Icon = item.icon;
+
+                    if (isPrimaryCollapsed) {
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          aria-label={item.name}
+                          title={item.name}
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setHoveredTooltip({ name: item.name, top: rect.top + rect.height / 2 });
+                          }}
+                          onMouseLeave={() => setHoveredTooltip(null)}
+                          className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-all duration-150 relative group ${
+                            active
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs ring-1 ring-blue-500/25'
+                              : 'text-slate-500 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 shrink-0 transition-colors ${
+                              active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400 group-hover:text-neutral-900 dark:group-hover:text-white'
+                            }`}
+                            strokeWidth={1.75}
+                          />
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
+                          active
+                            ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
+                            : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
+                        }`}
+                      >
+                        <Icon
+                          className={`w-4 h-4 shrink-0 transition-colors ${
+                            active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                          }`}
+                          strokeWidth={1.75}
+                        />
+                        <span className="truncate">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Feedback Trigger Button */}
-          <div className="p-3">
-            <button
-              type="button"
-              onClick={() => setShowFeedback(true)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer ${
-                isPrimaryCollapsed ? 'justify-center px-0' : ''
-              }`}
-              title="Đóng góp ý kiến"
-            >
-              <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
-              {!isPrimaryCollapsed && <span>Đóng góp ý kiến</span>}
-            </button>
-          </div>
+          {/* Blue Feedback Box at bottom */}
+          <SidebarFeedbackCard
+            isCollapsed={isPrimaryCollapsed}
+            onOpenFeedback={() => setShowFeedback(true)}
+            onHoverTooltip={setHoveredTooltip}
+            title="Góp ý tổ chức"
+            description="Ý kiến đóng góp giúp cải thiện quản trị tổ chức."
+          />
         </div>
+
+        {/* Floating Tooltip outside scroll container */}
+        <SidebarFloatingTooltip tooltip={isPrimaryCollapsed ? hoveredTooltip : null} />
       </aside>
 
-      {/* 2. SECONDARY SUB-SIDEBAR (MENU THỨ 2: Chỉ xuất hiện khi vào Phân hệ Khảo thí) */}
+      {/* 2. SECONDARY SUB-SIDEBAR (MENU THỨ 2: Phân hệ Khảo thí) */}
       {isAssessmentRoute && (
-        <aside className="w-60 border-r border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#0E0E11] flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-in-out select-none">
+        <aside className="w-60 border-r border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#0E0E11] flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-in-out">
           <div className="flex flex-col h-full min-h-0">
-            {/* Header phân hệ Khảo thí: Chỉ có tiêu đề Đánh giá năng lực */}
+            {/* Header phân hệ Khảo thí */}
             <div className="h-16 px-4 flex items-center shrink-0 bg-white/50 dark:bg-black/20">
               <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
                 Đánh giá năng lực
               </h2>
             </div>
 
-            {/* Menu dọc gồm 3 tab khảo thí */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-              <div className="px-2 pt-1 pb-1.5 text-[10px] font-bold font-mono tracking-wider text-slate-400 dark:text-neutral-500 uppercase">
-                DANH MỤC KHẢO THÍ
+            {/* Menu dọc gồm các tab khảo thí (Hidden scrollbar) */}
+            <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-1.5">
+              <div className="px-2 pt-1 pb-1.5 text-[10px] font-semibold tracking-wider text-slate-400 dark:text-zinc-500 uppercase">
+                Danh mục khảo thí
               </div>
 
               {assessmentSubNavItems.map((tab) => {
@@ -326,14 +378,14 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all duration-150 ${
                       tab.isActive
                         ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 font-semibold shadow-xs border border-slate-200/90 dark:border-zinc-800'
-                        : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100/70 dark:hover:bg-zinc-900/60 border border-transparent'
+                        : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-900/60 border border-transparent'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-                    <span className="font-semibold truncate flex-1">{tab.name}</span>
+                    <span className="truncate flex-1">{tab.name}</span>
                     {tab.isActive && (
                       <ChevronRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                     )}
@@ -343,7 +395,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
             </div>
 
             {/* Quick Actions Footer trong Sidebar phụ */}
-            <div className="p-3 bg-white/40 dark:bg-black/10 space-y-2">
+            <div className="p-3 bg-white/40 dark:bg-black/10">
               <Link
                 href={`/org/${orgSlug}/assessments/new`}
                 className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"

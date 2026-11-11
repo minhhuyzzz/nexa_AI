@@ -30,8 +30,13 @@ export async function GET() {
       user.id
     );
 
-    // 3. Extract assessed domains for diagnostic insights
-    const assessedDomains = summary.radarData.filter(
+    // 3. Extract assessed domains for diagnostic insights (use baseline diagnostic data when accumulated radar is starting)
+    const diagnosticPool =
+      summary.baselineRadarData && summary.baselineRadarData.some((d) => d.score !== null && d.score > 0)
+        ? summary.baselineRadarData
+        : summary.radarData;
+
+    const assessedDomains = diagnosticPool.filter(
       (d): d is typeof d & { score: number } => d.score !== null
     );
 
@@ -99,6 +104,7 @@ export async function GET() {
       latestSubmissionId: summary.latestSubmissionId,
       overallScore: summary.overallScore,
       radarData: summary.radarData,
+      baselineRadarData: summary.baselineRadarData || summary.radarData,
       insights,
       latestAnalysis,
     };

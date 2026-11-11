@@ -9,6 +9,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  referrer: 'no-referrer',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://nexa.ai.vn'),
   title: {
     default: 'NEXA — Nền tảng Đánh giá & Phát triển Năng lực Số',
@@ -63,6 +64,7 @@ export default function RootLayout({
       className={plusJakartaSans.variable}
     >
       <head>
+        <meta name="referrer" content="no-referrer" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

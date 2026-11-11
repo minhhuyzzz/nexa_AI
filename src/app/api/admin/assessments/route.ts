@@ -11,6 +11,7 @@ const createAssessmentSchema = z.object({
   duration_minutes: z.number().int().min(5).max(300).default(45),
   passing_score: z.number().min(0).max(100).default(70),
   point_reward: z.number().int().min(0).max(1000).default(50),
+  target_domain: z.string().optional().default('ALL'),
   is_published: z.boolean().default(true),
   is_vip: z.boolean().default(false),
   access_tier: z.enum(['FREE', 'VIP']).default('FREE'),
@@ -40,6 +41,7 @@ export async function GET() {
         is_vip,
         access_tier,
         visibility,
+        target_domain,
         organization_id,
         created_at,
         updated_at,
@@ -100,12 +102,30 @@ export async function GET() {
         ),
       ];
 
+      const DOMAIN_NAME_MAP: Record<string, string> = {
+        '01': 'Miền 01: Thông tin & Dữ liệu số',
+        '02': 'Miền 02: Giao tiếp & Cộng tác số',
+        '03': 'Miền 03: Sáng tạo Nội dung số & AI',
+        '04': 'Miền 04: An toàn & Bảo mật số',
+        '05': 'Miền 05: Giải quyết Vấn đề số',
+      };
+
+      const targetDomain = (a as any).target_domain || (domainCodes.length === 1 ? domainCodes[0] : 'ALL');
+      const resolvedDomainCodes =
+        targetDomain !== 'ALL'
+          ? [targetDomain]
+          : domainCodes.length > 0
+          ? domainCodes
+          : ['01', '02', '03', '04', '05'];
+
       const domainName =
-        domainCodes.length === 0
-          ? 'Chưa phân miền'
-          : domainCodes.length > 1
+        targetDomain !== 'ALL' && DOMAIN_NAME_MAP[targetDomain]
+          ? DOMAIN_NAME_MAP[targetDomain]
+          : resolvedDomainCodes.length > 1
           ? 'Đa Miền Năng Lực Số'
-          : `Miền ${domainCodes[0]}`;
+          : resolvedDomainCodes[0] && DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
+          ? DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
+          : 'Đa Miền Năng Lực Số';
 
       return {
         id: a.id,
@@ -122,7 +142,8 @@ export async function GET() {
         types: rawTypes,
         typeLabel: typeLabels.length > 0 ? typeLabels.join(', ') : 'Chưa có câu hỏi',
         domainName,
-        domainCodes,
+        domainCodes: resolvedDomainCodes,
+        target_domain: targetDomain,
       };
     });
 
@@ -159,6 +180,7 @@ export async function POST(req: Request) {
 
     const framework_id = parsed.data.framework_id || framework?.id;
     const { data: { user } } = await supabase.auth.getUser();
+    const effectiveUserId = auth.user?.id || user?.id || null;
 
     const { data: created, error } = await supabase
       .from('assessments')
@@ -173,9 +195,10 @@ export async function POST(req: Request) {
         access_tier: parsed.data.access_tier,
         framework_id,
         organization_id: null,
-        visibility: 'SYSTEM_CURATED',
-        owner_user_id: user?.id || null,
-        created_by: user?.id || null,
+        visibility: 'PUBLIC',
+        target_domain: parsed.data.target_domain || 'ALL',
+        owner_user_id: effectiveUserId,
+        created_by: effectiveUserId,
       })
       .select()
       .single();

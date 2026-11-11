@@ -30,6 +30,7 @@ export function PersonalAvatarMenu() {
   const [displayEmail, setDisplayEmail] = useState('learner@nexa.edu.vn');
   const [displayInitials, setDisplayInitials] = useState('NX');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -53,6 +54,7 @@ export function PersonalAvatarMenu() {
             setDisplayInitials(inits);
             if (userObj.avatarUrl) {
               setAvatarUrl(userObj.avatarUrl);
+              setImgError(false);
             }
             return;
           }
@@ -89,6 +91,7 @@ export function PersonalAvatarMenu() {
               user.user_metadata?.picture ||
               null;
             setAvatarUrl(avatar);
+            if (avatar) setImgError(false);
           }
         }
       } catch {
@@ -121,8 +124,14 @@ export function PersonalAvatarMenu() {
           aria-label="Tài khoản cá nhân"
           aria-expanded={isOpen}
         >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+          {avatarUrl && !imgError ? (
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              referrerPolicy="no-referrer"
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover"
+            />
           ) : (
             displayInitials
           )}
@@ -141,8 +150,14 @@ export function PersonalAvatarMenu() {
               <div className="px-4 py-3 bg-slate-50/60 dark:bg-zinc-900/60 rounded-t-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-zinc-800 text-white font-bold text-xs flex items-center justify-center font-mono overflow-hidden shrink-0">
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                    {avatarUrl && !imgError ? (
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        referrerPolicy="no-referrer"
+                        onError={() => setImgError(true)}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       displayInitials
                     )}

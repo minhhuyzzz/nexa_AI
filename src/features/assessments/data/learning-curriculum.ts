@@ -158,12 +158,12 @@ function makeQuestions(startIdx: number, count: number): PracticeQuestion[] {
 
 export const DOMAIN_CURRICULUM: DomainTrack[] = [
   // -------------------------------------------------------------
-  // MIỀN 1: TÌM KIẾM, ĐÁNH GIÁ & QUẢN LÝ THÔNG TIN (3 MIỀN CON)
+  // MIỀN 1: THÔNG TIN & DỮ LIỆU SỐ (3 MIỀN CON)
   // -------------------------------------------------------------
   {
     code: '01',
     domainNumber: 1,
-    title: 'Tìm kiếm, đánh giá & quản lý thông tin',
+    title: 'Thông tin & Dữ liệu số',
     desc: 'Duyệt, tìm kiếm dữ liệu, thẩm định độ tin cậy và quản lý dữ liệu an toàn.',
     iconName: 'Database',
     badgeColor: 'blue',
@@ -280,12 +280,12 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   },
 
   // -------------------------------------------------------------
-  // MIỀN 2: GIAO TIẾP & HỢP TÁC (6 MIỀN CON)
+  // MIỀN 2: GIAO TIẾP & CỘNG TÁC SỐ (6 MIỀN CON)
   // -------------------------------------------------------------
   {
     code: '02',
     domainNumber: 2,
-    title: 'Giao tiếp & hợp tác',
+    title: 'Giao tiếp & Cộng tác số',
     desc: 'Tương tác, chia sẻ, làm việc nhóm và thực hành văn hóa ứng xử số văn minh.',
     iconName: 'Users',
     badgeColor: 'emerald',
@@ -434,12 +434,12 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   },
 
   // -------------------------------------------------------------
-  // MIỀN 3: SÁNG TẠO NỘI DUNG SỐ (4 MIỀN CON)
+  // MIỀN 3: SÁNG TẠO NỘI DUNG SỐ & AI (4 MIỀN CON)
   // -------------------------------------------------------------
   {
     code: '03',
     domainNumber: 3,
-    title: 'Sáng tạo nội dung số',
+    title: 'Sáng tạo Nội dung số & AI',
     desc: 'Thiết kế ấn phẩm, ứng dụng AI có trách nhiệm, hiểu bản quyền và tư duy tính toán.',
     iconName: 'Lightbulb',
     badgeColor: 'amber',
@@ -549,12 +549,12 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   },
 
   // -------------------------------------------------------------
-  // MIỀN 4: AN TOÀN & TRÁCH NHIỆM (4 MIỀN CON)
+  // MIỀN 4: AN TOÀN & BẢO MẬT SỐ (4 MIỀN CON)
   // -------------------------------------------------------------
   {
     code: '04',
     domainNumber: 4,
-    title: 'An toàn & trách nhiệm',
+    title: 'An toàn & Bảo mật số',
     desc: 'Bảo vệ thiết bị, dữ liệu cá nhân, quyền riêng tư, sức khỏe số và môi trường.',
     iconName: 'Shield',
     badgeColor: 'purple',
@@ -650,12 +650,12 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   },
 
   // -------------------------------------------------------------
-  // MIỀN 5: NHẬN DIỆN & GIẢI QUYẾT VẤN ĐỀ (4 MIỀN CON)
+  // MIỀN 5: GIẢI QUYẾT VẤN ĐỀ SỐ (4 MIỀN CON)
   // -------------------------------------------------------------
   {
     code: '05',
     domainNumber: 5,
-    title: 'Nhận diện & giải quyết vấn đề',
+    title: 'Giải quyết Vấn đề số',
     desc: 'Xác định sự cố kỹ thuật, lựa chọn công cụ công nghệ và bồi dưỡng năng lực số liên tục.',
     iconName: 'Wrench',
     badgeColor: 'teal',

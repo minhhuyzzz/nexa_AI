@@ -1,12 +1,25 @@
 import { redirect } from 'next/navigation';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
+import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminNewAssessmentPage() {
-  const supabase = createAdminClient();
+  const auth = await requirePlatformAdmin();
+  if (!auth.isAuthorized || !auth.user) {
+    redirect('/admin/content');
+  }
 
-  // Create an initial draft system assessment
+  const supabase = await createClient();
+
+  // 1. Fetch default framework
+  const { data: framework } = await supabase
+    .from('assessment_frameworks')
+    .select('id')
+    .limit(1)
+    .single();
+
+  // 2. Create an initial draft system assessment
   const { data: newAsm, error } = await supabase
     .from('assessments')
     .insert({
@@ -19,11 +32,16 @@ export default async function AdminNewAssessmentPage() {
       is_vip: false,
       access_tier: 'FREE',
       visibility: 'PUBLIC',
+      framework_id: framework?.id || null,
+      created_by: auth.user.id,
+      owner_user_id: auth.user.id,
+      organization_id: null,
     })
     .select('id')
     .single();
 
   if (error || !newAsm) {
+    console.error('Error creating new assessment in AdminNewAssessmentPage:', error);
     redirect('/admin/content');
   }
 

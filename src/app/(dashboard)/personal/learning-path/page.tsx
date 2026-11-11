@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { EditGoalModal, UserLearningGoal } from '@/components/dashboard/personal/EditGoalModal';
+import { BaselineDiagnosticModal } from '@/components/dashboard/personal/BaselineDiagnosticModal';
 import {
   DOMAIN_CURRICULUM,
   SubdomainNode,
@@ -103,15 +104,8 @@ function LearningPathContent() {
   const requestedDomain = searchParams.get('domain');
 
   // Active selections
-  const [activeDomainCode, setActiveDomainCode] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('nexa_unlocked_domain');
-        if (saved) return saved;
-      } catch {}
-    }
-    return '01';
-  });
+  const [mounted, setMounted] = useState(false);
+  const [activeDomainCode, setActiveDomainCode] = useState<string>('01');
 
   // Focus Modal State (Lựa chọn A)
   const [selectedSubdomain, setSelectedSubdomain] = useState<{
@@ -125,6 +119,7 @@ function LearningPathContent() {
 
   // Modals & Notifications State
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState<boolean>(false);
+  const [isBaselineModalOpen, setIsBaselineModalOpen] = useState<boolean>(false);
   const [upgradeTargetDomain, setUpgradeTargetDomain] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -145,19 +140,12 @@ function LearningPathContent() {
   // Competency Profile State
   const [competencyProfile, setCompetencyProfile] = useState<CompetencyProfileData | null>(null);
 
-  // 1. Đồng bộ miền được mở khóa từ URL hoặc localStorage fallback
   useEffect(() => {
-    try {
-      const localUnlocked = localStorage.getItem('nexa_unlocked_domain');
-      if (localUnlocked) {
-        const norm = normalizeDomainCode(localUnlocked);
-        if (['01', '02', '03', '04', '05'].includes(norm)) {
-          setUnlockedFreeDomain((prev) => prev || norm);
-          setHasTakenAssessment(true);
-        }
-      }
-    } catch {}
+    setMounted(true);
+  }, []);
 
+  // 1. Đồng bộ miền được chọn từ URL (nếu có tham số ?domain=)
+  useEffect(() => {
     if (requestedDomain) {
       const clean = normalizeDomainCode(requestedDomain);
       if (['01', '02', '03', '04', '05'].includes(clean)) {
@@ -166,26 +154,33 @@ function LearningPathContent() {
     }
   }, [requestedDomain]);
 
-  // 2. Fetch User Profile & Unlocked Status
+  // 2. Fetch User Profile & Unlocked Status từ dữ liệu thực tế của tài khoản
   useEffect(() => {
     async function loadUserData() {
       try {
         const res = await fetch('/api/personal/learning-path', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
-          if (json.hasTakenAssessment) {
-            setHasTakenAssessment(true);
-            if (json.unlockedFreeDomain) {
-              const norm = normalizeDomainCode(json.unlockedFreeDomain);
-              setUnlockedFreeDomain(norm);
-              try {
-                localStorage.setItem('nexa_unlocked_domain', norm);
-              } catch {}
-              if (!requestedDomain) {
-                setActiveDomainCode(norm);
-              }
+          const hasAssessed = Boolean(json.hasTakenAssessment);
+          setHasTakenAssessment(hasAssessed);
+
+          if (hasAssessed && json.unlockedFreeDomain) {
+            const norm = normalizeDomainCode(json.unlockedFreeDomain);
+            setUnlockedFreeDomain(norm);
+            try {
+              localStorage.setItem('nexa_unlocked_domain', norm);
+            } catch {}
+            if (!requestedDomain) {
+              setActiveDomainCode(norm);
             }
+          } else {
+            // Tài khoản chưa khảo thí: Không mở khóa bất kỳ miền nào
+            setUnlockedFreeDomain(null);
+            try {
+              localStorage.removeItem('nexa_unlocked_domain');
+            } catch {}
           }
+
           if (json.isProUser) {
             setIsProUser(true);
           }
@@ -204,8 +199,8 @@ function LearningPathContent() {
           const pData = pJson.profile || pJson;
           if (pData.hasTakenAssessment !== undefined) {
             const hasTaken = Boolean(pData.hasTakenAssessment);
+            setHasTakenAssessment(hasTaken);
             if (hasTaken) {
-              setHasTakenAssessment(true);
               const weakestCode = pData.insights?.weakest?.code;
               if (weakestCode) {
                 const norm = normalizeDomainCode(weakestCode);
@@ -217,6 +212,11 @@ function LearningPathContent() {
                   setActiveDomainCode((prev) => (prev === '01' ? norm : prev));
                 }
               }
+            } else {
+              setUnlockedFreeDomain(null);
+              try {
+                localStorage.removeItem('nexa_unlocked_domain');
+              } catch {}
             }
           }
           if (pData) {
@@ -300,7 +300,7 @@ function LearningPathContent() {
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
             <span className="text-xs text-slate-500 dark:text-neutral-400">
-              Khung Chuẩn Hóa 5 Miền &bull; Hệ Thống 4 Cấp Độ Năng Lực
+              Khung Năng Lực Số Chuẩn Hóa &bull; Hệ Thống 4 Cấp Độ Năng Lực
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight mt-0.5">
@@ -313,24 +313,24 @@ function LearningPathContent() {
           className="px-4 py-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-2 transition-colors shadow-2xs shrink-0 cursor-pointer"
         >
           <Compass className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span>Xem Hồ sơ Năng lực 5 Miền</span>
+          <span>Xem Hồ sơ Năng lực</span>
         </Link>
       </div>
 
-      {/* 2. Main Workspace Layout (Left: Chặng 5 Miền - Right: Trục Tiến Trình Năng Lực Số) */}
+      {/* 2. Main Workspace Layout (Left: Các Miền Năng Lực - Right: Trục Tiến Trình Năng Lực Số) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (4 cols): Vertical Milestone Rails - 5 Miền Năng Lực Số */}
+        {/* Left Column (4 cols): Vertical Milestone Rails - Các Miền Năng Lực Số */}
         <div className="lg:col-span-4 space-y-4">
           <div className="p-4 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between pb-1">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 font-mono">
-                  CHỌN CHẶNG HỌC (5 MIỀN)
+                  CÁC MIỀN NĂNG LỰC
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">Khung năng lực số quốc gia</p>
               </div>
               <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
-                5 Miền
+                5 miền năng lực
               </span>
             </div>
 
@@ -381,21 +381,19 @@ function LearningPathContent() {
                         </span>
                       </div>
 
-                      {isProUser ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full shrink-0">
-                          <Check className="w-2.5 h-2.5" /> ĐÃ MỞ
-                        </span>
-                      ) : isTrackUnlocked ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full shrink-0">
-                          <Check className="w-2.5 h-2.5" /> ĐÃ MỞ
-                        </span>
-                      ) : !hasTakenAssessment ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-0.5 rounded-full shrink-0">
-                          <Lock className="w-2.5 h-2.5" /> CHƯA MỞ
+                      {mounted && (isProUser || isTrackUnlocked) ? (
+                        <span
+                          title="Miền đã mở khóa"
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 shrink-0"
+                        >
+                          <Check className="w-3 h-3" strokeWidth={2.5} />
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded-full shrink-0">
-                          <Lock className="w-2.5 h-2.5" /> CHUYÊN SÂU
+                        <span
+                          title={!hasTakenAssessment ? 'Cần làm khảo thí đầu vào để mở khóa' : 'Cần nâng cấp để mở khóa'}
+                          className="w-5 h-5 rounded-md flex items-center justify-center text-slate-400 dark:text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors shrink-0 cursor-pointer"
+                        >
+                          <Lock className="w-3.5 h-3.5" strokeWidth={1.75} />
                         </span>
                       )}
                     </div>
@@ -427,30 +425,31 @@ function LearningPathContent() {
             <div className="p-4 rounded-2xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-2.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
                 <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>{hasTakenAssessment ? 'Nâng cấp Gói Chuyên Sâu' : 'Chẩn đoán Năng lực Số'}</span>
+                <span>{hasTakenAssessment ? 'Mở khóa Toàn diện' : 'Chẩn đoán Năng lực Số'}</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
                 {hasTakenAssessment && unlockedFreeDomain
-                  ? `Tài khoản đã mở khóa miễn phí Miền [${DOMAIN_CURRICULUM.find((d) => normalizeDomainCode(d.code) === normalizeDomainCode(unlockedFreeDomain))?.title}]. Nâng cấp để mở trọn 5 miền và nhận chứng chỉ.`
+                  ? `Tài khoản đã mở khóa miễn phí Miền [${DOMAIN_CURRICULUM.find((d) => normalizeDomainCode(d.code) === normalizeDomainCode(unlockedFreeDomain))?.title}]. Nâng cấp để mở trọn vẹn các miền và nhận chứng chỉ.`
                   : 'Làm bài khảo thí đầu vào để hệ thống chẩn đoán điểm số và tự động mở khóa miễn phí miền năng lực bạn cần bồi dưỡng nhất.'}
               </p>
               {!hasTakenAssessment ? (
-                <Link
-                  href="/personal/take/baseline"
+                <button
+                  type="button"
+                  onClick={() => setIsBaselineModalOpen(true)}
                   className="block w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center shadow-xs"
                 >
                   Làm khảo thí đầu vào ngay &rarr;
-                </Link>
+                </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => {
-                    setUpgradeTargetDomain('Tất cả 5 miền');
+                    setUpgradeTargetDomain('Tất cả các miền');
                     setIsUpgradeModalOpen(true);
                   }}
                   className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center"
                 >
-                  Mở khóa toàn diện 5 miền
+                  Mở khóa toàn diện các miền
                 </button>
               )}
             </div>
@@ -521,17 +520,18 @@ function LearningPathContent() {
                     className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-sm shadow-amber-500/20"
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    <span>Mở khóa Chuyên sâu</span>
+                    <span>Mở khóa chặng này</span>
                   </button>
                 )
               ) : (
-                <Link
-                  href="/personal/take/baseline"
+                <button
+                  type="button"
+                  onClick={() => setIsBaselineModalOpen(true)}
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-sm shadow-blue-500/20"
                 >
                   <span>Làm khảo thí đầu vào để mở khóa</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                </button>
               )}
             </div>
 
@@ -570,13 +570,14 @@ function LearningPathContent() {
                   </h4>
                 </div>
                 <div className="pt-2 flex items-center justify-center gap-3">
-                  <Link
-                    href="/personal/take/baseline"
+                  <button
+                    type="button"
+                    onClick={() => setIsBaselineModalOpen(true)}
                     className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
                   >
                     <span>Làm bài khảo thí đầu vào ngay</span>
                     <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -586,7 +587,7 @@ function LearningPathContent() {
                 </div>
                 <div className="max-w-md mx-auto space-y-1.5">
                   <h4 className="font-bold text-base text-neutral-900 dark:text-neutral-100">
-                    Chặng học này thuộc Gói Chuyên sâu
+                    Chặng học này chưa được mở khóa
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
                     Bạn đang được mở khóa miễn phí Miền [{DOMAIN_CURRICULUM.find((d) => d.code === unlockedFreeDomain)?.title}]. Nâng cấp tài khoản để học trọn 5 miền và nhận chứng chỉ.
@@ -960,7 +961,7 @@ function LearningPathContent() {
 
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                Nâng Cấp Gói Chuyên Sâu
+                Mở Khóa Toàn Diện 5 Miền
               </h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
                 Mở khóa trọn vẹn 5 miền năng lực số và nhận chứng chỉ hoàn thành.
@@ -996,7 +997,7 @@ function LearningPathContent() {
                 onClick={() => {
                   setIsProUser(true);
                   setIsUpgradeModalOpen(false);
-                  showToast('Kích hoạt gói chuyên sâu thành công!');
+                  showToast('Mở khóa toàn diện 5 miền thành công!');
                 }}
                 className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-500/20 cursor-pointer"
               >
@@ -1013,6 +1014,21 @@ function LearningPathContent() {
         onClose={() => setIsEditGoalOpen(false)}
         currentGoal={learningGoal}
         onSave={handleSaveGoal}
+      />
+
+      {/* Modal Khảo Thí Chẩn Đoán Đầu Vào */}
+      <BaselineDiagnosticModal
+        isOpen={isBaselineModalOpen}
+        onClose={() => setIsBaselineModalOpen(false)}
+        onCompleted={(res) => {
+          setHasTakenAssessment(true);
+          if (res.unlockedFreeDomain) {
+            setUnlockedFreeDomain(res.unlockedFreeDomain);
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('profile-updated'));
+          }
+        }}
       />
     </div>
   );

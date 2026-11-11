@@ -277,10 +277,6 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
                     </span>
                   )}
                 </div>
-
-                <span className="font-mono font-bold text-slate-600 dark:text-neutral-300 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  +{currentQ.points || 1} điểm
-                </span>
               </div>
 
               {/* Scenario Context (if any) */}

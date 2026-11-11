@@ -58,10 +58,19 @@ export function HeroSection() {
             <div className="mt-7 flex flex-wrap items-center gap-3.5 sm:gap-4">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm sm:text-base transition-all shadow-sm transform hover:-translate-y-0.5 active:translate-y-0"
+                className="relative inline-flex items-center justify-center p-[2px] rounded-full overflow-hidden bg-blue-600/20 shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 group"
               >
-                <span>Bắt đầu miễn phí</span>
-                <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                {/* Rotating Light Beam around Border */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-1/2 w-[300%] aspect-square animate-border-beam border-beam-light"
+                />
+
+                {/* Button Face with Rich Radiant Gradient */}
+                <span className="relative z-10 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 group-hover:from-blue-600 group-hover:via-blue-500 group-hover:to-sky-400 text-white font-medium text-sm sm:text-base shadow-[inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300">
+                  <span>Bắt đầu miễn phí</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" strokeWidth={2} />
+                </span>
               </Link>
               <Link
                 href="#features"

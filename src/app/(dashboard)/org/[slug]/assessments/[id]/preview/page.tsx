@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { requireOrgPagePermission } from '@/lib/auth/org-guard';
-import { AssessmentTakeContent } from '@/app/(dashboard)/personal/take/[id]/page';
+import { AssessmentTakeContent } from '@/features/assessments/components/take/AssessmentTakeContent';
 
 export const dynamic = 'force-dynamic';
 

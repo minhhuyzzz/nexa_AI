@@ -25,7 +25,8 @@ export async function GET(req: Request) {
   const supabase = await createClient();
 
   const url = req?.url ? new URL(req.url) : null;
-  const period = (url?.searchParams.get('period') || 'all').toLowerCase();
+  const rawPeriod = (url?.searchParams.get('period') || 'all').toLowerCase();
+  const period = rawPeriod === 'day' ? 'today' : rawPeriod;
   const cacheKey = `${REDIS_CACHE_KEY}:${period}`;
 
   try {
@@ -52,7 +53,10 @@ export async function GET(req: Request) {
         .select('id, nickname, avatar_url, points, rank_tier, avg_competency_score, role, specialization, created_at, updated_at')
         .eq('role', 'LEARNER');
 
-      if (period === 'week') {
+      if (period === 'today' || period === 'day') {
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('updated_at', dayAgo);
+      } else if (period === 'week') {
         const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         query = query.gte('updated_at', weekAgo);
       } else if (period === 'month') {
@@ -60,20 +64,28 @@ export async function GET(req: Request) {
         query = query.gte('updated_at', monthAgo);
       }
 
-      const { data: profiles, error } = await query
+      const { data: rawProfiles, error } = await query
         .order('points', { ascending: false })
         .order('created_at', { ascending: true })
-        .limit(100);
+        .limit(1000);
 
       if (error) {
         console.error('Supabase profiles query error:', error.message);
       } else {
-        leaderboard = (profiles || []).map((p, index) => ({
+        // Filter: Trong bảng xếp hạng theo ngày/tuần/tháng, chỉ xếp hạng học viên có điểm > 0
+        const profiles = (rawProfiles || []).filter(
+          (p) => period === 'all' || (Number(p.points) || 0) > 0
+        );
+
+        // Sort descending by points strictly
+        profiles.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
+
+        leaderboard = profiles.map((p, index) => ({
           rank: index + 1,
           userId: p.id,
           displayName: p.nickname || 'Học viên ẩn danh',
           avatarUrl: p.avatar_url,
-          points: p.points || 0,
+          points: Number(p.points) || 0,
           rankTier: p.rank_tier || 'NOVICE',
           avgScore: Number(p.avg_competency_score) || 0,
           role: p.role,
@@ -114,8 +126,8 @@ export async function GET(req: Request) {
             avatarUrl: leaderboard[foundIndex].avatarUrl,
             points: leaderboard[foundIndex].points,
           };
-        } else {
-          // If not in top 100, calculate exact rank for current user based strictly on PTS
+        } else if (period === 'all') {
+          // If not in top 100, calculate exact all-time rank for current user based strictly on PTS
           const { data: myProfile } = await supabase
             .from('profiles')
             .select('id, nickname, avatar_url, points, created_at')
@@ -148,32 +160,25 @@ export async function GET(req: Request) {
           }
         }
       }
-    } catch {
-      // Non-blocking for unauthenticated requests
+    } catch (userRankErr) {
+      console.warn('Could not determine current user rank:', userRankErr);
     }
 
-    const fetchTimeMs = Number((performance.now() - startTime).toFixed(2));
+    const durationMs = Math.round(performance.now() - startTime);
 
+    return NextResponse.json({
+      period,
+      count: leaderboard.length,
+      cached: isCached,
+      durationMs,
+      leaderboard,
+      currentUserRank,
+    });
+  } catch (err: any) {
+    console.error('/api/leaderboard error:', err);
     return NextResponse.json(
-      {
-        period,
-        cached: isCached,
-        fetchTimeMs,
-        total: leaderboard.length,
-        leaderboard,
-        currentUserRank,
-      },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      }
+      { error: err.message || 'Lỗi lấy bảng xếp hạng' },
+      { status: 500 }
     );
-  } catch (err) {
-    console.error('Unexpected error in leaderboard:', err);
-    const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
-    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

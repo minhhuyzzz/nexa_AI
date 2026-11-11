@@ -19,8 +19,10 @@ import {
   Sparkles,
   Lock,
   Compass,
+  FileText,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { BaselineDiagnosticModal } from '@/components/dashboard/personal/BaselineDiagnosticModal';
 
 interface AssessmentMeta {
   id: string;
@@ -31,6 +33,7 @@ interface AssessmentMeta {
   point_reward: number;
   is_published: boolean;
   access_tier: 'FREE' | 'PRO' | 'VIP';
+  target_domain?: string;
   is_system_baseline: boolean;
   question_count: number;
   domain_breakdown: Array<{
@@ -40,12 +43,12 @@ interface AssessmentMeta {
   }>;
 }
 
-const DEFAULT_5_DOMAINS = [
-  { domainIndex: 1, title: 'Thông tin & Dữ liệu số', questionCount: 5 },
-  { domainIndex: 2, title: 'Giao tiếp & Cộng tác số', questionCount: 5 },
-  { domainIndex: 3, title: 'Sáng tạo Nội dung số & AI', questionCount: 5 },
-  { domainIndex: 4, title: 'An toàn & Bảo mật số', questionCount: 5 },
-  { domainIndex: 5, title: 'Giải quyết Vấn đề số', questionCount: 5 },
+const DOMAIN_CATALOG = [
+  { domainIndex: 1, code: '01', title: 'Thông tin & Dữ liệu số' },
+  { domainIndex: 2, code: '02', title: 'Giao tiếp & Cộng tác số' },
+  { domainIndex: 3, code: '03', title: 'Sáng tạo Nội dung số & AI' },
+  { domainIndex: 4, code: '04', title: 'An toàn & Bảo mật số' },
+  { domainIndex: 5, code: '05', title: 'Giải quyết Vấn đề số' },
 ];
 
 export default function AssessmentBriefingPage() {
@@ -56,12 +59,22 @@ export default function AssessmentBriefingPage() {
 
   const [assessment, setAssessment] = useState<AssessmentMeta | null>(null);
   const [loading, setLoading] = useState(true);
-  const [agreedToRules, setAgreedToRules] = useState(false);
+  const [isBaselineModalOpen, setIsBaselineModalOpen] = useState(false);
+  const [latestSubmission, setLatestSubmission] = useState<{
+    id: string;
+    totalScore: number;
+    maxScore: number;
+    percentage: number;
+    isPassed: boolean;
+    submittedAt: string;
+  } | null>(null);
 
   const fetchAssessmentMeta = useCallback(async () => {
     setLoading(true);
     try {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId);
+      const CANONICAL_BASELINE_ID = 'a0000000-0000-0000-0000-000000000001';
+      const effectiveId = testId === 'baseline' ? CANONICAL_BASELINE_ID : testId;
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(effectiveId);
       if (!isUUID) {
         setAssessment(null);
         setLoading(false);
@@ -80,10 +93,11 @@ export default function AssessmentBriefingPage() {
           point_reward,
           is_published,
           access_tier,
+          target_domain,
           is_system_baseline,
           system_code
         `)
-        .eq('id', testId)
+        .eq('id', effectiveId)
         .maybeSingle();
 
       if (asmError || !asm) {
@@ -92,7 +106,7 @@ export default function AssessmentBriefingPage() {
         return;
       }
 
-      // 2. Fetch items count and domain breakdown
+      // 2. Fetch real items count and competency domain relation
       const { data: itemsData } = await supabase
         .from('assessment_items')
         .select(`
@@ -110,42 +124,85 @@ export default function AssessmentBriefingPage() {
       const items = itemsData || [];
       const questionCount = items.length;
 
-      // Calculate domain breakdown
-      const domainCountMap = new Map<number, { title: string; count: number }>();
-      DEFAULT_5_DOMAINS.forEach((d) => {
-        domainCountMap.set(d.domainIndex, { title: d.title, count: 0 });
-      });
-
+      // Calculate real question counts by domain
+      const countByDomainIndex = new Map<number, number>();
       items.forEach((it: any) => {
         const dom = it.competencies?.competency_domains;
-        const dIdx = dom?.domain_index || 1;
-        const cur = domainCountMap.get(dIdx) || { title: dom?.title || `Miền ${dIdx}`, count: 0 };
-        domainCountMap.set(dIdx, { ...cur, count: cur.count + 1 });
+        const dIdx = dom?.domain_index;
+        if (dIdx) {
+          countByDomainIndex.set(dIdx, (countByDomainIndex.get(dIdx) || 0) + 1);
+        }
       });
 
-      const breakdown = Array.from(domainCountMap.entries())
-        .map(([domainIndex, val]) => ({
-          domainIndex,
-          title: val.title,
-          questionCount: val.count,
-        }))
-        .sort((a, b) => a.domainIndex - b.domainIndex);
+      let breakdown: Array<{ domainIndex: number; title: string; questionCount: number }> = [];
+
+      // If targeted to a single domain
+      const targetDomain = (asm as any).target_domain;
+      if (targetDomain && targetDomain !== 'ALL') {
+        const found = DOMAIN_CATALOG.find((d) => d.code === targetDomain);
+        if (found) {
+          breakdown = [
+            {
+              domainIndex: found.domainIndex,
+              title: found.title,
+              questionCount,
+            },
+          ];
+        }
+      }
+
+      // Comprehensive 5-domain test
+      if (breakdown.length === 0) {
+        breakdown = DOMAIN_CATALOG.map((d) => ({
+          domainIndex: d.domainIndex,
+          title: d.title,
+          questionCount: countByDomainIndex.get(d.domainIndex) || 0,
+        }));
+      }
 
       setAssessment({
         id: asm.id,
         title: asm.title,
         description:
           asm.description ||
-          'Bài khảo thí chẩn đoán chuẩn hóa 5 miền năng lực số. Hoàn thành để tự động xác lập Hồ sơ năng lực và kích hoạt lộ trình học tập bồi dưỡng.',
-        duration_minutes: asm.duration_minutes || 25,
+          'Bài khảo thí chuẩn hóa đo lường năng lực số. Hoàn thành bài thi để cập nhật hồ sơ năng lực và kích hoạt lộ trình học tập cá nhân hóa.',
+        duration_minutes: asm.duration_minutes || 45,
         passing_score: Number(asm.passing_score) || 70,
         point_reward: asm.point_reward || 50,
         is_published: Boolean(asm.is_published),
         access_tier: (asm.access_tier as any) || 'FREE',
+        target_domain: targetDomain || 'ALL',
         is_system_baseline: Boolean(asm.is_system_baseline),
         question_count: questionCount,
-        domain_breakdown: breakdown.some((b) => b.questionCount > 0) ? breakdown : DEFAULT_5_DOMAINS,
+        domain_breakdown: breakdown,
       });
+
+      // 3. Fetch user's latest submission for this assessment if logged in
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: subData } = await supabase
+          .from('assessment_submissions')
+          .select('id, total_score, max_score, percentage, is_passed, submitted_at')
+          .eq('assessment_id', effectiveId)
+          .eq('user_id', user.id)
+          .order('submitted_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (subData) {
+          setLatestSubmission({
+            id: subData.id,
+            totalScore: Number(subData.total_score) || 0,
+            maxScore: Number(subData.max_score) || 0,
+            percentage: Number(subData.percentage) || 0,
+            isPassed: Boolean(subData.is_passed),
+            submittedAt: subData.submitted_at,
+          });
+        }
+      }
     } catch (err) {
       console.error('Error fetching assessment briefing:', err);
       setAssessment(null);
@@ -211,24 +268,18 @@ export default function AssessmentBriefingPage() {
           </p>
         </div>
 
-        {/* 3 Thông số cốt lõi */}
-        <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800 text-center text-xs">
+        {/* Thông số cốt lõi: Không áp lực thời gian */}
+        <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800 text-center text-xs">
           <div className="space-y-0.5">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400">Số câu hỏi</span>
+            <span className="text-[11px] text-slate-500 dark:text-neutral-400">Quy mô khảo sát</span>
             <div className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100">
-              {assessment.question_count || 25} câu
+              {assessment.question_count || 25} câu trắc nghiệm
             </div>
           </div>
           <div className="space-y-0.5">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400">Thời gian</span>
-            <div className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100">
-              {assessment.duration_minutes || 25} phút
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400">Ngưỡng chuẩn</span>
-            <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              ≥ {assessment.passing_score || 70}%
+            <span className="text-[11px] text-slate-500 dark:text-neutral-400">Phạm vi đánh giá</span>
+            <div className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400">
+              Trọn vẹn 5 Miền
             </div>
           </div>
         </div>
@@ -238,16 +289,16 @@ export default function AssessmentBriefingPage() {
           <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center justify-between">
             <span>5 Miền năng lực số được khảo thí (mỗi miền 5 câu):</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            {DEFAULT_5_DOMAINS.map((dom) => (
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
+            {DOMAIN_CATALOG.map((dom) => (
               <div
                 key={dom.domainIndex}
-                className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/40 border border-slate-100 dark:border-zinc-800"
+                className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/40 border border-slate-200/70 dark:border-zinc-800 flex flex-col justify-between gap-1.5"
               >
                 <span className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-bold font-mono text-[10px] flex items-center justify-center shrink-0">
-                  {dom.domainIndex}
+                  0{dom.domainIndex}
                 </span>
-                <span className="text-neutral-800 dark:text-zinc-200 font-medium truncate">
+                <span className="text-neutral-800 dark:text-zinc-200 font-semibold text-[11px] leading-tight">
                   {dom.title}
                 </span>
               </div>
@@ -275,14 +326,23 @@ export default function AssessmentBriefingPage() {
             Để sau, về Bảng điều khiển
           </Link>
 
-          <Link
-            href={`/personal/take/${testId}`}
+          <button
+            type="button"
+            onClick={() => setIsBaselineModalOpen(true)}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-center inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
           >
-            <span>Bắt đầu làm bài khảo thí ngay</span>
+            <span>Bắt đầu làm bài khảo sát ngay</span>
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </button>
         </div>
+
+        <BaselineDiagnosticModal
+          isOpen={isBaselineModalOpen}
+          onClose={() => setIsBaselineModalOpen(false)}
+          onCompleted={() => {
+            router.push('/personal/learning-path');
+          }}
+        />
       </div>
     );
   }
@@ -324,7 +384,7 @@ export default function AssessmentBriefingPage() {
             </span>
           )}
           <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
-            Khung Chuẩn 5 Miền Năng Lực Số
+            Khung Năng Lực Số
           </span>
           {assessment.access_tier === 'PRO' || assessment.access_tier === 'VIP' ? (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold font-mono border border-blue-200">
@@ -345,8 +405,8 @@ export default function AssessmentBriefingPage() {
           {assessment.description}
         </p>
 
-        {/* 4 Essential Exam Parameters Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+        {/* 3 Thông Số Cốt Lõi (Số câu, Thời lượng, Chuẩn) - Đã lược bỏ chứng chỉ thừa */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
           <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
             <div className="text-[11px] text-slate-500 mb-1 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-slate-400" />
@@ -376,17 +436,6 @@ export default function AssessmentBriefingPage() {
               ≥ {assessment.passing_score}%
             </div>
           </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
-            <div className="text-[11px] text-slate-500 mb-1 flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-slate-400" />
-              <span>Chứng chỉ năng lực</span>
-            </div>
-            <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 mt-1">
-              <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-              <span>Cấp khi đạt chuẩn</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -394,16 +443,20 @@ export default function AssessmentBriefingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (7 cols): Domain breakdown & Learner Benefits */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Card: Cấu trúc 5 miền năng lực số */}
+          {/* Card: Cấu trúc các miền năng lực số */}
           <div className="p-6 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-xs space-y-4">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-600" strokeWidth={2} />
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                Cấu trúc 5 miền năng lực số được khảo thí
+                {assessment.target_domain && assessment.target_domain !== 'ALL'
+                  ? 'Miền năng lực số được khảo thí trọng tâm'
+                  : 'Cấu trúc các miền năng lực số được khảo thí'}
               </h3>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Đề thi phân bổ câu hỏi đồng đều trên trọn vẹn 5 miền năng lực số chuẩn hóa nhằm phác thảo chính xác bản đồ năng lực của bạn:
+              {assessment.question_count === 0
+                ? 'Đề thi hiện có 0 câu hỏi (đang được ban chuyên môn cập nhật nội dung khảo thí).'
+                : 'Đề thi được phân bổ câu hỏi chuẩn hóa nhằm phác thảo chính xác bản đồ năng lực số của bạn:'}
             </p>
 
             <div className="space-y-2.5">
@@ -421,7 +474,7 @@ export default function AssessmentBriefingPage() {
                     </span>
                   </div>
                   <span className="text-xs font-mono font-medium text-slate-500 dark:text-neutral-400">
-                    {dom.questionCount > 0 ? `${dom.questionCount} câu hỏi` : 'Đang cập nhật'}
+                    {dom.questionCount > 0 ? `${dom.questionCount} câu hỏi` : '0 câu hỏi'}
                   </span>
                 </div>
               ))}
@@ -453,20 +506,20 @@ export default function AssessmentBriefingPage() {
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Cộng điểm tích lũy PTS:</strong> Điểm thưởng được ghi nhận vào lịch sử học tập để xếp hạng và xét cấp chứng chỉ số.
+                  <strong>Cộng điểm tích lũy PTS:</strong> Điểm thưởng được ghi nhận vào lịch sử học tập và tích lũy xếp hạng khi đạt chuẩn ≥ 70%.
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column (5 cols): Exam Rules & Sticky CTA */}
+        {/* Right Column (5 cols): Exam Rules & Direct Action CTA */}
         <div className="lg:col-span-5 space-y-6">
           <div className="p-6 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-xs space-y-4">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-600" strokeWidth={2} />
+              <ShieldCheck className="w-4 h-4 text-blue-600" strokeWidth={2} />
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                Quy chế phòng thi & Chống gian lận
+                Hướng dẫn làm bài khảo thí
               </h3>
             </div>
 
@@ -480,53 +533,59 @@ export default function AssessmentBriefingPage() {
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5" />
                 <span>
-                  <strong>Lưu nháp tức thì:</strong> Mọi lựa chọn câu trả lời đều được lưu tạm thời để phòng ngừa sự cố mất kết nối mạng.
+                  <strong>Lưu nháp liên tục:</strong> Mọi lựa chọn câu trả lời đều được lưu tức thì vào hệ thống trong lúc bạn làm bài.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5" />
                 <span>
-                  <strong>Giám sát tập trung:</strong> Không chuyển tab hoặc mở ứng dụng khác trong quá trình làm bài. Hệ thống ghi nhận số lần rời khỏi màn hình thi.
+                  <strong>Tự do gắn cờ xem lại:</strong> Bạn có thể gắn cờ bất kỳ câu hỏi nào chưa chắc chắn để quay lại rà soát trước khi nộp bài.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5" />
                 <span>
-                  <strong>Một đáp án đúng:</strong> Mỗi câu hỏi trắc nghiệm chỉ có duy nhất 01 phương án chính xác.
+                  <strong>Báo cáo năng lực &amp; Xem lại:</strong> Ngay sau khi nộp, hệ thống phân tích khoảng trống các miền và hỗ trợ xem lại lời giải thích chi tiết từng câu.
                 </span>
               </li>
             </ul>
 
-            {/* Checkbox agreement */}
-            <div className="pt-2">
-              <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={agreedToRules}
-                  onChange={(e) => setAgreedToRules(e.target.checked)}
-                  className="mt-0.5 rounded text-blue-600 focus:ring-blue-600 cursor-pointer"
-                />
-                <span>
-                  Tôi đã đọc kỹ và cam kết tuân thủ quy chế khảo thí trung thực của nền tảng NEXA.
-                </span>
-              </label>
-            </div>
+            {/* Previous Submission Result Card if available */}
+            {latestSubmission && (
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500 dark:text-neutral-400 font-medium">Lần thi gần nhất:</span>
+                  <span
+                    className={`font-mono font-bold ${
+                      latestSubmission.isPassed
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    {latestSubmission.percentage}% • {latestSubmission.isPassed ? 'Đạt chuẩn' : 'Cần bồi dưỡng'}
+                  </span>
+                </div>
+                <Link
+                  href={`/personal/assessments/${assessment.id}/result?submissionId=${latestSubmission.id}`}
+                  className="w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Xem lại kết quả bài làm ({latestSubmission.percentage}%)</span>
+                </Link>
+              </div>
+            )}
 
-            {/* Action CTA Button */}
+            {/* Direct Action CTA Button */}
             <div className="pt-2">
               <Link
                 href={`/personal/take/${assessment.id}`}
-                className={`w-full py-3 px-4 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shadow-sm ${
-                  agreedToRules
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-blue-500/20'
-                    : 'bg-blue-600/80 hover:bg-blue-600 text-white cursor-pointer'
-                }`}
+                className="w-full py-3 px-4 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer transition-colors"
               >
-                <span>Bắt đầu làm bài khảo thí</span>
+                <span>{latestSubmission ? 'Làm lại bài khảo thí' : 'Bắt đầu làm bài khảo thí'}</span>
                 <ArrowRight className="w-4 h-4" strokeWidth={2} />
               </Link>
-              <p className="text-[11px] text-center text-slate-400 mt-2">
-                Hệ thống sẽ chuyển ngay vào giao diện làm bài có bấm giờ.
+              <p className="text-[11px] text-center text-slate-400 dark:text-neutral-500 mt-2">
+                Hệ thống sẽ chuyển ngay vào không gian làm bài có bấm giờ.
               </p>
             </div>
           </div>

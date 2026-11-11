@@ -43,17 +43,10 @@ const domainList = [
   { code: '05', label: 'Miền 05: Giải quyết Vấn đề' },
 ];
 
-const formatFilterOptions = [
-  { id: 'ALL' as const, label: 'Tất cả dạng bài' },
-  { id: 'MCQ' as const, label: 'Trắc nghiệm' },
-  { id: 'SCENARIO' as const, label: 'Tình huống' },
-  { id: 'DIGITAL_EVIDENCE' as const, label: 'Thực hành' },
-];
-
 const tierFilterOptions = [
   { id: 'ALL' as const, label: 'Tất cả phân hạng' },
   { id: 'FREE' as const, label: 'Miễn phí' },
-  { id: 'PRO' as const, label: 'Gói Chuyên sâu' },
+  { id: 'PRO' as const, label: 'Cần mở khóa' },
 ];
 
 export default function LearnerAssessmentsPage() {
@@ -62,10 +55,8 @@ export default function LearnerAssessmentsPage() {
 
   const [tierFilter, setTierFilter] = useState<'ALL' | 'FREE' | 'PRO'>('ALL');
   const [isTierMenuOpen, setIsTierMenuOpen] = useState(false);
-  const [formatFilter, setFormatFilter] = useState<'ALL' | 'MCQ' | 'SCENARIO' | 'DIGITAL_EVIDENCE'>('ALL');
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [isDomainMenuOpen, setIsDomainMenuOpen] = useState(false);
-  const [isFormatMenuOpen, setIsFormatMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchAssessments = useCallback(async () => {
@@ -138,10 +129,6 @@ export default function LearnerAssessmentsPage() {
       test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       test.domainName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFormat =
-      formatFilter === 'ALL' ||
-      test.types.includes(formatFilter);
-
     const matchesDomain =
       selectedDomains.length === 0 ||
       selectedDomains.some((d) => test.domainCodes.includes(d));
@@ -150,7 +137,7 @@ export default function LearnerAssessmentsPage() {
       tierFilter === 'ALL' ||
       (tierFilter === 'PRO' ? Boolean(test.isVip || test.accessTier === 'VIP') : !test.isVip && test.accessTier !== 'VIP');
 
-    return matchesSearch && matchesFormat && matchesDomain && matchesTier;
+    return matchesSearch && matchesDomain && matchesTier;
   });
 
   return (
@@ -161,16 +148,9 @@ export default function LearnerAssessmentsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Bài đánh giá
           </h1>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/personal/live-pin"
-            className="px-3.5 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
-          >
-            <span>Nhập mã PIN phòng thi</span>
-            <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
-          </Link>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Hệ thống bài khảo thí chuẩn hóa 5 miền năng lực số dùng chung toàn nền tảng.
+          </p>
         </div>
       </div>
 
@@ -198,11 +178,11 @@ export default function LearnerAssessmentsPage() {
               type="button"
               onClick={() => {
                 setIsDomainMenuOpen((prev) => !prev);
-                setIsFormatMenuOpen(false);
+                setIsTierMenuOpen(false);
               }}
               className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
                 selectedDomains.length > 0
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
                   : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
               }`}
             >
@@ -291,97 +271,6 @@ export default function LearnerAssessmentsPage() {
             )}
           </div>
 
-          {/* Mode Dropdown Menu */}
-          {/* Format Dropdown Menu */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setIsFormatMenuOpen((prev) => !prev);
-                setIsDomainMenuOpen(false);
-              }}
-              className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
-                formatFilter !== 'ALL'
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-              }`}
-            >
-              <Tag className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-              <span>
-                {formatFilterOptions.find((m) => m.id === formatFilter)?.label || 'Tất cả dạng bài'}
-              </span>
-              {formatFilter !== 'ALL' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-              )}
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${
-                  isFormatMenuOpen ? 'rotate-180' : ''
-                }`}
-                strokeWidth={1.75}
-              />
-            </button>
-
-            {isFormatMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-20"
-                  onClick={() => setIsFormatMenuOpen(false)}
-                />
-                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-48 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
-                  <div className="px-3 py-1.5 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Dạng bài
-                    </span>
-                    {formatFilter !== 'ALL' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormatFilter('ALL');
-                          setIsFormatMenuOpen(false);
-                        }}
-                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold"
-                      >
-                        Mặc định
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="py-1">
-                    {formatFilterOptions.map((item) => {
-                      const isSelected = formatFilter === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            setFormatFilter(item.id);
-                            setIsFormatMenuOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer ${
-                            isSelected ? 'bg-slate-50/70 font-semibold text-slate-900' : 'text-slate-700'
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                              isSelected
-                                ? 'bg-blue-600 border-blue-600 text-white'
-                                : 'border-slate-300 bg-white'
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
-                          </div>
-                          <span className={isSelected ? 'font-semibold text-slate-900' : 'text-slate-700'}>
-                            {item.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
           {/* Tier (Free / VIP) Dropdown Menu */}
           <div className="relative">
             <button
@@ -389,11 +278,10 @@ export default function LearnerAssessmentsPage() {
               onClick={() => {
                 setIsTierMenuOpen((prev) => !prev);
                 setIsDomainMenuOpen(false);
-                setIsFormatMenuOpen(false);
               }}
               className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
                 tierFilter !== 'ALL'
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
                   : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
               }`}
             >
@@ -454,8 +342,11 @@ export default function LearnerAssessmentsPage() {
                         >
                           <div className="flex items-center gap-2">
                             {opt.id === 'PRO' && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                                VIP
+                              <span
+                                title="Cần nâng cấp để mở khóa"
+                                className="w-5 h-5 rounded-md flex items-center justify-center text-slate-400 dark:text-zinc-500"
+                              >
+                                <Lock className="w-3 h-3" />
                               </span>
                             )}
                             {opt.id === 'FREE' && (
@@ -478,13 +369,12 @@ export default function LearnerAssessmentsPage() {
           </div>
 
           {/* Reset Filters button if any filter is active */}
-          {(searchQuery || selectedDomains.length > 0 || formatFilter !== 'ALL' || tierFilter !== 'ALL') && (
+          {(searchQuery || selectedDomains.length > 0 || tierFilter !== 'ALL') && (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedDomains([]);
-                setFormatFilter('ALL');
                 setTierFilter('ALL');
               }}
               className="text-xs text-slate-500 hover:text-slate-800 underline decoration-slate-300 underline-offset-2 ml-1"
@@ -520,18 +410,18 @@ export default function LearnerAssessmentsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredTests.map((test) => (
             <Link
               key={test.id}
               href={`/personal/assessments/${test.id}`}
-              className="p-5 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-2xs transition-all flex flex-col justify-between group text-xs min-h-[220px]"
+              className="p-5 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 hover:border-blue-500/60 dark:hover:border-blue-500/60 hover:shadow-2xs transition-all flex flex-col justify-between group text-xs min-h-[220px]"
             >
               <div>
-                {/* 1:1 Aspect ratio square badge / icon header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 truncate max-w-[120px]">
+                {/* Header badges */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-850 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 shrink-0">
                       {test.domainName}
                     </span>
                     <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/40 shrink-0">
@@ -539,15 +429,13 @@ export default function LearnerAssessmentsPage() {
                     </span>
                   </div>
                   {test.isVip || test.accessTier === 'VIP' || test.accessTier === 'PRO' ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs">
-                      <Lock className="w-2.5 h-2.5" />
-                      PRO
+                    <span
+                      title="Cần nâng cấp để mở khóa"
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Lock className="w-3.5 h-3.5" strokeWidth={1.75} />
                     </span>
-                  ) : (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium font-mono bg-slate-100 dark:bg-zinc-850 text-slate-600 dark:text-neutral-400 border border-slate-200 dark:border-zinc-800">
-                      FREE
-                    </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Title */}

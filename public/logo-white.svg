@@ -1,14 +1,12 @@
 <svg width="220" height="60" viewBox="0 0 220 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Left 3D Column -->
-  <polygon points="16,18 30,16 22,48 8,50" fill="#FFFFFF" />
-  <polygon points="8,50 22,48 28,54 14,56" fill="#94A3B8" />
-  
-  <!-- Right 3D Fold Ribbon -->
-  <polygon points="42,14 70,11 70,15 44,18" fill="#FFFFFF" />
-  <polygon points="42,14 54,16 38,48 26,46" fill="#FFFFFF" />
-  <polygon points="38,48 58,45 58,49 38,52" fill="#FFFFFF" />
-  <polygon points="44,18 54,16 38,48 28,50" fill="#94A3B8" />
+  <!-- NEXA Kinetic Monolith Mark (Scaled 42x42 at x=10, y=9) -->
+  <g transform="translate(10, 9) scale(0.42)">
+    <!-- Blade 1: Diagnostic Foundation (Pure White #FFFFFF) -->
+    <path d="M18 18 H36 V48 L58 70 V82 H40 L18 60 Z" fill="#FFFFFF" />
+    <!-- Blade 2: Digital Mastery (Sky Accent #60A5FA) -->
+    <path d="M82 82 H64 V52 L42 30 V18 H60 L82 40 Z" fill="#60A5FA" />
+  </g>
 
-  <!-- Typography NEXA -->
-  <text x="88" y="44" font-family="'JetBrains Mono', monospace" font-size="28" font-weight="800" letter-spacing="0.18em" fill="#FFFFFF">NEXA<tspan fill="#38BDF8">.</tspan></text>
+  <!-- Typography NEXA (Optically centered to mark center y=30) -->
+  <text x="64" y="39" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" letter-spacing="0.16em" fill="#FFFFFF">NEXA<tspan fill="#60A5FA">.</tspan></text>
 </svg>

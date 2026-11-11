@@ -17,6 +17,8 @@ import {
   Flame,
   ShieldCheck,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   LeaderboardHeroIllustration,
@@ -28,7 +30,7 @@ import {
   EmptyLeaderboardIllustration,
 } from '@/components/dashboard/personal/LeaderboardGraphics';
 
-type Period = 'week' | 'month' | 'all';
+type Period = 'today' | 'week' | 'month' | 'all';
 
 interface LeaderboardEntry {
   rank: number;
@@ -49,6 +51,7 @@ interface CurrentUserRank {
 }
 
 const PERIOD_TABS: { id: Period; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; desc: string }[] = [
+  { id: 'today', label: 'Hôm nay', icon: Zap, desc: '24 giờ qua' },
   { id: 'week', label: 'Tuần này', icon: Flame, desc: '7 ngày qua' },
   { id: 'month', label: 'Tháng này', icon: Clock, desc: '30 ngày qua' },
   { id: 'all', label: 'Tất cả', icon: Trophy, desc: 'Toàn thời gian' },
@@ -64,6 +67,8 @@ function LeaderboardContent() {
   const [myRank, setMyRank] = useState<CurrentUserRank | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const [hasError, setHasError] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -95,6 +100,7 @@ function LeaderboardContent() {
   const handlePeriodChange = (newPeriod: Period) => {
     if (newPeriod === period) return;
     setPeriod(newPeriod);
+    setCurrentPage(1);
     startTransition(() => {
       router.replace(`/personal/leaderboard?period=${newPeriod}`, { scroll: false });
     });
@@ -105,6 +111,11 @@ function LeaderboardContent() {
     fetchLeaderboard(initialPeriod);
   }, [fetchLeaderboard, initialPeriod]);
 
+  // Reset về trang 1 khi người dùng lọc tìm kiếm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const top1 = leaderboard[0];
   const top2 = leaderboard[1];
   const top3 = leaderboard[2];
@@ -114,6 +125,13 @@ function LeaderboardContent() {
         entry.displayName.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : leaderboard;
+
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / pageSize));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedList = filteredList.slice(
+    (validCurrentPage - 1) * pageSize,
+    validCurrentPage * pageSize
+  );
 
   const currentPeriodConfig = PERIOD_TABS.find((t) => t.id === period) || PERIOD_TABS[0];
 
@@ -227,6 +245,7 @@ function LeaderboardContent() {
                     <img
                       src={top2.avatarUrl}
                       alt={top2.displayName}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -275,6 +294,7 @@ function LeaderboardContent() {
                     <img
                       src={top1.avatarUrl}
                       alt={top1.displayName}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -323,6 +343,7 @@ function LeaderboardContent() {
                     <img
                       src={top3.avatarUrl}
                       alt={top3.displayName}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -424,7 +445,7 @@ function LeaderboardContent() {
                 </tr>
               </thead>
               <tbody className="">
-                {filteredList.map((entry) => {
+                {paginatedList.map((entry) => {
                   const isCurrentUser = myRank && entry.userId === myRank.userId;
                   const rank = entry.rank;
 
@@ -463,6 +484,7 @@ function LeaderboardContent() {
                               <img
                                 src={entry.avatarUrl}
                                 alt={entry.displayName}
+                                referrerPolicy="no-referrer"
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -477,7 +499,7 @@ function LeaderboardContent() {
                               )}
                               {isCurrentUser && (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                  Bạn
+                                   Bạn
                                 </span>
                               )}
                             </div>
@@ -509,6 +531,82 @@ function LeaderboardContent() {
                 })}
               </tbody>
             </table>
+
+            {/* Pagination Controls (10 người / trang) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4 bg-slate-50/70 dark:bg-zinc-900/40 text-xs text-slate-500 dark:text-neutral-400">
+              <div>
+                Hiển thị{' '}
+                <span className="font-semibold text-neutral-900 dark:text-neutral-200 font-mono tabular-nums">
+                  {(validCurrentPage - 1) * pageSize + 1} – {Math.min(validCurrentPage * pageSize, filteredList.length)}
+                </span>{' '}
+                trong{' '}
+                <span className="font-semibold text-neutral-900 dark:text-neutral-200 font-mono tabular-nums">
+                  {filteredList.length}
+                </span>{' '}
+                học viên
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={validCurrentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    aria-label="Trang trước"
+                    className="p-1.5 rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => {
+                      if (
+                        totalPages > 7 &&
+                        pageNum !== 1 &&
+                        pageNum !== totalPages &&
+                        Math.abs(pageNum - validCurrentPage) > 1
+                      ) {
+                        if (pageNum === 2 || pageNum === totalPages - 1) {
+                          return (
+                            <span key={pageNum} className="px-1 text-slate-400 dark:text-neutral-600 font-mono">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      }
+
+                      const isActive = validCurrentPage === pageNum;
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setCurrentPage(pageNum)}
+                          aria-current={isActive ? 'page' : undefined}
+                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-blue-600 text-white shadow-2xs'
+                              : 'border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={validCurrentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    aria-label="Trang tiếp theo"
+                    className="p-1.5 rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" strokeWidth={1.75} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </section>

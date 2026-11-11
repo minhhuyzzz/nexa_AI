@@ -590,8 +590,8 @@ export async function POST(
           grading_status: hasOpenResponse ? 'PENDING_REVIEW' : 'COMPLETED',
           class_assignment_id: classAssignmentId || null,
           campaign_id: resolvedCampaignId || null,
-          total_score: hasOpenResponse ? null : totalScore,
-          max_score: maxScore,
+          total_score: hasOpenResponse ? null : Number(totalScore.toFixed(2)),
+          max_score: Number(maxScore.toFixed(2)),
           percentage: percentage !== null ? Number(percentage.toFixed(2)) : null,
           points_awarded: pointsAwarded,
           is_passed: isPassed,
@@ -624,7 +624,7 @@ export async function POST(
       });
     }
 
-    // 10. Compute 5-Domain Scores & Snapshot for personalized learning
+    // 10. Compute Domain Scores & Progressive Competency Snapshot
     const domainScores: Record<string, number | null> = {};
     const domainCodes = ['01', '02', '03', '04', '05'];
     domainCodes.forEach((code) => {
@@ -643,21 +643,98 @@ export async function POST(
       }
     });
 
+    const isBaseline = Boolean(assessment.is_system_baseline);
+    const meetsPassingStandard = Boolean(isPassed === true && percentage !== null && percentage >= 70);
+
+    // CƠ CHẾ TÍCH LŨY HỒ SƠ NĂNG LỰC LÂU DÀI:
+    // Chỉ lưu snapshot khi: (1) là khảo sát đầu vào Baseline; HOẶC (2) bài thi đạt chuẩn >= 70%
     if (!hasOpenResponse && Object.values(domainScores).some((s) => s !== null)) {
-      try {
-        const clientForSnapshot = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
-        const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
-        if (snapTable && typeof snapTable.insert === 'function') {
-          await snapTable.insert({
-            user_id: user.id,
-            overall_score: percentage !== null ? Number(percentage.toFixed(2)) : 0,
-            domain_scores: domainScores,
-            skill_scores: {},
-            snapshot_trigger: assessment.is_system_baseline ? 'BASELINE_ASSESSMENT' : 'ASSESSMENT_SUBMISSION',
-          });
+      if (isBaseline) {
+        // Thiết lập mốc xuất phát ban đầu cho học viên
+        try {
+          const clientForSnapshot = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
+          const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
+          if (snapTable && typeof snapTable.insert === 'function') {
+            await snapTable.insert({
+              user_id: user.id,
+              overall_score: percentage !== null ? Number(percentage.toFixed(2)) : 0,
+              domain_scores: domainScores,
+              skill_scores: {},
+              snapshot_trigger: 'BASELINE_ASSESSMENT',
+            });
+          }
+        } catch (snapErr) {
+          console.warn('Could not insert baseline competency snapshot:', snapErr);
         }
-      } catch (snapErr) {
-        console.warn('Could not insert competency snapshot:', snapErr);
+      } else if (meetsPassingStandard) {
+        // Tăng lũy tiến từng nấc nhỏ 1-2% (hoặc 3% nếu xuất sắc >= 90%) dựa trên bằng chứng đạt chuẩn
+        try {
+          const clientForSnapshot = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
+          
+          let latestSnapshot: any = null;
+          try {
+            const queryRes = await dbQuery((db) => {
+              const table = db?.from?.('learner_competency_snapshots');
+              if (table && typeof table.select === 'function') {
+                const s = table.select('domain_scores, overall_score');
+                if (s && typeof s.eq === 'function') {
+                  const e = s.eq('user_id', user.id);
+                  if (e && typeof e.order === 'function') {
+                    return e.order('created_at', { ascending: false }).limit(1).maybeSingle();
+                  }
+                  if (e && typeof e.limit === 'function') {
+                    return e.limit(1).maybeSingle();
+                  }
+                }
+              }
+              return Promise.resolve({ data: null, error: null });
+            });
+            latestSnapshot = queryRes?.data;
+          } catch {
+            latestSnapshot = null;
+          }
+
+          const previousDomains = (latestSnapshot?.domain_scores as Record<string, number>) || {};
+          const updatedDomainScores: Record<string, number | null> = {};
+
+          domainCodes.forEach((code) => {
+            const prevScore = previousDomains[code] ?? domainScores[code] ?? 50;
+            const testDomainScore = domainScores[code];
+            const max = domainMax[code] || 0;
+
+            if (max > 0 && testDomainScore !== null) {
+              if (testDomainScore >= 70) {
+                // Tăng lũy tiến 2% (hoặc 3% nếu đạt >= 90%)
+                const delta = testDomainScore >= 90 ? 3 : 2;
+                updatedDomainScores[code] = Math.min(100, prevScore + delta);
+              } else {
+                // Không đạt miền này: giữ nguyên điểm cũ, không trừ điểm
+                updatedDomainScores[code] = prevScore;
+              }
+            } else {
+              // Miền không có câu hỏi trong đề này: giữ nguyên điểm cũ
+              updatedDomainScores[code] = prevScore;
+            }
+          });
+
+          const validScores = Object.values(updatedDomainScores).filter((v): v is number => v !== null);
+          const newOverallScore = validScores.length > 0
+            ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+            : percentage !== null ? Number(percentage.toFixed(2)) : 0;
+
+          const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
+          if (snapTable && typeof snapTable.insert === 'function') {
+            await snapTable.insert({
+              user_id: user.id,
+              overall_score: newOverallScore,
+              domain_scores: updatedDomainScores,
+              skill_scores: {},
+              snapshot_trigger: 'ASSESSMENT_PASSED',
+            });
+          }
+        } catch (snapErr) {
+          console.warn('Could not insert incremental competency snapshot:', snapErr);
+        }
       }
     }
 

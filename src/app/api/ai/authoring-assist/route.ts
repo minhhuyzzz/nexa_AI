@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     // 3. Layer 2: System Prompt & Layer 1: Model execution
     const adapter = new GeminiAdapter();
 
-    let systemInstruction = `
+    const systemInstruction = `
 Bạn là Chuyên gia Khảo thí và Thiết kế Câu hỏi Đánh giá Năng lực Số hàng đầu (Senior Educational Assessment Specialist) của Nền tảng NEXA.
 Hệ thống đánh giá dựa trên Khung năng lực số 5 miền:
 - Miền 1: Dữ liệu và Thông tin số (Tìm kiếm, định vị, lọc, đánh giá độ tin cậy và quản lý dữ liệu).

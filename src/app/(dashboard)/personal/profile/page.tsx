@@ -103,7 +103,7 @@ function LearnerProfileContent() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [credentials, setCredentials] = useState<CredentialItem[]>([]);
   const [learningStats, setLearningStats] = useState<LearningStats>({
-    completedAssessments: 12,
+    completedAssessments: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -161,7 +161,7 @@ function LearnerProfileContent() {
           const compData = await compRes.json();
           if (compData.profile) {
             setLearningStats({
-              completedAssessments: compData.profile.totalAssessmentsCompleted ?? 12,
+              completedAssessments: compData.profile.totalAssessmentsCompleted ?? 0,
             });
           }
         }

@@ -20,6 +20,7 @@ interface SecuritySettingsCardProps {
   onChange: (settings: AssessmentSecuritySettings) => void;
   disabled?: boolean;
   className?: string;
+  mode?: 'canonical' | 'proctored';
 }
 
 export function SecuritySettingsCard({
@@ -27,6 +28,7 @@ export function SecuritySettingsCard({
   onChange,
   disabled = false,
   className = '',
+  mode = 'proctored',
 }: SecuritySettingsCardProps) {
   const handleToggle = (key: keyof AssessmentSecuritySettings) => {
     if (disabled) return;
@@ -51,97 +53,99 @@ export function SecuritySettingsCard({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* 1. Phần Giám sát phòng thi & Chống gian lận */}
-      <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 space-y-3">
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-            Giám sát phòng thi &amp; Chống gian lận
-          </h4>
-        </div>
+      {/* 1. Phần Giám sát phòng thi & Chống gian lận (chỉ áp dụng cho phòng thi giám sát) */}
+      {mode !== 'canonical' && (
+        <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 space-y-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              Giám sát phòng thi &amp; Chống gian lận
+            </h4>
+          </div>
 
-        <div className="space-y-2.5">
-          {/* Bắt buộc toàn màn hình */}
-          <ToggleRow
-            label="Bắt buộc toàn màn hình"
-            description="Yêu cầu thí sinh mở toàn màn hình khi làm bài. Nếu thoát chế độ toàn màn hình sẽ tính là vi phạm."
-            icon={<Maximize2 className="w-4 h-4" />}
-            checked={value.fullscreen_lock}
-            onChange={() => handleToggle('fullscreen_lock')}
-            disabled={disabled}
-          />
+          <div className="space-y-2.5">
+            {/* Bắt buộc toàn màn hình */}
+            <ToggleRow
+              label="Bắt buộc toàn màn hình"
+              description="Yêu cầu thí sinh mở toàn màn hình khi làm bài. Nếu thoát chế độ toàn màn hình sẽ tính là vi phạm."
+              icon={<Maximize2 className="w-4 h-4" />}
+              checked={value.fullscreen_lock}
+              onChange={() => handleToggle('fullscreen_lock')}
+              disabled={disabled}
+            />
 
-          {/* Giám sát chuyển tab */}
-          <ToggleRow
-            label="Giám sát chuyển tab"
-            description="Phát hiện và ghi nhận khi thí sinh chuyển sang tab khác hoặc thu nhỏ cửa sổ bài thi."
-            icon={<ShieldAlert className="w-4 h-4" />}
-            checked={value.tab_switch_guard}
-            onChange={() => handleToggle('tab_switch_guard')}
-            disabled={disabled}
-          />
+            {/* Giám sát chuyển tab */}
+            <ToggleRow
+              label="Giám sát chuyển tab"
+              description="Phát hiện và ghi nhận khi thí sinh chuyển sang tab khác hoặc thu nhỏ cửa sổ bài thi."
+              icon={<ShieldAlert className="w-4 h-4" />}
+              checked={value.tab_switch_guard}
+              onChange={() => handleToggle('tab_switch_guard')}
+              disabled={disabled}
+            />
 
-          {/* Số lần rời tab tối đa cho phép */}
-          {value.tab_switch_guard && (
-            <div className="pl-4 pr-3 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div>
-                <span className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
-                  Số lần rời màn hình tối đa cho phép
-                </span>
-                <p className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Vượt quá số lần này, hệ thống sẽ tự động gắn cờ vi phạm gửi về giám thị.
-                </p>
+            {/* Số lần rời tab tối đa cho phép */}
+            {value.tab_switch_guard && (
+              <div className="pl-4 pr-3 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div>
+                  <span className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
+                    Số lần rời màn hình tối đa cho phép
+                  </span>
+                  <p className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                    Vượt quá số lần này, hệ thống sẽ tự động gắn cờ vi phạm gửi về giám thị.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {[
+                    { label: '1 lần', val: 1 },
+                    { label: '3 lần', val: 3 },
+                    { label: '5 lần', val: 5 },
+                    { label: 'Không giới hạn', val: 0 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.val}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => handleChangeMaxViolations(opt.val)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                        value.max_violations === opt.val
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {[
-                  { label: '1 lần', val: 1 },
-                  { label: '3 lần', val: 3 },
-                  { label: '5 lần', val: 5 },
-                  { label: 'Không giới hạn', val: 0 },
-                ].map((opt) => (
-                  <button
-                    key={opt.val}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => handleChangeMaxViolations(opt.val)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                      value.max_violations === opt.val
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Cảnh báo vi phạm trực tiếp */}
-          <ToggleRow
-            label="Cảnh báo vi phạm trực tiếp"
-            description={
-              value.active_warning
-                ? 'Hiển thị thông báo nhắc nhở ngay trên màn hình khi thí sinh có hành vi rời tab hoặc mất tiêu điểm.'
-                : 'Giám sát ngầm — âm thầm ghi nhận nhật ký vi phạm gửi về giám thị mà không làm gián đoạn bài làm.'
-            }
-            icon={value.active_warning ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-            checked={value.active_warning}
-            onChange={() => handleToggle('active_warning')}
-            disabled={disabled}
-          />
+            {/* Cảnh báo vi phạm trực tiếp */}
+            <ToggleRow
+              label="Cảnh báo vi phạm trực tiếp"
+              description={
+                value.active_warning
+                  ? 'Hiển thị thông báo nhắc nhở ngay trên màn hình khi thí sinh có hành vi rời tab hoặc mất tiêu điểm.'
+                  : 'Giám sát ngầm — âm thầm ghi nhận nhật ký vi phạm gửi về giám thị mà không làm gián đoạn bài làm.'
+              }
+              icon={value.active_warning ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+              checked={value.active_warning}
+              onChange={() => handleToggle('active_warning')}
+              disabled={disabled}
+            />
 
-          {/* In chìm dấu bản quyền */}
-          <ToggleRow
-            label="In mờ thông tin thí sinh trên đề thi"
-            description="Hiển thị mờ họ tên, email và thời gian thi chạy chéo toàn màn hình để chống chụp ảnh phát tán đề thi."
-            icon={<Eye className="w-4 h-4" />}
-            checked={value.dynamic_watermark}
-            onChange={() => handleToggle('dynamic_watermark')}
-            disabled={disabled}
-          />
+            {/* In chìm dấu bản quyền */}
+            <ToggleRow
+              label="In mờ thông tin thí sinh trên đề thi"
+              description="Hiển thị mờ họ tên, email và thời gian thi chạy chéo toàn màn hình để chống chụp ảnh phát tán đề thi."
+              icon={<Eye className="w-4 h-4" />}
+              checked={value.dynamic_watermark}
+              onChange={() => handleToggle('dynamic_watermark')}
+              disabled={disabled}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 2. Phần Cấu trúc đề & Trải nghiệm làm bài */}
       <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 space-y-3">
@@ -189,7 +193,15 @@ export function SecuritySettingsCard({
       <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
         <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold">Bảo mật tự động của hệ thống:</span> Hệ thống luôn mặc định chặn phím F12, chặn kiểm tra mã nguồn và vô hiệu hóa sao chép văn bản câu hỏi trong suốt thời gian làm bài để bảo vệ ngân hàng đề thi.
+          {mode === 'canonical' ? (
+            <span>
+              <strong>Chế độ khảo thí chuẩn hóa:</strong> Đề chuẩn được tối ưu cho việc tự đánh giá năng lực và học tập rèn luyện. Hệ thống tắt các chế độ giám sát khắt khe của phòng thi để người học có trải nghiệm tập trung, thoải mái nhất.
+            </span>
+          ) : (
+            <span>
+              <span className="font-semibold">Bảo mật tự động của hệ thống:</span> Hệ thống luôn mặc định chặn phím F12, chặn kiểm tra mã nguồn và vô hiệu hóa sao chép văn bản câu hỏi trong suốt thời gian làm bài để bảo vệ ngân hàng đề thi.
+            </span>
+          )}
         </div>
       </div>
     </div>

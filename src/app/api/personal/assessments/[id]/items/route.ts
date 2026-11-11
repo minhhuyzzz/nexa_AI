@@ -109,11 +109,28 @@ export async function POST(
 
     const { questions } = parsed.data;
 
-    // Remove old items and re-insert updated ones
+    // Mapping 5 standard DigComp domain codes to canonical primary competencies
+    const DOMAIN_COMPETENCY_MAP: Record<string, string> = {
+      '01': '6c475f25-7c43-4a43-888f-450c0d103d44',
+      '02': '6f292fe4-93cc-4679-b611-031b63b00298',
+      '03': '40bf0ca8-e831-4b08-a017-26d087895e19',
+      '04': '202b3822-953d-4675-ad29-45c1ecc22789',
+      '05': '4f90cac7-901f-40be-a292-d9670b16baa5',
+    };
+
+    // 1. Remove old items (item_options will CASCADE on delete)
     await db.from('assessment_items').delete().eq('assessment_id', id);
 
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
+    if (questions.length === 0) {
+      await db
+        .from('assessments')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', id);
+      return NextResponse.json({ success: true, count: 0 });
+    }
+
+    // 2. Prepare items with valid difficulty_level and competency mapping
+    const itemRows = questions.map((q, idx) => {
       let dbType = 'MCQ';
       if (q.type === 'SCENARIO') dbType = 'SCENARIO';
       if (q.type === 'PRACTICAL' || q.type === 'OPEN_RESPONSE') dbType = 'PRACTICAL_TASK';
@@ -121,45 +138,65 @@ export async function POST(
 
       const questionContext = q.context || q.scenarioContext || null;
       const submissionModes = q.allowedSubmissionModes || ['TEXT', 'FILE', 'URL'];
+      const compId = DOMAIN_COMPETENCY_MAP[q.domainCode] || DOMAIN_COMPETENCY_MAP['01'];
 
-      const { data: insertedItem, error: itemErr } = await db
-        .from('assessment_items')
-        .insert({
-          assessment_id: id,
-          prompt: q.prompt,
-          type: dbType,
-          points: q.points,
-          context: questionContext,
-          submission_modes: submissionModes,
-          rubric_guide: q.practicalGuide || null,
-          order_index: i,
-        })
-        .select('id')
-        .single();
+      return {
+        assessment_id: id,
+        prompt: q.prompt || 'Câu hỏi chưa có nội dung',
+        type: dbType,
+        points: q.points ?? 10,
+        difficulty_level: 'INTERMEDIATE',
+        competency_id: compId,
+        context: questionContext,
+        submission_modes: submissionModes,
+        rubric_guide: q.practicalGuide || null,
+        order_index: idx,
+      };
+    });
 
-      if (itemErr || !insertedItem) continue;
+    // 3. Batch insert assessment items in a single query
+    const { data: insertedItems, error: itemsErr } = await db
+      .from('assessment_items')
+      .insert(itemRows)
+      .select('id, order_index');
 
-      // Insert options only for choice / MCQ
-      if (dbType !== 'PRACTICAL_TASK' && q.options && q.options.length > 0) {
-        const optionRows = q.options.map((opt, oIdx) => ({
-          item_id: insertedItem.id,
-          content: opt.text,
-          is_correct: opt.isCorrect,
-          explanation: opt.explanation || null,
-          order_index: oIdx,
-        }));
+    if (itemsErr || !insertedItems) {
+      console.error('[BATCH_INSERT_ITEMS_ERROR]:', itemsErr);
+      return NextResponse.json({ error: 'Không thể lưu câu hỏi' }, { status: 500 });
+    }
 
-        await db.from('item_options').insert(optionRows);
+    // 4. Batch insert options for MCQ / CHOICE items in a single query
+    const optionRows: any[] = [];
+    const itemsList = Array.isArray(insertedItems) ? insertedItems : [insertedItems];
+    itemsList.forEach((item) => {
+      const q = questions[item.order_index ?? 0];
+      if (q && q.type !== 'PRACTICAL' && q.type !== 'OPEN_RESPONSE' && q.options && q.options.length > 0) {
+        q.options.forEach((opt, oIdx) => {
+          optionRows.push({
+            item_id: item.id,
+            content: opt.text || `Phương án ${String.fromCharCode(65 + oIdx)}`,
+            is_correct: Boolean(opt.isCorrect),
+            explanation: opt.explanation || null,
+            order_index: oIdx,
+          });
+        });
+      }
+    });
+
+    if (optionRows.length > 0) {
+      const { error: optErr } = await db.from('item_options').insert(optionRows);
+      if (optErr) {
+        console.error('[BATCH_INSERT_OPTIONS_ERROR]:', optErr);
       }
     }
 
-    // Update assessment updated_at
+    // 5. Update assessment updated_at
     await db
       .from('assessments')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', id);
 
-    return NextResponse.json({ success: true, count: questions.length });
+    return NextResponse.json({ success: true, count: itemsList.length });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });

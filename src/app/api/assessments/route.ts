@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
-export async function GET(req?: Request) {
+export async function GET(req: Request): Promise<NextResponse>;
+export async function GET(): Promise<NextResponse>;
+export async function GET(req?: Request): Promise<NextResponse> {
   try {
     const url = req ? new URL(req.url) : null;
     const orgId = url?.searchParams.get('orgId');
@@ -21,6 +23,7 @@ export async function GET(req?: Request) {
         is_vip,
         access_tier,
         visibility,
+        target_domain,
         organization_id,
         created_at,
         assessment_items (
@@ -91,22 +94,38 @@ export async function GET(req?: Request) {
         ),
       ];
 
-      const firstComp = Array.isArray(items[0]?.competencies)
-        ? items[0]?.competencies[0]
-        : items[0]?.competencies;
-      const firstDom = Array.isArray(firstComp?.competency_domains)
-        ? firstComp?.competency_domains[0]
-        : firstComp?.competency_domains;
+      const DOMAIN_NAME_MAP: Record<string, string> = {
+        '01': 'Miền 01: Thông tin & Dữ liệu số',
+        '02': 'Miền 02: Giao tiếp & Cộng tác số',
+        '03': 'Miền 03: Sáng tạo Nội dung số & AI',
+        '04': 'Miền 04: An toàn & Bảo mật số',
+        '05': 'Miền 05: Giải quyết Vấn đề số',
+      };
+
+      const targetDomain = (a as any).target_domain || (domainCodes.length === 1 ? domainCodes[0] : 'ALL');
+      const resolvedDomainCodes =
+        targetDomain !== 'ALL'
+          ? [targetDomain]
+          : domainCodes.length > 0
+          ? domainCodes
+          : ['01', '02', '03', '04', '05'];
 
       const domainName =
-        domainCodes.length > 1
+        targetDomain !== 'ALL' && DOMAIN_NAME_MAP[targetDomain]
+          ? DOMAIN_NAME_MAP[targetDomain]
+          : resolvedDomainCodes.length > 1
           ? 'Đa Miền Năng Lực Số'
-          : firstDom?.title || 'Đa Miền Năng Lực Số';
+          : resolvedDomainCodes[0] && DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
+          ? DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
+          : 'Đa Miền Năng Lực Số';
+
+      const rawDesc = a.description || '';
+      const cleanDesc = rawDesc.replace(/21\s*kỹ\s*năng(\s*số)?(\s*cốt\s*lõi)?/gi, '5 miền năng lực số');
 
       return {
         id: a.id,
         title: a.title,
-        description: a.description,
+        description: cleanDesc,
         duration_minutes: a.duration_minutes,
         passing_score: a.passing_score,
         point_reward: a.point_reward,
@@ -115,7 +134,8 @@ export async function GET(req?: Request) {
         typeLabel: typeLabels.length > 0 ? typeLabels.join(', ') : 'Trắc nghiệm',
         domain: domainName,
         domainName,
-        domainCodes,
+        domainCodes: resolvedDomainCodes,
+        target_domain: targetDomain,
         isVip: Boolean((a as any).is_vip || (a as any).access_tier === 'VIP'),
         accessTier: (a as any).access_tier || ((a as any).is_vip ? 'VIP' : 'FREE'),
         organization_id: a.organization_id || null,

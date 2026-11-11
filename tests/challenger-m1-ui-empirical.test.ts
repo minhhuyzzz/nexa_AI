@@ -265,12 +265,12 @@ describe('Empirical Challenger M1: UI/UX & AGENTS.md Conformance Challenge', () 
       expect(content).toContain('<InlinePinEntryCard className="shadow-xs" />');
     });
 
-    it('renders InlinePinEntryCard compact in personal dashboard page', () => {
+    it('does not render InlinePinEntryCard in personal dashboard page (moved to dedicated live-room)', () => {
       const content = fs.readFileSync(
         path.join(rootDir, 'src/app/(dashboard)/personal/dashboard/page.tsx'),
         'utf8'
       );
-      expect(content).toContain('<InlinePinEntryCard compact />');
+      expect(content).not.toContain('<InlinePinEntryCard');
     });
   });
 });

@@ -117,6 +117,7 @@ export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps
             <img
               src={avatarUrl}
               alt={displayName}
+              referrerPolicy="no-referrer"
               className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-zinc-700"
             />
           ) : (
@@ -139,6 +140,7 @@ export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps
                   <img
                     src={avatarUrl}
                     alt={displayName}
+                    referrerPolicy="no-referrer"
                     className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-zinc-700 shrink-0"
                   />
                 ) : (

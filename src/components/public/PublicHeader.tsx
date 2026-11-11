@@ -68,7 +68,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
   const frameworkDomains = [
     {
       code: '01',
-      title: 'Tìm kiếm, đánh giá & quản lý thông tin',
+      title: 'Thông tin & Dữ liệu số',
       skills: [
         'Duyệt, tìm kiếm và lọc dữ liệu, thông tin',
         'Đánh giá dữ liệu, thông tin và nội dung số',
@@ -78,7 +78,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '02',
-      title: 'Giao tiếp & hợp tác',
+      title: 'Giao tiếp & Cộng tác số',
       skills: [
         'Tương tác qua công nghệ số',
         'Chia sẻ qua công nghệ số',
@@ -91,7 +91,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '03',
-      title: 'Sáng tạo nội dung số',
+      title: 'Sáng tạo Nội dung số & AI',
       skills: [
         'Phát triển nội dung số',
         'Tích hợp và tái cấu trúc nội dung số',
@@ -102,7 +102,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '04',
-      title: 'An toàn & trách nhiệm',
+      title: 'An toàn & Bảo mật số',
       skills: [
         'Bảo vệ thiết bị',
         'Bảo vệ dữ liệu cá nhân & riêng tư',
@@ -113,7 +113,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '05',
-      title: 'Nhận diện & giải quyết vấn đề',
+      title: 'Giải quyết Vấn đề số',
       skills: [
         'Xác định & giải quyết sự cố kỹ thuật',
         'Nhận diện nhu cầu & giải pháp công nghệ',
@@ -287,7 +287,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             href="/register"
             className="text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-4 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 shadow-xs"
           >
-            <span>Đăng ký miễn phí</span>
+            <span>Đăng ký</span>
             <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
           </Link>
         </div>

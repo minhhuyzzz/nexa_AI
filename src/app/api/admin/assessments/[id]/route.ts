@@ -16,6 +16,7 @@ const updateAssessmentSchema = z.object({
   is_published: z.boolean().optional(),
   is_vip: z.boolean().optional(),
   access_tier: z.enum(['FREE', 'VIP']).optional(),
+  target_domain: z.string().optional(),
   security_settings: z.record(z.any()).optional(),
 });
 
@@ -187,20 +188,41 @@ export async function PUT(
       );
     }
 
-    if (parsed.data.passing_score !== undefined || parsed.data.duration_minutes !== undefined) {
-      const { count: submissionCount } = await supabase
-        .from('assessment_submissions')
-        .select('*', { count: 'exact', head: true })
-        .eq('assessment_id', id);
+    const needsScoreOrDurationCheck =
+      parsed.data.passing_score !== undefined || parsed.data.duration_minutes !== undefined;
 
-      if (submissionCount && submissionCount > 0) {
-        return NextResponse.json(
-          {
-            error:
-              'Đề thi đã có học viên nộp bài làm. Không được phép thay đổi điểm đạt hoặc thời gian làm bài. Vui lòng tạo phiên bản mới (Clone as Version).',
-          },
-          { status: 400 }
-        );
+    if (needsScoreOrDurationCheck) {
+      const { data: existingAssessment } = await supabase
+        .from('assessments')
+        .select('duration_minutes, passing_score')
+        .eq('id', id)
+        .maybeSingle();
+
+      const isDurationChanged =
+        parsed.data.duration_minutes !== undefined &&
+        existingAssessment &&
+        Number(existingAssessment.duration_minutes) !== Number(parsed.data.duration_minutes);
+
+      const isPassingScoreChanged =
+        parsed.data.passing_score !== undefined &&
+        existingAssessment &&
+        Number(existingAssessment.passing_score) !== Number(parsed.data.passing_score);
+
+      if (isDurationChanged || isPassingScoreChanged) {
+        const { count: submissionCount } = await supabase
+          .from('assessment_submissions')
+          .select('*', { count: 'exact', head: true })
+          .eq('assessment_id', id);
+
+        if (submissionCount && submissionCount > 0) {
+          return NextResponse.json(
+            {
+              error:
+                'Đề thi đã có học viên nộp bài làm. Không được phép thay đổi điểm đạt hoặc thời gian làm bài. Vui lòng tạo phiên bản mới (Clone as Version).',
+            },
+            { status: 400 }
+          );
+        }
       }
     }
 

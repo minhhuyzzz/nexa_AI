@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -112,6 +112,30 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
     setToast({ type, text });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Tính số lượng câu hỏi thực tế của từng miền trong đề
+  const domainItemCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    domains.forEach((d) => {
+      counts[d.code] = 0;
+    });
+
+    items.forEach((it) => {
+      const comp = Array.isArray(it.competencies) ? it.competencies[0] : it.competencies;
+      const dom = Array.isArray(comp?.competency_domains)
+        ? comp?.competency_domains[0]
+        : comp?.competency_domains;
+      const dCode = dom?.code;
+      if (dCode && counts[dCode] !== undefined) {
+        counts[dCode]++;
+      } else if (comp?.domain_id) {
+        const matched = domains.find((d) => d.id === comp.domain_id);
+        if (matched) counts[matched.code]++;
+      }
+    });
+
+    return counts;
+  }, [items, domains]);
 
   if (!assessment) {
     return (
@@ -400,6 +424,54 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
             <Plus className="w-4 h-4" />
             <span>Thêm câu hỏi mới</span>
           </button>
+        </div>
+      </div>
+
+      {/* 5-Domain Distribution Bar (Giúp Admin kiểm tra tính đồng đều của 5 miền) */}
+      <div className="p-4 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-xs space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <span>Phân bổ câu hỏi 5 miền năng lực số</span>
+          </span>
+          {Object.values(domainItemCounts).every((c) => c > 0 && c === Object.values(domainItemCounts)[0]) && items.length > 0 ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Phân bổ đều ({items.length / 5} câu/miền)</span>
+            </span>
+          ) : (
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+              Khuyến nghị: Phân bổ đều câu hỏi cho cả 5 miền để kết quả chẩn đoán chính xác nhất
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+          {domains.map((dom) => {
+            const count = domainItemCounts[dom.code] || 0;
+            return (
+              <div
+                key={dom.id}
+                className={`p-2.5 rounded-xl border flex items-center justify-between transition-colors ${
+                  count === 0
+                    ? 'border-amber-300 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20'
+                    : 'border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40'
+                }`}
+              >
+                <div className="space-y-0.5 truncate pr-1">
+                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-neutral-400">
+                    {dom.code}
+                  </span>
+                  <div className="text-[11px] font-medium text-neutral-800 dark:text-zinc-200 truncate">
+                    {dom.title.split('&')[0].trim()}
+                  </div>
+                </div>
+                <span className={`font-mono font-bold text-xs shrink-0 ${count === 0 ? 'text-amber-600' : 'text-blue-600'}`}>
+                  {count} câu
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

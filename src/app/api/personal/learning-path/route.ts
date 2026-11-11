@@ -131,7 +131,8 @@ export async function GET() {
             domainScores = domainScores || {};
             let lowest = 999;
             let lowestCode = '01';
-            summary.radarData.forEach((d) => {
+            const diagnosticSource = summary.baselineRadarData || summary.radarData;
+            diagnosticSource.forEach((d) => {
               const norm = normalizeDomainCode(d.code);
               domainScores![norm] = d.score;
               domainScores![d.code] = d.score;

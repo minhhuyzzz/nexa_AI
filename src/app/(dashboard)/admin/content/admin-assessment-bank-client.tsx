@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   FileCheck,
   BookOpen,
@@ -80,6 +81,7 @@ export function AdminAssessmentBankClient({
   competencies,
   pendingContributionsCount = 0,
 }: Props) {
+  const router = useRouter();
   const [assessments, setAssessments] = useState<AssessmentItemRecord[]>(initialAssessments);
 
   // Filters
@@ -110,6 +112,7 @@ export function AdminAssessmentBankClient({
   // Form State for Create / Edit Assessment
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [formTargetDomain, setFormTargetDomain] = useState('ALL');
   const [formDuration, setFormDuration] = useState(45);
   const [formPassingScore, setFormPassingScore] = useState(70);
   const [formReward, setFormReward] = useState(50);
@@ -164,6 +167,7 @@ export function AdminAssessmentBankClient({
     setEditingAssessment(null);
     setFormTitle('');
     setFormDescription('Bài khảo thí chuẩn hóa đo lường 5 miền năng lực số toàn diện.');
+    setFormTargetDomain('ALL');
     setFormDuration(45);
     setFormPassingScore(70);
     setFormReward(50);
@@ -177,6 +181,7 @@ export function AdminAssessmentBankClient({
     setEditingAssessment(exam);
     setFormTitle(exam.title);
     setFormDescription(exam.description || '');
+    setFormTargetDomain((exam as any).target_domain || 'ALL');
     setFormDuration(exam.duration_minutes);
     setFormPassingScore(exam.passing_score);
     setFormReward(exam.point_reward);
@@ -318,9 +323,10 @@ export function AdminAssessmentBankClient({
           body: JSON.stringify({
             title: formTitle.trim(),
             description: formDescription.trim(),
-            duration_minutes: Number(formDuration),
-            passing_score: Number(formPassingScore),
-            point_reward: Number(formReward),
+            duration_minutes: Number(formDuration) || 45,
+            passing_score: Number(formPassingScore) || 70,
+            point_reward: Number(formReward) || 50,
+            target_domain: formTargetDomain,
             is_vip: formIsVip,
             access_tier: formIsVip ? 'VIP' : 'FREE',
             is_published: formIsPublished,
@@ -350,7 +356,10 @@ export function AdminAssessmentBankClient({
         };
 
         setAssessments((prev) => [newRecord, ...prev]);
-        showToast('Đã tạo đề thi mới! Bạn có thể thêm câu hỏi ngay bây giờ.');
+        setIsCreateModalOpen(false);
+        showToast('Đã tạo đề thi mới! Đang chuyển đến trình biên soạn câu hỏi...');
+        router.push(`/admin/content/assessments/${created.id}`);
+        return;
       }
 
       setIsCreateModalOpen(false);
@@ -641,13 +650,25 @@ export function AdminAssessmentBankClient({
             <span>Nạp hàng loạt</span>
           </button>
 
-          <Link
-            href="/admin/content/assessments/new"
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2"
+          <button
+            type="button"
+            onClick={() => {
+              setEditingAssessment(null);
+              setFormTitle('');
+              setFormDescription('');
+              setFormTargetDomain('ALL');
+              setFormDuration(45);
+              setFormPassingScore(70);
+              setFormReward(50);
+              setFormIsVip(false);
+              setFormIsPublished(false);
+              setIsCreateModalOpen(true);
+            }}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
             <span>Tạo đề chuẩn mới</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -688,7 +709,7 @@ export function AdminAssessmentBankClient({
             className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
             <option value="ALL">Phân hạng: Tất cả</option>
-            <option value="VIP">VIP</option>
+            <option value="VIP">Có khóa</option>
             <option value="FREE">Miễn phí</option>
           </select>
         </div>
@@ -710,19 +731,19 @@ export function AdminAssessmentBankClient({
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto min-h-[420px] pb-52">
-            <table className="w-full text-left text-xs min-w-[1100px]">
+          <div className="overflow-x-auto min-h-[240px] pb-16">
+            <table className="w-full text-left text-xs min-w-[1020px]">
               <thead>
                 <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 text-xs font-medium">
-                  <th className="py-3 px-4 min-w-[240px]">Bài khảo thí</th>
-                  <th className="py-3 px-4 min-w-[140px]">Miền năng lực</th>
-                  <th className="py-3 px-4 min-w-[140px]">Dạng câu hỏi</th>
-                  <th className="py-3 px-4 text-center min-w-[70px]">Số câu</th>
-                  <th className="py-3 px-4 min-w-[160px]">Thời gian &amp; ngưỡng đạt</th>
-                  <th className="py-3 px-4 text-center min-w-[90px]">Phân hạng</th>
-                  <th className="py-3 px-4 min-w-[140px]">Trạng thái phát hành</th>
-                  <th className="py-3 px-4 min-w-[140px]">Nguồn</th>
-                  <th className="py-3 px-4 text-right min-w-[100px]">Thao tác</th>
+                  <th className="py-3 px-4 min-w-[260px]">Bài khảo thí</th>
+                  <th className="py-3 px-4 min-w-[130px]">Miền năng lực</th>
+                  <th className="py-3 px-4 min-w-[120px]">Dạng câu hỏi</th>
+                  <th className="py-3 px-4 text-center min-w-[65px]">Số câu</th>
+                  <th className="py-3 px-4 min-w-[150px]">Thời gian &amp; ngưỡng đạt</th>
+                  <th className="py-3 px-4 text-center min-w-[85px]">Phân hạng</th>
+                  <th className="py-3 px-4 min-w-[130px]">Trạng thái</th>
+                  <th className="py-3 px-4 min-w-[130px]">Nguồn</th>
+                  <th className="py-3 px-4 text-right min-w-[90px]">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -732,15 +753,15 @@ export function AdminAssessmentBankClient({
                   return (
                     <tr key={exam.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
                       {/* Bài khảo thí */}
-                      <td className="py-3.5 px-4 min-w-[240px] max-w-[320px]">
+                      <td className="py-3.5 px-4 min-w-[260px] max-w-[420px]">
                         <div className="flex items-center gap-2.5">
                           <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <div className="group relative min-w-0 max-w-[240px] sm:max-w-[280px]">
+                              <div className="group relative min-w-0 flex-1">
                                 <Link
                                   href={`/admin/content/assessments/${exam.id}`}
-                                  className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block truncate transition-colors leading-snug cursor-pointer"
+                                  className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block transition-colors leading-snug cursor-pointer line-clamp-1"
                                   title={exam.title}
                                 >
                                   {exam.title}
@@ -803,16 +824,17 @@ export function AdminAssessmentBankClient({
                         <button
                           type="button"
                           onClick={() => handleToggleVip(exam)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          title={exam.is_vip ? 'Cần nâng cấp để mở khóa (Bấm để chuyển sang Miễn phí)' : 'Miễn phí (Bấm để đặt khóa)'}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer ${
                             exam.is_vip
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                              ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                              : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                           }`}
                         >
                           {exam.is_vip ? (
                             <>
-                              <Crown className="w-3 h-3 text-amber-600" />
-                              <span>VIP</span>
+                              <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                              <span>Có khóa</span>
                             </>
                           ) : (
                             <>
@@ -1042,42 +1064,25 @@ export function AdminAssessmentBankClient({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">Thời Lượng (Phút)</label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={300}
-                    value={formDuration}
-                    onChange={(e) => setFormDuration(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded border border-slate-200 font-mono text-slate-900 focus:outline-hidden focus:border-sky-600 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">Chuẩn Đạt (%)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={formPassingScore}
-                    onChange={(e) => setFormPassingScore(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded border border-slate-200 font-mono text-slate-900 focus:outline-hidden focus:border-sky-600 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">Điểm thưởng</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1000}
-                    value={formReward}
-                    onChange={(e) => setFormReward(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded border border-slate-200 font-mono text-slate-900 focus:outline-hidden focus:border-sky-600 text-xs"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1">
+                  Miền Năng Lực Số (Khảo thí trọng tâm) *
+                </label>
+                <select
+                  value={formTargetDomain}
+                  onChange={(e) => setFormTargetDomain(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 focus:outline-hidden focus:border-blue-600 text-xs cursor-pointer font-medium"
+                >
+                  <option value="ALL">Đa Miền Năng Lực Số (Đánh giá toàn diện 5 miền)</option>
+                  <option value="01">Miền 01: Thông tin &amp; Dữ liệu số</option>
+                  <option value="02">Miền 02: Giao tiếp &amp; Cộng tác số</option>
+                  <option value="03">Miền 03: Sáng tạo Nội dung số &amp; AI</option>
+                  <option value="04">Miền 04: An toàn &amp; Bảo mật số</option>
+                  <option value="05">Miền 05: Giải quyết Vấn đề số</option>
+                </select>
+                <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Đề thi được phân loại theo chuẩn 5 miền năng lực số để người học dễ dàng lọc và đánh giá đúng trọng tâm.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-3">
@@ -1087,30 +1092,30 @@ export function AdminAssessmentBankClient({
                     <button
                       type="button"
                       onClick={() => setFormIsVip(false)}
-                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold text-center transition-colors ${
+                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold text-center transition-colors cursor-pointer ${
                         !formIsVip
                           ? 'bg-sky-50 border-sky-300 text-sky-800'
                           : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      FREE (Tự do)
+                      Miễn phí
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormIsVip(true)}
-                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold text-center transition-colors ${
+                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold text-center transition-colors cursor-pointer ${
                         formIsVip
                           ? 'bg-amber-50 border-amber-300 text-amber-800'
                           : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      VIP (Khóa nâng cao)
+                      Có khóa (Cần nâng cấp)
                     </button>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1">
                     {formIsVip
-                      ? 'Chỉ tài khoản người học đã nâng cấp gói VIP mới được làm bài này'
-                      : 'Mọi người học tài khoản Free đều có thể truy cập làm bài'}
+                      ? 'Yêu cầu người học phải nâng cấp gói để mở khóa làm bài này'
+                      : 'Mọi người học tài khoản miễn phí đều có thể truy cập làm bài'}
                   </p>
                 </div>
 
@@ -1446,7 +1451,7 @@ export function AdminAssessmentBankClient({
                 }`}
               >
                 <Shield className="w-3.5 h-3.5" />
-                <span>Bảo mật &amp; Giám thị (11 công tắc)</span>
+                <span>Cấu hình trải nghiệm thi</span>
               </button>
             </div>
 
@@ -1537,7 +1542,7 @@ export function AdminAssessmentBankClient({
                               : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900'
                           }`}
                         >
-                          Gói Chuyên sâu
+                          Có khóa
                         </button>
                       </div>
                     </div>
@@ -1591,6 +1596,7 @@ export function AdminAssessmentBankClient({
                   value={settingsSecurity}
                   onChange={setSettingsSecurity}
                   disabled={isSavingSettings}
+                  mode="canonical"
                 />
               )}
 
