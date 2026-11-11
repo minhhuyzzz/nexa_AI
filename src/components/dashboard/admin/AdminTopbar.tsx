@@ -17,6 +17,7 @@ const adminRouteTitleMap: Record<string, string> = {
   '/admin/organizations': 'Tổ chức B2B',
   '/admin/plans': 'Gói dịch vụ',
   '/admin/transactions': 'Thanh toán & Đối soát',
+  '/admin/baseline': 'Khảo thí đầu vào',
   '/admin/content': 'Ngân hàng đề chuẩn',
   '/admin/frameworks': 'Khung 5 miền năng lực',
   '/admin/learning-paths': 'Lộ trình học',

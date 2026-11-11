@@ -3,10 +3,9 @@
   <rect width="64" height="64" rx="14" fill="#000000" />
   <rect x="0.5" y="0.5" width="63" height="63" rx="13.5" stroke="#27272A" stroke-width="1" />
   
-  <!-- Optical Centered Razor Nexus N (44x44 at 10, 10) -->
+  <!-- Optical Centered Kinetic Monolith (44x44 at 10, 10) -->
   <g transform="translate(10, 10) scale(0.44)">
-    <rect x="18" y="18" width="16" height="64" rx="2" fill="#FFFFFF" />
-    <rect x="66" y="18" width="16" height="64" rx="2" fill="#FFFFFF" />
-    <polygon points="34,18 50,18 66,82 50,82" fill="#60A5FA" />
+    <path d="M18 18 H36 V48 L58 70 V82 H40 L18 60 Z" fill="#FFFFFF" />
+    <path d="M82 82 H64 V52 L42 30 V18 H60 L82 40 Z" fill="#60A5FA" />
   </g>
 </svg>
