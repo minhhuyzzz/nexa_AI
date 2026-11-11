@@ -91,6 +91,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isSubmittingNew, setIsSubmittingNew] = useState(false);
   const [newPrompt, setNewPrompt] = useState('');
+  const [newPoints, setNewPoints] = useState(4);
   const [newDomainId, setNewDomainId] = useState(domains[0]?.id || '');
   const [newOptions, setNewOptions] = useState<Option[]>([
     { content: '', is_correct: true, explanation: '' },
@@ -101,6 +102,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
 
   // State Chỉnh sửa câu hỏi hiện có
   const [editPrompt, setEditPrompt] = useState('');
+  const [editPoints, setEditPoints] = useState(4);
   const [editDomainId, setEditDomainId] = useState('');
   const [editOptions, setEditOptions] = useState<Option[]>([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -171,6 +173,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   const handleStartEdit = (item: Item) => {
     setEditingItemId(item.id);
     setEditPrompt(item.prompt);
+    setEditPoints(item.points || 4);
     setEditDomainId(getDomainIdFromItem(item));
     const existingOpts = item.item_options || [];
     if (existingOpts.length === 0) {
@@ -216,7 +219,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
         body: JSON.stringify({
           type: 'MCQ',
           prompt: editPrompt.trim(),
-          points: 1,
+          points: Number(editPoints) || 4,
           competency_id: compId,
           options: editOptions.map((o) => ({
             id: o.id,
@@ -238,7 +241,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
             return {
               ...item,
               prompt: editPrompt.trim(),
-              points: 1,
+              points: Number(editPoints) || 4,
               competency_id: compId,
               competencies: {
                 domain_id: editDomainId,
@@ -287,7 +290,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
         body: JSON.stringify({
           type: 'MCQ',
           prompt: newPrompt.trim(),
-          points: 1,
+          points: Number(newPoints) || 4,
           competency_id: compId,
           options: newOptions.map((o) => ({
             content: o.content.trim(),
@@ -305,7 +308,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
         id: data.item?.id || `new-${Date.now()}`,
         prompt: newPrompt.trim(),
         type: 'MCQ',
-        points: 1,
+        points: Number(newPoints) || 4,
         order_index: items.length + 1,
         competency_id: compId,
         competencies: {
@@ -321,6 +324,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
       setItems((prev) => [...prev, createdItem]);
       setIsAddingNew(false);
       setNewPrompt('');
+      setNewPoints(4);
       setNewOptions([
         { content: '', is_correct: true, explanation: '' },
         { content: '', is_correct: false, explanation: '' },
@@ -514,7 +518,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div className="md:col-span-3 space-y-1.5">
               <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                 Nội dung câu hỏi (Prompt) <span className="text-red-500">*</span>
@@ -543,6 +547,20 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
+                Điểm câu hỏi
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={newPoints}
+                onChange={(e) => setNewPoints(Number(e.target.value) || 1)}
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-mono"
+              />
             </div>
           </div>
 
@@ -685,7 +703,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div className="md:col-span-3 space-y-1.5">
                       <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                         Nội dung câu hỏi
@@ -713,6 +731,20 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
+                        Điểm câu hỏi
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={editPoints}
+                        onChange={(e) => setEditPoints(Number(e.target.value) || 1)}
+                        className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-mono"
+                      />
                     </div>
                   </div>
 

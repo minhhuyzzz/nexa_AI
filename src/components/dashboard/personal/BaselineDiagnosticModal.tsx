@@ -664,7 +664,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
               <div className="lg:col-span-5 flex flex-col justify-between gap-3">
                 <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
                   <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">
-                    Điểm số bài khảo sát:
+                    Số câu đúng &amp; Điểm số:
                   </span>
                   <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
                     {submitResult.totalScore} / {submitResult.maxScore} đ
@@ -674,12 +674,12 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
 
                 <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
                   <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">
-                    Tỷ lệ chuẩn hóa:
+                    Chuẩn hóa 5 miền năng lực:
                   </span>
                   <div className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
                     {submitResult.percentage}%
                   </div>
-                  <span className="text-[10px] text-slate-500">Mục tiêu chuẩn: 70%</span>
+                  <span className="text-[10px] text-slate-500">Bình quân 20% mỗi miền</span>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
@@ -751,33 +751,66 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                 </div>
               </div>
             ) : (
-              <div className="relative overflow-hidden p-5 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/30 space-y-3 text-xs">
-                <div className="flex items-start gap-3.5">
-                  {/* Biểu tượng Ổ Khóa Mở với hiệu ứng nảy (Bounce & Glow) */}
-                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-md transition-all duration-700 ${
-                    isLockPopped
-                      ? 'bg-emerald-600 text-white scale-110 shadow-emerald-500/30'
-                      : 'bg-amber-500 text-white scale-95'
-                  }`}>
-                    {isLockPopped ? (
-                      <Unlock className="w-6 h-6 animate-in zoom-in duration-300" strokeWidth={2.2} />
-                    ) : (
-                      <Lock className="w-5 h-5" strokeWidth={2} />
+              <div className={`relative overflow-hidden p-5 rounded-2xl border transition-all duration-700 space-y-3 text-xs ${
+                isLockPopped
+                  ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/30'
+                  : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/40'
+              }`}>
+                {/* Hiệu ứng tia sáng phát quang khi mở khóa */}
+                {isLockPopped && (
+                  <div className="absolute -right-6 -top-6 w-28 h-28 bg-emerald-400/20 rounded-full blur-xl pointer-events-none animate-pulse" />
+                )}
+
+                <div className="flex items-start gap-4">
+                  {/* Biểu tượng Ổ Khóa Mở với hiệu ứng bung chốt, sóng xung kích (Pulse Shockwave) & Ngôi sao lấp lánh */}
+                  <div className="relative shrink-0">
+                    {isLockPopped && (
+                      <span className="absolute inset-0 rounded-2xl bg-emerald-500/30 animate-ping [animation-duration:1.5s]" />
                     )}
+                    <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-all duration-700 ${
+                      isLockPopped
+                        ? 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white scale-105 shadow-emerald-500/40'
+                        : 'bg-amber-500 text-white scale-95'
+                    }`}>
+                      {isLockPopped ? (
+                        <div className="relative flex items-center justify-center animate-in zoom-in-75 duration-500">
+                          <Unlock className="w-6 h-6 text-white" strokeWidth={2.4} />
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-1.5 -right-1.5 animate-spin [animation-duration:4s]" />
+                        </div>
+                      ) : (
+                        <Lock className="w-5 h-5 text-white" strokeWidth={2} />
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/70 text-emerald-800 dark:text-emerald-200 font-mono font-bold text-[10px] uppercase tracking-wide">
-                        ĐÃ MỞ KHÓA MIỄN PHÍ
+                      <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-[10px] uppercase tracking-wide inline-flex items-center gap-1 transition-colors duration-500 ${
+                        isLockPopped
+                          ? 'bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200'
+                          : 'bg-slate-200 dark:bg-zinc-800 text-slate-600'
+                      }`}>
+                        {isLockPopped && <Check className="w-3 h-3 stroke-[3]" />}
+                        <span>ĐÃ MỞ KHÓA MIỄN PHÍ</span>
                       </span>
+                      {isLockPopped && (
+                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 animate-in fade-in duration-500">
+                          (Sẵn sàng vào học)
+                        </span>
+                      )}
                     </div>
 
-                    <h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-100">
-                      Miền ưu tiên bồi dưỡng: [{DOMAIN_CATALOG.find((d) => d.code === submitResult.weakestDomainCode)?.title}] ({submitResult.domainScores[submitResult.weakestDomainCode] ?? 0}%)
+                    <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 flex-wrap">
+                      <span>Miền ưu tiên bồi dưỡng:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                        [{DOMAIN_CATALOG.find((d) => d.code === submitResult.weakestDomainCode)?.title}]
+                      </span>
+                      <span className="text-xs font-mono font-bold text-slate-500">
+                        ({submitResult.domainScores[submitResult.weakestDomainCode] ?? 0}%)
+                      </span>
                     </h4>
 
-                    <p className="text-emerald-800 dark:text-emerald-300 text-[11px] leading-relaxed">
+                    <p className="text-slate-600 dark:text-neutral-300 text-[11px] leading-relaxed">
                       Ổ khóa học phần của miền này đã được mở! Bạn có thể vào học ngay toàn bộ bài giảng và bài tập thực hành hoàn toàn miễn phí.
                     </p>
                   </div>

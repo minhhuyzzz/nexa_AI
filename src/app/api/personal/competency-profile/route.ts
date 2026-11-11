@@ -97,6 +97,7 @@ export async function GET() {
     }
 
     const payload = {
+      userId: user.id,
       hasTakenAssessment: summary.hasTakenAssessment,
       totalAssessmentsCompleted: summary.totalAssessmentsCompleted,
       assessedDomainsCount: summary.assessedDomainsCount,

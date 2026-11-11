@@ -35,6 +35,7 @@ import {
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { SilkRibbonHeroIllustration } from '@/components/dashboard/personal/SilkRibbonHeroIllustration';
 import { BaselineDiagnosticModal } from '@/components/dashboard/personal/BaselineDiagnosticModal';
+import { useCountUp } from '@/hooks/useCountUp';
 
 interface RealAssessment {
   id: string;
@@ -66,6 +67,7 @@ export default function LearnerDashboardPage() {
 
 
   const [stats, setStats] = useState<{
+    userId?: string;
     nickname: string;
     fullName?: string;
     avatarUrl?: string | null;
@@ -91,6 +93,7 @@ export default function LearnerDashboardPage() {
   });
 
   const [competencyProfile, setCompetencyProfile] = useState<{
+    userId?: string;
     hasTakenAssessment?: boolean;
     totalAssessmentsCompleted?: number;
     assessedDomainsCount?: number;
@@ -103,6 +106,8 @@ export default function LearnerDashboardPage() {
       weakest: { code: string; name: string; score: number; level: string; isGap: boolean } | null;
     } | null;
   } | null>(null);
+
+  const animatedPoints = useCountUp(stats.points, 900);
 
   const [assessments, setAssessments] = useState<RealAssessment[]>([]);
   const [baselineTest, setBaselineTest] = useState<{ id: string; title: string; duration_minutes?: number } | null>(null);
@@ -120,9 +125,13 @@ export default function LearnerDashboardPage() {
   const handleCloseBaselineModal = useCallback(() => {
     setIsBaselineModalOpen(false);
     if (typeof window !== 'undefined') {
+      const uid = competencyProfile?.userId || stats.userId;
+      if (uid) {
+        sessionStorage.setItem(`nexa_dismissed_baseline_${uid}`, 'true');
+      }
       sessionStorage.setItem('nexa_dismissed_baseline_modal', 'true');
     }
-  }, []);
+  }, [competencyProfile?.userId, stats.userId]);
 
   const loadLeaderboard = useCallback(async () => {
     setLoadingLeaderboard(true);
@@ -170,6 +179,7 @@ export default function LearnerDashboardPage() {
           const json = await res.json();
           if (json.success) {
             setStats({
+              userId: json.user?.id,
               nickname: json.user?.nickname || 'Học viên',
               fullName: json.user?.fullName || json.user?.nickname || 'Học viên',
               avatarUrl: json.user?.avatarUrl || null,
@@ -232,7 +242,8 @@ export default function LearnerDashboardPage() {
 
             // Tự động mở Modal Khảo thí đầu vào cho tài khoản mới (Lựa chọn 2: Onboarding First có đường lui)
             if (profileData.hasTakenAssessment === false) {
-              const dismissed = typeof window !== 'undefined' ? sessionStorage.getItem('nexa_dismissed_baseline_modal') : null;
+              const userKey = profileData.userId ? `nexa_dismissed_baseline_${profileData.userId}` : 'nexa_dismissed_baseline_modal';
+              const dismissed = typeof window !== 'undefined' ? sessionStorage.getItem(userKey) : null;
               if (!dismissed) {
                 setIsBaselineModalOpen(true);
               }
@@ -496,7 +507,7 @@ export default function LearnerDashboardPage() {
                 />
               </svg>
               <span className="absolute font-bold text-xs text-blue-700 dark:text-blue-300 font-mono tabular-nums">
-                {stats.points}
+                {animatedPoints}
               </span>
             </div>
             <div>
@@ -514,7 +525,7 @@ export default function LearnerDashboardPage() {
                 </button>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">
-                <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{stats.points}</strong> / {stats.levelNextTarget} PTS
+                <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{animatedPoints}</strong> / {stats.levelNextTarget} PTS
               </div>
             </div>
           </div>
@@ -684,7 +695,7 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
           <div className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums my-1">
-            {stats.points}
+            {animatedPoints}
           </div>
           <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Tổng điểm hoạt động</div>
         </div>
@@ -1512,7 +1523,6 @@ export default function LearnerDashboardPage() {
         isOpen={isBaselineModalOpen}
         onClose={handleCloseBaselineModal}
         onCompleted={() => {
-          handleCloseBaselineModal();
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('profile-updated'));
           }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useCountUp } from '@/hooks/useCountUp';
 import {
   User,
   CheckCircle2,
@@ -372,10 +373,11 @@ function LearnerProfileContent() {
   };
 
   // Level & XP math
-  const currentPoints = profile?.points ?? 9;
+  const rawPoints = profile?.points ?? 0;
+  const currentPoints = useCountUp(rawPoints, 900);
   const levelTarget = profile?.levelNextTarget ?? 150;
-  const pointsRemaining = Math.max(0, levelTarget - currentPoints);
-  const progressPercent = Math.min(100, Math.max(5, Math.round((currentPoints / levelTarget) * 100)));
+  const pointsRemaining = Math.max(0, levelTarget - rawPoints);
+  const progressPercent = Math.min(100, Math.max(5, Math.round((rawPoints / levelTarget) * 100)));
 
   const initials = (profile?.nickname || 'Học viên')
     .split(' ')

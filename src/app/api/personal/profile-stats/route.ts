@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { PointLedgerService } from '@/features/gamification/services/point-ledger.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,11 +72,40 @@ export async function GET() {
 
     if (profile.last_login_date !== todayStr) {
       newLoginToday = true;
-      points = points + 1;
       totalLoginDays = (totalLoginDays || 0) + 1;
       loginStreak = profile.last_login_date === yesterdayStr ? (loginStreak || 0) + 1 : 1;
+      points = points + 1;
 
-      await supabase
+      // Use admin client when SERVICE_ROLE_KEY is available to bypass non-admin points trigger
+      let db = supabase;
+      try {
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          db = createAdminClient();
+        }
+      } catch {}
+
+      try {
+        if (typeof db?.rpc === 'function') {
+          const grantRes = await PointLedgerService.grantPoints(db, {
+            userId: effectiveUserId,
+            delta: 1,
+            eventType: 'STREAK_BONUS',
+            sourceType: 'SYSTEM',
+            idempotencyKey: `DAILY_LOGIN_${effectiveUserId}_${todayStr}`,
+            metadata: {
+              date: todayStr,
+              loginStreak,
+            },
+          });
+          if (grantRes && typeof grantRes.points === 'number') {
+            points = grantRes.points;
+          }
+        }
+      } catch {
+        // Fallback to direct update below
+      }
+
+      await db
         .from('profiles')
         .update({
           points,

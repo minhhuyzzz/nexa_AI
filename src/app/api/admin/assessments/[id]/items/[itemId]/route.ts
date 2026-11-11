@@ -124,12 +124,27 @@ export async function PUT(
 
     let competencyId = rawCompId;
     if (!competencyId && skill_code) {
-      const { data: comp } = await adminSupabase
+      let comp: any = null;
+      const adminCompRes = await adminSupabase
         .from('competencies')
         .select('id')
         .eq('skill_code', skill_code.trim())
         .limit(1)
         .maybeSingle();
+
+      if (adminCompRes.error || !adminCompRes.data) {
+        const userSupabase = await createClient();
+        const userCompRes = await userSupabase
+          .from('competencies')
+          .select('id')
+          .eq('skill_code', skill_code.trim())
+          .limit(1)
+          .maybeSingle();
+        comp = userCompRes.data;
+      } else {
+        comp = adminCompRes.data;
+      }
+
       if (comp) competencyId = comp.id;
     }
 

@@ -513,9 +513,50 @@ export async function POST(
       }
     }
 
-    const percentage = hasOpenResponse
+    // 6b. Compute Domain Scores & Balanced Equal Weighting Percentage
+    const domainScores: Record<string, number | null> = {};
+    const domainCodes = ['01', '02', '03', '04', '05'];
+    domainCodes.forEach((code) => {
+      const max = domainMax[code] || 0;
+      const earned = domainEarned[code] || 0;
+      domainScores[code] = max > 0 ? Math.round((earned / max) * 100) : null;
+    });
+
+    let weakestDomainCode = '01';
+    let lowestScore = 999;
+    domainCodes.forEach((code) => {
+      const score = domainScores[code];
+      if (score !== null && score < lowestScore) {
+        lowestScore = score;
+        weakestDomainCode = code;
+      }
+    });
+
+    const isBaseline = Boolean(
+      assessment.is_system_baseline ||
+      assessment.id === 'a0000000-0000-0000-0000-000000000001'
+    );
+
+    // Raw question-weighted percentage
+    const rawPercentage = hasOpenResponse
       ? null
       : maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+
+    // For baseline assessments: overall percentage is equal-weighted across the 5 domains (20% per domain)
+    // regardless of question count differences across domains
+    const assessedDomainScores = domainCodes
+      .map((code) => domainScores[code])
+      .filter((s): s is number => s !== null);
+
+    const equalDomainPercentage =
+      assessedDomainScores.length > 0
+        ? Math.round(assessedDomainScores.reduce((sum, s) => sum + s, 0) / assessedDomainScores.length)
+        : (rawPercentage !== null ? Math.round(rawPercentage) : 0);
+
+    const percentage = isBaseline
+      ? equalDomainPercentage
+      : (rawPercentage !== null ? Number(rawPercentage.toFixed(1)) : null);
+
     const isPassed = hasOpenResponse
       ? null
       : percentage !== null && percentage >= passingScore;
@@ -624,26 +665,7 @@ export async function POST(
       });
     }
 
-    // 10. Compute Domain Scores & Progressive Competency Snapshot
-    const domainScores: Record<string, number | null> = {};
-    const domainCodes = ['01', '02', '03', '04', '05'];
-    domainCodes.forEach((code) => {
-      const max = domainMax[code] || 0;
-      const earned = domainEarned[code] || 0;
-      domainScores[code] = max > 0 ? Math.round((earned / max) * 100) : null;
-    });
-
-    let weakestDomainCode = '01';
-    let lowestScore = 999;
-    domainCodes.forEach((code) => {
-      const score = domainScores[code];
-      if (score !== null && score < lowestScore) {
-        lowestScore = score;
-        weakestDomainCode = code;
-      }
-    });
-
-    const isBaseline = Boolean(assessment.is_system_baseline);
+    // 10. Progressive Competency Snapshot (NEXA Standard)
     const meetsPassingStandard = Boolean(isPassed === true && percentage !== null && percentage >= 70);
 
     // CƠ CHẾ TÍCH LŨY HỒ SƠ NĂNG LỰC LÂU DÀI:

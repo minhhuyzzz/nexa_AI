@@ -109,6 +109,10 @@ export function PersonalAvatarMenu() {
     await supabase.auth.signOut();
     document.cookie = 'nexa_demo_role=; path=/; max-age=0';
     document.cookie = 'nexa_active_workspace=; path=/; max-age=0';
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('nexa_dismissed_baseline_modal');
+      localStorage.removeItem('nexa_unlocked_domain');
+    }
     router.push('/login');
     router.refresh();
   };

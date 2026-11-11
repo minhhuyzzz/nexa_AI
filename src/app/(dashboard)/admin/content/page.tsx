@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import {
   AdminAssessmentBankClient,
   type AssessmentItemRecord,
@@ -7,10 +8,13 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function AdminContentPage() {
-  const supabase = createAdminClient();
+  const adminSupabase = createAdminClient();
+  const userSupabase = await createClient();
 
   // 1. Fetch official canonical system assessments only (Exclude Org & Personal assessments)
-  const { data: rawAssessments } = await supabase
+  // Dual-client fallback: if service_role lacks table privileges on competencies (42501), fallback to authenticated user client
+  let rawAssessments: any[] | null = null;
+  const adminAssessmentsRes = await adminSupabase
     .from('assessments')
     .select(`
       id,
@@ -45,6 +49,46 @@ export default async function AdminContentPage() {
     .is('organization_id', null)
     .order('created_at', { ascending: false });
 
+  if (adminAssessmentsRes.error || !adminAssessmentsRes.data) {
+    const userAssessmentsRes = await userSupabase
+      .from('assessments')
+      .select(`
+        id,
+        title,
+        description,
+        duration_minutes,
+        passing_score,
+        point_reward,
+        is_published,
+        is_vip,
+        access_tier,
+        visibility,
+        organization_id,
+        security_settings,
+        created_at,
+        assessment_items (
+          id,
+          type,
+          points,
+          competency_id,
+          is_multi_competency,
+          competencies (
+            skill_code,
+            domain_id,
+            competency_domains (
+              code,
+              title
+            )
+          )
+        )
+      `)
+      .is('organization_id', null)
+      .order('created_at', { ascending: false });
+    rawAssessments = userAssessmentsRes.data;
+  } else {
+    rawAssessments = adminAssessmentsRes.data;
+  }
+
   // Strictly isolate: only include system canonical assessments (PUBLIC / SYSTEM_CURATED), never Org or Personal tests
   // Also isolate the Baseline Intake exam into its dedicated '/admin/baseline' workspace
   const filteredCanonical = (rawAssessments || []).filter((a: any) => {
@@ -61,22 +105,55 @@ export default async function AdminContentPage() {
   });
 
   // 2. Fetch competency domains
-  const { data: rawDomains } = await supabase
+  let rawDomains: any[] | null = null;
+  const adminDomainsRes = await adminSupabase
     .from('competency_domains')
     .select('id, code, title')
     .order('domain_index', { ascending: true });
 
+  if (adminDomainsRes.error || !adminDomainsRes.data) {
+    const userDomainsRes = await userSupabase
+      .from('competency_domains')
+      .select('id, code, title')
+      .order('domain_index', { ascending: true });
+    rawDomains = userDomainsRes.data;
+  } else {
+    rawDomains = adminDomainsRes.data;
+  }
+
   // 3. Fetch competencies
-  const { data: rawCompetencies } = await supabase
+  let rawCompetencies: any[] | null = null;
+  const adminCompRes = await adminSupabase
     .from('competencies')
     .select('id, skill_code, title, domain_id')
     .order('skill_code', { ascending: true });
 
+  if (adminCompRes.error || !adminCompRes.data) {
+    const userCompRes = await userSupabase
+      .from('competencies')
+      .select('id, skill_code, title, domain_id')
+      .order('skill_code', { ascending: true });
+    rawCompetencies = userCompRes.data;
+  } else {
+    rawCompetencies = adminCompRes.data;
+  }
+
   // 4. Fetch real pending contributions count from community_contributions
-  const { count: pendingContributionsCount } = await supabase
+  let pendingContributionsCount = 0;
+  const adminContribRes = await adminSupabase
     .from('community_contributions')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'PENDING');
+
+  if (adminContribRes.error) {
+    const userContribRes = await userSupabase
+      .from('community_contributions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'PENDING');
+    pendingContributionsCount = userContribRes.count ?? 0;
+  } else {
+    pendingContributionsCount = adminContribRes.count ?? 0;
+  }
 
   // Format assessments
   const assessments: AssessmentItemRecord[] = filteredCanonical.map((a: any) => {

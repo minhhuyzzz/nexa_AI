@@ -29,13 +29,13 @@ export function NexaLogo({
   const isWhite = variant === 'white';
   const isAccent = variant === 'accent';
 
-  // Kinetic Monolith colors
-  const blade1Class = isWhite
+  // Razor Nexus N colors
+  const pillarClass = isWhite
     ? 'fill-white'
     : isAccent
     ? 'fill-blue-600'
     : 'fill-neutral-900 dark:fill-white';
-  const blade2Class = isWhite
+  const beamClass = isWhite
     ? 'fill-blue-400'
     : isAccent
     ? 'fill-blue-800'
@@ -44,7 +44,7 @@ export function NexaLogo({
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
-      {/* Precision Kinetic Monolith 'N' Emblem (Two Interlocking Blades + 45° Negative Space Slit) */}
+      {/* Precision Razor Nexus 'N' Emblem: Dual Pillars + Dynamic Cobalt Diagonal */}
       <svg
         width={iconSize}
         height={iconSize}
@@ -53,10 +53,12 @@ export function NexaLogo({
         xmlns="http://www.w3.org/2000/svg"
         className="shrink-0 transition-transform duration-200"
       >
-        {/* Blade 1: Diagnostic Foundation & Evidence */}
-        <path d="M18 18 H36 V48 L58 70 V82 H40 L18 60 Z" className={blade1Class} />
-        {/* Blade 2: Digital Mastery & AI Ascent */}
-        <path d="M82 82 H64 V52 L42 30 V18 H60 L82 40 Z" className={blade2Class} />
+        {/* Left Pillar: Diagnostic Baseline & Evidence */}
+        <rect x="18" y="18" width="16" height="64" rx="2" className={pillarClass} />
+        {/* Right Pillar: Competency Benchmark & Mastery */}
+        <rect x="66" y="18" width="16" height="64" rx="2" className={pillarClass} />
+        {/* Dynamic Diagonal Beam: AI Learning Pathway & Ascent */}
+        <polygon points="34,18 50,18 66,82 50,82" className={beamClass} />
       </svg>
 
       {/* Refined Bespoke Geometric Wordmark */}

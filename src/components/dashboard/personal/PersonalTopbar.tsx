@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { PersonalAvatarMenu } from './PersonalAvatarMenu';
 import { NotificationBell } from '../NotificationBell';
 import { Search, Trophy } from 'lucide-react';
+import { useCountUp } from '@/hooks/useCountUp';
 
 export function PersonalTopbar() {
   const [scrolled, setScrolled] = useState(false);
   const [points, setPoints] = useState<number>(0);
+  const animatedPoints = useCountUp(points, 800);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,7 +68,7 @@ export function PersonalTopbar() {
         <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-slate-50/60 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60 group">
           <span className="w-1.5 h-1.5 rounded-full bg-volt ring-2 ring-volt/40" />
           <Trophy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{points} PTS</span>
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{animatedPoints} PTS</span>
         </div>
 
         {/* Notification Bell */}

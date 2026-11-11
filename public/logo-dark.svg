@@ -1,10 +1,11 @@
 <svg width="220" height="60" viewBox="0 0 220 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- NEXA Kinetic Monolith Mark (Scaled 42x42 at x=10, y=9) -->
+  <!-- NEXA Razor Nexus N Mark (Scaled 42x42 at x=10, y=9) -->
   <g transform="translate(10, 9) scale(0.42)">
-    <!-- Blade 1: Diagnostic Foundation (Deep Charcoal #171717) -->
-    <path d="M18 18 H36 V48 L58 70 V82 H40 L18 60 Z" fill="#171717" />
-    <!-- Blade 2: Digital Mastery (Brand Cobalt #2563EB) -->
-    <path d="M82 82 H64 V52 L42 30 V18 H60 L82 40 Z" fill="#2563EB" />
+    <!-- Dual Pillars (Deep Charcoal #171717) -->
+    <rect x="18" y="18" width="16" height="64" rx="2" fill="#171717" />
+    <rect x="66" y="18" width="16" height="64" rx="2" fill="#171717" />
+    <!-- Dynamic Diagonal Beam (Brand Cobalt #2563EB) -->
+    <polygon points="34,18 50,18 66,82 50,82" fill="#2563EB" />
   </g>
 
   <!-- Typography NEXA (Optically centered to mark center y=30) -->

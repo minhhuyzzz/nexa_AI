@@ -340,7 +340,9 @@ export default function AssessmentBriefingPage() {
           isOpen={isBaselineModalOpen}
           onClose={() => setIsBaselineModalOpen(false)}
           onCompleted={() => {
-            router.push('/personal/learning-path');
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('profile-updated'));
+            }
           }}
         />
       </div>

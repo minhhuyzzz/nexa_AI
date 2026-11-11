@@ -83,13 +83,24 @@ export async function POST(
 
     // Platform Admin has global access to system canonical assessments
     if (!hasAccess && assessment.organization_id === null) {
-      const { data: profile } = await db
+      const { data: userProfile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .maybeSingle();
-      if (profile?.role === 'ADMIN') {
+
+      const profileRole = userProfile?.role;
+      if (profileRole === 'ADMIN') {
         hasAccess = true;
+      } else {
+        const { data: adminProfile } = await db
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (adminProfile?.role === 'ADMIN') {
+          hasAccess = true;
+        }
       }
     }
 
