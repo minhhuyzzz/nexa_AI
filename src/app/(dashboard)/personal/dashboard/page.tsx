@@ -61,6 +61,7 @@ export default function LearnerDashboardPage() {
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [isBaselineModalOpen, setIsBaselineModalOpen] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingCompetency, setLoadingCompetency] = useState(true);
   const [loadingAssessments, setLoadingAssessments] = useState(true);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
@@ -232,6 +233,7 @@ export default function LearnerDashboardPage() {
     }
 
     async function loadCompetencyProfile() {
+      setLoadingCompetency(true);
       try {
         const res = await fetch('/api/personal/competency-profile', { cache: 'no-store' });
         if (res.ok) {
@@ -240,7 +242,7 @@ export default function LearnerDashboardPage() {
           if (json.success && (profileData.hasTakenAssessment !== undefined || profileData.totalAssessmentsCompleted !== undefined)) {
             setCompetencyProfile(profileData);
 
-            // Tự động mở Modal Khảo thí đầu vào cho tài khoản mới (Lựa chọn 2: Onboarding First có đường lui)
+            // Tự động mở Modal Khảo thí đầu vào cho tài khoản mới (chưa từng làm bài)
             if (profileData.hasTakenAssessment === false) {
               const userKey = profileData.userId ? `nexa_dismissed_baseline_${profileData.userId}` : 'nexa_dismissed_baseline_modal';
               const dismissed = typeof window !== 'undefined' ? sessionStorage.getItem(userKey) : null;
@@ -252,6 +254,8 @@ export default function LearnerDashboardPage() {
         }
       } catch (e) {
         console.error('Failed to load competency profile:', e);
+      } finally {
+        setLoadingCompetency(false);
       }
     }
 
@@ -461,14 +465,14 @@ export default function LearnerDashboardPage() {
                 <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <span>Chuỗi {stats.loginStreak} ngày</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-mono whitespace-nowrap">
+              <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono whitespace-nowrap">
                 (Tổng {stats.totalLoginDays} ngày)
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               {weekDays.map((item) => (
                 <div key={item.label} className="flex flex-col items-center gap-0.5">
-                  <span className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium">{item.label}</span>
+                  <span className="text-[9px] text-slate-500 dark:text-neutral-400 font-medium">{item.label}</span>
                   <span
                     className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono tabular-nums transition-colors ${
                       item.done
@@ -518,7 +522,7 @@ export default function LearnerDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowLevelModal(true)}
-                  className="text-[10px] text-slate-400 dark:text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer"
+                  className="text-[10px] text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer"
                   title="Xem chi tiết các mốc cấp bậc"
                 >
                   (Quy định cấp độ)
@@ -594,29 +598,35 @@ export default function LearnerDashboardPage() {
           <div className="md:col-span-7 lg:col-span-8 space-y-3.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-200 text-[11px] font-bold font-mono uppercase tracking-wider backdrop-blur-md shadow-2xs">
               <BookOpen className="w-3.5 h-3.5 text-blue-400" strokeWidth={2} />
-              <span>{competencyProfile?.hasTakenAssessment ? 'LỘ TRÌNH CÁ NHÂN' : 'KHẢO THÍ ĐẦU VÀO'}</span>
+              <span>
+                {loadingCompetency
+                  ? 'LỘ TRÌNH NĂNG LỰC SỐ'
+                  : competencyProfile?.hasTakenAssessment
+                  ? 'LỘ TRÌNH CÁ NHÂN'
+                  : 'KHẢO THÍ & LỘ TRÌNH'}
+              </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">
-              {competencyProfile?.hasTakenAssessment
-                ? 'Tiếp tục Lộ trình Bồi dưỡng Năng lực Số'
-                : 'Thiết lập Hồ sơ Năng lực Số Ban Đầu'}
+              Lộ trình Bồi dưỡng Năng lực Số Cá nhân hóa
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed font-normal">
               {competencyProfile?.hasTakenAssessment
                 ? 'Hồ sơ năng lực số của bạn đã sẵn sàng. Hãy tiếp tục chặng học tiếp theo để bồi dưỡng kỹ năng và chinh phục chứng chỉ.'
-                : 'Làm bài khảo thí chuẩn hóa để chẩn đoán chính xác hồ sơ năng lực số và tự động mở khóa lộ trình bồi dưỡng cá nhân hóa.'}
+                : 'Chẩn đoán chính xác hồ sơ năng lực số, phát hiện khoảng trống kỹ năng và mở khóa lộ trình bồi dưỡng cá nhân hóa.'}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1.5">
-              {competencyProfile?.hasTakenAssessment ? (
+              {loadingCompetency ? (
+                <div className="w-44 h-10 rounded-xl bg-blue-600/40 animate-pulse" />
+              ) : competencyProfile?.hasTakenAssessment ? (
                 <Link
                   href="/personal/learning-path"
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-md shadow-blue-600/30 active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Học tiếp</span>
+                  <span>Học tiếp lộ trình</span>
                   <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
                 </Link>
               ) : baselineTestId ? (
@@ -625,13 +635,13 @@ export default function LearnerDashboardPage() {
                   onClick={() => setIsBaselineModalOpen(true)}
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-md shadow-blue-600/30 active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Bắt đầu khảo sát</span>
+                  <span>Bắt đầu khảo sát đầu vào</span>
                   <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
                 </button>
               ) : (
                 <button
                   disabled
-                  className="px-6 py-2.5 rounded-xl bg-slate-800 text-slate-400 text-xs font-semibold inline-flex items-center gap-2 cursor-not-allowed border border-slate-700/50"
+                  className="px-6 py-2.5 rounded-xl bg-slate-800 text-slate-500 text-xs font-semibold inline-flex items-center gap-2 cursor-not-allowed border border-slate-700/50"
                 >
                   <span>Chưa mở đợt thi</span>
                 </button>
@@ -652,64 +662,84 @@ export default function LearnerDashboardPage() {
         </div>
       </div>
 
-      {/* 3. Four Key Metric Cards — Executive Tinted Bento Design, Tránh AI Slop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3. Four Key Metric Cards — Clean Executive Bento Design (#F8FAFC / Dark #111114) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Completed Assessments */}
-        <div className="p-5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-gradient-to-br from-blue-50/40 via-slate-50/60 to-white dark:from-[#111114] dark:to-zinc-900 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-blue-300 dark:hover:border-zinc-700 transition-colors">
+        <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-[#111114] shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
-            <span className="font-semibold text-neutral-800 dark:text-zinc-200">Bài đã hoàn thành</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-100/70 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-2xs">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">Bài đã hoàn thành</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
               <CheckSquare className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
           <div className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums my-1">
-            {competencyProfile?.totalAssessmentsCompleted ?? 0}
+            {loadingCompetency ? (
+              <span className="inline-block w-10 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+            ) : (
+              competencyProfile?.totalAssessmentsCompleted ?? 0
+            )}
           </div>
-          <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Đạt chuẩn đánh giá (≥ 70%)</div>
+          <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">Đạt chuẩn đánh giá (≥ 70%)</div>
         </div>
 
         {/* Card 2: Domains Passed */}
-        <div className="p-5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-gradient-to-br from-emerald-50/40 via-slate-50/60 to-white dark:from-[#111114] dark:to-zinc-900 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-emerald-300 dark:hover:border-zinc-700 transition-colors">
+        <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-[#111114] shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
-            <span className="font-semibold text-neutral-800 dark:text-zinc-200">Miền đạt chuẩn</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">Miền đạt chuẩn</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
               <Target className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
           <div className={`font-extrabold text-neutral-900 dark:text-neutral-100 my-1 ${
             competencyProfile?.hasTakenAssessment ? 'text-3xl font-mono tabular-nums' : 'text-xl'
           }`}>
-            {competencyProfile?.hasTakenAssessment ? `${passedDomainsCount} / 5` : 'Chưa đánh giá'}
+            {loadingCompetency ? (
+              <span className="inline-block w-16 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+            ) : competencyProfile?.hasTakenAssessment ? (
+              `${passedDomainsCount} / 5`
+            ) : (
+              'Chưa đánh giá'
+            )}
           </div>
-          <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
-            {competencyProfile?.hasTakenAssessment ? 'Đạt mức ≥ 70%' : 'Cần làm bài khảo thí ban đầu'}
+          <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">
+            {loadingCompetency ? (
+              <span className="inline-block w-24 h-3 bg-slate-100 dark:bg-zinc-800 rounded animate-pulse" />
+            ) : competencyProfile?.hasTakenAssessment ? (
+              'Đạt mức ≥ 70%'
+            ) : (
+              'Cần làm bài khảo thí ban đầu'
+            )}
           </div>
         </div>
 
         {/* Card 3: Activity Points */}
-        <div className="p-5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-gradient-to-br from-amber-50/40 via-slate-50/60 to-white dark:from-[#111114] dark:to-zinc-900 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-amber-300 dark:hover:border-zinc-700 transition-colors">
+        <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-[#111114] shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
-            <span className="font-semibold text-neutral-800 dark:text-zinc-200">Điểm tích lũy</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-100/70 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-2xs">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">Điểm tích lũy</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
               <Trophy className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
           <div className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums my-1">
-            {animatedPoints}
+            {loadingStats ? (
+              <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+            ) : (
+              animatedPoints
+            )}
           </div>
-          <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Tổng điểm hoạt động</div>
+          <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">Tổng điểm hoạt động</div>
         </div>
 
-        {/* Card 4: Certification Status (Interactive CTA — Thẻ Hành Động Tinh Tế) */}
+        {/* Card 4: Certification Status */}
         <Link
           href="/personal/credentials"
-          className="p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 bg-gradient-to-br from-blue-50/80 via-sky-50/50 to-indigo-50/40 dark:from-blue-950/40 dark:to-zinc-900 shadow-[0_2px_8px_rgba(37,99,235,0.06)] flex flex-col justify-between group hover:border-blue-400 dark:hover:border-blue-600 transition-all cursor-pointer"
+          className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-[#111114] shadow-xs flex flex-col justify-between group hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
         >
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
-            <span className="font-semibold text-blue-950 dark:text-blue-200 group-hover:text-blue-700 dark:group-hover:text-blue-100 transition-colors">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
               Chứng chỉ Năng lực số
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center group-hover:scale-105 shadow-sm shadow-blue-500/25 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center group-hover:scale-105 shadow-2xs transition-transform">
               <Award className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
@@ -717,7 +747,7 @@ export default function LearnerDashboardPage() {
             <span>{stats.isCertUnlocked ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</span>
             <ArrowRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-all" />
           </div>
-          <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 transition-colors">
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 transition-colors">
             Xem điều kiện cấp chứng chỉ &rarr;
           </div>
         </Link>
@@ -737,7 +767,13 @@ export default function LearnerDashboardPage() {
                   </span>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                  {competencyProfile?.hasTakenAssessment ? 'Năng lực số của bạn' : 'Khung năng lực số'}
+                  {loadingCompetency ? (
+                    <span className="inline-block w-36 h-6 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+                  ) : competencyProfile?.hasTakenAssessment ? (
+                    'Năng lực số của bạn'
+                  ) : (
+                    'Khung năng lực số'
+                  )}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                   {competencyProfile?.hasTakenAssessment
@@ -909,7 +945,7 @@ export default function LearnerDashboardPage() {
 
           <div className="pt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
             <span className="flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <Info className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <span>Kết quả được xác minh từ các bài khảo thí và nộp bài hợp lệ.</span>
             </span>
             <Link
@@ -1128,7 +1164,7 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-3 mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500">
+          <div className="pt-3 mt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
             <span>Tiến trình mở khóa chuyên đề bồi dưỡng theo khoảng trống năng lực số thực tế.</span>
             <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">
               Đạt chuẩn: {passedDomainsCount} miền năng lực
@@ -1181,7 +1217,7 @@ export default function LearnerDashboardPage() {
                         {user.rank === 1 ? (
                           <Crown className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
                         ) : (
-                          <span className="w-4 text-center font-mono font-bold text-slate-400 dark:text-neutral-500 shrink-0">
+                          <span className="w-4 text-center font-mono font-bold text-slate-500 dark:text-neutral-400 shrink-0">
                             {user.rank}
                           </span>
                         )}
@@ -1201,12 +1237,12 @@ export default function LearnerDashboardPage() {
                   );
                 })
               ) : (
-                <div className="py-4 text-center text-xs text-slate-400">Chưa có dữ liệu</div>
+                <div className="py-4 text-center text-xs text-slate-500">Chưa có dữ liệu</div>
               )}
             </div>
           </div>
 
-          <div className="pt-2 text-center text-[11px] text-slate-400 dark:text-neutral-500">
+          <div className="pt-2 text-center text-[11px] text-slate-500 dark:text-neutral-400">
             Xếp hạng dựa trên tổng điểm PTS tích lũy hợp lệ
           </div>
         </div>
@@ -1240,7 +1276,7 @@ export default function LearnerDashboardPage() {
                         </div>
                         <div className="truncate">
                           <div className="font-medium text-neutral-900 dark:text-neutral-100 truncate">Điểm danh hôm nay</div>
-                          <div className="text-[10px] text-slate-400 font-mono">Chuyên cần chuỗi {stats.loginStreak} ngày</div>
+                          <div className="text-[10px] text-slate-500 font-mono">Chuyên cần chuỗi {stats.loginStreak} ngày</div>
                         </div>
                       </div>
                       <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full text-[11px] shrink-0">
@@ -1255,7 +1291,7 @@ export default function LearnerDashboardPage() {
                       </div>
                       <div className="truncate">
                         <div className="font-medium text-neutral-900 dark:text-neutral-100 truncate">Tổng điểm tích lũy</div>
-                        <div className="text-[10px] text-slate-400 font-mono">Đã ghi nhận trên hệ thống</div>
+                        <div className="text-[10px] text-slate-500 font-mono">Đã ghi nhận trên hệ thống</div>
                       </div>
                     </div>
                     <span className="font-mono text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full text-[11px] shrink-0">
@@ -1264,7 +1300,7 @@ export default function LearnerDashboardPage() {
                   </div>
                 </>
               ) : (
-                <div className="py-6 text-center text-xs text-slate-400 dark:text-neutral-500">
+                <div className="py-6 text-center text-xs text-slate-500 dark:text-neutral-400">
                   Chưa có hoạt động ghi nhận điểm. Làm bài khảo thí hoặc học bài để nhận điểm.
                 </div>
               )}
@@ -1274,7 +1310,7 @@ export default function LearnerDashboardPage() {
           <div className="pt-2 mt-2 text-right">
             <Link
               href="/personal/leaderboard"
-              className="text-[11px] text-slate-400 hover:text-blue-600 transition-colors"
+              className="text-[11px] text-slate-500 hover:text-blue-600 transition-colors"
             >
               Lịch sử ghi nhận điểm &rarr;
             </Link>
@@ -1315,12 +1351,12 @@ export default function LearnerDashboardPage() {
                         <div className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
                           {mod.title}
                         </div>
-                        <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-mono mt-0.5">
+                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-0.5">
                           {mod.duration_minutes || 15} phút &bull; +{mod.point_reward || 20} PTS
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -1365,7 +1401,7 @@ export default function LearnerDashboardPage() {
                     <div
                       className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                         m.done
-                          ? 'border-slate-200 dark:border-zinc-800 bg-slate-100/80 dark:bg-zinc-800/60 text-slate-400 dark:text-neutral-500'
+                          ? 'border-slate-200 dark:border-zinc-800 bg-slate-100/80 dark:bg-zinc-800/60 text-slate-500 dark:text-neutral-400'
                           : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-200 shadow-2xs'
                       }`}
                     >
@@ -1378,7 +1414,7 @@ export default function LearnerDashboardPage() {
                         <span
                           className={`font-semibold text-xs leading-snug ${
                             m.done
-                              ? 'line-through text-slate-400 dark:text-neutral-500'
+                              ? 'line-through text-slate-500 dark:text-neutral-400'
                               : 'text-neutral-900 dark:text-neutral-100'
                           }`}
                         >
@@ -1429,7 +1465,7 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-3 mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500">
+          <div className="pt-3 mt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
             <span>
               Tiến độ: <strong className="font-mono text-neutral-900 dark:text-neutral-100">{completedMilestonesCount}</strong> / {masterMilestones.length} hoàn thành
             </span>
@@ -1454,7 +1490,7 @@ export default function LearnerDashboardPage() {
               </div>
               <button
                 onClick={() => setShowLevelModal(false)}
-                className="text-slate-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 text-xs font-semibold p-1 rounded-md transition-colors cursor-pointer"
+                className="text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 text-xs font-semibold p-1 rounded-md transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" strokeWidth={1.75} />
               </button>

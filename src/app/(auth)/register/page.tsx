@@ -14,7 +14,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +40,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (!acceptTerms) {
-      setError('Bạn cần đồng ý với Điều khoản dịch vụ và Chính sách bảo mật để tiếp tục.');
-      return;
-    }
 
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
@@ -94,33 +88,33 @@ export default function RegisterPage() {
   if (pendingEmail) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Kiểm tra email của bạn</h2>
-          <p className="text-xs text-slate-500 mt-1">
+        <div className="text-center space-y-1.5">
+          <h2 className="text-2xl sm:text-[26px] font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Kiểm tra email của bạn</h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400">
             Chúng tôi đã gửi liên kết xác thực tới hộp thư của bạn.
           </p>
         </div>
 
-        <div className="p-4 rounded-md bg-emerald-50 border border-emerald-200 space-y-3">
+        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-3">
           <div className="flex items-start gap-2.5">
             <Mail className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
-            <div className="text-xs text-emerald-900">
+            <div className="text-xs text-emerald-900 dark:text-emerald-200">
               <div className="font-semibold">Xác thực để kích hoạt tài khoản</div>
-              <div className="text-[11px] text-emerald-700 mt-1 leading-relaxed">
+              <div className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1 leading-relaxed">
                 Mở email gửi tới <span className="font-mono font-medium">{pendingEmail}</span> và bấm
                 vào liên kết xác thực. Liên kết sẽ đưa bạn thẳng vào bảng điều khiển.
               </div>
             </div>
           </div>
-          <p className="text-[11px] text-emerald-700 pt-2">
+          <p className="text-[11px] text-emerald-700 dark:text-emerald-300 pt-2">
             Không thấy email? Hãy kiểm tra thư mục Spam hoặc Thư rác.
           </p>
         </div>
 
         {/* Login Link (Không viền ngang) */}
-      <div className="text-center text-xs text-slate-500 pt-3">
+        <div className="text-center text-xs sm:text-sm text-slate-500 dark:text-neutral-400 pt-3">
           Đã xác thực xong?{' '}
-          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
             Đăng nhập ngay
           </Link>
         </div>
@@ -130,15 +124,15 @@ export default function RegisterPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Tạo tài khoản cá nhân</h2>
-        <p className="text-xs text-slate-500 mt-1">
+      <div className="text-center space-y-1.5">
+        <h2 className="text-2xl sm:text-[26px] font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Tạo tài khoản cá nhân</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400">
           Học tập, đánh giá năng lực số toàn diện và khởi tạo bài thi trên NEXA AI.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-md bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700">
+        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" strokeWidth={1.75} />
           <span>{error}</span>
         </div>
@@ -146,7 +140,7 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="register-email" className="block text-xs font-semibold text-slate-700 mb-1">
+          <label htmlFor="register-email" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
             Địa chỉ email <span className="text-rose-600">*</span>
           </label>
           <input
@@ -156,13 +150,13 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+            className="w-full px-4 py-2.5 sm:py-3 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label htmlFor="register-password" className="block text-xs font-semibold text-slate-700 mb-1">
+            <label htmlFor="register-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
               Mật khẩu <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
@@ -174,12 +168,12 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
                 title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
@@ -193,7 +187,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="register-confirm-password" className="block text-xs font-semibold text-slate-700 mb-1">
+            <label htmlFor="register-confirm-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
               Xác nhận lại mật khẩu <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
@@ -205,12 +199,12 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu"
-                className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+                className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
                 title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
@@ -223,35 +217,26 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-400 -mt-1 sm:col-span-2">
+          <p className="text-[11px] text-slate-400 dark:text-neutral-500 -mt-1 sm:col-span-2">
             Mật khẩu từ 6 ký tự (kết hợp chữ thường và số).
           </p>
         </div>
 
-        <div className="pt-1">
-          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              required
-              checked={acceptTerms}
-              onChange={(e) => setAcceptTerms(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-600 cursor-pointer"
-            />
-            <span className="text-xs text-slate-600 leading-relaxed">
-              Tôi đồng ý với <span className="text-slate-900 font-semibold">Điều khoản dịch vụ</span>{' '}
-              và <span className="text-slate-900 font-semibold">Chính sách bảo mật dữ liệu</span>.
-            </span>
-          </label>
-        </div>
+        <p className="text-[11px] sm:text-xs text-center text-slate-500 dark:text-neutral-400 pt-1 leading-relaxed">
+          Bằng việc đăng ký, bạn đồng ý với{' '}
+          <span className="text-neutral-800 dark:text-neutral-200 font-semibold">Điều khoản dịch vụ</span>{' '}
+          và{' '}
+          <span className="text-neutral-800 dark:text-neutral-200 font-semibold">Chính sách bảo mật dữ liệu</span>.
+        </p>
 
-        <div className="pt-2">
+        <div className="pt-1">
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-xs flex items-center justify-center gap-2"
+            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 shadow-xs flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>{loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}</span>
-            <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
           </button>
         </div>
       </form>
@@ -262,7 +247,7 @@ export default function RegisterPage() {
           type="button"
           onClick={handleGoogleSignup}
           disabled={oauthLoading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-xs"
+          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-700 dark:text-neutral-200 text-sm font-semibold transition-colors shadow-xs cursor-pointer"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path
@@ -287,9 +272,9 @@ export default function RegisterPage() {
       </div>
 
       {/* Login Link (Không viền ngang) */}
-      <div className="text-center text-xs text-slate-500 pt-3">
+      <div className="text-center text-xs sm:text-sm text-slate-500 dark:text-neutral-400 pt-3">
         Đã có tài khoản?{' '}
-        <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+        <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
           Đăng nhập ngay
         </Link>
       </div>

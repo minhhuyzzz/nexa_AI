@@ -7,15 +7,15 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md flex justify-center mb-6">
+    <div className="min-h-screen bg-white dark:bg-black flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-[500px] flex justify-center mb-8">
         <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity">
           <NexaLogo size="md" />
         </Link>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 border border-slate-200 rounded-md shadow-xs">
+      <div className="sm:mx-auto sm:w-full sm:max-w-[500px]">
+        <div className="bg-white dark:bg-black py-2 px-2 sm:px-4">
           {children}
         </div>
       </div>

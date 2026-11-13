@@ -211,7 +211,7 @@ export function PricingSection() {
                         <div className="text-3xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight">
                           Liên hệ
                         </div>
-                        <div className="text-xs font-medium text-slate-500 dark:text-neutral-400">
+                        <div className="text-xs font-medium text-slate-600 dark:text-neutral-400">
                           Báo giá linh hoạt theo quy mô triển khai
                         </div>
                       </div>
@@ -220,7 +220,7 @@ export function PricingSection() {
                         <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">
                           0đ
                         </span>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-neutral-400">
                           / vĩnh viễn
                         </span>
                       </div>
@@ -232,12 +232,12 @@ export function PricingSection() {
                               ? `${plan.monthlyPrice.toLocaleString('vi-VN')} đ`
                               : `${plan.yearlyMonthlyEquivalent.toLocaleString('vi-VN')} đ`}
                           </span>
-                          <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                          <span className="text-xs font-semibold text-slate-600 dark:text-neutral-400">
                             / tháng
                           </span>
                         </div>
                         {frequency === 'yearly' && (
-                          <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                          <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                             Thanh toán {plan.yearlyPrice.toLocaleString('vi-VN')} đ / năm
                           </div>
                         )}

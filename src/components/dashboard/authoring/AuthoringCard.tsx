@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Layers,
   ArrowRight,
+  Play,
 } from 'lucide-react';
 
 export interface AuthoringCardItem {
@@ -126,6 +127,15 @@ export function AuthoringCard({ item, onDuplicate, onDelete }: AuthoringCardProp
             </span>
           )}
         </div>
+
+        {/* Nút Bắt đầu làm bài dạng icon nhỏ gọn ở kho lưu đề */}
+        <Link
+          href={`/personal/take/${item.id}`}
+          className="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 transition shadow-2xs inline-flex items-center justify-center cursor-pointer"
+          title="Bắt đầu làm bài tự luyện ngay"
+        >
+          <Play className="w-4 h-4 fill-current" />
+        </Link>
 
         {/* Primary CTA */}
         {item.status === 'READY' ? (

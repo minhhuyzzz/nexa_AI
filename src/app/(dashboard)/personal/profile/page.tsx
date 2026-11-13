@@ -143,7 +143,7 @@ function LearnerProfileContent() {
   const loadProfile = useCallback(async () => {
     try {
       // 1. Load user profile
-      const res = await fetch('/api/personal/profile');
+      const res = await fetch('/api/personal/profile', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data.profile) {
@@ -157,7 +157,7 @@ function LearnerProfileContent() {
 
       // 2. Load competency stats (chỉ lấy số bài hoàn thành)
       try {
-        const compRes = await fetch('/api/personal/competency-profile');
+        const compRes = await fetch('/api/personal/competency-profile', { cache: 'no-store' });
         if (compRes.ok) {
           const compData = await compRes.json();
           if (compData.profile) {
@@ -198,6 +198,10 @@ function LearnerProfileContent() {
 
   useEffect(() => {
     loadProfile();
+    window.addEventListener('profile-updated', loadProfile);
+    return () => {
+      window.removeEventListener('profile-updated', loadProfile);
+    };
   }, [loadProfile]);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -377,7 +381,7 @@ function LearnerProfileContent() {
   const currentPoints = useCountUp(rawPoints, 900);
   const levelTarget = profile?.levelNextTarget ?? 150;
   const pointsRemaining = Math.max(0, levelTarget - rawPoints);
-  const progressPercent = Math.min(100, Math.max(5, Math.round((rawPoints / levelTarget) * 100)));
+  const progressPercent = levelTarget > 0 ? Math.min(100, Math.max(0, Math.round((rawPoints / levelTarget) * 100))) : 0;
 
   const initials = (profile?.nickname || 'Học viên')
     .split(' ')
@@ -538,10 +542,10 @@ function LearnerProfileContent() {
                   <div className="w-8 h-8 rounded-full border border-blue-200 dark:border-blue-800 bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-2xs">
                     <Trophy className="w-4 h-4" strokeWidth={2} />
                   </div>
-                  <span className="text-base font-mono tabular-nums">{currentPoints} điểm</span>
+                  <span className="text-base font-mono tabular-nums">{currentPoints} PTS</span>
                 </div>
                 <div className="text-xs text-slate-500 dark:text-zinc-400 font-mono">
-                  Lên Level 2 còn {pointsRemaining} điểm
+                  Lên Level 2 còn {pointsRemaining} PTS
                 </div>
               </div>
 
@@ -554,7 +558,7 @@ function LearnerProfileContent() {
                   />
                 </div>
                 <span className="text-xs text-slate-600 dark:text-zinc-400 font-mono tabular-nums shrink-0 font-medium">
-                  {currentPoints} / {levelTarget}
+                  {currentPoints} / {levelTarget} PTS
                 </span>
               </div>
             </div>
@@ -566,13 +570,18 @@ function LearnerProfileContent() {
                 <span>Tiến độ học tập số</span>
               </div>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">
-                  {learningStats.completedAssessments}
-                </span>
-                <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
-                  Bài đã hoàn thành
-                </span>
+              <div className="space-y-0.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">
+                    {learningStats.completedAssessments}
+                  </span>
+                  <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
+                    Bài đã hoàn thành
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                  Đạt chuẩn đánh giá (≥ 70%)
+                </div>
               </div>
             </div>
           </div>

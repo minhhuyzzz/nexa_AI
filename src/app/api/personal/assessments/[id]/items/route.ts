@@ -187,7 +187,7 @@ export async function POST(
             item_id: item.id,
             content: opt.text || `Phương án ${String.fromCharCode(65 + oIdx)}`,
             is_correct: Boolean(opt.isCorrect),
-            explanation: opt.explanation || null,
+            explanation: opt.explanation || (Boolean(opt.isCorrect) && q.practicalGuide ? q.practicalGuide : null),
             order_index: oIdx,
           });
         });

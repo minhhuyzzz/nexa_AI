@@ -43,7 +43,8 @@ export async function GET(
           code,
           type,
           status,
-          is_active
+          is_active,
+          max_members
         )
       `)
       .eq('code', cleanCode)
@@ -85,7 +86,7 @@ export async function GET(
       // Fallback: check if cleanCode matches an active organization code
       const { data: orgRow } = await adminSupabase
         .from('organizations')
-        .select('id, name, code, slug, type, status, is_active')
+        .select('id, name, code, slug, type, status, is_active, max_members')
         .eq('code', cleanCode)
         .maybeSingle();
 
@@ -181,7 +182,8 @@ export async function POST(
           name,
           slug,
           status,
-          is_active
+          is_active,
+          max_members
         )
       `)
       .eq('code', cleanCode)
@@ -211,7 +213,7 @@ export async function POST(
       // Fallback: check if cleanCode matches an active organization
       const { data: orgRow } = await adminSupabase
         .from('organizations')
-        .select('id, name, code, slug, status, is_active')
+        .select('id, name, code, slug, status, is_active, max_members')
         .eq('code', cleanCode)
         .maybeSingle();
 
@@ -240,6 +242,23 @@ export async function POST(
         organizationSlug: targetOrg.slug,
         organizationName: targetOrg.name,
       });
+    }
+
+    // 2.5. Check organization seat capacity
+    const { count: currentMemberCount, error: countErr } = await adminSupabase
+      .from('user_organizations')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .eq('status', 'ACTIVE');
+
+    const maxAllowedSeats = targetOrg?.max_members || 500;
+    if (!countErr && typeof currentMemberCount === 'number' && currentMemberCount >= maxAllowedSeats) {
+      return NextResponse.json(
+        {
+          error: `Tổ chức đã đạt giới hạn thành viên tối đa (${maxAllowedSeats} chỗ ngồi). Vui lòng liên hệ ban quản trị tổ chức để nâng cấp hạn mức.`,
+        },
+        { status: 400 }
+      );
     }
 
     // 3. DIRECT JOIN: Activate user immediately as an organization member (No waiting queue!)

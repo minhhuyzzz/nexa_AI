@@ -381,12 +381,12 @@ export async function POST(
     // 5b. Fetch item domain mappings for 5-domain evaluation
     let itemMetaList: any[] | null = null;
     try {
-      const { data } = await dbQuery((db) =>
+      const { data, error: itmErr } = await dbQuery((db) =>
         db
           .from('assessment_items')
           .select(`
             id,
-            explanation,
+            rubric_guide,
             competencies (
               id,
               skill_code,
@@ -405,9 +405,12 @@ export async function POST(
           `)
           .eq('assessment_id', assessmentId)
       );
+      if (itmErr) {
+        console.warn('[SUBMIT_WARN_ITEM_META]:', itmErr);
+      }
       itemMetaList = data;
-    } catch {
-      // Graceful fallback for environments/mocks without assessment_items table
+    } catch (metaErr) {
+      console.warn('[SUBMIT_CATCH_ITEM_META]:', metaErr);
     }
 
     const itemDomainMap = new Map<string, string>();
@@ -421,7 +424,7 @@ export async function POST(
       
       const correctOpt = (it.item_options || []).find((opt: any) => opt.is_correct === true);
       const optExplanation = correctOpt?.explanation || null;
-      const finalExplanation = it.explanation || optExplanation || null;
+      const finalExplanation = it.rubric_guide || optExplanation || null;
 
       itemDomainMap.set(it.id, rawCode);
       itemMetaMap.set(it.id, {
@@ -780,11 +783,16 @@ export async function POST(
       };
     });
 
+    const correctAnswersCount = answerRecords.filter((a) => a.is_correct === true).length;
+    const totalQuestionsCount = items.length;
+
     return NextResponse.json({
       success: true,
       submissionId: activeSubmissionId,
       totalScore: hasOpenResponse ? null : totalScore,
       maxScore,
+      correctAnswersCount,
+      totalQuestionsCount,
       scoreOn10,
       percentage: percentage !== null ? Number(percentage.toFixed(1)) : null,
       pointsAwarded,

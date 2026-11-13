@@ -165,9 +165,10 @@ export async function PATCH(
     };
 
     if (!isPlatformAdmin) {
-      // Non-admins cannot alter platform monetization tiers (FREE/VIP)
+      // Non-admins cannot alter platform monetization tiers (FREE/VIP) or set custom platform XP/PTS reward
       delete safeUpdateData.is_vip;
       delete safeUpdateData.access_tier;
+      delete safeUpdateData.point_reward;
 
       // Preserve organization ownership and visibility
       if (assessment.organization_id) {

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     // 2. Verify organization exists and is active
     const { data: organization, error: orgError } = await adminSupabase
       .from('organizations')
-      .select('id, name')
+      .select('id, name, is_active, max_members')
       .eq('id', organizationId)
       .maybeSingle();
 
@@ -85,6 +85,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Tổ chức không tồn tại' },
         { status: 404 }
+      );
+    }
+
+    if (organization.is_active === false) {
+      return NextResponse.json(
+        { error: 'Tổ chức hiện đang tạm ngưng hoạt động. Không thể gửi thêm lời mời.' },
+        { status: 403 }
+      );
+    }
+
+    // Check available seats before issuing new invitation
+    const { count: currentMemberCount } = await adminSupabase
+      .from('user_organizations')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .eq('status', 'ACTIVE');
+
+    const maxAllowedSeats = organization.max_members || 500;
+    if (typeof currentMemberCount === 'number' && currentMemberCount >= maxAllowedSeats) {
+      return NextResponse.json(
+        {
+          error: `Tổ chức đã sử dụng hết hạn mức chỗ ngồi (${maxAllowedSeats} ghế). Vui lòng liên hệ quản trị viên để nâng cấp hạn mức trước khi mời thêm.`,
+        },
+        { status: 400 }
       );
     }
 

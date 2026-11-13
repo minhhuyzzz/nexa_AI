@@ -26,6 +26,7 @@ import {
   Send,
   Loader2,
   Eye,
+  Play,
   Clock,
   X,
   Building2,
@@ -36,6 +37,11 @@ import {
   Radio,
   BookOpen,
   Shield,
+  ArrowLeft,
+  Download,
+  Paperclip,
+  FileSpreadsheet,
+  RefreshCw,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -109,6 +115,13 @@ export function AuthoringEditorTwoPane({
   const durationPopoverRef = useRef<HTMLDivElement>(null);
   const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
   const [isPublishSuccessOpen, setIsPublishSuccessOpen] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewActiveQIndex, setPreviewActiveQIndex] = useState(0);
+  const [previewShowTeacherKey, setPreviewShowTeacherKey] = useState(false);
+  const [isGuideAccordionOpen, setIsGuideAccordionOpen] = useState(true);
+  const [guideActiveTab, setGuideActiveTab] = useState<'rubric' | 'solution'>('rubric');
 
   // Polymorphic Modal States
   const [modalTab, setModalTab] = useState<'GENERAL' | 'SECURITY'>('GENERAL');
@@ -528,6 +541,40 @@ export function AuthoringEditorTwoPane({
     });
   };
 
+  // Practical Rubric and Benchmark Solution parser & updater
+  const parsePracticalGuide = (raw?: string): { rubric: string; sampleSolution: string } => {
+    if (!raw) return { rubric: '', sampleSolution: '' };
+    try {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'object' && parsed !== null && ('rubric' in parsed || 'sampleSolution' in parsed)) {
+          return {
+            rubric: typeof parsed.rubric === 'string' ? parsed.rubric : '',
+            sampleSolution: typeof parsed.sampleSolution === 'string' ? parsed.sampleSolution : '',
+          };
+        }
+      }
+    } catch {
+      // legacy string fallback
+    }
+    return { rubric: raw, sampleSolution: '' };
+  };
+
+  const updatePracticalGuideField = (field: 'rubric' | 'sampleSolution', value: string) => {
+    if (!currentQ) return;
+    const current = parsePracticalGuide(currentQ.practicalGuide);
+    const updated = {
+      ...current,
+      [field]: value,
+    };
+    if (!updated.rubric.trim() && !updated.sampleSolution.trim()) {
+      updateCurrentQuestion({ practicalGuide: '' });
+    } else {
+      updateCurrentQuestion({ practicalGuide: JSON.stringify(updated) });
+    }
+  };
+
   // Option handlers for MCQ
   const handleAddOption = () => {
     if (!currentQ) return;
@@ -566,6 +613,109 @@ export function AuthoringEditorTwoPane({
     }
     const updated = currentOpts.filter((o) => o.id !== optId);
     updateCurrentQuestion({ options: updated });
+  };
+
+  // Helper to parse attachment context (supports multiple files, single file, or legacy URL)
+  const parseAttachments = (context?: string): { id: string; url: string; fileName: string; fileSize?: number; storagePath?: string }[] => {
+    if (!context || !context.trim()) return [];
+    const trimmed = context.trim();
+    try {
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item, idx) => ({
+            id: item.id || `file-${idx}`,
+            url: item.url,
+            fileName: item.fileName || 'Tệp đính kèm',
+            fileSize: item.fileSize,
+            storagePath: item.storagePath,
+          }));
+        }
+        if (parsed.files && Array.isArray(parsed.files)) {
+          return parsed.files;
+        }
+        if (parsed.url) {
+          return [{
+            id: parsed.id || `file-0`,
+            url: parsed.url,
+            fileName: parsed.fileName || 'Tệp đính kèm',
+            fileSize: parsed.fileSize,
+            storagePath: parsed.storagePath,
+          }];
+        }
+      }
+    } catch {
+      // not JSON
+    }
+    if (trimmed.startsWith('http')) {
+      const fileName = trimmed.split('/').pop()?.split('?')[0] || 'Tệp đính kèm';
+      return [{
+        id: `file-link-0`,
+        url: trimmed,
+        fileName,
+      }];
+    }
+    return [];
+  };
+
+  const handleUploadAttachment = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (!fileArray.length) return;
+
+    // 10 MB strict limit per file
+    const MAX_SIZE = 10 * 1024 * 1024;
+    for (const file of fileArray) {
+      if (file.size > MAX_SIZE) {
+        alert(`Tệp "${file.name}" vượt quá giới hạn 10 MB (${(file.size / (1024 * 1024)).toFixed(1)} MB). Vui lòng chọn tệp nhỏ hơn.`);
+        return;
+      }
+    }
+
+    setIsUploadingAttachment(true);
+    try {
+      const currentFiles = parseAttachments(currentQ?.context);
+      const uploadedFiles = [...currentFiles];
+
+      for (const file of fileArray) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('itemId', currentQ?.id || 'new');
+        formData.append('submissionId', 'authoring-attachments');
+
+        const res = await fetch('/api/evidence/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || `Lỗi khi tải tệp ${file.name}`);
+        }
+
+        uploadedFiles.push({
+          id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          url: data.url,
+          fileName: data.fileName,
+          fileSize: data.fileSize,
+          storagePath: data.storagePath,
+        });
+      }
+
+      updateCurrentQuestion({ context: JSON.stringify(uploadedFiles) });
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Không thể tải tệp lên. Vui lòng thử lại.');
+    } finally {
+      setIsUploadingAttachment(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteAttachment = (fileId: string) => {
+    const currentFiles = parseAttachments(currentQ?.context);
+    const remaining = currentFiles.filter((f) => f.id !== fileId);
+    updateCurrentQuestion({ context: remaining.length > 0 ? JSON.stringify(remaining) : '' });
   };
 
   // AI Action Handlers (Quizizz Model & 8-Layer Architecture)
@@ -988,23 +1138,21 @@ export function AuthoringEditorTwoPane({
             <span>Cài đặt đề</span>
           </button>
 
-          {/* Nút Xem trước: mở trực tiếp không gian làm bài thực tế của thí sinh */}
-          <Link
-            href={
-              previewUrl ||
-              (slug
-                ? `/org/${slug}/assessments/${assessmentId}/preview`
-                : `/personal/take/${assessmentId}?preview=true&returnUrl=${encodeURIComponent(returnUrl)}`)
-            }
-            target="_blank"
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Mở màn hình làm bài thực tế của thí sinh trong tab mới"
+          {/* Nút Xem trước toàn màn hình: chỉ xem cấu trúc, không tính điểm / thời gian */}
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewActiveQIndex(selectedIndex >= 0 ? selectedIndex : 0);
+              setIsPreviewModalOpen(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-semibold text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+            title="Xem trước cấu trúc và giao diện đề thi toàn màn hình (Không tính điểm & không giới hạn thời gian)"
           >
-            <Eye className="w-3.5 h-3.5 text-slate-500" />
+            <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-zinc-400" />
             <span>Xem trước</span>
-          </Link>
+          </button>
 
-          {/* Nút Phát hành / Xuất bản đề thi */}
+          {/* Nút Lưu đề thi / Xuất bản */}
           <button
             type="button"
             onClick={handleTogglePublish}
@@ -1014,7 +1162,7 @@ export function AuthoringEditorTwoPane({
                 ? 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
-            title={isPublished ? 'Chuyển về trạng thái bản nháp' : 'Lưu và xuất bản đề vào Kho đề sẵn sàng khảo thí'}
+            title={isPublished ? 'Chuyển về trạng thái bản nháp' : 'Lưu và hoàn tất đề thi trong kho'}
           >
             {isPublishing ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1023,7 +1171,17 @@ export function AuthoringEditorTwoPane({
             ) : (
               <Sparkles className="w-3.5 h-3.5" />
             )}
-            <span>{isPublishing ? 'Đang lưu...' : isPublished ? (effectiveMode === 'ORG' ? 'Đã lưu trong Kho đề' : 'Chuyển về bản nháp') : (effectiveMode === 'ORG' ? 'Lưu vào Kho đề' : 'Xuất bản đề thi')}</span>
+            <span>
+              {isPublishing
+                ? 'Đang lưu...'
+                : isPublished
+                ? effectiveMode === 'ORG'
+                  ? 'Đã lưu trong Kho đề'
+                  : 'Đã lưu đề thi'
+                : effectiveMode === 'ORG'
+                ? 'Lưu vào Kho đề'
+                : 'Lưu đề thi'}
+            </span>
           </button>
         </div>
       </div>
@@ -1133,7 +1291,7 @@ export function AuthoringEditorTwoPane({
               title="Thêm câu trắc nghiệm"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Trắc nghiệm</span>
+              <span>Trắc nghiệm</span>
             </button>
             <button
               type="button"
@@ -1142,7 +1300,7 @@ export function AuthoringEditorTwoPane({
               title="Thêm bài thực hành"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Thực hành</span>
+              <span>Thực hành</span>
             </button>
           </div>
 
@@ -1335,7 +1493,7 @@ export function AuthoringEditorTwoPane({
 
             {/* MCQ / Scenario Options Builder */}
             {currentQ.type !== 'PRACTICAL' && (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-neutral-800 dark:text-zinc-200">
                     Các phương án lựa chọn
@@ -1398,136 +1556,327 @@ export function AuthoringEditorTwoPane({
                     </div>
                   ))}
                 </div>
+
+                {/* Question-level General Explanation (Optional) */}
+                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Giải thích đáp án cho toàn câu hỏi</span>
+                      <span className="text-[10px] font-normal text-slate-400">(Tùy chọn)</span>
+                    </label>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={currentQ.practicalGuide || ''}
+                    onChange={(e) => updateCurrentQuestion({ practicalGuide: e.target.value })}
+                    placeholder="Nhập giải thích vì sao đáp án đúng hoặc kiến thức cần nhớ cho câu này (để trống nếu không cần)..."
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition resize-none leading-relaxed"
+                  />
+                </div>
               </div>
             )}
 
-            {/* Practical Task View (Clean, No Complicated Rubric Tables) */}
+            {/* Practical Task View (Clean, Modern, Real File Upload & Structured Rubric) */}
             {currentQ.type === 'PRACTICAL' && (
-              <div className="space-y-5 pt-2">
-                {/* 1. Accepted submission formats */}
+              <div className="space-y-4 pt-2">
+                {/* 1. File Upload / Attached Practice Dataset (Max 10 MB) */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-neutral-800 dark:text-zinc-200">
-                      Hình thức nộp bài minh chứng của học viên
-                    </h3>
-                    <span className="text-[10px] text-slate-400">Chọn ít nhất 1 hình thức</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label
-                      className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
-                        (currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('FILE')
-                          ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30'
-                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 opacity-60'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('FILE')}
-                        onChange={(e) => {
-                          const modes = new Set(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']);
-                          if (e.target.checked) modes.add('FILE');
-                          else if (modes.size > 1) modes.delete('FILE');
-                          updateCurrentQuestion({ allowedSubmissionModes: Array.from(modes) as any });
-                        }}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <UploadCloud className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                          Tệp đính kèm
-                        </div>
-                        <div className="text-[10px] text-slate-400">PDF, Word, Ảnh, ZIP</div>
-                      </div>
+                    <label className="text-xs font-bold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <Paperclip className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Tài liệu &amp; Tệp dữ liệu đề bài</span>
+                      <span className="text-[10px] font-normal text-slate-400">(Tối đa 10 MB / tệp • Tùy chọn)</span>
                     </label>
 
-                    <label
-                      className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
-                        (currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('URL')
-                          ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30'
-                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 opacity-60'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('URL')}
-                        onChange={(e) => {
-                          const modes = new Set(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']);
-                          if (e.target.checked) modes.add('URL');
-                          else if (modes.size > 1) modes.delete('URL');
-                          updateCurrentQuestion({ allowedSubmissionModes: Array.from(modes) as any });
-                        }}
-                        className="rounded text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                          Liên kết trực tuyến
-                        </div>
-                        <div className="text-[10px] text-slate-400">Drive, Figma, GitHub</div>
-                      </div>
-                    </label>
-
-                    <label
-                      className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
-                        (currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('TEXT')
-                          ? 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/30'
-                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 opacity-60'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']).includes('TEXT')}
-                        onChange={(e) => {
-                          const modes = new Set(currentQ.allowedSubmissionModes || ['TEXT', 'FILE', 'URL']);
-                          if (e.target.checked) modes.add('TEXT');
-                          else if (modes.size > 1) modes.delete('TEXT');
-                          updateCurrentQuestion({ allowedSubmissionModes: Array.from(modes) as any });
-                        }}
-                        className="rounded text-purple-600 focus:ring-purple-500"
-                      />
-                      <FileCode className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                          Văn bản trực tiếp
-                        </div>
-                        <div className="text-[10px] text-slate-400">Nhập bài giải trình</div>
-                      </div>
-                    </label>
+                    {/* Quick Button "+ Thêm tệp" on top right if files already exist */}
+                    {(() => {
+                      const attachments = parseAttachments(currentQ.context);
+                      if (attachments.length > 0) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => !isUploadingAttachment && fileInputRef.current?.click()}
+                            className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Thêm tệp</span>
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
-                </div>
 
-                {/* 2. Evaluation / Solution Guide for Evaluator */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200">
-                      Hướng dẫn chấm điểm / Đáp án mẫu (Ghi chú đánh giá)
-                    </label>
-                    <span className="text-[10px] text-slate-400">Dành cho người chấm &amp; AI đối chiếu</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">
-                    Ghi chú các tiêu chuẩn cần kiểm tra hoặc đáp án chuẩn để đối chiếu nhanh khi xem xét bài nộp của học viên (không bắt buộc nhập ma trận tiêu chí).
-                  </p>
-                  <textarea
-                    value={currentQ.practicalGuide || ''}
-                    onChange={(e) => updateCurrentQuestion({ practicalGuide: e.target.value })}
-                    rows={4}
-                    placeholder="Ví dụ: - Bảng tính có đủ các cột: Khoản chi, Số tiền, Ngày chi
-- Áp dụng đúng công thức SUM và AVERAGE
-- Biểu đồ trực quan, định dạng rõ ràng"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  {/* Hidden file input supporting multiple files */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    accept=".xlsx,.xls,.csv,.docx,.doc,.pdf,.json,.png,.jpg,.jpeg,.zip"
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files && files.length > 0) handleUploadAttachment(files);
+                    }}
                   />
 
-                  {/* Informative Workbench Flow Banner */}
-                  <div className="p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
-                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      <span className="font-semibold text-blue-800 dark:text-blue-300">Luồng chấm bài thực hành:</span>
-                      <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 leading-relaxed">
-                        Học viên sẽ nộp Tệp (Word/Excel/ảnh) hoặc Đường dẫn (Google Drive/Figma). Bài làm sẽ tự động chuyển vào <strong>Bàn chấm bài (Grading Workbench)</strong> để giảng viên mở sản phẩm thực tế và chấm điểm theo barem này.
-                      </p>
-                    </div>
-                  </div>
+                  {/* Upload Container (Compact Grid with Hover Actions) */}
+                  {(() => {
+                    const attachments = parseAttachments(currentQ.context);
+                    if (attachments.length > 0) {
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {attachments.map((file, fIdx) => (
+                            <div
+                              key={file.id || fIdx}
+                              className="group relative p-2.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-blue-400 dark:hover:border-zinc-700 transition-all flex items-center justify-between gap-2 shadow-2xs"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                                  <FileSpreadsheet className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p
+                                    className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate block"
+                                    title={file.fileName}
+                                  >
+                                    {file.fileName}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                    {file.fileSize && (
+                                      <span>{(file.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
+                                    )}
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
+                                      <CheckCircle2 className="w-2.5 h-2.5" /> Sẵn sàng
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Action buttons revealed on hover */}
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1 shrink-0 bg-white/90 dark:bg-[#111114]/90 pl-1">
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                  title="Tải về kiểm tra"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAttachment(file.id)}
+                                  className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                                  title="Xóa tệp này"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Inline uploading state tile */}
+                          {isUploadingAttachment && (
+                            <div className="p-2.5 rounded-xl border border-dashed border-blue-300 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center gap-2 text-xs font-semibold animate-pulse">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Đang tải tệp...</span>
+                            </div>
+                          )}
+
+                          {/* Compact Add-More Tile inside grid */}
+                          {!isUploadingAttachment && (
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-zinc-750 hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-zinc-850 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 transition cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Thêm tệp khác</span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        onClick={() => !isUploadingAttachment && fileInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const files = e.dataTransfer.files;
+                          if (files && files.length > 0) handleUploadAttachment(files);
+                        }}
+                        className={`p-6 rounded-xl border border-dashed text-center cursor-pointer transition ${
+                          isUploadingAttachment
+                            ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20'
+                            : 'border-slate-300 dark:border-zinc-700 hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-zinc-850'
+                        }`}
+                      >
+                        {isUploadingAttachment ? (
+                          <div className="flex flex-col items-center gap-2 text-blue-600 dark:text-blue-400">
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                            <span className="text-xs font-semibold">Đang tải tệp lên hệ thống...</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+                              <UploadCloud className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-neutral-800 dark:text-zinc-200">
+                                Nhấp để chọn một hoặc nhiều tệp (hoặc kéo thả vào đây)
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 dark:text-zinc-500">
+                              Hỗ trợ chọn nhiều file cùng lúc: Excel (.xlsx, .xls), Word (.docx), PDF, JSON, ảnh hoặc ZIP • Tối đa 10 MB mỗi tệp
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
+
+                {/* 2. Structured Barem & Benchmark Solution (Unified Single Card with Tabs) */}
+                {(() => {
+                  const practicalData = parsePracticalGuide(currentQ.practicalGuide);
+                  const hasRubric = Boolean(practicalData.rubric && practicalData.rubric.trim().length > 0);
+                  const hasSolution = Boolean(practicalData.sampleSolution && practicalData.sampleSolution.trim().length > 0);
+
+                  let statusText = 'Chưa thiết lập';
+                  let statusColor = 'bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-zinc-500';
+                  if (hasRubric && hasSolution) {
+                    statusText = 'Đã có tiêu chí & đáp án';
+                    statusColor = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300';
+                  } else if (hasRubric) {
+                    statusText = 'Đã có tiêu chí chấm';
+                    statusColor = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300';
+                  } else if (hasSolution) {
+                    statusText = 'Đã có đáp án mẫu';
+                    statusColor = 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300';
+                  }
+
+                  return (
+                    <div className="pt-2">
+                      <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden transition-all shadow-2xs">
+                        {/* Header bar */}
+                        <button
+                          type="button"
+                          onClick={() => setIsGuideAccordionOpen((prev) => !prev)}
+                          className="w-full px-4 py-3 bg-slate-50/70 dark:bg-zinc-850/60 hover:bg-slate-100/80 dark:hover:bg-zinc-800/60 transition flex items-center justify-between cursor-pointer text-left"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-neutral-800 dark:text-zinc-100">
+                                Barem điểm &amp; Hướng dẫn chấm
+                              </span>
+                              <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
+                                Ẩn với người làm bài
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5">
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
+                              {statusText}
+                            </span>
+                            <div className="w-6 h-6 rounded-md hover:bg-slate-200 dark:hover:bg-zinc-700 flex items-center justify-center text-slate-500 transition">
+                              {isGuideAccordionOpen ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Collapsible Content */}
+                        {isGuideAccordionOpen && (
+                          <div className="p-4 border-t border-slate-100 dark:border-zinc-800 space-y-3 bg-white dark:bg-zinc-900">
+                            {/* Segmented Tab Switcher */}
+                            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 max-w-fit">
+                              <button
+                                type="button"
+                                onClick={() => setGuideActiveTab('rubric')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                                  guideActiveTab === 'rubric'
+                                    ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
+                                    : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                                }`}
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>Tiêu chí chấm (Barem)</span>
+                                {hasRubric && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setGuideActiveTab('solution')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                                  guideActiveTab === 'solution'
+                                    ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
+                                    : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                                }`}
+                              >
+                                <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                <span>Đáp án chuẩn &amp; Hướng dẫn giải</span>
+                                {hasSolution && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                )}
+                              </button>
+                            </div>
+
+                            {/* Tab 1: Rubric */}
+                            {guideActiveTab === 'rubric' && (
+                              <div className="space-y-1.5">
+                                <textarea
+                                  value={practicalData.rubric}
+                                  onChange={(e) => updatePracticalGuideField('rubric', e.target.value)}
+                                  rows={4}
+                                  placeholder="Nhập tiêu chí và thang điểm chi tiết..."
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-950/40 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 resize-none focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-500 focus:bg-white dark:focus:bg-zinc-900 transition leading-relaxed font-sans"
+                                />
+                                <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500">
+                                  <span>Tiêu chí dùng khi chấm bài thực hành.</span>
+                                  <span className="font-mono text-[10px]">
+                                    {practicalData.rubric ? `${practicalData.rubric.length} ký tự` : 'Trống'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Tab 2: Benchmark Solution */}
+                            {guideActiveTab === 'solution' && (
+                              <div className="space-y-1.5">
+                                <textarea
+                                  value={practicalData.sampleSolution}
+                                  onChange={(e) => updatePracticalGuideField('sampleSolution', e.target.value)}
+                                  rows={4}
+                                  placeholder="Nhập kết quả mẫu, công thức chuẩn hoặc lưu ý khi chấm..."
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-950/40 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 resize-none focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-zinc-900 transition leading-relaxed font-sans"
+                                />
+                                <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500">
+                                  <span>Đáp án đối chiếu kết quả làm bài.</span>
+                                  <span className="font-mono text-[10px]">
+                                    {practicalData.sampleSolution ? `${practicalData.sampleSolution.length} ký tự` : 'Trống'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -1679,24 +2028,26 @@ export function AuthoringEditorTwoPane({
                     </div>
                   </div>
 
-                  {/* Điểm thưởng hoàn thành (PTS) cho Admin & Personal */}
-                  <div className="space-y-1.5">
-                    <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Điểm thưởng hoàn thành (XP / PTS)</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={1000}
-                      value={publishPointReward}
-                      onChange={(e) => setPublishPointReward(Number(e.target.value) || 50)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Điểm tích lũy ghi nhận vào hồ sơ người học khi làm bài đạt chuẩn.
-                    </p>
-                  </div>
+                  {/* Điểm thưởng hoàn thành (PTS) - ĐẶC QUYỀN RIÊNG CỦA PLATFORM ADMIN */}
+                  {effectiveMode === 'ADMIN' && (
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Điểm thưởng hoàn thành toàn sàn (XP / PTS)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={1000}
+                        value={publishPointReward}
+                        onChange={(e) => setPublishPointReward(Number(e.target.value) || 50)}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                      />
+                      <p className="text-[11px] text-slate-400">
+                        Đặc quyền Admin: Điểm tích lũy ghi nhận vào hồ sơ năng lực số chuẩn hóa toàn hệ thống khi đạt chuẩn.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Context-specific Section */}
                   {effectiveMode === 'ORG' && (
@@ -1712,70 +2063,8 @@ export function AuthoringEditorTwoPane({
                   )}
 
                   {effectiveMode === 'PERSONAL' && (
-                    <div className="space-y-2">
-                      <label className="font-semibold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Mục đích xuất bản đề thi</span>
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPersonalPublishMode('PRIVATE')}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            personalPublishMode === 'PRIVATE'
-                              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 font-bold'
-                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-xs">Luyện tập riêng tư</span>
-                          </div>
-                          <p className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                            Chỉ lưu trong kho đề cá nhân để tự ôn luyện, không chia sẻ.
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPersonalPublishMode('LIVE_ROOM')}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            personalPublishMode === 'LIVE_ROOM'
-                              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 font-bold'
-                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Radio className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-xs">Phòng thi trực tiếp</span>
-                          </div>
-                          <p className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                            Mở phòng thi thời gian thực cho bạn bè làm bài cùng lúc.
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPersonalPublishMode('COMMUNITY')}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            personalPublishMode === 'COMMUNITY'
-                              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 font-bold'
-                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-xs">Đóng góp cộng đồng</span>
-                          </div>
-                          <p className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                            Gửi đề vào Thư viện cộng đồng để người học khác cùng luyện.
-                          </p>
-                        </button>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                        Đề thi cá nhân phục vụ rèn luyện năng lực số tự chủ. Bạn có thể thay đổi chế độ riêng tư hoặc chia sẻ bất kỳ lúc nào.
-                      </div>
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                      Đề thi được lưu trữ tự động trong <strong>Kho đề cá nhân</strong> của bạn. Bạn có thể tự vào làm bài luyện tập hoặc xem trước cấu trúc bất kỳ lúc nào mà không cần qua bước xuất bản phức tạp.
                     </div>
                   )}
 
@@ -1966,6 +2255,339 @@ export function AuthoringEditorTwoPane({
                 <span>Về Kho đề thi</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem trước toàn màn hình: Chuẩn giao diện làm bài, không tính điểm / thời gian */}
+      {isPreviewModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#F8FAFC] dark:bg-[#0A0A0B] flex flex-col overflow-hidden animate-in fade-in duration-150">
+          {/* Top Bar Preview */}
+          <div className="h-14 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] px-6 flex items-center justify-between shrink-0 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 flex items-center gap-1.5 cursor-pointer transition shadow-2xs"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Thoát xem trước</span>
+              </button>
+              <div className="h-4 w-px bg-slate-200 dark:bg-zinc-700" />
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100 truncate max-w-md">
+                  {assessment?.title || 'Đề thi đánh giá năng lực số'}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 shrink-0">
+                  CHẾ ĐỘ XEM TRƯỚC
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-zinc-400">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>{publishDuration} phút (Thời lượng dự kiến)</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Award className="w-3.5 h-3.5 text-slate-400" />
+                <span>Tổng {currentTotalPoints} điểm</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer"
+                title="Đóng xem trước (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Banner Thông báo Xem trước */}
+          <div className="bg-blue-50 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900/40 px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-blue-900 dark:text-blue-200">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>
+                <strong>Giao diện cấu trúc đề:</strong> Mô phỏng trực quan bố cục câu hỏi cho người học. Hệ thống không tính giờ, không tính điểm và không lưu vết kết quả.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewShowTeacherKey(!previewShowTeacherKey)}
+              className="text-xs font-semibold text-blue-700 dark:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>{previewShowTeacherKey ? 'Ẩn đáp án & Barem' : 'Hiện đáp án & Barem giảng viên'}</span>
+            </button>
+          </div>
+
+          {/* Body Preview: Clean Single-Column Student Exam View (No Question List Sidebar) */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 sm:p-8 flex justify-center">
+            <div className="w-full max-w-3xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between min-h-[500px]">
+              {questions[previewActiveQIndex] ? (
+                (() => {
+                  const q = questions[previewActiveQIndex];
+                  const attachments = parseAttachments(q.context);
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Question Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-mono text-xs font-bold">
+                            Câu {previewActiveQIndex + 1}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                            {q.type === 'PRACTICAL' ? 'Bài tập Thực hành' : 'Câu hỏi Trắc nghiệm'}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold font-mono text-neutral-800 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg">
+                          {q.points} điểm
+                        </span>
+                      </div>
+
+                      {/* Question Prompt */}
+                      <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 leading-relaxed whitespace-pre-wrap">
+                        {q.prompt || 'Chưa nhập nội dung câu hỏi'}
+                      </div>
+
+                      {/* Attachments if present */}
+                      {attachments.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          <span className="text-xs font-bold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
+                            <Paperclip className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>Tệp dữ liệu đề bài ({attachments.length} tệp):</span>
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {attachments.map((file, aIdx) => (
+                              <div
+                                key={file.id || aIdx}
+                                className="p-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20 flex items-center justify-between gap-2.5 shadow-2xs"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-700 dark:text-blue-300 shrink-0">
+                                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate" title={file.fileName}>
+                                      {file.fileName}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                                      {file.fileSize ? `${(file.fileSize / (1024 * 1024)).toFixed(2)} MB` : 'Tệp đính kèm'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1 transition shrink-0"
+                                >
+                                  <Download className="w-3 h-3" />
+                                  <span>Tải</span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* MCQ Options */}
+                      {q.type !== 'PRACTICAL' && (
+                        <div className="space-y-3 pt-2">
+                          {(q.options || []).map((opt, oIdx) => {
+                            const isCorrect = opt.isCorrect;
+                            return (
+                              <div
+                                key={opt.id || oIdx}
+                                className={`p-3.5 rounded-xl border text-xs flex items-center gap-3 transition ${
+                                  previewShowTeacherKey && isCorrect
+                                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 font-semibold'
+                                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200'
+                                }`}
+                              >
+                                <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs font-mono shrink-0 ${
+                                  previewShowTeacherKey && isCorrect
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'
+                                }`}>
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span className="flex-1">{opt.text || `Phương án ${String.fromCharCode(65 + oIdx)}`}</span>
+                                {previewShowTeacherKey && isCorrect && (
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1">
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Đáp án đúng
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {previewShowTeacherKey && q.practicalGuide && (
+                            <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20 text-xs text-neutral-800 dark:text-zinc-200 space-y-1">
+                              <span className="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                                <HelpCircle className="w-3.5 h-3.5" /> Giải thích đáp án:
+                              </span>
+                              <p className="whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{q.practicalGuide}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Practical Submission Simulation (Upload + Essay options) */}
+                      {q.type === 'PRACTICAL' && (
+                        <div className="space-y-4 pt-2">
+                          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-800 pb-2">
+                            <span className="text-xs font-bold text-neutral-800 dark:text-zinc-200">
+                              Hình thức nộp bài của thí sinh:
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              (Thí sinh có thể tải tệp lên hoặc nhập bài luận trực tiếp)
+                            </span>
+                          </div>
+
+                          {/* 1. Tải tệp sản phẩm thực hành */}
+                          <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                                <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Tải tệp sản phẩm bài làm</span>
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                Tối đa 10 MB • Hỗ trợ Word, Excel, PDF, JSON, ZIP, Ảnh
+                              </span>
+                            </div>
+
+                            {/* Simulated Uploaded File with full Action Icons */}
+                            <div className="p-3 rounded-lg border border-slate-200 dark:border-zinc-750 bg-white dark:bg-zinc-850 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate block">
+                                    bai_lam_thuc_hanh_mau.xlsx
+                                  </span>
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                    <span>2.4 MB / 10 MB</span>
+                                    <span className="text-emerald-600 font-medium">&bull; Đã sẵn sàng nộp</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-zinc-700 transition cursor-pointer"
+                                  title="Tải về kiểm tra"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-zinc-700 transition cursor-pointer"
+                                  title="Tải thêm / Thay tệp khác"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                                  title="Xóa tệp này"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 2. Bài luận & giải trình văn bản */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 block">
+                              Bản tóm tắt giải trình / luận văn bản giải pháp
+                            </label>
+                            <textarea
+                              rows={3}
+                              disabled
+                              placeholder="Người làm bài nhập giải trình quy trình xử lý, câu lệnh, công thức hoặc đáp án văn bản tại đây..."
+                              className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 resize-none opacity-80 cursor-not-allowed"
+                            />
+                          </div>
+
+                          {previewShowTeacherKey && q.practicalGuide && (() => {
+                            const practicalData = parsePracticalGuide(q.practicalGuide);
+                            return (
+                              <div className="space-y-3 pt-2">
+                                {practicalData.rubric && (
+                                  <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-1.5 text-xs">
+                                    <span className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5" /> Barem tiêu chí chấm điểm (Ẩn với người làm bài):
+                                    </span>
+                                    <p className="whitespace-pre-wrap text-neutral-700 dark:text-zinc-300 leading-relaxed font-sans">
+                                      {practicalData.rubric}
+                                    </p>
+                                  </div>
+                                )}
+                                {practicalData.sampleSolution && (
+                                  <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 space-y-1.5 text-xs">
+                                    <span className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                                      <BookOpen className="w-3.5 h-3.5" /> Đáp án chuẩn &amp; Hướng dẫn đối chiếu:
+                                    </span>
+                                    <p className="whitespace-pre-wrap text-neutral-700 dark:text-zinc-300 leading-relaxed font-sans">
+                                      {practicalData.sampleSolution}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {/* Prev / Next Nav with Question Pills */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-100 dark:border-zinc-800">
+                        <button
+                          type="button"
+                          disabled={previewActiveQIndex === 0}
+                          onClick={() => setPreviewActiveQIndex((prev) => Math.max(0, prev - 1))}
+                          className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-zinc-850 cursor-pointer"
+                        >
+                          &larr; Câu trước
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                          {questions.map((_, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setPreviewActiveQIndex(idx)}
+                              className={`w-7 h-7 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
+                                idx === previewActiveQIndex
+                                  ? 'bg-blue-600 text-white shadow-2xs'
+                                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                              }`}
+                            >
+                              {idx + 1}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={previewActiveQIndex === questions.length - 1}
+                          onClick={() => setPreviewActiveQIndex((prev) => Math.min(questions.length - 1, prev + 1))}
+                          className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Câu tiếp theo &rarr;
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="py-20 text-center text-xs text-slate-400">
+                  Đề thi hiện chưa có câu hỏi nào để xem trước.
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -101,7 +101,7 @@ export function CoreHighlightsSection() {
               <div className="py-6 space-y-5">
                 {/* Chặng 1 - Đã xong */}
                 <div className="flex items-start gap-3.5">
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+                  <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                     ✓
                   </div>
                   <div className="flex-1 min-w-0">
@@ -109,11 +109,11 @@ export function CoreHighlightsSection() {
                       <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                         Chặng 01: Khai thác & Đánh giá Dữ liệu Số
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
                         88/100 • Đạt
                       </span>
                     </div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                       Đã kiểm chứng: Tìm kiếm và lưu trữ dữ liệu an toàn.
                     </div>
                   </div>
@@ -143,8 +143,8 @@ export function CoreHighlightsSection() {
                 </div>
 
                 {/* Chặng 3 - Tiếp theo */}
-                <div className="flex items-start gap-3.5 opacity-75">
-                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-neutral-500 dark:text-neutral-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-200 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                     03
                   </div>
                   <div className="flex-1 min-w-0">
@@ -152,19 +152,19 @@ export function CoreHighlightsSection() {
                       <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
                         Chặng 03: An toàn Thông tin & Phòng ngừa Rủi ro
                       </div>
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">
+                      <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 shrink-0">
                         Kế tiếp
                       </span>
                     </div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                       Bảo vệ thiết bị số và phòng tránh rủi ro lừa đảo trực tuyến.
                     </div>
                   </div>
                 </div>
 
                 {/* Chặng 4 - Đánh giá lại */}
-                <div className="flex items-start gap-3.5 opacity-75">
-                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-neutral-500 dark:text-neutral-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-200 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                     04
                   </div>
                   <div className="flex-1 min-w-0">
@@ -172,11 +172,11 @@ export function CoreHighlightsSection() {
                       <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
                         Chặng 04: Đánh giá lại & Cấp Chứng nhận Số
                       </div>
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">
+                      <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 shrink-0">
                         Mục tiêu
                       </span>
                     </div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                       Đo lường sự tăng trưởng năng lực và nhận chứng chỉ số minh bạch.
                     </div>
                   </div>
@@ -184,7 +184,7 @@ export function CoreHighlightsSection() {
               </div>
 
               {/* Footer tóm tắt của Dashboard */}
-              <div className="pt-4 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="pt-4 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
                 <span>Mục tiêu lộ trình: Đạt 75 điểm toàn diện</span>
                 <span className="font-semibold text-blue-600 dark:text-blue-400">Tiến bộ ghi nhận: +14 điểm</span>
               </div>

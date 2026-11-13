@@ -60,6 +60,8 @@ interface QuestionEvaluation {
 interface SubmitResultData {
   totalScore: number;
   maxScore: number;
+  correctAnswersCount?: number;
+  totalQuestionsCount?: number;
   percentage: number;
   domainScores: Record<string, number | null>;
   weakestDomainCode: string;
@@ -239,6 +241,10 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
       const resultData: SubmitResultData = {
         totalScore: data.totalScore ?? answeredCount,
         maxScore: data.maxScore ?? totalQuestions,
+        correctAnswersCount:
+          data.correctAnswersCount ??
+          (data.evaluations ? data.evaluations.filter((e: any) => e.isCorrect).length : undefined),
+        totalQuestionsCount: data.totalQuestionsCount ?? (data.evaluations?.length || totalQuestions),
         percentage: data.percentage ?? 0,
         domainScores: data.domainScores || { '01': 50, '02': 50, '03': 50, '04': 50, '05': 50 },
         weakestDomainCode: data.weakestDomainCode || '01',
@@ -664,10 +670,10 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
               <div className="lg:col-span-5 flex flex-col justify-between gap-3">
                 <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
                   <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">
-                    Số câu đúng &amp; Điểm số:
+                    Số câu đúng:
                   </span>
                   <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
-                    {submitResult.totalScore} / {submitResult.maxScore} đ
+                    {submitResult.correctAnswersCount ?? submitResult.evaluations?.filter((e) => e.isCorrect).length ?? 0} / {submitResult.totalQuestionsCount ?? submitResult.evaluations?.length ?? totalQuestions} câu
                   </div>
                   <span className="text-[10px] text-emerald-600 font-medium">Tự động chấm 0.01s</span>
                 </div>
@@ -679,7 +685,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   <div className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
                     {submitResult.percentage}%
                   </div>
-                  <span className="text-[10px] text-slate-500">Bình quân 20% mỗi miền</span>
+                  <span className="text-[10px] text-slate-500">Thang đo độc lập 0–100% mỗi miền</span>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
@@ -690,7 +696,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                     {DOMAIN_CATALOG.find((d) => d.code === submitResult.weakestDomainCode)?.title || 'Miền 01'}
                   </div>
                   <span className="text-[10px] text-slate-500">
-                    Điểm miền: {submitResult.domainScores[submitResult.weakestDomainCode] ?? 0}%
+                    Tỷ lệ đúng: {submitResult.domainScores[submitResult.weakestDomainCode] ?? 0}%
                   </span>
                 </div>
               </div>

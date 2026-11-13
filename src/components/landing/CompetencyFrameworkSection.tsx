@@ -85,7 +85,7 @@ export function CompetencyFrameworkSection() {
                   <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
                     <Icon className="w-4 h-4" strokeWidth={1.75} />
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-400">
+                  <span className="text-[11px] font-semibold text-slate-600 dark:text-neutral-300">
                     {domain.id}
                   </span>
                 </div>
@@ -94,7 +94,7 @@ export function CompetencyFrameworkSection() {
                 <p className="text-xs text-slate-600 leading-relaxed">{domain.desc}</p>
               </div>
 
-              <div className="pt-4 mt-4 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="pt-4 mt-4 flex items-center justify-between text-[11px] text-slate-600 dark:text-neutral-300">
                 <span>{domain.skillsCount}</span>
               </div>
             </div>

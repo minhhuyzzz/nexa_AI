@@ -85,21 +85,21 @@ function LoginForm() {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Đăng nhập tài khoản</h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Hệ thống tự động nhận diện vai trò và chuyển tiếp đến Portal tương ứng.
+      <div className="text-center space-y-1.5">
+        <h2 className="text-2xl sm:text-[26px] font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Đăng nhập tài khoản</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400">
+          Chào mừng bạn trở lại! Tiếp tục hành trình đánh giá và phát triển năng lực số.
         </p>
       </div>
 
       {redirectParam && (
-        <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-800 flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
           <span>Vui lòng đăng nhập để tiếp nhận quyền truy cập hoặc lời mời của bạn.</span>
         </div>
       )}
 
       {error && (
-        <div className="p-3 rounded-md bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700">
+        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" strokeWidth={1.75} />
           <span>{error}</span>
         </div>
@@ -108,7 +108,7 @@ function LoginForm() {
       {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="login-email" className="block text-xs font-semibold text-slate-700 mb-1">
+          <label htmlFor="login-email" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
             Địa chỉ email
           </label>
           <input
@@ -119,18 +119,18 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+            className="w-full px-4 py-2.5 sm:py-3 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
           />
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700">
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="login-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               Mật khẩu
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs text-sky-600 hover:text-sky-700 font-medium transition-colors"
+              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium transition-colors"
             >
               Quên mật khẩu?
             </Link>
@@ -144,12 +144,12 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Nhập mật khẩu"
-              className="w-full px-3 py-2 pr-9 text-xs border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+              className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
               title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
@@ -165,9 +165,9 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-xs flex items-center justify-center gap-2"
+          className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 shadow-xs flex items-center justify-center gap-2 cursor-pointer"
         >
-          <LogIn className="w-3.5 h-3.5" strokeWidth={1.75} />
+          <LogIn className="w-4 h-4" strokeWidth={1.75} />
           <span>{loading ? 'Đang xác thực...' : 'Đăng nhập'}</span>
         </button>
       </form>
@@ -178,7 +178,7 @@ function LoginForm() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={oauthLoading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-xs"
+          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-700 dark:text-neutral-200 text-sm font-semibold transition-colors shadow-xs cursor-pointer"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path
@@ -203,9 +203,9 @@ function LoginForm() {
       </div>
 
       {/* Register Link (Không viền ngang) */}
-      <div className="text-center text-xs text-slate-500 pt-3">
+      <div className="text-center text-xs text-slate-500 dark:text-neutral-400 pt-3">
         Chưa có tài khoản?{' '}
-        <Link href="/register" className="font-semibold text-sky-600 hover:text-sky-700">
+        <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
           Đăng ký miễn phí
         </Link>
       </div>

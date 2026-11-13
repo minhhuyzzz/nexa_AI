@@ -123,6 +123,7 @@ export function HeroSection() {
                 width={941}
                 height={667}
                 priority
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 500px, (max-width: 1280px) 580px, 640px"
                 className="w-full h-auto drop-shadow-[0_20px_35px_rgba(84,120,201,0.12)] transition-transform duration-300 hover:scale-[1.01]"
               />
             </div>

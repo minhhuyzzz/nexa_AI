@@ -133,20 +133,20 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Link
-            href="/admin/analytics"
-            className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
-          >
-            <BarChart3 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-            <span>Phân tích BI 5 miền</span>
-          </Link>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full sm:w-auto">
           <Link
             href="/admin/organizations"
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
           >
             <Building2 className="w-3.5 h-3.5" strokeWidth={1.75} />
             <span>Duyệt hồ sơ B2B</span>
+          </Link>
+          <Link
+            href="/admin/analytics"
+            className="w-full sm:w-auto px-3.5 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+            <span>Phân tích BI 5 miền</span>
           </Link>
         </div>
       </div>
@@ -263,27 +263,59 @@ export default async function AdminDashboardPage() {
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile stacked cards (< 768px) */}
+            <div className="md:hidden space-y-2.5">
+              {recentActivities.map((act, idx) => {
+                const ActIcon = act.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-lg bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1 rounded-md bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 border border-slate-200/80 dark:border-zinc-700 shrink-0">
+                          <ActIcon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                          {act.action}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 whitespace-nowrap shrink-0">
+                        {act.time}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-300 gap-2">
+                      <span className="truncate">{act.target}</span>
+                      <span className="text-slate-500 dark:text-zinc-400 shrink-0">{act.actor}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="text-slate-400 dark:text-zinc-500 font-medium">
+                  <tr className="text-slate-500 dark:text-zinc-400 font-medium">
                     <th className="py-2.5 pr-4">Thời gian</th>
                     <th className="py-2.5 px-4">Hoạt động</th>
                     <th className="py-2.5 px-4">Đối tượng</th>
                     <th className="py-2.5 pl-4">Người thực hiện</th>
                   </tr>
                 </thead>
-                <tbody className="">
+                <tbody>
                   {recentActivities.map((act, idx) => {
                     const ActIcon = act.icon;
                     return (
                       <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/50 transition-colors">
-                        <td className="py-3 pr-4 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                        <td className="py-3 pr-4 text-slate-500 dark:text-zinc-400 whitespace-nowrap font-mono text-[11px]">
                           {act.time}
                         </td>
                         <td className="py-3 px-4 font-medium text-neutral-900 dark:text-neutral-100">
                           <div className="flex items-center gap-2">
-                            <ActIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <ActIcon className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400 shrink-0" />
                             <span>{act.action}</span>
                           </div>
                         </td>

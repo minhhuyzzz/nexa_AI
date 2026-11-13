@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, Playfair_Display, Alex_Brush } from 'next/font/google';
 import './globals.css';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -8,9 +8,29 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
+const alexBrush = Alex_Brush({
+  weight: '400',
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-script',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   referrer: 'no-referrer',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://nexa.ai.vn'),
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/icon.svg',
+  },
   title: {
     default: 'NEXA — Nền tảng Đánh giá & Phát triển Năng lực Số',
     template: '%s | NEXA',
@@ -61,16 +81,10 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={plusJakartaSans.variable}
+      className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${alexBrush.variable}`}
     >
       <head>
         <meta name="referrer" content="no-referrer" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap"
-          rel="stylesheet"
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

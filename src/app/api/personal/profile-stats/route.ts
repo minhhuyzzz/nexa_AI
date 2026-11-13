@@ -108,7 +108,6 @@ export async function GET() {
       await db
         .from('profiles')
         .update({
-          points,
           total_login_days: totalLoginDays,
           login_streak: loginStreak,
           last_login_date: todayStr,
@@ -129,15 +128,15 @@ export async function GET() {
 
     if (points >= 450) {
       levelNumber = 4;
-      levelCode = 'Level 4: Highly Active';
+      levelCode = 'Level 4: Highly Advanced';
       levelNextTarget = 450;
     } else if (points >= 300) {
       levelNumber = 3;
-      levelCode = 'Level 3: Active';
+      levelCode = 'Level 3: Advanced';
       levelNextTarget = 450;
     } else if (points >= 150) {
       levelNumber = 2;
-      levelCode = 'Level 2: Engaged';
+      levelCode = 'Level 2: Intermediate';
       levelNextTarget = 300;
     }
 

@@ -53,9 +53,26 @@ export function InviteMemberModal({
   // Email invite state
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<'MEMBER' | 'ASSESSOR' | 'ORG_ADMIN'>('MEMBER');
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Validate email on blur (chỉ kiểm tra khi rời khỏi trường nhập, không kiểm tra liên tục khi đang gõ)
+  const validateEmailOnBlur = () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setFieldError('Vui lòng nhập địa chỉ email người nhận (ví dụ: giangvien@truong.edu.vn).');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      setFieldError('Email chưa đúng định dạng. Vui lòng kiểm tra lại cấu trúc dạng ten@donvi.edu.vn.');
+      return false;
+    }
+    setFieldError(null);
+    return true;
+  };
 
   // Tính thời gian còn hiệu lực theo thời gian thực
   useEffect(() => {
@@ -211,7 +228,7 @@ export function InviteMemberModal({
 
   const handleSendEmailInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || isSubmitting) return;
+    if (!validateEmailOnBlur() || isSubmitting) return;
 
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -235,6 +252,7 @@ export function InviteMemberModal({
 
       setSuccessMsg(`Đã gửi thư mời thành công đến ${email.trim()}`);
       setEmail('');
+      setFieldError(null);
       onSuccess?.();
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
@@ -258,14 +276,14 @@ export function InviteMemberModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 p-1 rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          aria-label="Đóng"
+          className="absolute top-4 right-4 w-11 h-11 min-h-[44px] min-w-[44px] rounded-xl text-slate-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
+          aria-label="Đóng hộp thoại"
         >
           <X className="w-5 h-5" strokeWidth={1.75} />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-3.5 mb-6">
+        <div className="flex items-center gap-3.5 mb-6 pr-10">
           <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center shrink-0">
             <UserPlus className="w-5 h-5" strokeWidth={1.75} />
           </div>
@@ -284,7 +302,7 @@ export function InviteMemberModal({
           <button
             type="button"
             onClick={() => setActiveTab('code')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${
+            className={`flex-1 min-h-[44px] py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none ${
               activeTab === 'code'
                 ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-2xs'
                 : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
@@ -297,7 +315,7 @@ export function InviteMemberModal({
           <button
             type="button"
             onClick={() => setActiveTab('email')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${
+            className={`flex-1 min-h-[44px] py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none ${
               activeTab === 'email'
                 ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-2xs'
                 : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
@@ -327,9 +345,9 @@ export function InviteMemberModal({
               </div>
 
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-10 px-3.5 rounded-xl bg-slate-50/70 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-700/80 flex items-center text-sm font-bold font-mono text-blue-600 dark:text-blue-400 tracking-wider">
+                <div className="flex-1 h-11 min-h-[44px] px-3.5 rounded-xl bg-slate-50/70 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-700/80 flex items-center text-sm font-bold font-mono text-blue-600 dark:text-blue-400 tracking-wider">
                   {loadingCode ? (
-                    <span className="text-slate-400 flex items-center gap-1.5 text-xs font-normal">
+                    <span className="text-slate-500 dark:text-neutral-400 flex items-center gap-1.5 text-xs font-normal">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang tạo mã...
                     </span>
                   ) : (
@@ -344,7 +362,7 @@ export function InviteMemberModal({
                   disabled={loadingCode || isRotating}
                   title="Tạo mã mới ngay (mã cũ sẽ hết hiệu lực)"
                   aria-label="Cập nhật mã mới"
-                  className="h-10 w-10 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-neutral-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0 disabled:opacity-50"
+                  className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-neutral-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                 >
                   <RotateCw
                     className={`w-4 h-4 ${
@@ -358,7 +376,7 @@ export function InviteMemberModal({
                   type="button"
                   onClick={handleCopyCode}
                   disabled={loadingCode || !joinCode}
-                  className="h-10 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
+                  className="h-11 min-h-[44px] px-4 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                 >
                   {copiedCode ? (
                     <>
@@ -391,7 +409,7 @@ export function InviteMemberModal({
                 type="button"
                 onClick={handleCopyLink}
                 disabled={loadingCode || !joinCode}
-                className="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
+                className="h-11 min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 {copiedLink ? (
                   <>
@@ -434,39 +452,56 @@ export function InviteMemberModal({
               </div>
             )}
 
-            {/* Email input */}
+            {/* Email input (1 Cột, Label trên, On blur validation, Hướng dẫn lỗi chi tiết) */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                Địa chỉ email người được mời *
+              <label htmlFor="invite-email" className="block text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                Địa chỉ email người được mời <span className="text-red-500">*</span>
               </label>
               <input
+                id="invite-email"
                 type="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onBlur={validateEmailOnBlur}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldError) setFieldError(null);
+                }}
+                aria-invalid={!!fieldError}
+                aria-describedby={fieldError ? 'invite-email-error' : undefined}
                 placeholder="dongnghiep@donvi.edu.vn"
-                className="w-full h-10 px-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className={`w-full h-11 min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 transition-colors focus-visible:outline-none motion-reduce:transition-none ${
+                  fieldError
+                    ? 'border-2 border-red-500 focus-visible:ring-2 focus-visible:ring-red-500 bg-red-50/10'
+                    : 'border border-slate-200 dark:border-zinc-700/80 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:border-transparent'
+                }`}
               />
+              {fieldError && (
+                <p id="invite-email-error" className="text-[11px] text-red-600 dark:text-red-400 flex items-center gap-1.5 mt-1 font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{fieldError}</span>
+                </p>
+              )}
             </div>
 
-            {/* Role dropdown (Tinh gọn gọn gàng theo yêu cầu) */}
+            {/* Role dropdown */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              <label htmlFor="invite-role" className="block text-xs font-bold text-neutral-900 dark:text-neutral-100">
                 Vai trò trong tổ chức
               </label>
               <div className="relative">
                 <select
+                  id="invite-role"
                   value={selectedRole}
                   onChange={(e) =>
                     setSelectedRole(e.target.value as 'MEMBER' | 'ASSESSOR' | 'ORG_ADMIN')
                   }
-                  className="w-full h-10 px-3.5 pr-9 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 appearance-none cursor-pointer"
+                  className="w-full h-11 min-h-[44px] px-3.5 pr-9 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none appearance-none cursor-pointer motion-reduce:transition-none"
                 >
                   <option value="MEMBER">Thành viên</option>
                   <option value="ASSESSOR">Khảo thí viên</option>
                   {isOwner && <option value="ORG_ADMIN">Quản trị viên</option>}
                 </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 text-slate-500 dark:text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -475,9 +510,9 @@ export function InviteMemberModal({
               <button
                 type="submit"
                 disabled={isSubmitting || !email.trim()}
-                className={`w-full h-10 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors ${
+                className={`w-full h-11 min-h-[44px] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none ${
                   isSubmitting || !email.trim()
-                    ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-neutral-500 cursor-not-allowed'
+                    ? 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 cursor-not-allowed border border-slate-200 dark:border-zinc-700'
                     : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-2xs'
                 }`}
               >

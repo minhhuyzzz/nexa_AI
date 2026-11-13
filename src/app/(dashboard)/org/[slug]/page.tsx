@@ -189,7 +189,7 @@ export default async function OrgOverviewPage({
             </div>
             <div>
               <div className="mb-0.5">
-                <span className="text-[11px] font-mono text-slate-400 dark:text-neutral-500">
+                <span className="text-[11px] font-mono text-slate-500 dark:text-neutral-400">
                   @{org.slug}
                 </span>
               </div>
@@ -199,38 +199,40 @@ export default async function OrgOverviewPage({
             </div>
           </div>
 
-          {/* Fast Action Command Bar */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+          {/* Fast Action Command Bar (Responsive: Full-width stacked on mobile, inline on desktop) */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0 w-full lg:w-auto">
             {isOwnerOrAdmin && (
               <Link
                 href={`/org/${slug}/campaigns/new`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <PlusCircle className="w-4 h-4" strokeWidth={1.75} />
                 <span>Giao đề đánh giá</span>
               </Link>
             )}
-            <Link
-              href={`/org/${slug}/classes`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors shadow-xs backdrop-blur-xs"
-            >
-              <FolderKanban className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
-              <span>Tạo Lớp học</span>
-            </Link>
-            <Link
-              href={`/org/${slug}/members`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors shadow-xs backdrop-blur-xs"
-            >
-              <UserPlus className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
-              <span>Mời thành viên</span>
-            </Link>
-            <Link
-              href={`/org/${slug}/live-room`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors shadow-xs backdrop-blur-xs"
-            >
-              <Radio className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
-              <span>Phòng thi Live</span>
-            </Link>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Link
+                href={`/org/${slug}/classes`}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
+              >
+                <FolderKanban className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+                <span>Tạo Lớp</span>
+              </Link>
+              <Link
+                href={`/org/${slug}/members`}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
+              >
+                <UserPlus className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+                <span>Mời</span>
+              </Link>
+              <Link
+                href={`/org/${slug}/live-room`}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
+              >
+                <Radio className="w-4 h-4 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
+                <span>Live</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -242,13 +244,13 @@ export default async function OrgOverviewPage({
         {/* Card 1: Thành viên & Người học */}
         <Link
           href={`/org/${slug}/members`}
-          className="group p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all flex flex-col justify-between"
+          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
               Thành viên đơn vị
             </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
               <Users className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
@@ -269,13 +271,13 @@ export default async function OrgOverviewPage({
         {/* Card 2: Lớp học & Không gian đào tạo */}
         <Link
           href={`/org/${slug}/classes`}
-          className="group p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-sm transition-all flex flex-col justify-between"
+          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
               Lớp học &amp; Đơn vị
             </span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
               <GraduationCap className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
@@ -287,7 +289,7 @@ export default async function OrgOverviewPage({
               Không gian đào tạo đang mở
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
             <span>Danh sách lớp học</span>
             <ChevronRight className="w-3 h-3" />
           </div>
@@ -296,13 +298,13 @@ export default async function OrgOverviewPage({
         {/* Card 3: Đợt khảo thí số */}
         <Link
           href={`/org/${slug}/campaigns`}
-          className="group p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-sm transition-all flex flex-col justify-between"
+          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
               Đợt khảo thí
             </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
               <Calendar className="w-4 h-4" strokeWidth={1.75} />
             </div>
           </div>
@@ -316,7 +318,7 @@ export default async function OrgOverviewPage({
                 : 'Chưa có đợt mở thi'}
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
             <span>Xem đợt khảo thí</span>
             <ChevronRight className="w-3 h-3" />
           </div>
@@ -325,17 +327,17 @@ export default async function OrgOverviewPage({
         {/* Card 4: Thẩm định & Bài nộp */}
         <Link
           href={`/org/${slug}/grading`}
-          className="group p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-sm transition-all flex flex-col justify-between"
+          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
               Bàn thẩm định bài
             </span>
             <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform ${
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                 pendingGradingCount > 0
                   ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
-                  : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400'
               }`}
             >
               <FileCheck className="w-4 h-4" strokeWidth={1.75} />
@@ -359,7 +361,7 @@ export default async function OrgOverviewPage({
               )}
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
             <span>Mở bàn chấm bài</span>
             <ChevronRight className="w-3 h-3" />
           </div>
@@ -445,18 +447,18 @@ export default async function OrgOverviewPage({
               </div>
               <Link
                 href={`/org/${slug}/classes`}
-                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group"
+                className="mt-4 w-full py-2.5 px-3 min-h-[44px] rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <span>{classesCount > 0 ? 'Xem danh sách lớp' : 'Tạo lớp học'}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all motion-reduce:transition-none" />
               </Link>
             </div>
 
             {/* Step 2 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors motion-reduce:transition-none">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                     BƯỚC 02
                   </span>
                   {membersCount > 1 ? (
@@ -470,7 +472,7 @@ export default async function OrgOverviewPage({
                   )}
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
                     <Users className="w-4 h-4" />
                   </div>
                   <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
@@ -480,15 +482,15 @@ export default async function OrgOverviewPage({
               </div>
               <Link
                 href={`/org/${slug}/members`}
-                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group"
+                className="mt-4 w-full py-2.5 px-3 min-h-[44px] rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <span>{membersCount > 1 ? 'Xem thành viên' : 'Mời thành viên'}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all motion-reduce:transition-none" />
               </Link>
             </div>
 
             {/* Step 3 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-blue-200 dark:border-blue-900/60 flex flex-col justify-between shadow-2xs ring-1 ring-blue-500/10 hover:border-blue-400 transition-colors">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-blue-200 dark:border-blue-900/60 flex flex-col justify-between shadow-2xs ring-1 ring-blue-500/10 hover:border-blue-400 transition-colors motion-reduce:transition-none">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
@@ -509,18 +511,18 @@ export default async function OrgOverviewPage({
               </div>
               <Link
                 href={`/org/${slug}/campaigns/new`}
-                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-xs group"
+                className="mt-4 w-full py-2.5 px-3 min-h-[44px] rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-xs group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <span>Tạo đợt thi ngay</span>
-                <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
               </Link>
             </div>
 
             {/* Step 4 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors motion-reduce:transition-none">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                     BƯỚC 04
                   </span>
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700/60 px-2 py-0.5 rounded-full">
@@ -538,10 +540,10 @@ export default async function OrgOverviewPage({
               </div>
               <Link
                 href={`/org/${slug}/grading`}
-                className="mt-4 w-full py-2 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group"
+                className="mt-4 w-full py-2.5 px-3 min-h-[44px] rounded-lg text-xs font-semibold inline-flex items-center justify-between transition-colors bg-slate-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-neutral-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <span>Bàn chấm bài</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all motion-reduce:transition-none" />
               </Link>
             </div>
           </div>
@@ -581,7 +583,7 @@ export default async function OrgOverviewPage({
 
             {rawCampaigns.length === 0 ? (
               <div className="p-8 text-center my-2">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800/80 flex items-center justify-center text-slate-400 dark:text-neutral-500 mx-auto mb-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800/80 flex items-center justify-center text-slate-500 dark:text-neutral-400 mx-auto mb-3">
                   <Calendar className="w-5 h-5" strokeWidth={1.75} />
                 </div>
                 <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-3.5">
@@ -590,9 +592,9 @@ export default async function OrgOverviewPage({
                 {isOwnerOrAdmin && (
                   <Link
                     href={`/org/${slug}/campaigns/new`}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                   >
-                    <PlusCircle className="w-3.5 h-3.5" />
+                    <PlusCircle className="w-4 h-4" />
                     <span>Khởi tạo đợt đầu tiên</span>
                   </Link>
                 )}
@@ -621,7 +623,7 @@ export default async function OrgOverviewPage({
                   return (
                     <div
                       key={camp.id}
-                      className="p-4 hover:bg-slate-50/60 dark:hover:bg-zinc-900/40 transition-colors flex items-center justify-between gap-3"
+                      className="p-4 hover:bg-slate-50/60 dark:hover:bg-zinc-900/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
                       <div className="min-w-0 pr-2">
                         <div className="flex items-center gap-2 mb-1">
@@ -629,7 +631,7 @@ export default async function OrgOverviewPage({
                           {camp.ends_at && (
                             <span
                               suppressHydrationWarning
-                              className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono"
+                              className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono"
                             >
                               Hạn: {formatVnDate(camp.ends_at)}
                             </span>
@@ -645,16 +647,16 @@ export default async function OrgOverviewPage({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                         <Link
                           href={`/org/${slug}/grading?campaignId=${camp.id}`}
-                          className="px-2.5 py-1 rounded-md text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition-colors"
+                          className="px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 inline-flex items-center justify-center rounded-md text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                         >
                           Chấm bài
                         </Link>
                         <Link
                           href={`/org/${slug}/campaigns`}
-                          className="px-2.5 py-1 rounded-md text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
+                          className="px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 inline-flex items-center justify-center rounded-md text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                         >
                           Chi tiết
                         </Link>
@@ -693,7 +695,7 @@ export default async function OrgOverviewPage({
 
             {classesCount === 0 ? (
               <div className="p-8 text-center my-2">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800/80 flex items-center justify-center text-slate-400 dark:text-neutral-500 mx-auto mb-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800/80 flex items-center justify-center text-slate-500 dark:text-neutral-400 mx-auto mb-3">
                   <GraduationCap className="w-5 h-5" strokeWidth={1.75} />
                 </div>
                 <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-3.5">
@@ -701,9 +703,9 @@ export default async function OrgOverviewPage({
                 </p>
                 <Link
                   href={`/org/${slug}/classes`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                 >
-                  <PlusCircle className="w-3.5 h-3.5" />
+                  <PlusCircle className="w-4 h-4" />
                   <span>Tạo lớp học mới</span>
                 </Link>
               </div>
@@ -732,12 +734,12 @@ export default async function OrgOverviewPage({
                         </h3>
                         <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5">
                           <span className="inline-flex items-center gap-1">
-                            <Users className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
+                            <Users className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
                             {studentCount} thành viên
                           </span>
                           <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
                           <span className="inline-flex items-center gap-1">
-                            <FileText className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
+                            <FileText className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
                             {assignCount} bài đã giao
                           </span>
                         </div>
@@ -746,13 +748,13 @@ export default async function OrgOverviewPage({
                       <div className="pt-3 mt-3 flex items-center justify-between">
                         <Link
                           href={`/org/${slug}/grading?classId=${cls.id}`}
-                          className="text-[11px] font-medium text-slate-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          className="min-h-[44px] sm:min-h-0 inline-flex items-center text-[11px] font-medium text-slate-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                         >
                           Chấm bài lớp
                         </Link>
                         <Link
                           href={`/org/${slug}/classes/${cls.id}`}
-                          className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
+                          className="min-h-[44px] sm:min-h-0 inline-flex items-center text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline gap-0.5 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
                         >
                           <span>Quản lý</span>
                           <ChevronRight className="w-3 h-3" />
@@ -854,119 +856,125 @@ export default async function OrgOverviewPage({
 
           {/* Card 2: Phím Tắt Khảo Thí & Điều Hành Nhanh (Executive Dock) */}
           <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs p-5">
-            <div className="flex items-center justify-between pb-3 mb-3">
+            <div className="flex items-center justify-between pb-3 mb-2">
               <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-neutral-900 dark:text-neutral-100">
                 Phím Tắt Điều Hành
               </h3>
-              <span className="text-[10px] font-mono text-slate-400 dark:text-neutral-500">
+              <span className="text-[10px] font-mono text-slate-500 dark:text-neutral-400">
                 Lối tắt
               </span>
             </div>
 
-            <div className="">
+            <div className="space-y-1">
               {/* Shortcut 1: Bàn chấm bài */}
               <Link
                 href={`/org/${slug}/grading`}
-                className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between group"
+                className="min-h-[44px] py-2 px-2.5 -mx-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <div
+                    className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                      pendingGradingCount > 0
+                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400'
+                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/60 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                    }`}
+                  >
                     <FileCheck className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       Bàn thẩm định bài nộp
                     </div>
-                    <div className="text-[11px] text-slate-400 dark:text-neutral-500">
+                    <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       {pendingGradingCount > 0 ? `${pendingGradingCount} bài chờ chấm` : 'Sạch hàng chờ'}
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
               </Link>
 
               {/* Shortcut 2: Phòng thi Live */}
               <Link
                 href={`/org/${slug}/live-room`}
-                className="py-2.5 flex items-center justify-between group"
+                className="min-h-[44px] py-2 px-2.5 -mx-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/60 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-center shrink-0 transition-colors">
                     <Radio className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       Phòng thi trực tiếp (Mã PIN)
                     </div>
-                    <div className="text-[11px] text-slate-400 dark:text-neutral-500">
+                    <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       Điều hành phiên thi realtime
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
               </Link>
 
               {/* Shortcut 3: Ngân hàng đề */}
               <Link
                 href={`/org/${slug}/assessments`}
-                className="py-2.5 flex items-center justify-between group"
+                className="min-h-[44px] py-2 px-2.5 -mx-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/60 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-center shrink-0 transition-colors">
                     <FileText className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       Ngân hàng đề khảo thí
                     </div>
-                    <div className="text-[11px] text-slate-400 dark:text-neutral-500">
+                    <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       {(orgAssessmentsResult.data || []).length} đề nội bộ đơn vị
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
               </Link>
 
               {/* Shortcut 4: Báo cáo phân tích */}
               <Link
                 href={`/org/${slug}/analytics`}
-                className="py-2.5 flex items-center justify-between group"
+                className="min-h-[44px] py-2 px-2.5 -mx-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/60 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-center shrink-0 transition-colors">
                     <BarChart2 className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       Báo cáo &amp; Phân tích phổ điểm
                     </div>
-                    <div className="text-[11px] text-slate-400 dark:text-neutral-500">
+                    <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       Khoảng trống &amp; Đề xuất học phần
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
               </Link>
 
               {/* Shortcut 5: Gói & Hạn mức */}
               <Link
                 href={`/org/${slug}/plan`}
-                className="py-2.5 last:pb-1 flex items-center justify-between group"
+                className="min-h-[44px] py-2 px-2.5 -mx-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/60 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-center shrink-0 transition-colors">
                     <ShieldCheck className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       Gói bản quyền &amp; Quota
                     </div>
-                    <div className="text-[11px] text-slate-400 dark:text-neutral-500">
+                    <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       {entitlements.planName || 'Business'} &bull; Tra cứu hạn mức
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
               </Link>
             </div>
           </div>

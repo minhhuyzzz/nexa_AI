@@ -60,11 +60,11 @@ export function AdminKpiCard({
       </div>
 
       <div>
-        <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white tabular-nums">
+        <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white tabular-nums font-mono">
           {value}
         </div>
         {timeframe && (
-          <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1">
+          <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
             {timeframe}
           </p>
         )}
@@ -103,7 +103,9 @@ export function AdminQueueCard({
       <div>
         <div className="flex items-center justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4 text-slate-700 dark:text-zinc-300" strokeWidth={1.75} />
+            <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 shrink-0">
+              <Icon className="w-4 h-4" strokeWidth={1.75} />
+            </div>
             <h3 className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
               {title}
             </h3>
@@ -136,7 +138,7 @@ export function AdminQueueCard({
       <div className="mt-4 pt-1">
         <Link
           href={actionHref}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-800 hover:text-blue-600 dark:text-zinc-200 dark:hover:text-blue-400 transition-colors"
+          className="min-h-[44px] sm:min-h-0 py-2 sm:py-0 inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-800 hover:text-blue-600 dark:text-zinc-200 dark:hover:text-blue-400 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none rounded-md"
         >
           <span>{actionText}</span>
           <ChevronRight className="w-3.5 h-3.5" />
@@ -263,13 +265,13 @@ export function AdminFunnelChart({ steps }: { steps: FunnelStep[] }) {
 
               {/* Conversion rate indicator */}
               {step.conversionRate && idx < steps.length - 1 && (
-                <div className="text-[10px] text-slate-400 font-mono font-medium mt-1">
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono font-medium mt-1">
                   {step.conversionRate} →
                 </div>
               )}
 
               {/* Label below */}
-              <div className="text-[11px] text-center text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-tight">
+              <div className="text-[10px] sm:text-[11px] text-center text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-tight">
                 {step.label}
               </div>
             </div>
@@ -348,6 +350,7 @@ export function AdminPagination({
   totalPages,
   totalRecords,
   recordsPerPage = 10,
+  onPageChange,
 }: AdminPaginationProps) {
   const startRecord = (currentPage - 1) * recordsPerPage + 1;
   const endRecord = Math.min(currentPage * recordsPerPage, totalRecords);
@@ -369,8 +372,11 @@ export function AdminPagination({
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1">
           <button
+            type="button"
+            aria-label="Trang trước"
+            onClick={() => onPageChange && onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-2.5 py-1 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
           >
             &lt;
           </button>
@@ -378,19 +384,30 @@ export function AdminPagination({
             {currentPage}
           </span>
           {totalPages > 1 && (
-            <button className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 transition-colors">
+            <button
+              type="button"
+              onClick={() => onPageChange && onPageChange(currentPage + 1)}
+              className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+            >
               {Math.min(currentPage + 1, totalPages)}
             </button>
           )}
-          {totalPages > 3 && <span className="px-1">...</span>}
+          {totalPages > 3 && <span className="px-1 text-slate-500">...</span>}
           {totalPages > 2 && (
-            <button className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 transition-colors">
+            <button
+              type="button"
+              onClick={() => onPageChange && onPageChange(totalPages)}
+              className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+            >
               {totalPages}
             </button>
           )}
           <button
+            type="button"
+            aria-label="Trang sau"
+            onClick={() => onPageChange && onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-2.5 py-1 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
           >
             &gt;
           </button>

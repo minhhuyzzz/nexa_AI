@@ -21,7 +21,6 @@ import {
   FileText,
   Edit3,
   Send,
-  Calendar,
   Archive,
   Clock,
   Play,
@@ -55,8 +54,47 @@ export default function PersonalAuthoringListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Row dropdown menus
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  // 3-dots Dropdown State (Fixed floating popover)
+  const [dropdownMenu, setDropdownMenu] = useState<{
+    id: string;
+    top: number;
+    right: number;
+    placement: 'top' | 'bottom';
+    item: AuthoringCardItem;
+  } | null>(null);
+
+  // Đóng dropdown khi click ngoài hoặc cuộn trang
+  useEffect(() => {
+    const handleClose = () => setDropdownMenu(null);
+    if (dropdownMenu) {
+      window.addEventListener('click', handleClose);
+      window.addEventListener('scroll', handleClose, true);
+      return () => {
+        window.removeEventListener('click', handleClose);
+        window.removeEventListener('scroll', handleClose, true);
+      };
+    }
+  }, [dropdownMenu]);
+
+  const handleOpenDropdown = (e: React.MouseEvent, item: AuthoringCardItem) => {
+    e.stopPropagation();
+    if (dropdownMenu?.id === item.id) {
+      setDropdownMenu(null);
+      return;
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const menuHeight = 135;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placement: 'top' | 'bottom' = spaceBelow < menuHeight && rect.top > menuHeight ? 'top' : 'bottom';
+
+    setDropdownMenu({
+      id: item.id,
+      top: placement === 'bottom' ? rect.bottom + 6 : rect.top - 6,
+      right: window.innerWidth - rect.right,
+      placement,
+      item,
+    });
+  };
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -410,7 +448,6 @@ export default function PersonalAuthoringListPage() {
                   <th className="py-3 px-3 min-w-[100px]">Thời lượng</th>
                   <th className="py-3 px-3 min-w-[120px]">Trạng thái</th>
                   <th className="py-3 px-4 min-w-[150px]">Cập nhật gần đây</th>
-                  <th className="py-3 px-4 min-w-[170px]">Phiên/Đợt thi</th>
                   <th className="py-3 px-4 text-right min-w-[110px]">Thao tác</th>
                 </tr>
               </thead>
@@ -507,15 +544,6 @@ export default function PersonalAuthoringListPage() {
                         </div>
                       </td>
 
-                      {/* Phiên/Đợt thi */}
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-zinc-400">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="text-xs font-medium">Chưa gắn đợt thi</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 pl-5">-</div>
-                      </td>
-
                       {/* Thao tác */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1 relative">
@@ -550,45 +578,16 @@ export default function PersonalAuthoringListPage() {
                           {/* More dropdown */}
                           <button
                             type="button"
-                            onClick={() =>
-                              setActiveMenuId(activeMenuId === item.id ? null : item.id)
-                            }
-                            className="p-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 hover:text-neutral-900 dark:hover:bg-zinc-800 text-slate-500 transition-colors cursor-pointer"
+                            onClick={(e) => handleOpenDropdown(e, item)}
+                            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                              dropdownMenu?.id === item.id
+                                ? 'border-blue-600 text-blue-600 bg-blue-50 dark:bg-blue-950/40'
+                                : 'border-slate-200 dark:border-zinc-700 hover:bg-slate-100 hover:text-neutral-900 dark:hover:bg-zinc-800 text-slate-500'
+                            }`}
                             title="Thao tác khác"
                           >
                             <MoreHorizontal className="w-3.5 h-3.5" />
                           </button>
-
-                          {/* Dropdown Menu */}
-                          {activeMenuId === item.id && (
-                            <div className="absolute right-0 top-9 w-40 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg py-1 z-30 text-left">
-                              <Link
-                                href={`/personal/authoring/${item.id}`}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800"
-                              >
-                                <Eye className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Xem chi tiết</span>
-                              </Link>
-                              <Link
-                                href={`/personal/authoring/${item.id}/preview`}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800"
-                              >
-                                <FileCheck className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Kiểm định &amp; xem</span>
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  handleDelete(item.id);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Xóa đề</span>
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -652,6 +651,50 @@ export default function PersonalAuthoringListPage() {
               onDelete={handleDelete}
             />
           ))}
+        </div>
+      )}
+
+      {/* 3-dots Floating Dropdown Menu (Nổi trên mọi khung viền, tự động lật hướng) */}
+      {dropdownMenu && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: dropdownMenu.placement === 'bottom' ? dropdownMenu.top : undefined,
+            bottom: dropdownMenu.placement === 'top' ? window.innerHeight - dropdownMenu.top : undefined,
+            right: dropdownMenu.right,
+            zIndex: 9999,
+          }}
+          className="w-44 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#18181B] shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100 font-sans z-50 text-left"
+        >
+          <Link
+            href={`/personal/authoring/${dropdownMenu.item.id}`}
+            onClick={() => setDropdownMenu(null)}
+            className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5 text-slate-400" />
+            <span>Xem chi tiết</span>
+          </Link>
+          <Link
+            href={`/personal/authoring/${dropdownMenu.item.id}/preview`}
+            onClick={() => setDropdownMenu(null)}
+            className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <FileCheck className="w-3.5 h-3.5 text-slate-400" />
+            <span>Kiểm định &amp; xem</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              const targetId = dropdownMenu.item.id;
+              setDropdownMenu(null);
+              handleDelete(targetId);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Xóa đề</span>
+          </button>
         </div>
       )}
     </div>

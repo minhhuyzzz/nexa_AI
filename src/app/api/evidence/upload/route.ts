@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-// 25MB limit synchronized with storage.buckets file_size_limit (26214400 bytes)
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
+// 10MB limit for attachments & evidence submissions (synchronized with authoring & exam requirements)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = new Set([
   // Documents
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     // 3. Validate File Size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `Dung lượng tệp vượt quá giới hạn (Tối đa 25MB, tệp hiện tại: ${(file.size / 1024 / 1024).toFixed(1)}MB)` },
+        { error: `Dung lượng tệp vượt quá giới hạn (Tối đa 10MB, tệp hiện tại: ${(file.size / 1024 / 1024).toFixed(1)}MB)` },
         { status: 400 }
       );
     }
@@ -99,9 +100,10 @@ export async function POST(request: Request) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = `submissions/${userId}/${submissionId}/${itemId || 'item'}_${Date.now()}_${safeName}`;
 
-    // 6. Upload to Supabase Storage
+    // 6. Upload to Supabase Storage using admin client (service role) to ensure reliable storage writes
+    const adminSupabase = createAdminClient();
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await adminSupabase.storage
       .from('assessment-evidence')
       .upload(filePath, buffer, {
         contentType: file.type || 'application/octet-stream',
@@ -118,7 +120,7 @@ export async function POST(request: Request) {
     }
 
     // 7. Generate Signed URL for secure private storage access (valid for 7 days)
-    const { data: signedData } = await supabase.storage
+    const { data: signedData } = await adminSupabase.storage
       .from('assessment-evidence')
       .createSignedUrl(uploadData.path, 60 * 60 * 24 * 7);
 

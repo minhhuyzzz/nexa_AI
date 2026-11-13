@@ -699,7 +699,19 @@ export class QuotaEnforcementService {
       };
     }
 
-    // SEC-07: Tổ chức chưa có entitlement chính thức thì trả về trạng thái PROVISIONING an toàn
+    // SEC-07: Tổ chức chưa có entitlement chính thức thì đọc max_members từ organizations hoặc fallback an toàn
+    let fallbackSeats = 50;
+    try {
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('max_members')
+        .eq('id', organizationId)
+        .maybeSingle();
+      if (orgData?.max_members) {
+        fallbackSeats = orgData.max_members;
+      }
+    } catch {}
+
     const nowIso = now.toISOString();
     return {
       contractNumber: 'PROVISIONING',
@@ -707,7 +719,7 @@ export class QuotaEnforcementService {
       status: 'PROVISIONING',
       isProvisioning: true,
       daysRemaining: 0,
-      maxSeats: 50,
+      maxSeats: fallbackSeats,
       maxAssessments: 10,
       aiCreditsGranted: 0,
       aiCreditsUsed: 0,

@@ -72,6 +72,11 @@ describe('Admin Organization Creation & Owner Direct Elevation Suite', () => {
             insert: mockInsertInvite,
           };
         }
+        if (table === 'organization_entitlements') {
+          return {
+            insert: vi.fn().mockResolvedValue({ data: {}, error: null }),
+          };
+        }
         return {};
       }),
     };
@@ -159,6 +164,11 @@ describe('Admin Organization Creation & Owner Direct Elevation Suite', () => {
         if (table === 'organization_invitations') {
           return {
             insert: mockInsertInvite,
+          };
+        }
+        if (table === 'organization_entitlements') {
+          return {
+            insert: vi.fn().mockResolvedValue({ data: {}, error: null }),
           };
         }
         return {};
