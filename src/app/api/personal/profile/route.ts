@@ -92,7 +92,7 @@ export async function GET() {
       // Fallback if table query is unmocked or fails
     }
 
-    let totalSubmissions = userSubmissions?.length || 0;
+    const totalSubmissions = userSubmissions?.length || 0;
     let completedAssessments = 0;
     let percentageSum = 0;
     let evaluatedCount = 0;
