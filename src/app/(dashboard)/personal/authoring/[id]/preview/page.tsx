@@ -18,6 +18,7 @@ import {
   Edit3,
   Loader2,
   AlertTriangle,
+  Eye,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -133,9 +134,8 @@ export default function PersonalAuthoringPreviewPage({
   });
 
   const totalPoints = items.reduce((sum, i) => sum + i.points, 0);
-  const isTotalPoints100 = Math.round(totalPoints) === 100;
   const coveredDomains = [...new Set(items.map((i) => i.domainCode))];
-  const isValidForPublish = hasQuestions && allPromptsFilled && allMCQHaveCorrectAnswer && isTotalPoints100;
+  const isValidForPublish = hasQuestions && allPromptsFilled && allMCQHaveCorrectAnswer;
 
   const handlePublish = async () => {
     if (!isValidForPublish) return;
@@ -290,20 +290,14 @@ export default function PersonalAuthoringPreviewPage({
                 </span>
               </div>
 
-              {/* Check 5: Total Score 100 */}
+              {/* Check 5: Total Score */}
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
                 <span className="text-neutral-800 dark:text-zinc-200">
-                  5. Tổng điểm đề thi chuẩn hóa đủ 100 điểm
+                  5. Tổng điểm cấu hình câu hỏi
                 </span>
-                {isTotalPoints100 ? (
-                  <span className="text-emerald-600 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4" /> Đạt (100/100 điểm)
-                  </span>
-                ) : (
-                  <span className="text-rose-600 font-bold flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" /> {Math.round(totalPoints)}/100đ (Chưa đủ 100đ)
-                  </span>
-                )}
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> {totalPoints} điểm (Đạt chuẩn)
+                </span>
               </div>
             </div>
           </div>
@@ -431,6 +425,14 @@ export default function PersonalAuthoringPreviewPage({
 
             {/* Action buttons */}
             <div className="pt-2 space-y-2">
+              <Link
+                href={`/personal/take/${id}?preview=true`}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>Xem trước giao diện làm bài</span>
+              </Link>
+
               {isValidForPublish ? (
                 <button
                   type="button"

@@ -170,12 +170,12 @@ export function AuthoringCard({ item, onDuplicate, onDelete }: AuthoringCardProp
           {menuOpen && (
             <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-lg z-30 p-1.5 text-xs space-y-0.5 animate-in fade-in duration-100">
               <Link
-                href={`/personal/authoring/${item.id}/preview`}
+                href={`/personal/take/${item.id}?preview=true`}
                 className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200"
                 onClick={() => setMenuOpen(false)}
               >
                 <Eye className="w-3.5 h-3.5 text-slate-400" />
-                <span>Xem trước &amp; Kiểm định</span>
+                <span>Xem trước</span>
               </Link>
 
               <Link

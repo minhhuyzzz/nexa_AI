@@ -201,7 +201,7 @@ function AssessmentTakeContent({
       email: candidateUser.email,
       fullName: candidateUser.fullName,
     },
-    enabled: Boolean(assessment && !submittedResult),
+    enabled: Boolean(assessment && !submittedResult && !isPreview),
     onViolation: (event) => {
       // Nếu đang trong phòng thi Live trực tiếp, phát broadcast và ghi nhận sự kiện máy chủ
       if (roomId) {
@@ -539,9 +539,9 @@ function AssessmentTakeContent({
     assessment?.title?.toLowerCase().includes('khảo thí đầu vào')
   );
 
-  // 2. Countdown Timer (Only for Formal Time-Limited Exams, NEVER for Intake Assessment)
+  // 2. Countdown Timer (Only for Formal Time-Limited Exams, NEVER for Intake Assessment, NEVER for Preview Mode)
   useEffect(() => {
-    if (isBaseline || loading || timeRemaining <= 0 || isSubmitting || submittedResult || isRoomPaused) return;
+    if (isBaseline || loading || timeRemaining <= 0 || isSubmitting || submittedResult || isRoomPaused || isPreview) return;
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -555,7 +555,7 @@ function AssessmentTakeContent({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult, isRoomPaused]);
+  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult, isRoomPaused, isPreview]);
 
   // 2.1 Live Room Realtime Sync (room:${roomId})
   useEffect(() => {
@@ -2133,13 +2133,13 @@ function AssessmentTakeContent({
           {/* Countdown Clock */}
           <div
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-mono text-xs font-bold tabular-nums transition-colors ${
-              timeRemaining < 300
+              timeRemaining < 300 && !isPreview
                 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 animate-pulse'
                 : 'bg-slate-100 dark:bg-zinc-800 border-slate-200/80 dark:border-zinc-700 text-slate-800 dark:text-neutral-200'
             }`}
           >
             <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
-            <span>{formatTime(timeRemaining)}</span>
+            <span>{isPreview ? `${assessment?.duration_minutes || 45} phút` : formatTime(timeRemaining)}</span>
           </div>
 
           {/* Mobile Palette Toggle Button */}
@@ -2200,7 +2200,7 @@ function AssessmentTakeContent({
           <footer className="max-w-3xl w-full mx-auto pt-6 flex items-center justify-between text-xs mt-6">
             <button
               type="button"
-              disabled={currentIndex === 0 || Boolean(effectiveSecuritySettings?.linear_progression)}
+              disabled={currentIndex === 0 || Boolean(effectiveSecuritySettings?.linear_progression && !isPreview)}
               onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:pointer-events-none font-semibold cursor-pointer"
             >
@@ -2324,7 +2324,7 @@ function AssessmentTakeContent({
                     btnStyle = 'border-transparent bg-blue-600 text-white font-semibold';
                   }
 
-                  const isLinearDisabled = Boolean(effectiveSecuritySettings?.linear_progression && qIdx < currentIndex);
+                  const isLinearDisabled = Boolean(effectiveSecuritySettings?.linear_progression && !isPreview && qIdx < currentIndex);
                   return (
                     <button
                       key={q.id}
@@ -2362,13 +2362,13 @@ function AssessmentTakeContent({
         answeredIndices={answeredIndices}
         flaggedIndices={flaggedIndices}
         onSelectQuestion={(idx) => {
-          if (effectiveSecuritySettings?.linear_progression && idx < currentIndex) {
+          if (effectiveSecuritySettings?.linear_progression && !isPreview && idx < currentIndex) {
             return;
           }
           setCurrentIndex(idx);
           setShowMobilePalette(false);
         }}
-        isLinear={Boolean(effectiveSecuritySettings?.linear_progression)}
+        isLinear={Boolean(effectiveSecuritySettings?.linear_progression && !isPreview)}
       />
 
       {/* Dynamic Watermark (T6) - Chỉ bật trong phòng thi trực tiếp B2B có giám thị */}
@@ -2376,11 +2376,11 @@ function AssessmentTakeContent({
         candidateEmail={candidateUser.email}
         candidateId={candidateUser.id}
         assessmentCode={assessment?.title}
-        enabled={Boolean(effectiveSecuritySettings?.dynamic_watermark && roomId)}
+        enabled={Boolean(effectiveSecuritySettings?.dynamic_watermark && roomId && !isPreview)}
       />
 
       {/* Active Warning Modal (T4: Active Warning Mode) */}
-      {proctoring.activeWarning && (
+      {proctoring.activeWarning && !isPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white dark:bg-[#111114] border border-amber-300 dark:border-amber-700/60 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">

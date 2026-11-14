@@ -676,12 +676,12 @@ export default function PersonalAuthoringListPage() {
             <span>Xem chi tiết</span>
           </Link>
           <Link
-            href={`/personal/authoring/${dropdownMenu.item.id}/preview`}
+            href={`/personal/take/${dropdownMenu.item.id}?preview=true`}
             onClick={() => setDropdownMenu(null)}
             className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
           >
-            <FileCheck className="w-3.5 h-3.5 text-slate-400" />
-            <span>Kiểm định &amp; xem</span>
+            <Eye className="w-3.5 h-3.5 text-slate-400" />
+            <span>Xem trước</span>
           </Link>
           <button
             type="button"
