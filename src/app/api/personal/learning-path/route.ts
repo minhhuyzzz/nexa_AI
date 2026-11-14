@@ -156,18 +156,75 @@ export async function GET() {
     // 6. Fetch published modules and map freemium lock state
     const { data: rawModules } = await adminSupabase
       .from('learning_modules')
-      .select('*')
+      .select(`
+        *,
+        assessments (
+          id,
+          title,
+          passing_score,
+          duration_minutes,
+          point_reward,
+          security_settings
+        )
+      `)
       .eq('is_published', true)
       .order('order_index', { ascending: true });
+
+    const assessmentIds = (rawModules || [])
+      .map((m: any) => m.assessment_id)
+      .filter(Boolean);
+
+    const recentSubmissionsMap: Record<string, any> = {};
+    if (assessmentIds.length > 0) {
+      const { data: userSubmissions } = await adminSupabase
+        .from('assessment_submissions')
+        .select('id, assessment_id, total_score, percentage, is_passed, status, submitted_at')
+        .eq('user_id', user.id)
+        .in('assessment_id', assessmentIds)
+        .order('submitted_at', { ascending: false });
+
+      (userSubmissions || []).forEach((sub: any) => {
+        if (!recentSubmissionsMap[sub.assessment_id]) {
+          recentSubmissionsMap[sub.assessment_id] = sub;
+        }
+      });
+    }
+
+    const progressMap = new Map((progressList || []).map((p: any) => [p.module_id, p]));
 
     const modules = (rawModules || []).map((m: any) => {
       const match = String(m.domain_code || '').match(/(\d+)/);
       const rawDomain = match ? match[1].padStart(2, '0') : '01';
       const isDomainUnlocked = isProUser || (unlockedFreeDomain !== null && rawDomain === unlockedFreeDomain);
+      const prog = progressMap.get(m.id);
+      const lastSub = m.assessment_id ? recentSubmissionsMap[m.assessment_id] : null;
+
+      const cooldownMinutes = typeof (m.assessments?.security_settings as any)?.cooldownMinutes === 'number'
+        ? Number((m.assessments?.security_settings as any).cooldownMinutes)
+        : 15;
+
+      let cooldownUntil: string | null = null;
+      let isOnCooldown = false;
+      if (cooldownMinutes > 0 && lastSub && !lastSub.is_passed && lastSub.submitted_at) {
+        const lastTime = new Date(lastSub.submitted_at).getTime();
+        const cooldownMs = cooldownMinutes * 60 * 1000;
+        const diff = Date.now() - lastTime;
+        if (diff < cooldownMs) {
+          isOnCooldown = true;
+          cooldownUntil = new Date(lastTime + cooldownMs).toISOString();
+        }
+      }
+
       return {
         ...m,
         domain_code: rawDomain,
         is_locked: !isDomainUnlocked,
+        is_completed: Boolean(prog?.is_completed || lastSub?.is_passed),
+        last_score: lastSub?.total_score ?? null,
+        last_percentage: lastSub?.percentage ?? null,
+        is_on_cooldown: isOnCooldown,
+        cooldown_until: cooldownUntil,
+        assessment: m.assessments || null,
       };
     });
 

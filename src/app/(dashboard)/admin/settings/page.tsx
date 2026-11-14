@@ -145,16 +145,51 @@ function AdminSettingsContent() {
     }, 800);
   };
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     setSaving(true);
     setErrorMsg(null);
     setSavedSuccess(false);
 
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platformName,
+          supportEmail,
+          systemTimezone,
+          maintenanceMode,
+          defaultLanguage,
+          sessionTimeout,
+          dataRetention,
+          maxUploadSize,
+          requireContentModeration,
+          isolateCanonicalBank,
+          immutableAuditLogs,
+          alertEmails,
+          gamificationPolicy: {
+            contributionMcqDefaultPts: 20,
+            contributionScenarioDefaultPts: 50,
+            contributionPracticalFileDefaultPts: 100,
+            bugReportDefaultPts: 150,
+            minRewardPts: 0,
+            maxRewardPts: 500,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Lỗi khi lưu cấu hình');
+      }
+
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    }, 600);
+      setTimeout(() => setSavedSuccess(false), 3500);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Lỗi kết nối máy chủ');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleResetDefaults = () => {

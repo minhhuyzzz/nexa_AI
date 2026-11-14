@@ -11,13 +11,19 @@ export interface AIFlowConfig {
 }
 
 export interface AIGatewaySettings {
-  provider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI';
+  provider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI' | 'ON_PREMISE';
   apiKey: string;
   defaultModel: string;
+  endpointUrl?: string;
   costBudgetMonthlyUsd?: number;
   flows: {
     rubricGrading: AIFlowConfig;
     competencyAnalysis: AIFlowConfig;
+  };
+  routingRules?: {
+    quickGradingProvider?: string;
+    rubricGradingProvider?: string;
+    competencyAnalysisProvider?: string;
   };
   updatedAt: string;
 }

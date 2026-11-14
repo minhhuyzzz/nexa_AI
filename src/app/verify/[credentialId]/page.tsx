@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -11,6 +12,11 @@ import {
   Award,
   Hash,
 } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Tra cứu chứng nhận số',
+  robots: { index: false, follow: false },
+};
 
 export default async function VerifyCredentialKioskPage({
   params,
@@ -31,25 +37,7 @@ export default async function VerifyCredentialKioskPage({
   }
 
   const { data: dbCredential } = await query.single();
-  let credential = dbCredential;
-
-  if (!credential && credentialId.toUpperCase().startsWith('NX-')) {
-    credential = {
-      id: credentialId,
-      credential_code: credentialId.toUpperCase(),
-      candidate_name: 'Học Viên Nexa',
-      assessment_title: 'Chứng Nhận Năng Lực Số Toàn Diện (NEXA Master Certificate)',
-      score_percentage: 100,
-      total_score: 450,
-      max_score: 450,
-      competency_level: 'Level 4: Highly Advanced',
-      content_sha256: 'a6f9c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b821',
-      pdf_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-      issued_at: new Date().toISOString(),
-      is_revoked: false,
-      revoked_reason: null,
-    };
-  }
+  const credential = dbCredential;
 
   if (!credential) {
     return (

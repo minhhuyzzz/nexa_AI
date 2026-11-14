@@ -29,22 +29,17 @@ export function AdminKpiCard({
   const isNegative = changeType === 'negative';
 
   return (
-    <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 border border-slate-100 dark:border-zinc-800">
-            <Icon className="w-4 h-4" strokeWidth={1.75} />
-          </div>
-          <span className="text-xs font-medium text-slate-600 dark:text-zinc-400">
-            {label}
-          </span>
+    <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all">
+      <div className="flex items-center justify-between gap-2">
+        <div className="p-2 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 border border-slate-100 dark:border-zinc-800 shrink-0">
+          <Icon className="w-4 h-4" strokeWidth={1.75} />
         </div>
 
         {badge ? (
           badge
         ) : change ? (
           <span
-            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${
+            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums shrink-0 ${
               isPositive
                 ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
                 : isNegative
@@ -59,12 +54,21 @@ export function AdminKpiCard({
         ) : null}
       </div>
 
-      <div>
-        <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white tabular-nums font-mono">
+      <div className="mt-3">
+        <span
+          className="text-xs font-medium text-slate-600 dark:text-zinc-400 block truncate"
+          title={label}
+        >
+          {label}
+        </span>
+        <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white tabular-nums font-mono mt-1">
           {value}
         </div>
         {timeframe && (
-          <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
+          <p
+            className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1 line-clamp-1"
+            title={timeframe}
+          >
             {timeframe}
           </p>
         )}
@@ -233,57 +237,63 @@ export function AdminFunnelChart({ steps }: { steps: FunnelStep[] }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2 items-end pt-6 pb-2">
-        {steps.map((step, idx) => {
-          const heightPercent = Math.max(20, Math.round((step.value / maxValue) * 100));
-          return (
-            <div key={idx} className="flex flex-col items-center">
-              {/* Value on top */}
-              <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 tabular-nums mb-1">
-                {step.value.toLocaleString('vi-VN')}
-              </div>
-
-              {/* Bar */}
-              <div className="w-full flex items-center justify-center">
-                <div
-                  className="w-full rounded-t-md transition-all duration-500"
-                  style={{
-                    height: `${heightPercent}px`,
-                    backgroundColor:
-                      idx === 0
-                        ? '#DBEAFE'
-                        : idx === 1
-                        ? '#BFDBFE'
-                        : idx === 2
-                        ? '#93C5FD'
-                        : idx === 3
-                        ? '#60A5FA'
-                        : '#2563EB',
-                  }}
-                />
-              </div>
-
-              {/* Conversion rate indicator */}
-              {step.conversionRate && idx < steps.length - 1 && (
-                <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono font-medium mt-1">
-                  {step.conversionRate} →
+      {!steps.some((s) => s.value > 0) ? (
+        <div className="py-12 text-center text-xs text-slate-500 dark:text-neutral-400">
+          Chưa ghi nhận đủ dữ liệu hành trình để tính toán phễu chuyển đổi.
+        </div>
+      ) : (
+        <div className="grid grid-cols-5 gap-2 items-end pt-6 pb-2">
+          {steps.map((step, idx) => {
+            const heightPercent = Math.max(20, Math.round((step.value / maxValue) * 100));
+            return (
+              <div key={idx} className="flex flex-col items-center">
+                {/* Value on top */}
+                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 tabular-nums mb-1">
+                  {step.value.toLocaleString('vi-VN')}
                 </div>
-              )}
 
-              {/* Label below */}
-              <div className="text-[10px] sm:text-[11px] text-center text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-tight">
-                {step.label}
+                {/* Bar */}
+                <div className="w-full flex items-center justify-center">
+                  <div
+                    className="w-full rounded-t-md transition-all duration-500"
+                    style={{
+                      height: `${heightPercent}px`,
+                      backgroundColor:
+                        idx === 0
+                          ? '#DBEAFE'
+                          : idx === 1
+                          ? '#BFDBFE'
+                          : idx === 2
+                          ? '#93C5FD'
+                          : idx === 3
+                          ? '#60A5FA'
+                          : '#2563EB',
+                    }}
+                  />
+                </div>
+
+                {/* Conversion rate indicator */}
+                {step.conversionRate && idx < steps.length - 1 && (
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono font-medium mt-1">
+                    {step.conversionRate} →
+                  </div>
+                )}
+
+                {/* Label below */}
+                <div className="text-[10px] sm:text-[11px] text-center text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-tight">
+                  {step.label}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* 5. Chỉ Số 5 Miền Toàn Nền Tảng (Domain Score Bars - Chuẩn Ảnh 1)            */
+/* 5. Hồ Sơ Năng Lực Số Toàn Nền Tảng (Domain Score Bars)                     */
 /* -------------------------------------------------------------------------- */
 
 export interface DomainScore {
@@ -302,32 +312,38 @@ export function AdminFiveDomainScores({
     <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs flex flex-col justify-between">
       <div>
         <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-          Chỉ số 5 miền toàn nền tảng
+          Hồ sơ năng lực số toàn nền tảng
         </h3>
         <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 mb-4">
           {subtitle}
         </p>
 
-        <div className="space-y-3.5">
-          {domains.map((dom, idx) => (
-            <div key={idx} className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-700 dark:text-neutral-300">
-                  {dom.name}
-                </span>
-                <span className="font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                  {dom.score.toFixed(1).replace('.', ',')}
-                </span>
+        {domains.length === 0 ? (
+          <div className="py-12 text-center text-xs text-slate-500 dark:text-neutral-400">
+            Chưa có bài đánh giá hợp lệ để tổng hợp điểm các miền năng lực số.
+          </div>
+        ) : (
+          <div className="space-y-3.5">
+            {domains.map((dom, idx) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-700 dark:text-neutral-300">
+                    {dom.name}
+                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                    {dom.score.toFixed(1).replace('.', ',')}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, dom.score))}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-blue-600 transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.max(0, dom.score))}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

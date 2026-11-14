@@ -71,9 +71,15 @@ export default function AdminContributionsPage() {
   const countApproved = contributions.filter((c) => c.status === 'approved').length;
   const countNeedsRevision = contributions.filter((c) => c.status === 'needs_revision').length;
 
+  const [customPoints, setCustomPoints] = useState<number>(50);
+
   const handleOpenReview = (item: ContributionItem) => {
     setSelectedItem(item);
     setReviewFeedback(item.adminFeedback || '');
+    let defaultPts = 50;
+    if (item.questionType === 'PRACTICAL_FILE') defaultPts = 100;
+    else if (item.questionType === 'MCQ') defaultPts = 20;
+    setCustomPoints(item.pointsRewarded || defaultPts);
     setActionSuccessMsg('');
   };
 
@@ -83,7 +89,7 @@ export default function AdminContributionsPage() {
       setActionSubmitting(true);
       const feedback =
         reviewFeedback.trim() ||
-        'Đề xuất tình huống đạt chuẩn Khung năng lực số NEXA. Đã được phê duyệt và cộng +100 điểm thưởng.';
+        `Đề xuất tình huống đạt chuẩn Khung năng lực số NEXA. Đã phê duyệt và chuyển vào Kho tiếp nhận nội bộ kèm +${customPoints} PTS.`;
 
       const res = await fetch('/api/contributions', {
         method: 'PATCH',
@@ -92,13 +98,13 @@ export default function AdminContributionsPage() {
           id: selectedItem.id,
           status: 'APPROVED',
           adminFeedback: feedback,
-          pointsRewarded: 100,
+          pointsRewarded: customPoints,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setActionSuccessMsg('Đã phê duyệt và chuyển vào Ngân hàng câu hỏi dùng chung! Học viên được cộng +100 điểm thưởng tự động.');
+        setActionSuccessMsg(`Đã phê duyệt và chuyển vào Kho tiếp nhận nội bộ! Học viên được cộng +${customPoints} PTS tự động.`);
         await fetchContributions();
         setSelectedItem((prev) =>
           prev
@@ -106,7 +112,7 @@ export default function AdminContributionsPage() {
                 ...prev,
                 status: 'approved',
                 adminFeedback: feedback,
-                pointsRewarded: 100,
+                pointsRewarded: customPoints,
               }
             : null
         );
@@ -465,6 +471,30 @@ export default function AdminContributionsPage() {
               />
             </div>
 
+            {/* Dynamic PTS Reward Input */}
+            <div className="p-3.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                  Điểm thưởng PTS cấp cho tác giả khi duyệt:
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    max={1000}
+                    step={5}
+                    value={customPoints}
+                    onChange={(e) => setCustomPoints(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-20 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono font-bold text-right text-blue-600 dark:text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-2xs"
+                  />
+                  <span className="text-xs font-bold text-slate-600 dark:text-zinc-300">PTS</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                Điểm thưởng có thể tùy chỉnh linh hoạt theo chất lượng đề thi. Bài sau khi duyệt sẽ lưu vào Kho tiếp nhận nội bộ, chưa tự động xuất bản lên Thư viện người học.
+              </p>
+            </div>
+
             {/* Actions */}
             <div className="pt-3 flex flex-wrap items-center justify-between gap-3">
               <button
@@ -492,7 +522,7 @@ export default function AdminContributionsPage() {
                   className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{actionSubmitting ? 'Đang duyệt...' : 'Phê duyệt (+100đ)'}</span>
+                  <span>{actionSubmitting ? 'Đang duyệt...' : `Phê duyệt (+${customPoints} PTS)`}</span>
                 </button>
               </div>
             </div>

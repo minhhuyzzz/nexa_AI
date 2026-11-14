@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -6,6 +7,15 @@ import { OrgTopbar } from '@/components/dashboard/org/OrgTopbar';
 import { OrgSuspendedView } from '@/components/dashboard/org/OrgSuspendedView';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
 import { normalizeOrgRole } from '@/lib/auth/org-roles';
+
+export const metadata: Metadata = {
+  title: 'NEXA Business | Quản trị tổ chức',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 export const dynamic = 'force-dynamic';
 

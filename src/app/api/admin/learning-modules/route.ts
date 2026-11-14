@@ -15,6 +15,8 @@ const createModuleSchema = z.object({
   pointReward: z.number().int().min(0).max(1000).default(30),
   contentMarkdown: z.string().optional(),
   assessmentId: z.string().uuid().optional().nullable(),
+  passingScore: z.number().min(0).max(100).optional(),
+  securitySettings: z.record(z.any()).optional(),
   accessTier: z.enum(['FREE', 'VIP']).default('FREE'),
   isPublished: z.boolean().default(true),
   orderIndex: z.number().int().default(1),
@@ -51,7 +53,10 @@ export async function GET(request: NextRequest) {
         assessments (
           id,
           title,
-          passing_score
+          passing_score,
+          duration_minutes,
+          point_reward,
+          security_settings
         ),
         learning_paths (
           id,
@@ -100,12 +105,32 @@ export async function POST(request: NextRequest) {
       pointReward,
       contentMarkdown,
       assessmentId,
+      passingScore,
+      securitySettings,
       accessTier,
       isPublished,
       orderIndex,
     } = parsed.data;
 
     const adminSupabase = createAdminClient();
+
+    if (assessmentId && (passingScore !== undefined || securitySettings !== undefined || durationMinutes !== undefined)) {
+      const assessmentUpdates: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (passingScore !== undefined) assessmentUpdates.passing_score = passingScore;
+      if (durationMinutes !== undefined) assessmentUpdates.duration_minutes = durationMinutes;
+      if (pointReward !== undefined) assessmentUpdates.point_reward = pointReward;
+      if (securitySettings !== undefined) assessmentUpdates.security_settings = securitySettings;
+
+      const assTable = adminSupabase.from('assessments');
+      if (assTable && typeof assTable.update === 'function') {
+        const updateQuery = assTable.update(assessmentUpdates);
+        if (updateQuery && typeof updateQuery.eq === 'function') {
+          await updateQuery.eq('id', assessmentId);
+        }
+      }
+    }
 
     const { data: newModule, error: insertError } = await adminSupabase
       .from('learning_modules')

@@ -8,9 +8,10 @@ import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 export const dynamic = 'force-dynamic';
 
 const updateAiConfigSchema = z.object({
-  provider: z.enum(['GOOGLE_GEMINI', 'ANTHROPIC_CLAUDE', 'OPENAI']).default('GOOGLE_GEMINI'),
+  provider: z.enum(['GOOGLE_GEMINI', 'ANTHROPIC_CLAUDE', 'OPENAI', 'ON_PREMISE']).default('GOOGLE_GEMINI'),
   apiKey: z.string().optional(),
   defaultModel: z.string().optional(),
+  endpointUrl: z.string().optional(),
   flows: z
     .object({
       rubricGrading: z
@@ -37,7 +38,7 @@ const updateAiConfigSchema = z.object({
 
 export async function GET(request: NextRequest | Request) {
   try {
-    const auth = await requirePlatformAdmin();
+    const auth = await requirePlatformAdmin('OPERATE_AI');
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
@@ -180,7 +181,7 @@ export async function GET(request: NextRequest | Request) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requirePlatformAdmin();
+    const auth = await requirePlatformAdmin('OPERATE_AI');
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
@@ -201,19 +202,11 @@ export async function POST(request: NextRequest) {
       provider,
       apiKey,
       defaultModel,
+      endpointUrl,
       flows,
       costBudgetMonthlyUsd,
       monthlyBudgetUsd: inputMonthlyBudget,
     } = validation.data;
-
-    if (provider && provider !== 'GOOGLE_GEMINI') {
-      return NextResponse.json(
-        {
-          error: `Nhà cung cấp "${provider}" hiện chưa có adapter hoạt động. Hệ thống hiện chỉ hỗ trợ và kích hoạt Google Gemini.`,
-        },
-        { status: 400 }
-      );
-    }
 
     // Check if new API key is provided and not masked
     const patchPayload: Record<string, any> = {
@@ -222,6 +215,10 @@ export async function POST(request: NextRequest) {
 
     if (defaultModel) {
       patchPayload.defaultModel = defaultModel;
+    }
+
+    if (endpointUrl !== undefined) {
+      patchPayload.endpointUrl = endpointUrl.trim();
     }
 
     if (apiKey && !apiKey.includes('••••')) {
@@ -259,6 +256,7 @@ export async function POST(request: NextRequest) {
       details: {
         provider: updated.provider,
         defaultModel: updated.defaultModel,
+        endpointUrl: updated.endpointUrl,
         costBudgetMonthlyUsd: updated.costBudgetMonthlyUsd,
         updatedAt: updated.updatedAt,
       },
@@ -277,6 +275,7 @@ export async function POST(request: NextRequest) {
       config: {
         provider: updated.provider,
         defaultModel: updated.defaultModel,
+        endpointUrl: updated.endpointUrl,
         maskedApiKey,
         apiKeyMasked: maskedApiKey,
         costBudgetMonthlyUsd: monthlyBudgetUsd,

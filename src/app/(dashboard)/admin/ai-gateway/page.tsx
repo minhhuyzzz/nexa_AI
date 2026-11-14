@@ -55,6 +55,7 @@ interface AiEventLog {
 interface AiGatewayConfig {
   provider: string;
   defaultModel: string;
+  endpointUrl?: string;
   maskedApiKey: string;
   costBudgetMonthlyUsd?: number;
   monthlyBudgetUsd?: number;
@@ -63,13 +64,13 @@ interface AiGatewayConfig {
 }
 
 const FEATURE_LABELS: Record<string, string> = {
-  RUBRIC_GRADING: 'Chấm Rubric & Đánh giá Minh chứng',
-  COMPETENCY_ANALYSIS: 'Phân tích Năng lực 5 Miền & Lộ trình',
-  AUTHORING_ASSIST: 'Trợ lý Soạn Đề AI (Quizizz/Wayground)',
+  RUBRIC_GRADING: 'Chấm Rubric và đánh giá minh chứng',
+  COMPETENCY_ANALYSIS: 'Phân tích hồ sơ năng lực số và lộ trình',
+  AUTHORING_ASSIST: 'Trợ lý soạn đề khảo thí',
   SIMILAR_QUESTION: 'Tạo câu hỏi tương tự',
   EXPLAIN_OPTIONS: 'Giải thích đáp án',
-  GENERATE_BY_DOMAIN: 'Sinh câu hỏi 5 miền',
-  HEALTH_CHECK: 'Kiểm tra Sức khỏe Gateway',
+  GENERATE_BY_DOMAIN: 'Sinh câu hỏi theo miền năng lực',
+  HEALTH_CHECK: 'Kiểm tra sức khỏe cổng AI',
   OTHER: 'Nghiệp vụ khác / Hệ thống',
 };
 
@@ -84,8 +85,10 @@ export default function AdminAiGatewayPage() {
 
   // Modal configuration
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<string>('GOOGLE_GEMINI');
   const [editingApiKey, setEditingApiKey] = useState('');
   const [editingModel, setEditingModel] = useState('gemini-2.5-flash');
+  const [editingEndpointUrl, setEditingEndpointUrl] = useState('');
   const [editingBudget, setEditingBudget] = useState(200);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSuccessMsg, setConfigSuccessMsg] = useState('');
@@ -101,7 +104,9 @@ export default function AdminAiGatewayPage() {
       }
       if (data.config) {
         setConfig(data.config);
+        setEditingProvider(data.config.provider || 'GOOGLE_GEMINI');
         setEditingModel(data.config.defaultModel || 'gemini-2.5-flash');
+        setEditingEndpointUrl(data.config.endpointUrl || '');
         setEditingBudget(data.config.costBudgetMonthlyUsd ?? data.config.monthlyBudgetUsd ?? 200);
       }
     } catch (e) {
@@ -121,12 +126,15 @@ export default function AdminAiGatewayPage() {
     setConfigSuccessMsg('');
     try {
       const payload: Record<string, any> = {
-        provider: 'GOOGLE_GEMINI',
+        provider: editingProvider,
         defaultModel: editingModel,
         costBudgetMonthlyUsd: Number(editingBudget),
       };
       if (editingApiKey.trim()) {
         payload.apiKey = editingApiKey.trim();
+      }
+      if (editingProvider === 'ON_PREMISE' || editingEndpointUrl.trim()) {
+        payload.endpointUrl = editingEndpointUrl.trim();
       }
       const res = await fetch('/api/admin/ai-gateway', {
         method: 'POST',
@@ -135,7 +143,7 @@ export default function AdminAiGatewayPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        setConfigSuccessMsg('Đã lưu cấu hình AI Gateway thành công');
+        setConfigSuccessMsg('Đã lưu cấu hình AI Gateway thành công vào cơ sở dữ liệu');
         setEditingApiKey('');
         setTimeout(() => {
           setIsConfigModalOpen(false);
@@ -230,7 +238,7 @@ export default function AdminAiGatewayPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-              Quản trị AI Gateway &amp; Chi phí
+              Quản trị Cổng AI Gateway và Chi phí
             </h1>
             <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-md">
               Dữ liệu thực tế 100%
@@ -247,7 +255,7 @@ export default function AdminAiGatewayPage() {
             className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
           >
             <Key className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cấu hình Model &amp; API Keys</span>
+            <span>Cấu hình Model và Khóa API</span>
           </button>
           <button
             onClick={() => fetchData(period, flow)}
@@ -717,10 +725,10 @@ export default function AdminAiGatewayPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                  Cấu hình AI Gateway &amp; Model Keys
+                  Cấu hình AI Gateway và Khóa API
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Cập nhật khóa API và mô hình AI mặc định cho toàn bộ nền tảng.
+                  Cập nhật khóa API, nhà cung cấp và mô hình AI định tuyến cho toàn nền tảng.
                 </p>
               </div>
               <button
@@ -743,32 +751,92 @@ export default function AdminAiGatewayPage() {
                 <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
                   Nhà cung cấp (Provider)
                 </label>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-neutral-800 dark:text-zinc-200 font-semibold flex items-center justify-between">
-                  <span>Google Gemini (Adapter chính thức)</span>
-                  <span className="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded font-mono">
-                    Hoạt động
-                  </span>
-                </div>
+                <select
+                  value={editingProvider}
+                  onChange={(e) => {
+                    const nextP = e.target.value;
+                    setEditingProvider(nextP);
+                    if (nextP === 'GOOGLE_GEMINI') setEditingModel('gemini-2.5-flash');
+                    else if (nextP === 'OPENAI') setEditingModel('gpt-4o');
+                    else if (nextP === 'ANTHROPIC_CLAUDE') setEditingModel('claude-3-5-sonnet-latest');
+                    else if (nextP === 'ON_PREMISE') setEditingModel('deepseek-v3');
+                  }}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600 font-medium"
+                >
+                  <option value="GOOGLE_GEMINI">Google Gemini (Khuyến nghị - Hỗ trợ đầy đủ)</option>
+                  <option value="OPENAI">OpenAI (GPT-4o, o3-mini)</option>
+                  <option value="ANTHROPIC_CLAUDE">Anthropic Claude (Claude 3.5 Sonnet)</option>
+                  <option value="ON_PREMISE">Mô hình mở On-Premise (Llama 3 / DeepSeek v3 qua vLLM)</option>
+                </select>
               </div>
+
+              {editingProvider === 'ON_PREMISE' && (
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
+                    Địa chỉ máy chủ On-Premise (Endpoint URL)
+                  </label>
+                  <input
+                    type="url"
+                    value={editingEndpointUrl}
+                    onChange={(e) => setEditingEndpointUrl(e.target.value)}
+                    placeholder="http://vllm-service.internal:8000/v1"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Hỗ trợ giao thức OpenAI-compatible của vLLM, Ollama hoặc TGI nội bộ.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
                   Mô hình mặc định (Default Model)
                 </label>
-                <select
-                  value={editingModel}
-                  onChange={(e) => setEditingModel(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="gemini-2.5-flash">gemini-2.5-flash (Cân bằng tốc độ &amp; chi phí tối ưu)</option>
-                  <option value="gemini-2.5-pro">gemini-2.5-pro (Phân tích chuyên sâu 5 miền năng lực)</option>
-                  <option value="gemini-2.0-flash">gemini-2.0-flash (Độ trễ thấp, sinh câu hỏi nhanh)</option>
-                </select>
+                {editingProvider === 'GOOGLE_GEMINI' ? (
+                  <select
+                    value={editingModel}
+                    onChange={(e) => setEditingModel(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  >
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (Cân bằng tốc độ và chi phí tối ưu)</option>
+                    <option value="gemini-2.5-pro">gemini-2.5-pro (Phân tích chuyên sâu hồ sơ năng lực)</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash (Độ trễ thấp, sinh câu hỏi nhanh)</option>
+                  </select>
+                ) : editingProvider === 'OPENAI' ? (
+                  <select
+                    value={editingModel}
+                    onChange={(e) => setEditingModel(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  >
+                    <option value="gpt-4o">gpt-4o (Hiệu năng cao, đa phương thức)</option>
+                    <option value="gpt-4o-mini">gpt-4o-mini (Tiết kiệm chi phí, phản hồi nhanh)</option>
+                    <option value="o3-mini">o3-mini (Suy luận chuyên sâu và thẩm định logic)</option>
+                  </select>
+                ) : editingProvider === 'ANTHROPIC_CLAUDE' ? (
+                  <select
+                    value={editingModel}
+                    onChange={(e) => setEditingModel(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  >
+                    <option value="claude-3-5-sonnet-latest">claude-3-5-sonnet (Chấm Rubric tự luận chuẩn xác)</option>
+                    <option value="claude-3-5-haiku-latest">claude-3-5-haiku (Độ trễ thấp, xử lý tức thời)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={editingModel}
+                    onChange={(e) => setEditingModel(e.target.value)}
+                    placeholder="deepseek-ai/DeepSeek-V3 hoặc meta-llama/Llama-3.3-70B-Instruct"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
-                  Khóa API Gemini (GEMINI_API_KEY)
+                  {editingProvider === 'ON_PREMISE'
+                    ? 'Khóa API xác thực nội bộ (Tùy chọn)'
+                    : `Khóa API (${editingProvider})`}
                 </label>
                 <input
                   type="password"

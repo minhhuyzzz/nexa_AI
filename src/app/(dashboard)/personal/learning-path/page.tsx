@@ -24,6 +24,7 @@ import {
   Layers,
   Circle,
   Compass,
+  Clock,
 } from 'lucide-react';
 import { DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { EditGoalModal, UserLearningGoal } from '@/components/dashboard/personal/EditGoalModal';
@@ -117,10 +118,8 @@ function LearningPathContent() {
   const [activeLevelCode, setActiveLevelCode] = useState<CompetencyLevelCode>('BASIC');
   const [showGuidanceModal, setShowGuidanceModal] = useState<boolean>(false);
 
-  // Modals & Notifications State
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState<boolean>(false);
+  // Modals và Notifications State
   const [isBaselineModalOpen, setIsBaselineModalOpen] = useState<boolean>(false);
-  const [upgradeTargetDomain, setUpgradeTargetDomain] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Freemium Locking & Progress State
@@ -128,6 +127,7 @@ function LearningPathContent() {
   const [hasTakenAssessment, setHasTakenAssessment] = useState<boolean>(false);
   const [isProUser, setIsProUser] = useState<boolean>(false);
   const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(new Set());
+  const [serverModules, setServerModules] = useState<any[]>([]);
 
   // Learning Goal State
   const [learningGoal, setLearningGoal] = useState<UserLearningGoal>({
@@ -184,8 +184,17 @@ function LearningPathContent() {
           if (json.isProUser) {
             setIsProUser(true);
           }
+          if (Array.isArray(json.modules)) {
+            setServerModules(json.modules);
+            const serverCompletedIds = json.modules
+              .filter((m: any) => m.is_completed)
+              .map((m: any) => m.id);
+            if (serverCompletedIds.length > 0) {
+              setCompletedLevelIds((prev) => new Set([...prev, ...serverCompletedIds]));
+            }
+          }
           if (Array.isArray(json.completedLessonIds)) {
-            setCompletedLevelIds(new Set(json.completedLessonIds));
+            setCompletedLevelIds((prev) => new Set([...prev, ...json.completedLessonIds]));
           }
         }
       } catch (e) {
@@ -296,15 +305,15 @@ function LearningPathContent() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              LỘ TRÌNH PHÁT TRIỂN NĂNG LỰC SỐ
+              LỘ TRÌNH NĂNG LỰC SỐ
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
             <span className="text-xs text-slate-500 dark:text-neutral-400">
-              Khung Năng Lực Số Chuẩn Hóa &bull; Hệ Thống 4 Cấp Độ Năng Lực
+              5 Miền • 21 Kỹ năng • 4 Cấp độ
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight mt-0.5">
-            Các Chặng Bồi Dưỡng Năng Lực Số
+            Lộ trình Bồi dưỡng Năng lực
           </h1>
         </div>
 
@@ -425,12 +434,12 @@ function LearningPathContent() {
             <div className="p-4 rounded-2xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-2.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
                 <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>{hasTakenAssessment ? 'Mở khóa Toàn diện' : 'Chẩn đoán Năng lực Số'}</span>
+                <span>{hasTakenAssessment ? 'Tài khoản Miễn phí' : 'Khảo thí đầu vào'}</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
                 {hasTakenAssessment && unlockedFreeDomain
-                  ? `Tài khoản đã mở khóa miễn phí Miền [${DOMAIN_CURRICULUM.find((d) => normalizeDomainCode(d.code) === normalizeDomainCode(unlockedFreeDomain))?.title}]. Nâng cấp để mở trọn vẹn các miền và nhận chứng chỉ.`
-                  : 'Làm bài khảo thí đầu vào để hệ thống chẩn đoán điểm số và tự động mở khóa miễn phí miền năng lực bạn cần bồi dưỡng nhất.'}
+                  ? 'Đang mở 1 miền miễn phí. Cần nâng cấp tài khoản để mở khóa toàn bộ.'
+                  : 'Làm bài khảo thí để xác định khoảng trống năng lực và mở khóa 1 miền miễn phí.'}
               </p>
               {!hasTakenAssessment ? (
                 <button
@@ -438,19 +447,15 @@ function LearningPathContent() {
                   onClick={() => setIsBaselineModalOpen(true)}
                   className="block w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center shadow-xs"
                 >
-                  Làm khảo thí đầu vào ngay &rarr;
+                  Khảo thí đầu vào ngay →
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUpgradeTargetDomain('Tất cả các miền');
-                    setIsUpgradeModalOpen(true);
-                  }}
-                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center"
+                <Link
+                  href="/personal/billing"
+                  className="block w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center shadow-xs"
                 >
-                  Mở khóa toàn diện các miền
-                </button>
+                  Nâng cấp tài khoản →
+                </Link>
               )}
             </div>
           )}
@@ -466,7 +471,7 @@ function LearningPathContent() {
                 onClick={() => setIsEditGoalOpen(true)}
                 className="text-blue-600 dark:text-blue-400 font-semibold text-[11px] hover:underline cursor-pointer"
               >
-                Cài đặt &rarr;
+                Cài đặt →
               </button>
             </div>
             <p className="text-neutral-800 dark:text-zinc-200 font-medium leading-relaxed">
@@ -486,7 +491,7 @@ function LearningPathContent() {
                     CHẶNG MIỀN {activeTrack.domainNumber}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-neutral-400 font-mono">
-                    {activeTrack.subdomains.length} Kỹ năng thành phần &bull; 4 Cấp độ chuẩn
+                    {activeTrack.subdomains.length} Kỹ năng thành phần • 4 Cấp độ chuẩn
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -511,25 +516,21 @@ function LearningPathContent() {
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUpgradeTargetDomain(activeTrack.title);
-                      setIsUpgradeModalOpen(true);
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-sm shadow-amber-500/20"
+                  <Link
+                    href="/personal/billing"
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-xs"
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    <span>Mở khóa chặng này</span>
-                  </button>
+                    <span>Nâng cấp tài khoản</span>
+                  </Link>
                 )
               ) : (
                 <button
                   type="button"
                   onClick={() => setIsBaselineModalOpen(true)}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-sm shadow-blue-500/20"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-xs"
                 >
-                  <span>Làm khảo thí đầu vào để mở khóa</span>
+                  <span>Khảo thí đầu vào để mở khóa</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -563,34 +564,37 @@ function LearningPathContent() {
                 </div>
                 <div className="max-w-md mx-auto space-y-1">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                    BƯỚC 1: CHẨN ĐOÁN NĂNG LỰC ĐẦU VÀO
+                    BƯỚC 1: KHẢO THÍ ĐẦU VÀO
                   </span>
                   <h4 className="font-bold text-base sm:text-lg text-neutral-900 dark:text-neutral-100">
-                    Chưa thiết lập Hồ sơ Năng lực Số
+                    Chưa thiết lập Hồ sơ Năng lực
                   </h4>
+                  <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
+                    Làm bài khảo thí để xác định khoảng trống năng lực và mở khóa 1 miền miễn phí.
+                  </p>
                 </div>
                 <div className="pt-2 flex items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => setIsBaselineModalOpen(true)}
-                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-xs cursor-pointer"
                   >
-                    <span>Làm bài khảo thí đầu vào ngay</span>
+                    <span>Làm khảo thí đầu vào ngay</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="p-10 rounded-3xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+              <div className="p-10 rounded-3xl bg-slate-50 dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 text-center space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 flex items-center justify-center mx-auto">
                   <Lock className="w-6 h-6" strokeWidth={1.75} />
                 </div>
                 <div className="max-w-md mx-auto space-y-1.5">
                   <h4 className="font-bold text-base text-neutral-900 dark:text-neutral-100">
-                    Chặng học này chưa được mở khóa
+                    Chặng học này đang bị khóa
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
-                    Bạn đang được mở khóa miễn phí Miền [{DOMAIN_CURRICULUM.find((d) => d.code === unlockedFreeDomain)?.title}]. Nâng cấp tài khoản để học trọn 5 miền và nhận chứng chỉ.
+                    Cần nâng cấp tài khoản để mở khóa miền này.
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-3 pt-1">
@@ -598,21 +602,18 @@ function LearningPathContent() {
                     <button
                       type="button"
                       onClick={() => setActiveDomainCode(unlockedFreeDomain)}
-                      className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700 cursor-pointer"
                     >
-                      Về chặng miễn phí của tôi
+                      Về miền miễn phí
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUpgradeTargetDomain(activeTrack.title);
-                      setIsUpgradeModalOpen(true);
-                    }}
-                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm cursor-pointer"
+                  <Link
+                    href="/personal/billing"
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    Nâng cấp gói ngay &rarr;
-                  </button>
+                    <span>Nâng cấp tài khoản</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
             )
@@ -779,9 +780,9 @@ function LearningPathContent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono font-bold text-[10px] uppercase">
-                    TRẠM 0{selectedSubdomain.subIdx + 1} &bull; MIỀN {selectedSubdomain.domainNum}
+                    TRẠM 0{selectedSubdomain.subIdx + 1} • MIỀN {selectedSubdomain.domainNum}
                   </span>
-                  <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
+                  <span className="text-slate-300 dark:text-zinc-700">•</span>
                   <span className="text-xs text-slate-500 dark:text-neutral-400">
                     Khung Năng Lực 4 Cấp Độ
                   </span>
@@ -839,6 +840,36 @@ function LearningPathContent() {
               if (!currentLevel) return null;
               const isLevelDone = completedLevelIds.has(currentLevel.id);
               const cfg = LEVEL_CONFIGS[currentLevel.levelCode];
+              const activeDomainNum = String(activeTrack.domainNumber).padStart(2, '0');
+
+              // Find module matching (domain, skillCode, levelNumber) precisely
+              const matchedModule =
+                serverModules.find((sm) => {
+                  const smDom = normalizeDomainCode(sm.domain_code);
+                  const isDom = smDom === activeDomainNum;
+                  const isSkill = sm.skill_code === selectedSubdomain.subdomain.skillCode;
+                  const isLvl = Number(sm.order_index) === currentLevel.levelNumber;
+                  return isDom && isSkill && isLvl;
+                }) ||
+                serverModules.find((sm) => {
+                  const smDom = normalizeDomainCode(sm.domain_code);
+                  const isDom = smDom === activeDomainNum;
+                  const isSkill = sm.skill_code === selectedSubdomain.subdomain.skillCode;
+                  return isDom && isSkill;
+                }) ||
+                serverModules.find((sm) => {
+                  const smDom = normalizeDomainCode(sm.domain_code);
+                  if (smDom !== activeDomainNum) return false;
+                  const subTitle = (selectedSubdomain.subdomain.title || '').toLowerCase();
+                  const smTitle = (sm.title || '').toLowerCase();
+                  return subTitle.includes(smTitle) || smTitle.includes(subTitle);
+                });
+
+              const effectiveDuration = matchedModule?.assessments?.duration_minutes || matchedModule?.duration_minutes || currentLevel.durationMinutes;
+              const effectivePassingScore = matchedModule?.assessments?.passing_score !== undefined
+                ? Number(matchedModule.assessments.passing_score)
+                : 100;
+              const effectivePoints = matchedModule?.assessments?.point_reward || matchedModule?.point_reward || currentLevel.pointReward;
 
               return (
                 <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs text-neutral-800 dark:text-zinc-200 flex-1">
@@ -860,7 +891,7 @@ function LearningPathContent() {
                     </div>
 
                     <span className="text-[11px] font-mono text-slate-400">
-                      Thời lượng ước tính: {currentLevel.durationMinutes} phút
+                      Thời lượng: {effectiveDuration} phút • Chuẩn vượt trạm: {effectivePassingScore}% • +{effectivePoints} PTS
                     </span>
                   </div>
 
@@ -921,26 +952,61 @@ function LearningPathContent() {
                       <span>{showGuidanceModal ? 'Đóng hướng dẫn' : 'Xem trọng tâm bồi dưỡng'}</span>
                     </button>
 
-                    {currentLevel.assessmentId ? (
-                      <Link
-                        href={`/personal/take/${currentLevel.assessmentId}`}
-                        className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
-                      >
-                        <span>{isLevelDone ? 'Khảo thí lại cấp độ' : 'Bắt đầu làm bài đánh giá'}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          showToast('Đề khảo thí cho cấp độ này đang được cập nhật.');
-                        }}
-                        className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-750 transition-colors"
-                      >
-                        <span>Đang chuẩn bị đề khảo thí</span>
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                      </button>
-                    )}
+                    {(() => {
+                      if (matchedModule?.assessment_id) {
+                        if (matchedModule.is_on_cooldown) {
+                          return (
+                            <button
+                              type="button"
+                              disabled
+                              className="px-5 py-2.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
+                            >
+                              <Clock className="w-3.5 h-3.5 animate-pulse" />
+                              <span>Đang trong thời gian chờ ôn tập</span>
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            href={`/personal/learning-path/assessment/${matchedModule.id}`}
+                            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+                          >
+                            <span>
+                              {matchedModule.is_completed || isLevelDone
+                                ? 'Kiểm chứng lại vượt trạm'
+                                : `Vào kiểm chứng vượt trạm (Chuẩn ${effectivePassingScore}%)`}
+                            </span>
+                            <ArrowRight className="w-4 h-4" />
+                          </Link>
+                        );
+                      }
+
+                      if (currentLevel.assessmentId) {
+                        return (
+                          <Link
+                            href={`/personal/take/${currentLevel.assessmentId}`}
+                            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+                          >
+                            <span>{isLevelDone ? 'Khảo thí lại cấp độ' : 'Bắt đầu làm bài đánh giá'}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            showToast('Đề kiểm chứng cho học phần này đang được Quản trị viên liên kết từ Ngân hàng đề.');
+                          }}
+                          className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-750 transition-colors"
+                        >
+                          <span>Đang chuẩn bị đề kiểm chứng</span>
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               );
@@ -949,64 +1015,6 @@ function LearningPathContent() {
         </div>
       )}
 
-      {/* ============================================================= */}
-      {/* MODAL NÂNG CẤP TÀI KHOẢN (PRO UPGRADE)                        */}
-      {/* ============================================================= */}
-      {isUpgradeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-[#111114] rounded-3xl border border-slate-200 dark:border-zinc-800 p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 text-center text-neutral-800 dark:text-zinc-200">
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-xs">
-              <Sparkles className="w-7 h-7" strokeWidth={1.75} />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                Mở Khóa Toàn Diện 5 Miền
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
-                Mở khóa trọn vẹn 5 miền năng lực số và nhận chứng chỉ hoàn thành.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-left space-y-2.5 text-xs">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Mở khóa toàn diện 5 miền năng lực số</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Đầy đủ cấp độ đánh giá từ Cơ bản đến Chuyên sâu</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Cấp chứng nhận hoàn thành chuẩn hóa</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsUpgradeModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
-              >
-                Để sau
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsProUser(true);
-                  setIsUpgradeModalOpen(false);
-                  showToast('Mở khóa toàn diện 5 miền thành công!');
-                }}
-                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-500/20 cursor-pointer"
-              >
-                Kích hoạt ngay &rarr;
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit Learning Goal Modal */}
       <EditGoalModal

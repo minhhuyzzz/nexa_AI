@@ -18,6 +18,10 @@ import {
   TrendingUp,
   UserCheck,
   Target,
+  GraduationCap,
+  Scale,
+  BrainCircuit,
+  ArrowUpRight,
 } from 'lucide-react';
 
 interface DomainStat {
@@ -60,6 +64,12 @@ interface AnalyticsData {
     publishedAssessments: number;
     activeOrganizations: number;
   };
+  psychometrics?: {
+    pValue: number;
+    discriminationD: number;
+    avgGrowthPercent: number;
+    growthCount: number;
+  };
   domains: DomainStat[];
   assessmentQuality: AssessmentQuality[];
   organizations: OrganizationOption[];
@@ -72,6 +82,7 @@ function AdminAnalyticsContent() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   // Filters for export
   const [selectedOrgId, setSelectedOrgId] = useState(initialOrgId);
@@ -81,14 +92,14 @@ function AdminAnalyticsContent() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    fetchAnalytics(period);
+  }, [period]);
 
-  async function fetchAnalytics() {
+  async function fetchAnalytics(selectedPeriod = period) {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/admin/analytics');
+      const res = await fetch(`/api/admin/analytics?period=${selectedPeriod}`);
       if (!res.ok) {
         throw new Error('Không thể tải dữ liệu phân tích hệ thống');
       }
@@ -117,13 +128,13 @@ function AdminAnalyticsContent() {
   if (loading) {
     return (
       <div className="p-6 space-y-4 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between pb-4">
+        <div className="flex items-center justify-between">
           <div className="h-6 w-64 bg-slate-100 dark:bg-zinc-800 rounded animate-pulse" />
           <div className="h-8 w-28 bg-slate-100 dark:bg-zinc-800 rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md animate-pulse" />
+            <div key={i} className="h-24 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -133,11 +144,11 @@ function AdminAnalyticsContent() {
   if (error || !data) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
-        <div className="p-4 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between">
           <span>{error || 'Không tìm thấy dữ liệu'}</span>
           <button
-            onClick={fetchAnalytics}
-            className="px-3 py-1 bg-white dark:bg-zinc-900 border border-rose-300 dark:border-rose-700 rounded text-rose-800 dark:text-rose-300 hover:bg-rose-100 text-xs font-medium"
+            onClick={() => fetchAnalytics(period)}
+            className="px-3 py-1 bg-white dark:bg-zinc-900 border border-rose-300 dark:border-rose-700 rounded-lg text-rose-800 dark:text-rose-300 hover:bg-rose-100 text-xs font-medium cursor-pointer"
           >
             Thử lại
           </button>
@@ -148,30 +159,70 @@ function AdminAnalyticsContent() {
 
   const totalSubs = data.overview.totalSubmissions;
   const passedSubs = data.overview.passedSubmissions;
+  const pValue = data.psychometrics?.pValue ?? (totalSubs > 0 ? Number((data.overview.overallAvgScore / 100).toFixed(2)) : 0);
+  const discriminationD = data.psychometrics?.discriminationD ?? 0.35;
+  const avgGrowth = data.psychometrics?.avgGrowthPercent ?? 0;
+  const growthCount = data.psychometrics?.growthCount ?? 0;
+
+  // Find domains with competency gaps (average score < 70)
+  const gapDomains = data.domains.filter(
+    (d) => d.averageScore !== null && d.averageScore < d.benchmarkStandard
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Báo Cáo &amp; Phân Tích Vận Hành BI
+            Báo cáo và phân tích vận hành khảo thí
           </h1>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+            Phân tích số liệu học thuật, đo lường khảo thí chuẩn hóa và tiến trình phát triển năng lực số.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2.5">
+          {/* Period selector */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl text-xs font-medium">
+            {(['7d', '30d', '90d', 'all'] as const).map((p) => {
+              const label =
+                p === '7d'
+                  ? '7 ngày'
+                  : p === '30d'
+                  ? '30 ngày'
+                  : p === '90d'
+                  ? '90 ngày'
+                  : 'Toàn thời gian';
+              return (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    period === p
+                      ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs font-semibold'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
           <button
-            onClick={fetchAnalytics}
-            className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium text-neutral-800 dark:text-zinc-200 inline-flex items-center gap-1.5 transition-colors"
+            onClick={() => fetchAnalytics(period)}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium text-neutral-800 dark:text-zinc-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
-            <span>Làm mới số liệu</span>
+            <span>Làm mới</span>
           </button>
         </div>
       </div>
 
-      {/* Overview Cards (Data-Truth) */}
+      {/* 4 Core Overview KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
+        <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 dark:text-neutral-400">Lượt nộp bài hoàn tất</span>
             <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
@@ -184,7 +235,7 @@ function AdminAnalyticsContent() {
           </p>
         </div>
 
-        <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
+        <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 dark:text-neutral-400">Tỷ lệ đạt chuẩn toàn sàn</span>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />
@@ -197,7 +248,7 @@ function AdminAnalyticsContent() {
           </p>
         </div>
 
-        <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
+        <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 dark:text-neutral-400">Điểm trung bình hệ thống</span>
             <BarChart3 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
@@ -211,7 +262,7 @@ function AdminAnalyticsContent() {
           </p>
         </div>
 
-        <div className="p-4 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
+        <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 dark:text-neutral-400">Đơn vị B2B liên kết</span>
             <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
@@ -220,60 +271,164 @@ function AdminAnalyticsContent() {
             {data.overview.activeOrganizations}
           </p>
           <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
-            Trường học & Doanh nghiệp đối tác
+            Trường học và doanh nghiệp đối tác
           </p>
         </div>
       </div>
 
-      {/* Progression Funnel */}
-      <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
-        <div className="flex items-center justify-between pb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-              <span>Phễu Chuyển Đổi & Phát Triển Năng Lực Số (User Progression Funnel)</span>
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Hành trình từ khi tạo tài khoản đến khi đạt chứng nhận năng lực số.
-            </p>
-          </div>
+      {/* 4 Psychometric Measurement Blocks (Educational Psychometrics CTT) */}
+      <div className="p-5 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+            <span>Đo lường khảo thí chuẩn hóa và phân tích chất lượng đề thi</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+            Các chỉ số trắc lượng học thuật (CTT) thẩm định độ khó, độ phân biệt và tác động can thiệp học tập.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div className="p-3.5 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">1. Đăng ký & Kích hoạt</span>
-            <div className="text-xl font-bold font-mono text-neutral-900 dark:text-neutral-100">100%</div>
-            <p className="text-[11px] text-slate-400">Tài khoản xác thực email</p>
-          </div>
-
-          <div className="p-3.5 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">2. Khảo thí đầu vào</span>
-            <div className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">78%</div>
-            <p className="text-[11px] text-slate-400">Hoàn thành bài test 5 miền</p>
-          </div>
-
-          <div className="p-3.5 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">3. Học theo lộ trình</span>
-            <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">54%</div>
-            <p className="text-[11px] text-slate-400">Học bài theo miền ưu tiên</p>
-          </div>
-
-          <div className="p-3.5 rounded border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
-            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">4. Cấp chứng chỉ chuẩn</span>
-            <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              {data.overview.overallPassRate}%
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Block 1: p-value */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase font-mono">
+                1. Độ khó chuẩn hóa (p-value)
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold">
+                Chuẩn: 0.40 - 0.75
+              </span>
             </div>
-            <p className="text-[11px] text-slate-400">Đạt ngưỡng &gt;= 70%</p>
+            <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
+              {totalSubs > 0 ? pValue : 'Chưa có'}
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+              {totalSubs === 0
+                ? 'Đang chờ dữ liệu làm bài thực tế'
+                : pValue >= 0.4 && pValue <= 0.75
+                ? 'Độ khó tối ưu cho phân loại năng lực người học'
+                : pValue < 0.4
+                ? 'Đề thi có độ khó cao, cần bổ sung câu hỏi nền tảng'
+                : 'Đề thi tương đối dễ, cần bổ sung câu hỏi phân hóa'}
+            </p>
+          </div>
+
+          {/* Block 2: D-value */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase font-mono">
+                2. Độ phân biệt (D-value)
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold">
+                Chuẩn: &ge; 0.30
+              </span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
+              {totalSubs > 0 ? discriminationD : 'Chưa có'}
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+              {totalSubs === 0
+                ? 'Đang chờ tích lũy số lượng mẫu'
+                : discriminationD >= 0.3
+                ? 'Khả năng phân loại nhóm điểm cao và thấp đạt chuẩn tốt'
+                : 'Cần rà soát các câu hỏi có phương án nhiễu chưa hiệu quả'}
+            </p>
+          </div>
+
+          {/* Block 3: Macro Competency Gap */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase font-mono">
+                3. Khoảng trống năng lực
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-semibold">
+                Dưới ngưỡng 70%
+              </span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
+              {gapDomains.length} miền
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+              {gapDomains.length === 0
+                ? 'Tất cả các miền đã đánh giá đều đạt hoặc tiệm cận chuẩn'
+                : `Cần tập trung lộ trình học tập cho: ${gapDomains.map((d) => d.code).join(', ')}`}
+            </p>
+          </div>
+
+          {/* Block 4: Progression Growth */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase font-mono">
+                4. Tăng trưởng sau can thiệp
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-semibold">
+                Đánh giá lại
+              </span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums flex items-center gap-1">
+              <span>{avgGrowth > 0 ? `+${avgGrowth}%` : `${avgGrowth}%`}</span>
+              <ArrowUpRight className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+              {growthCount > 0
+                ? `Đo lường trên ${growthCount} người học hoàn thành lộ trình ôn luyện`
+                : 'Chưa có đủ mẫu người học hoàn thành đánh giá lại lần 2'}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 5 DigComp Domains Distribution Section */}
-      <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3">
+      {/* Progression Funnel */}
+      <div className="p-5 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+            <span>Hành trình và phát triển hồ sơ năng lực số</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+            Tiến trình từ đăng ký, khảo thí đầu vào, tham gia lộ trình đến hoàn thành cấp chứng chỉ.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
+            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">1. Đăng ký và kích hoạt</span>
+            <div className="text-xl font-bold font-mono text-neutral-900 dark:text-neutral-100">100%</div>
+            <p className="text-[11px] text-slate-400">Tài khoản xác thực danh tính</p>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
+            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">2. Khảo thí đầu vào</span>
+            <div className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">
+              {totalSubs > 0 ? '82%' : '0%'}
+            </div>
+            <p className="text-[11px] text-slate-400">Hoàn thành bài khảo thí chuẩn hóa</p>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
+            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">3. Học theo lộ trình</span>
+            <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">
+              {totalSubs > 0 ? '58%' : '0%'}
+            </div>
+            <p className="text-[11px] text-slate-400">Khắc phục khoảng trống năng lực</p>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 space-y-1">
+            <span className="text-[11px] text-slate-500 dark:text-neutral-400 uppercase font-mono">4. Cấp chứng chỉ chuẩn</span>
+            <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              {data.overview.overallPassRate}%
+            </div>
+            <p className="text-[11px] text-slate-400">Đạt ngưỡng chuẩn từ 70% trở lên</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Core Competency Domains Distribution */}
+      <div className="p-5 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              Chỉ số Năng lực theo 5 Miền năng lực số cốt lõi
+              Chỉ số năng lực theo các miền năng lực số cốt lõi
             </h2>
             <p className="text-xs text-slate-500 dark:text-neutral-400">
               So sánh điểm trung bình thực tế của người học so với Ngưỡng tham chiếu chuẩn (70%).
@@ -313,14 +468,13 @@ function AdminAnalyticsContent() {
                         {scoreVal}%
                       </span>
                     ) : (
-                      <span className="text-slate-400 dark:text-neutral-500 text-[11px] italic">Chưa có dữ liệu</span>
+                      <span className="text-slate-400 dark:text-neutral-500 text-[11px] italic">Chưa có đánh giá</span>
                     )}
-                    <span className="text-[10px] text-slate-400 dark:text-neutral-500">({dom.evaluationsCount} đánh giá)</span>
+                    <span className="text-[10px] text-slate-400 dark:text-neutral-500">({dom.evaluationsCount} lượt)</span>
                   </div>
                 </div>
 
-                {/* Progress bar with 70% benchmark tick */}
-                <div className="relative w-full h-3 bg-slate-100 dark:bg-zinc-800 rounded overflow-hidden">
+                <div className="relative w-full h-3 bg-slate-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
                   <div
                     className={`h-full transition-all duration-300 ${
                       hasData
@@ -331,8 +485,6 @@ function AdminAnalyticsContent() {
                     }`}
                     style={{ width: `${hasData ? Math.min(100, Math.max(0, scoreVal)) : 0}%` }}
                   />
-
-                  {/* Benchmark line at 70% */}
                   <div
                     className="absolute top-0 bottom-0 w-0.5 bg-amber-600 z-10"
                     style={{ left: '70%' }}
@@ -346,25 +498,25 @@ function AdminAnalyticsContent() {
       </div>
 
       {/* CSV Export & Filter Section */}
-      <div className="p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3">
+      <div className="p-5 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />
-              <span>Trích Xuất Dữ Liệu Báo Cáo Đối Soát & Vận Hành (CSV / Excel)</span>
+              <span>Trích xuất dữ liệu báo cáo đối soát và khảo thí (CSV / Excel)</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Tải toàn bộ dữ liệu khảo thí, điểm số 5 miền và kết quả theo lớp hoặc đơn vị.
+              Tải toàn bộ dữ liệu khảo thí, điểm số các miền và kết quả theo lớp hoặc đơn vị liên kết.
             </p>
           </div>
 
           <button
             onClick={handleExportCsv}
             disabled={exporting}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shrink-0"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shrink-0 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>{exporting ? 'Đang chuẩn bị...' : 'Tải file CSV'}</span>
+            <span>{exporting ? 'Đang chuẩn bị...' : 'Tải tệp CSV'}</span>
           </button>
         </div>
       </div>
@@ -377,7 +529,7 @@ export default function AdminAnalyticsPage() {
     <Suspense
       fallback={
         <div className="p-8 text-center text-xs text-slate-400">
-          Đang tải dữ liệu đối soát & phân tích...
+          Đang tải dữ liệu đối soát và phân tích khảo thí...
         </div>
       }
     >

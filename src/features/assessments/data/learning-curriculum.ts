@@ -163,7 +163,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   {
     code: '01',
     domainNumber: 1,
-    title: 'Thông tin & Dữ liệu số',
+    title: 'Thông tin và Dữ liệu số',
     desc: 'Duyệt, tìm kiếm dữ liệu, thẩm định độ tin cậy và quản lý dữ liệu an toàn.',
     iconName: 'Database',
     badgeColor: 'blue',
@@ -225,7 +225,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
           },
           {
             id: 'd0000000-0000-0000-0000-000000000001',
-            title: 'Phương pháp Thẩm định Nguồn tin Số & Nhận diện Deepfake AI',
+            title: 'Phương pháp Thẩm định Nguồn tin Số và Nhận diện Deepfake AI',
             description: 'Nhận biết các hình ảnh và video do AI tạo sinh nhằm xuyên tạc thông tin hoặc lừa đảo.',
             durationMinutes: 20,
             pointReward: 30,
@@ -285,7 +285,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   {
     code: '02',
     domainNumber: 2,
-    title: 'Giao tiếp & Cộng tác số',
+    title: 'Giao tiếp và Hợp tác số',
     desc: 'Tương tác, chia sẻ, làm việc nhóm và thực hành văn hóa ứng xử số văn minh.',
     iconName: 'Users',
     badgeColor: 'emerald',
@@ -439,7 +439,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   {
     code: '03',
     domainNumber: 3,
-    title: 'Sáng tạo Nội dung số & AI',
+    title: 'Sáng tạo Nội dung số và AI',
     desc: 'Thiết kế ấn phẩm, ứng dụng AI có trách nhiệm, hiểu bản quyền và tư duy tính toán.',
     iconName: 'Lightbulb',
     badgeColor: 'amber',
@@ -554,7 +554,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
   {
     code: '04',
     domainNumber: 4,
-    title: 'An toàn & Bảo mật số',
+    title: 'An toàn và Bảo mật số',
     desc: 'Bảo vệ thiết bị, dữ liệu cá nhân, quyền riêng tư, sức khỏe số và môi trường.',
     iconName: 'Shield',
     badgeColor: 'purple',
@@ -663,7 +663,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
       {
         id: 'c44c6158-0d28-4a73-b7a3-32d8dfa8172d',
         skillCode: '5.1',
-        title: 'Xác định & giải quyết sự cố kỹ thuật',
+        title: 'Xác định và giải quyết sự cố kỹ thuật',
         desc: 'Nhận diện các vấn đề kỹ thuật khi vận hành thiết bị số và áp dụng giải pháp khắc phục.',
         lessons: [
           {
@@ -694,7 +694,7 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
       {
         id: 'ac0b2598-4117-4e05-a3cd-4974aab780e6',
         skillCode: '5.2',
-        title: 'Nhận diện nhu cầu & giải pháp công nghệ',
+        title: 'Nhận diện nhu cầu và giải pháp công nghệ',
         desc: 'Đánh giá nhu cầu thực tế và lựa chọn công cụ số, phần mềm hoặc nền tảng tối ưu.',
         lessons: [
           {
@@ -732,12 +732,12 @@ export const DOMAIN_CURRICULUM: DomainTrack[] = [
       {
         id: '4f90cac7-901f-40be-a292-d9670b16baa5',
         skillCode: '5.4',
-        title: 'Nhận diện & bồi dưỡng năng lực số',
+        title: 'Nhận diện và bồi dưỡng năng lực số',
         desc: 'Tự nhận biết khoảng trống năng lực cá nhân và chủ động cập nhật công nghệ mới liên tục.',
         lessons: [
           {
             id: 'd0000000-0000-0000-0000-000000000005',
-            title: 'Chiến lược Tự khắc phục Lỗ hổng Kỹ năng Số & Cập nhật Công nghệ Mới',
+            title: 'Chiến lược Tự khắc phục Lỗ hổng Kỹ năng Số và Cập nhật Công nghệ Mới',
             description: 'Xây dựng kế hoạch học tập suốt đời và thích ứng nhanh với các công nghệ đột phá.',
             durationMinutes: 20,
             pointReward: 30,

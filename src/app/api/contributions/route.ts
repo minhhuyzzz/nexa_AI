@@ -20,7 +20,7 @@ const reviewContributionSchema = z.object({
   id: z.string().uuid('ID đóng góp không hợp lệ'),
   status: z.enum(['APPROVED', 'NEEDS_REVISION', 'REJECTED']),
   adminFeedback: z.string().optional().default(''),
-  pointsRewarded: z.number().int().min(0).default(50),
+  pointsRewarded: z.number().int().min(0, 'Điểm thưởng không được âm').max(1000, 'Điểm thưởng tối đa 1.000 PTS').default(50),
 });
 
 // GET: Fetch contributions (Admin sees all; Learner sees their own)
@@ -43,7 +43,17 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    const isAdmin = profile?.role === 'ADMIN';
+    let isAdmin = profile?.role === 'ADMIN';
+    if (!isAdmin) {
+      try {
+        const authCheck = await requirePlatformAdmin('MANAGE_CONTENT');
+        if (authCheck?.isAuthorized) {
+          isAdmin = true;
+        }
+      } catch {
+        // Not admin
+      }
+    }
 
     let query = adminSupabase
       .from('community_contributions')
@@ -175,9 +185,9 @@ export async function POST(request: NextRequest) {
 // PATCH: Admin reviews a contribution (Approve, Request Revision, Reject)
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await requirePlatformAdmin();
-    if (!auth.isAuthorized) {
-      return auth.errorResponse!;
+    const auth = await requirePlatformAdmin('MANAGE_CONTENT');
+    if (!auth?.isAuthorized) {
+      return auth?.errorResponse || NextResponse.json({ error: 'Từ chối quyền truy cập' }, { status: 403 });
     }
 
     const adminSupabase = createAdminClient();

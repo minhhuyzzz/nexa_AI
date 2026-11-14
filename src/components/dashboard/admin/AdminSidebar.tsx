@@ -22,6 +22,8 @@ import {
   MessageSquare,
   Compass,
   Target,
+  GraduationCap,
+  Shield,
   LucideIcon,
 } from 'lucide-react';
 
@@ -43,37 +45,43 @@ const adminNavSections: NavSection[] = [
     id: 'operations',
     label: 'Điều hành',
     items: [
-      { name: 'Tổng quan', href: '/admin/dashboard', icon: Home, exact: true },
-      { name: 'Phân tích 5 miền', href: '/admin/analytics', icon: BarChart3, exact: false },
-      { name: 'Truyền thông & Góp ý', href: '/admin/communications', icon: MessageSquare, exact: false },
+      { name: 'Tổng quan nền tảng', href: '/admin/dashboard', icon: Home, exact: true },
     ],
   },
   {
     id: 'business',
-    label: 'Khách hàng & Kinh doanh',
+    label: 'Khách hàng và kinh doanh',
     items: [
       { name: 'Người dùng', href: '/admin/users', icon: Users, exact: false },
-      { name: 'Tổ chức B2B', href: '/admin/organizations', icon: Building2, exact: false },
+      { name: 'Tổ chức Business', href: '/admin/organizations', icon: Building2, exact: false },
       { name: 'Gói dịch vụ', href: '/admin/plans', icon: CreditCard, exact: false },
-      { name: 'Thanh toán & Đối soát', href: '/admin/transactions', icon: Receipt, exact: false },
+      { name: 'Giao dịch đối soát', href: '/admin/transactions', icon: Receipt, exact: false },
     ],
   },
   {
     id: 'content',
-    label: 'Nội dung & Khảo thí',
+    label: 'Năng lực và khảo thí',
     items: [
       { name: 'Khảo thí đầu vào', href: '/admin/baseline', icon: Target, exact: false },
       { name: 'Ngân hàng đề chuẩn', href: '/admin/content', icon: BookOpenCheck, exact: false },
-      { name: 'Lộ trình học', href: '/admin/learning-paths', icon: Compass, exact: false },
+      { name: 'Lộ trình học tập', href: '/admin/learning-paths', icon: GraduationCap, exact: false },
+      { name: 'Phân tích năng lực số', href: '/admin/analytics', icon: BarChart3, exact: false },
+    ],
+  },
+  {
+    id: 'community',
+    label: 'Cộng đồng và phản hồi',
+    items: [
+      { name: 'Hộp thư góp ý', href: '/admin/communications', icon: MessageSquare, exact: false },
       { name: 'Kiểm duyệt đóng góp', href: '/admin/contributions', icon: FileCheck2, exact: false },
     ],
   },
   {
     id: 'system',
-    label: 'Hạ tầng & An toàn',
+    label: 'Hệ thống và bảo mật',
     items: [
-      { name: 'AI Gateway', href: '/admin/ai-gateway', icon: Sparkles, exact: false },
-      { name: 'Bảo mật & Kiểm toán', href: '/admin/compliance', icon: ShieldCheck, exact: false },
+      { name: 'Cổng kết nối AI', href: '/admin/ai-gateway', icon: Sparkles, exact: false },
+      { name: 'Nhật ký kiểm toán', href: '/admin/compliance', icon: ShieldCheck, exact: false },
       { name: 'Cài đặt nền tảng', href: '/admin/settings', icon: Settings, exact: false },
     ],
   },
@@ -131,10 +139,10 @@ export function AdminSidebar() {
           </div>
         )}
 
-        {/* Navigation Sections (Hidden scrollbar) */}
+        {/* Navigation Sections */}
         <nav
           onScroll={() => setHoveredTooltip(null)}
-          className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2 space-y-4"
+          className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 pb-8"
         >
           {adminNavSections.map((section) => (
             <div key={section.id} className="space-y-1">
@@ -217,11 +225,11 @@ export function AdminSidebar() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
-                    Hệ thống ổn định
+                    Dịch vụ sẵn sàng
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
-                  99.9%
+                  LIVE
                 </span>
               </div>
             </div>
@@ -230,11 +238,11 @@ export function AdminSidebar() {
               <div
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setHoveredTooltip({ name: 'Hệ thống ổn định (99.9%)', top: rect.top + rect.height / 2 });
+                  setHoveredTooltip({ name: 'Hệ thống dịch vụ sẵn sàng (Live)', top: rect.top + rect.height / 2 });
                 }}
                 onMouseLeave={() => setHoveredTooltip(null)}
                 className="w-10 h-8 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/80 flex items-center justify-center relative group cursor-default"
-                title="Hệ thống hoạt động ổn định (99.9%)"
+                title="Hệ thống dịch vụ sẵn sàng (Live)"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

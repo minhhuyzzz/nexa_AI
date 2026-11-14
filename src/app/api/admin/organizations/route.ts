@@ -291,7 +291,7 @@ export async function PATCH(request: Request | NextRequest) {
 
 export async function DELETE(request: Request | NextRequest) {
   try {
-    const authCheck = await requirePlatformAdmin();
+    const authCheck = await requirePlatformAdmin('MANAGE_ORGANIZATIONS');
     if (!authCheck.isAuthorized || authCheck.errorResponse) {
       return authCheck.errorResponse!;
     }
@@ -300,22 +300,29 @@ export async function DELETE(request: Request | NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Thiếu ID tổ chức cần xóa' }, { status: 400 });
+      return NextResponse.json({ error: 'Thiếu ID tổ chức cần xử lý' }, { status: 400 });
     }
 
     const supabase = createAdminClient();
 
-    // Xóa tổ chức (các bảng user_organizations, organization_invitations, entitlements đều cascade)
+    // Soft deactivation: chuyển sang SUSPENDED/ARCHIVED, bảo toàn dữ liệu lịch sử
     const { error } = await supabase
       .from('organizations')
-      .delete()
+      .update({
+        status: 'SUSPENDED',
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, message: 'Đã xóa tổ chức thành công' });
+    return NextResponse.json({
+      success: true,
+      message: 'Đã tạm ngừng hoạt động tổ chức và bảo toàn dữ liệu lịch sử thành công',
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error';
     return NextResponse.json({ error: message }, { status: 500 });

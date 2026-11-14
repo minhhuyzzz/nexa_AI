@@ -1,7 +1,17 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { AdminSidebar } from '@/components/dashboard/admin/AdminSidebar';
 import { AdminTopbar } from '@/components/dashboard/admin/AdminTopbar';
+
+export const metadata: Metadata = {
+  title: 'NEXA Platform Admin | Điều hành nền tảng',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 export default async function AdminLayout({
   children,

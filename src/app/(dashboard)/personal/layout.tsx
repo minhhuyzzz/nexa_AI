@@ -1,5 +1,15 @@
+import type { Metadata } from 'next';
 import { PersonalSidebar } from '@/components/dashboard/personal/PersonalSidebar';
 import { PersonalTopbar } from '@/components/dashboard/personal/PersonalTopbar';
+
+export const metadata: Metadata = {
+  title: 'NEXA Personal | Hồ sơ năng lực số',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 export default function PersonalLayout({
   children,

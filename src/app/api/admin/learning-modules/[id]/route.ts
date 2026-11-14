@@ -15,6 +15,8 @@ const updateModuleSchema = z.object({
   pointReward: z.number().int().min(0).max(1000).optional(),
   contentMarkdown: z.string().optional().nullable(),
   assessmentId: z.string().uuid().optional().nullable(),
+  passingScore: z.number().min(0).max(100).optional(),
+  securitySettings: z.record(z.any()).optional(),
   accessTier: z.enum(['FREE', 'VIP']).optional(),
   isPublished: z.boolean().optional(),
   orderIndex: z.number().int().optional(),
@@ -52,7 +54,10 @@ export async function GET(
         assessments (
           id,
           title,
-          passing_score
+          passing_score,
+          duration_minutes,
+          point_reward,
+          security_settings
         ),
         learning_paths (
           id,
@@ -122,6 +127,25 @@ export async function PATCH(
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    const targetAssessmentId = parsed.data.assessmentId !== undefined ? parsed.data.assessmentId : updated.assessment_id;
+    if (targetAssessmentId && (parsed.data.passingScore !== undefined || parsed.data.securitySettings !== undefined || parsed.data.durationMinutes !== undefined || parsed.data.pointReward !== undefined)) {
+      const assessmentUpdates: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (parsed.data.passingScore !== undefined) assessmentUpdates.passing_score = parsed.data.passingScore;
+      if (parsed.data.durationMinutes !== undefined) assessmentUpdates.duration_minutes = parsed.data.durationMinutes;
+      if (parsed.data.pointReward !== undefined) assessmentUpdates.point_reward = parsed.data.pointReward;
+      if (parsed.data.securitySettings !== undefined) assessmentUpdates.security_settings = parsed.data.securitySettings;
+
+      const assTable = adminSupabase.from('assessments');
+      if (assTable && typeof assTable.update === 'function') {
+        const updateQuery = assTable.update(assessmentUpdates);
+        if (updateQuery && typeof updateQuery.eq === 'function') {
+          await updateQuery.eq('id', targetAssessmentId);
+        }
+      }
     }
 
     return NextResponse.json({ success: true, module: updated });

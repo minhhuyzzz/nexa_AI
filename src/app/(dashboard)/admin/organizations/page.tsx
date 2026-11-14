@@ -257,7 +257,7 @@ export default function AdminOrganizationsPage() {
   };
 
   const handleDeleteOrg = async (org: OrganizationItem) => {
-    const confirmMsg = `XÁC NHẬN XÓA TỔ CHỨC:\nBạn có chắc chắn muốn XÓA VĨNH VIỄN tổ chức "${org.name}"?\nThao tác này sẽ xóa sạch dữ liệu tổ chức, thành viên và các thiết lập liên quan.`;
+    const confirmMsg = `XÁC NHẬN TẠM NGỪNG HOẠT ĐỘNG:\nBạn có chắc chắn muốn TẠM NGỪNG hoạt động tổ chức "${org.name}"?\nDữ liệu học viên, bài thi và lịch sử giao dịch sẽ được bảo toàn nguyên vẹn trong hệ thống.`;
     if (!confirm(confirmMsg)) return;
 
     try {
@@ -265,15 +265,15 @@ export default function AdminOrganizationsPage() {
         method: 'DELETE',
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa tổ chức');
-      setActionToast(`Đã xóa vĩnh viễn tổ chức "${org.name}".`);
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi tạm ngừng tổ chức');
+      setActionToast(`Đã tạm ngừng hoạt động tổ chức "${org.name}" an toàn.`);
       setTimeout(() => setActionToast(null), 3000);
       if (selectedOrgDetail && selectedOrgDetail.id === org.id) {
         setSelectedOrgDetail(null);
       }
       await fetchOrganizations();
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Lỗi hệ thống khi xóa tổ chức');
+      alert(e instanceof Error ? e.message : 'Lỗi hệ thống khi tạm ngừng tổ chức');
     }
   };
 

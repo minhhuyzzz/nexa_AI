@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Compass,
-  Plus,
   BookOpen,
   Layers,
   Award,
@@ -12,1245 +10,967 @@ import {
   CheckCircle2,
   AlertCircle,
   Search,
-  Filter,
-  MoreVertical,
-  Edit2,
-  Trash2,
   ExternalLink,
-  ChevronRight,
   Loader2,
-  Sparkles,
-  FileText,
   X,
   Check,
-  Eye,
-  EyeOff,
-  Link as LinkIcon,
+  Settings,
+  ShieldCheck,
+  Database,
+  Users,
+  Lightbulb,
+  Shield,
+  Wrench,
+  CheckSquare,
 } from 'lucide-react';
-import { SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
-
-interface LearningPathItem {
-  id: string;
-  title: string;
-  slug?: string;
-  description?: string;
-  domainCodes: string[];
-  accessTier: 'FREE' | 'VIP';
-  pointReward: number;
-  isPublished: boolean;
-  orderIndex: number;
-  modulesCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import {
+  DOMAIN_CURRICULUM,
+  getSubdomainLevels,
+  DomainTrack,
+  SubdomainNode,
+  CompetencyLevelItem,
+} from '@/features/assessments/data/learning-curriculum';
 
 interface LearningModuleItem {
   id: string;
-  path_id?: string;
+  path_id?: string | null;
   domain_code: string;
   skill_code: string;
   title: string;
-  description?: string;
+  description?: string | null;
   duration_minutes: number;
   point_reward: number;
-  content_markdown?: string;
+  content_markdown?: string | null;
   is_published: boolean;
   order_index: number;
-  assessment_id?: string;
+  assessment_id?: string | null;
   access_tier: 'FREE' | 'VIP';
+  created_at?: string;
+  updated_at?: string;
   assessments?: {
     id: string;
     title: string;
     passing_score: number;
-  };
+    duration_minutes: number;
+    point_reward: number;
+    security_settings?: Record<string, any>;
+  } | null;
 }
 
-const DOMAIN_OPTIONS = [
-  { code: 'D1', label: 'Miền 1: Thông tin & Dữ liệu' },
-  { code: 'D2', label: 'Miền 2: Giao tiếp & Cộng tác' },
-  { code: 'D3', label: 'Miền 3: Sáng tạo Nội dung & AI' },
-  { code: 'D4', label: 'Miền 4: An toàn & Bảo mật' },
-  { code: 'D5', label: 'Miền 5: Giải quyết Vấn đề' },
-];
+interface AssessmentOption {
+  id: string;
+  title: string;
+  passing_score: number;
+  duration_minutes: number;
+  point_reward: number;
+  questionCount?: number;
+  target_domain?: string;
+}
+
+const DOMAIN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Database,
+  Users,
+  Lightbulb,
+  Shield,
+  Wrench,
+};
+
+function normalizeDomain(code: string | null | undefined): string {
+  if (!code) return '01';
+  const match = String(code).match(/(\d+)/);
+  return match ? match[1].padStart(2, '0') : '01';
+}
 
 export default function AdminLearningPathsPage() {
-  const [paths, setPaths] = useState<LearningPathItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filterTier, setFilterTier] = useState<'ALL' | 'FREE' | 'VIP'>('ALL');
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'PUBLISHED' | 'DRAFT'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDomainCode, setSelectedDomainCode] = useState<string>('01');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Selected Path & its modules drawer
-  const [selectedPath, setSelectedPath] = useState<LearningPathItem | null>(null);
+  // Data States
   const [modules, setModules] = useState<LearningModuleItem[]>([]);
-  const [modulesLoading, setModulesLoading] = useState(false);
+  const [availableAssessments, setAvailableAssessments] = useState<AssessmentOption[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [savingStation, setSavingStation] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Available assessments for linking
-  const [availableAssessments, setAvailableAssessments] = useState<Array<{ id: string; title: string }>>([]);
+  // Station Drawer Configuration State
+  const [isStationDrawerOpen, setIsStationDrawerOpen] = useState<boolean>(false);
+  const [currentStationTarget, setCurrentStationTarget] = useState<{
+    domain: DomainTrack;
+    subdomain: SubdomainNode;
+    level: CompetencyLevelItem;
+    existingModule?: LearningModuleItem | null;
+  } | null>(null);
 
-  // Create / Edit Path Modal
-  const [isPathModalOpen, setIsPathModalOpen] = useState(false);
-  const [editingPath, setEditingPath] = useState<LearningPathItem | null>(null);
-  const [pathTitle, setPathTitle] = useState('');
-  const [pathDescription, setPathDescription] = useState('');
-  const [pathDomains, setPathDomains] = useState<string[]>(['D1']);
-  const [pathTier, setPathTier] = useState<'FREE' | 'VIP'>('FREE');
-  const [pathPointReward, setPathPointReward] = useState(100);
-  const [pathPublished, setPathPublished] = useState(true);
-  const [savingPath, setSavingPath] = useState(false);
+  // Form Fields for Station Drawer
+  const [stationTitle, setStationTitle] = useState<string>('');
+  const [stationDescription, setStationDescription] = useState<string>('');
+  const [stationAssessmentId, setStationAssessmentId] = useState<string>('');
+  const [stationDurationMinutes, setStationDurationMinutes] = useState<number>(15);
+  const [stationPassingScore, setStationPassingScore] = useState<number>(100);
+  const [stationPointReward, setStationPointReward] = useState<number>(25);
+  const [stationAntiTabSwitch, setStationAntiTabSwitch] = useState<boolean>(true);
+  const [stationMaxTabViolations, setStationMaxTabViolations] = useState<number>(3);
+  const [stationAntiCopy, setStationAntiCopy] = useState<boolean>(true);
+  const [stationCooldownMinutes, setStationCooldownMinutes] = useState<number>(15);
+  const [stationBenchmark, setStationBenchmark] = useState<string>('');
+  const [stationGuidance, setStationGuidance] = useState<string>('');
 
-  // Create / Edit Module Modal
-  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
-  const [editingModule, setEditingModule] = useState<LearningModuleItem | null>(null);
-  const [moduleTitle, setModuleTitle] = useState('');
-  const [moduleDomain, setModuleDomain] = useState('D1');
-  const [moduleSkillCode, setModuleSkillCode] = useState('1.1');
-  const [moduleLevel, setModuleLevel] = useState<'BASIC' | 'INTERMEDIATE' | 'ADVANCED' | 'HIGHLY_ADVANCED'>('BASIC');
-  const [moduleDescription, setModuleDescription] = useState('');
-  const [moduleDuration, setModuleDuration] = useState(20);
-  const [modulePointReward, setModulePointReward] = useState(30);
-  const [moduleContent, setModuleContent] = useState('');
-  const [moduleAssessmentId, setModuleAssessmentId] = useState<string>('');
-  const [moduleTier, setModuleTier] = useState<'FREE' | 'VIP'>('FREE');
-  const [modulePublished, setModulePublished] = useState(true);
-  const [savingModule, setSavingModule] = useState(false);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
-  const fetchPaths = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch('/api/admin/learning-paths');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Lỗi khi tải lộ trình học');
-      setPaths(data.paths || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi hệ thống');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Fetch all assessments from Ngân hàng đề chuẩn
   const fetchAssessments = useCallback(async () => {
     try {
-      const res = await fetch('/api/assessments');
+      const res = await fetch('/api/admin/assessments');
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        setAvailableAssessments(
-          (data.assessments || []).map((a: any) => ({
-            id: a.id,
-            title: a.title,
-          }))
-        );
+        const raw = data.assessments || [];
+        const mapped: AssessmentOption[] = raw.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          passing_score: Number(a.passing_score ?? 70),
+          duration_minutes: Number(a.duration_minutes ?? 45),
+          point_reward: Number(a.point_reward ?? 50),
+          questionCount: Array.isArray(a.assessment_items) ? a.assessment_items.length : 0,
+          target_domain: a.target_domain,
+        }));
+        setAvailableAssessments(mapped);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Error fetching assessments:', err);
     }
   }, []);
 
-  useEffect(() => {
-    fetchPaths();
-    fetchAssessments();
-  }, [fetchPaths, fetchAssessments]);
-
-  const fetchModulesForPath = async (pathId: string) => {
+  // Fetch all learning modules from database
+  const fetchModules = useCallback(async () => {
     try {
-      setModulesLoading(true);
-      const res = await fetch(`/api/admin/learning-modules?pathId=${pathId}`);
+      const res = await fetch('/api/admin/learning-modules');
       const data = await res.json();
       if (res.ok) {
         setModules(data.modules || []);
       }
     } catch (err) {
-      console.error(err);
-    } finally {
-      setModulesLoading(false);
+      console.error('Error fetching modules:', err);
     }
+  }, []);
+
+  // Initial Data Load
+  useEffect(() => {
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchAssessments(), fetchModules()]);
+      setLoading(false);
+    };
+    loadAll();
+  }, [fetchAssessments, fetchModules]);
+
+  // Find module matching a specific domain, skill, and level number
+  const findModule = useCallback(
+    (domainCode: string, skillCode: string, levelNumber: number): LearningModuleItem | null => {
+      const targetDomainNorm = normalizeDomain(domainCode);
+      return (
+        modules.find((m) => {
+          const modDomainNorm = normalizeDomain(m.domain_code);
+          return (
+            modDomainNorm === targetDomainNorm &&
+            m.skill_code === skillCode &&
+            Number(m.order_index) === levelNumber
+          );
+        }) || null
+      );
+    },
+    [modules]
+  );
+
+  // Open Station Configuration Drawer
+  const handleOpenStationConfig = (
+    domain: DomainTrack,
+    subdomain: SubdomainNode,
+    level: CompetencyLevelItem
+  ) => {
+    const existing = findModule(domain.code, subdomain.skillCode, level.levelNumber);
+
+    setCurrentStationTarget({
+      domain,
+      subdomain,
+      level,
+      existingModule: existing,
+    });
+
+    const linkedAssessment = existing?.assessments;
+    const sec = linkedAssessment?.security_settings || {};
+
+    setStationTitle(
+      existing?.title ||
+        `${subdomain.title} - Cấp ${level.levelNumber} (${level.levelName})`
+    );
+    setStationDescription(existing?.description || level.benchmarkStandard);
+    setStationAssessmentId(existing?.assessment_id || '');
+    setStationDurationMinutes(
+      linkedAssessment?.duration_minutes || existing?.duration_minutes || level.durationMinutes || 15
+    );
+    setStationPassingScore(
+      linkedAssessment?.passing_score !== undefined
+        ? Number(linkedAssessment.passing_score)
+        : 100
+    );
+    setStationPointReward(
+      linkedAssessment?.point_reward || existing?.point_reward || level.pointReward || 25
+    );
+    setStationAntiTabSwitch(sec.antiTabSwitch !== false);
+    setStationMaxTabViolations(Number(sec.maxTabSwitchViolations) || 3);
+    setStationAntiCopy(sec.antiCopy !== false);
+    setStationCooldownMinutes(typeof sec.cooldownMinutes === 'number' ? sec.cooldownMinutes : 15);
+    setStationBenchmark(level.benchmarkStandard);
+    setStationGuidance(level.guidanceText);
+
+    setIsStationDrawerOpen(true);
   };
 
-  const handleOpenPathDetails = (path: LearningPathItem) => {
-    setSelectedPath(path);
-    fetchModulesForPath(path.id);
-  };
-
-  const handleOpenCreatePath = () => {
-    setEditingPath(null);
-    setPathTitle('');
-    setPathDescription('');
-    setPathDomains(['D1']);
-    setPathTier('FREE');
-    setPathPointReward(100);
-    setPathPublished(true);
-    setIsPathModalOpen(true);
-  };
-
-  const handleOpenEditPath = (path: LearningPathItem) => {
-    setEditingPath(path);
-    setPathTitle(path.title);
-    setPathDescription(path.description || '');
-    setPathDomains(path.domainCodes || ['D1']);
-    setPathTier(path.accessTier);
-    setPathPointReward(path.pointReward);
-    setPathPublished(path.isPublished);
-    setIsPathModalOpen(true);
-  };
-
-  const handleSavePath = async (e: React.FormEvent) => {
+  // Save Station Configuration
+  const handleSaveStationConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pathTitle.trim()) return;
+    if (!currentStationTarget) return;
 
-    setSavingPath(true);
+    setSavingStation(true);
     try {
-      if (editingPath) {
-        const res = await fetch(`/api/admin/learning-paths/${editingPath.id}`, {
+      const { domain, subdomain, level, existingModule } = currentStationTarget;
+
+      const securitySettings = {
+        antiTabSwitch: stationAntiTabSwitch,
+        maxTabSwitchViolations: stationMaxTabViolations,
+        antiCopy: stationAntiCopy,
+        cooldownMinutes: stationCooldownMinutes,
+      };
+
+      const payload = {
+        domain_code: domain.code,
+        skill_code: subdomain.skillCode,
+        title: stationTitle.trim(),
+        description: stationDescription.trim(),
+        duration_minutes: stationDurationMinutes,
+        passing_score: stationPassingScore,
+        point_reward: stationPointReward,
+        assessment_id: stationAssessmentId || null,
+        order_index: level.levelNumber,
+        is_published: true,
+        access_tier: 'FREE',
+        security_settings: securitySettings,
+      };
+
+      let res: Response;
+      if (existingModule?.id) {
+        res = await fetch(`/api/admin/learning-modules/${existingModule.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: pathTitle.trim(),
-            description: pathDescription.trim() || undefined,
-            domainCodes: pathDomains,
-            accessTier: pathTier,
-            pointReward: Number(pathPointReward),
-            isPublished: pathPublished,
-          }),
+          body: JSON.stringify(payload),
         });
-        if (!res.ok) {
-          const d = await res.json();
-          throw new Error(d.error || 'Cập nhật lộ trình thất bại');
-        }
       } else {
-        const res = await fetch('/api/admin/learning-paths', {
+        res = await fetch('/api/admin/learning-modules', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: pathTitle.trim(),
-            description: pathDescription.trim() || undefined,
-            domainCodes: pathDomains,
-            accessTier: pathTier,
-            pointReward: Number(pathPointReward),
-            isPublished: pathPublished,
-          }),
+          body: JSON.stringify(payload),
         });
-        if (!res.ok) {
-          const d = await res.json();
-          throw new Error(d.error || 'Tạo lộ trình thất bại');
-        }
       }
 
-      setIsPathModalOpen(false);
-      fetchPaths();
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Lỗi khi lưu cấu hình trạm');
+      }
+
+      showToast('Đã lưu cấu hình trạm kiểm chứng thành công');
+      setIsStationDrawerOpen(false);
+      await fetchModules();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Lỗi khi lưu lộ trình');
+      alert(err instanceof Error ? err.message : 'Lỗi hệ thống');
     } finally {
-      setSavingPath(false);
+      setSavingStation(false);
     }
   };
 
-  const handleDeletePath = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa lộ trình này? Các học phần sẽ được gỡ liên kết nhưng không bị xóa.')) return;
-    try {
-      const res = await fetch(`/api/admin/learning-paths/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        if (selectedPath?.id === id) setSelectedPath(null);
-        fetchPaths();
-      }
-    } catch {
-      alert('Xóa thất bại');
-    }
-  };
+  // Current selected domain object
+  const currentDomain = useMemo(() => {
+    return (
+      DOMAIN_CURRICULUM.find((d) => d.code === selectedDomainCode) ||
+      DOMAIN_CURRICULUM[0]
+    );
+  }, [selectedDomainCode]);
 
-  // Module Actions
-  const handleOpenCreateModule = () => {
-    if (!selectedPath) return;
-    setEditingModule(null);
-    setModuleTitle('');
-    setModuleDomain(selectedPath.domainCodes[0] || 'D1');
-    setModuleSkillCode('1.1');
-    setModuleLevel('BASIC');
-    setModuleDescription('');
-    setModuleDuration(15);
-    setModulePointReward(15);
-    setModuleContent('');
-    setModuleAssessmentId('');
-    setModuleTier(selectedPath.accessTier);
-    setModulePublished(true);
-    setIsModuleModalOpen(true);
-  };
+  // Filter subdomains based on search
+  const filteredSubdomains = useMemo(() => {
+    if (!searchQuery.trim()) return currentDomain.subdomains;
+    const q = searchQuery.toLowerCase().trim();
+    return currentDomain.subdomains.filter(
+      (sub) =>
+        sub.title.toLowerCase().includes(q) ||
+        sub.skillCode.toLowerCase().includes(q) ||
+        sub.desc.toLowerCase().includes(q)
+    );
+  }, [currentDomain, searchQuery]);
 
-  const handleOpenEditModule = (m: LearningModuleItem) => {
-    setEditingModule(m);
-    setModuleTitle(m.title);
-    setModuleDomain(m.domain_code);
-    setModuleSkillCode(m.skill_code);
-    setModuleLevel((m as any).difficulty_level || 'BASIC');
-    setModuleDescription(m.description || '');
-    setModuleDuration(m.duration_minutes);
-    setModulePointReward(m.point_reward);
-    setModuleContent(m.content_markdown || '');
-    setModuleAssessmentId(m.assessment_id || '');
-    setModuleTier(m.access_tier);
-    setModulePublished(m.is_published);
-    setIsModuleModalOpen(true);
-  };
+  // Domain station stats
+  const domainStationStats = useMemo(() => {
+    let totalStations = 0;
+    let configuredStations = 0;
 
-  const handleSaveModule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!moduleTitle.trim() || !selectedPath) return;
-
-    setSavingModule(true);
-    try {
-      if (editingModule) {
-        const res = await fetch(`/api/admin/learning-modules/${editingModule.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: moduleTitle.trim(),
-            domainCode: moduleDomain,
-            skillCode: moduleSkillCode.trim(),
-            difficultyLevel: moduleLevel,
-            description: moduleDescription.trim() || null,
-            durationMinutes: Number(moduleDuration),
-            pointReward: Number(modulePointReward),
-            contentMarkdown: moduleContent || null,
-            assessmentId: moduleAssessmentId || null,
-            accessTier: moduleTier,
-            isPublished: modulePublished,
-          }),
-        });
-        if (!res.ok) {
-          const d = await res.json();
-          throw new Error(d.error || 'Cập nhật học phần thất bại');
+    currentDomain.subdomains.forEach((sub, sIdx) => {
+      const levels = getSubdomainLevels(sub, currentDomain.domainNumber, sIdx);
+      totalStations += levels.length;
+      levels.forEach((lvl) => {
+        const mod = findModule(currentDomain.code, sub.skillCode, lvl.levelNumber);
+        if (mod?.assessment_id) {
+          configuredStations++;
         }
-      } else {
-        const res = await fetch('/api/admin/learning-modules', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pathId: selectedPath.id,
-            title: moduleTitle.trim(),
-            domainCode: moduleDomain,
-            skillCode: moduleSkillCode.trim(),
-            difficultyLevel: moduleLevel,
-            description: moduleDescription.trim() || null,
-            durationMinutes: Number(moduleDuration),
-            pointReward: Number(modulePointReward),
-            contentMarkdown: moduleContent || null,
-            assessmentId: moduleAssessmentId || null,
-            accessTier: moduleTier,
-            isPublished: modulePublished,
-            orderIndex: modules.length + 1,
-          }),
-        });
-        if (!res.ok) {
-          const d = await res.json();
-          throw new Error(d.error || 'Tạo học phần thất bại');
-        }
-      }
+      });
+    });
 
-      setIsModuleModalOpen(false);
-      fetchModulesForPath(selectedPath.id);
-      fetchPaths();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Lỗi khi lưu học phần');
-    } finally {
-      setSavingModule(false);
-    }
-  };
-
-  const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa học phần này?')) return;
-    try {
-      const res = await fetch(`/api/admin/learning-modules/${moduleId}`, { method: 'DELETE' });
-      if (res.ok && selectedPath) {
-        fetchModulesForPath(selectedPath.id);
-        fetchPaths();
-      }
-    } catch {
-      alert('Xóa thất bại');
-    }
-  };
-
-  // Filtered paths
-  const filteredPaths = paths.filter((p) => {
-    if (filterTier !== 'ALL' && p.accessTier !== filterTier) return false;
-    if (filterStatus === 'PUBLISHED' && !p.isPublished) return false;
-    if (filterStatus === 'DRAFT' && p.isPublished) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchTitle = p.title.toLowerCase().includes(q);
-      const matchDesc = (p.description || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchDesc) return false;
-    }
-    return true;
-  });
-
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-
-  const activePathsCount = paths.filter((p) => p.isPublished).length || 156;
-  const draftPathsCount = paths.filter((p) => !p.isPublished).length || 24;
+    return { totalStations, configuredStations };
+  }, [currentDomain, findModule]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header (Chuẩn Ảnh 8) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 text-slate-900 dark:text-neutral-100">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-neutral-900 text-white px-4 py-3 rounded-2xl shadow-xl text-xs flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200 border border-neutral-700">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản trị lộ trình học &amp; học phần
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+              LỘ TRÌNH VÀ TRẠM KIỂM CHỨNG
+            </span>
+            <span className="text-xs text-slate-400 dark:text-neutral-500">• 5 Miền Năng Lực Chuẩn Hóa</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Quản trị Trạm Kiểm chứng Năng lực
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Thiết kế lộ trình học chính thức, học phần và tài sản học tập dùng chung.
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-3xl leading-relaxed">
+            Cấu hình đề thi, thời lượng, chuẩn đạt và giám sát cho từng cấp độ trong 21 kỹ năng thành phần.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreatePath}
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Tạo lộ trình mới</span>
-        </button>
-      </div>
-
-      {/* 2. Top Banner: Canonical Repository + 3 KPI Cards (Chuẩn Ảnh 8) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Canonical Notice Banner */}
-        <div className="lg:col-span-6 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 rounded-xl p-5 flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-blue-600 text-white">
-                <Layers className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-blue-950 dark:text-blue-100">
-                Kho lộ trình học chính thức (Canonical)
-              </h3>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
-                ✓ Chuẩn dùng chung
-              </span>
-            </div>
-            <p className="text-xs text-blue-900/80 dark:text-blue-200/80 leading-relaxed">
-              Quản trị các lộ trình học chuẩn của nền tảng, dùng chung cho toàn bộ tổ chức, nhóm và người học. Đây là nguồn lộ trình gốc, không phải gán lộ trình cá nhân.
-            </p>
-          </div>
-        </div>
-
-        {/* 3 Stats Cards */}
-        <div className="lg:col-span-6 grid grid-cols-3 gap-3">
-          <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-            <span className="text-xs text-slate-500 block line-clamp-1">Lộ trình đang hoạt động</span>
-            <div className="text-2xl font-bold text-neutral-900 dark:text-white tabular-nums my-1">
-              {activePathsCount}
-            </div>
-            <span className="text-[10px] text-blue-600 font-semibold">↗ 6,8%</span>
-            <span className="text-[10px] text-slate-400 block">So với 30 ngày trước</span>
-          </div>
-
-          <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-            <span className="text-xs text-slate-500 block line-clamp-1">Lộ trình nháp</span>
-            <div className="text-2xl font-bold text-neutral-900 dark:text-white tabular-nums my-1">
-              {draftPathsCount}
-            </div>
-            <span className="text-[10px] text-blue-600 font-semibold">↗ 12,5%</span>
-            <span className="text-[10px] text-slate-400 block">So với 30 ngày trước</span>
-          </div>
-
-          <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-            <span className="text-xs text-slate-500 block line-clamp-1">Lộ trình đã lưu trữ</span>
-            <div className="text-2xl font-bold text-neutral-900 dark:text-white tabular-nums my-1">
-              37
-            </div>
-            <span className="text-[10px] text-slate-400 font-semibold">↘ -4,3%</span>
-            <span className="text-[10px] text-slate-400 block">So với 30 ngày trước</span>
-          </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Link
+            href="/admin/content"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900 transition shadow-xs"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Ngân hàng đề chuẩn</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" />
+          </Link>
         </div>
       </div>
 
-      {/* 3. Filter Toolbar & View Switcher (Chuẩn Ảnh 8) */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-        <div className="flex-1 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm lộ trình (tên, mô tả, mã...)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
-          />
+      {/* Overview Status Bar */}
+      <div className="flex items-center justify-between py-1">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-zinc-300">
+          <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <span>Cấu trúc 5 Miền Năng lực (21 Kỹ năng • 84 Trạm kiểm chứng)</span>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={filterTier}
-            onChange={(e) => setFilterTier(e.target.value as any)}
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
-          >
-            <option value="ALL">Phân hạng: Tất cả</option>
-            <option value="FREE">Miễn phí</option>
-            <option value="VIP">Gói Chuyên sâu</option>
-          </select>
-
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
-          >
-            <option value="ALL">Trạng thái: Tất cả</option>
-            <option value="PUBLISHED">Đang hoạt động</option>
-            <option value="DRAFT">Nháp</option>
-          </select>
-
-          <select
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
-          >
-            <option>Miền năng lực: Tất cả</option>
-            {DOMAIN_OPTIONS.map((d) => (
-              <option key={d.code} value={d.code}>{d.label}</option>
-            ))}
-          </select>
-
-          {/* View switcher: Bảng vs Thẻ */}
-          <div className="flex items-center rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] p-1 shadow-xs">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                viewMode === 'table' ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Bảng
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                viewMode === 'grid' ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Thẻ
-            </button>
-          </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
+          <span>Đã gắn đề:</span>
+          <strong className="text-blue-600 dark:text-blue-400">
+            {domainStationStats.configuredStations} / {domainStationStats.totalStations} trạm
+          </strong>
         </div>
       </div>
 
-      {/* 4. Main Content: Table or Grid View (Chuẩn Ảnh 8) */}
-      {loading ? (
-        viewMode === 'table' ? (
-          <SkeletonTable rows={5} columns={5} />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={i} lines={3} />
-            ))}
-          </div>
-        )
-      ) : error ? (
-        <div className="p-6 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          <span>{error}</span>
-        </div>
-      ) : filteredPaths.length === 0 ? (
-        <div className="p-12 text-center rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114]">
-          <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <h3 className="text-sm font-bold text-slate-800 dark:text-neutral-200 mb-1">
-            Chưa có lộ trình học nào
-          </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-            Bấm nút Tạo lộ trình mới để bắt đầu xây dựng khung học liệu cho người học.
-          </p>
-          <button
-            type="button"
-            onClick={handleOpenCreatePath}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tạo lộ trình ngay</span>
-          </button>
-        </div>
-      ) : viewMode === 'table' ? (
-        <div className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
-                  <th className="py-3 px-4 w-10">
-                    <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
-                  </th>
-                  <th className="py-3 px-4">Lộ trình</th>
-                  <th className="py-3 px-4">Miền ưu tiên</th>
-                  <th className="py-3 px-4">Học phần</th>
-                  <th className="py-3 px-4">Đối tượng</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4">Cập nhật</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="">
-                {filteredPaths.map((p, idx) => {
-                  const code = `LP-${String(idx + 1).padStart(3, '0')}`;
-                  const modCount = p.modulesCount || 6;
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
-                      </td>
+      {/* 3-TIER HIERARCHY */}
+      <div className="space-y-6">
+        {/* Tầng 1: 5 Thẻ Miền Năng Lực Lớn */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {DOMAIN_CURRICULUM.map((d) => {
+            const isSelected = selectedDomainCode === d.code;
+            const IconComp = DOMAIN_ICONS[d.iconName] || Database;
 
-                      {/* Lộ trình */}
-                      <td className="py-3.5 px-4 max-w-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100">
-                            <Compass className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                                {p.title}
-                              </span>
-                              <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-[10px] font-mono text-slate-600">
-                                {code}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                              {p.description || 'Trang bị năng lực số ứng dụng trong công việc.'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
+            let totalInDomain = 0;
+            let readyInDomain = 0;
+            d.subdomains.forEach((sub, sIdx) => {
+              const lvls = getSubdomainLevels(sub, d.domainNumber, sIdx);
+              totalInDomain += lvls.length;
+              lvls.forEach((l) => {
+                const m = findModule(d.code, sub.skillCode, l.levelNumber);
+                if (m?.assessment_id) readyInDomain++;
+              });
+            });
 
-                      {/* Miền ưu tiên */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80">
-                          <Sparkles className="w-3 h-3 text-blue-600" />
-                          <span>{(p.domainCodes && p.domainCodes[0]) || 'AI Ứng dụng'}</span>
-                        </span>
-                      </td>
-
-                      {/* Học phần */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="space-y-1">
-                          <div className="font-semibold text-neutral-800 dark:text-zinc-200 text-xs">
-                            {modCount} học phần
-                          </div>
-                          <div className="flex items-center gap-1 w-24">
-                            {Array.from({ length: Math.min(6, modCount) }).map((_, i) => (
-                              <div key={i} className="h-1.5 flex-1 rounded-full bg-blue-600" />
-                            ))}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Đối tượng */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 dark:text-zinc-300">
-                        Toàn nền tảng
-                      </td>
-
-                      {/* Trạng thái */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {p.isPublished ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Đang hoạt động
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                            Nháp
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Cập nhật */}
-                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                        <div>Hôm nay, 14:26</div>
-                        <div className="text-[10px] text-slate-400">bởi Admin hệ thống</div>
-                      </td>
-
-                      {/* Thao tác */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => {
-                              setSelectedPath(p);
-                              fetchModulesForPath(p.id);
-                            }}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-600 hover:bg-blue-50"
-                          >
-                            Học phần ({p.modulesCount})
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditPath(p)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePath(p.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="p-4">
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <div>Hiển thị 1–{Math.min(6, filteredPaths.length)} trên {paths.length || 217} lộ trình</div>
-              <div className="flex items-center gap-1">
-                <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold">1</span>
-                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">2</span>
-                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">3</span>
-                <span className="px-1">...</span>
-                <span className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">22</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
-          {filteredPaths.map((path) => (
-            <div
-              key={path.id}
-              className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-700 transition shadow-xs flex flex-col justify-between group"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {path.accessTier === 'VIP' ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                        VIP
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium font-mono bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
-                        FREE
-                      </span>
-                    )}
-
-                    {path.isPublished ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                        <Check className="w-3 h-3" /> Đã phát hành
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400">
-                        Bản nháp
-                      </span>
-                    )}
-                  </div>
-
-                  <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-bold">
-                    +{path.pointReward} PTS
-                  </span>
-                </div>
-
-                <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100 mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
-                  {path.title}
-                </h3>
-
-                <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 leading-relaxed mb-3 min-h-[32px]">
-                  {path.description || 'Lộ trình phát triển 5 miền năng lực số.'}
-                </p>
-
-                <div className="flex items-center gap-1 flex-wrap mb-3.5">
-                  {(path.domainCodes || []).map((code) => (
-                    <span
-                      key={code}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900"
-                    >
-                      {code}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-3 flex items-center justify-between gap-2 text-xs">
-                <span className="font-mono text-slate-500 text-[11px]">
-                  <strong>{path.modulesCount}</strong> học phần
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditPath(path)}
-                    title="Chỉnh sửa thông tin lộ trình"
-                    className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-neutral-100 rounded hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDeletePath(path.id)}
-                    title="Xóa lộ trình"
-                    className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPath(path);
-                      fetchModulesForPath(path.id);
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200/80 dark:border-blue-900 hover:bg-blue-100 transition cursor-pointer"
-                  >
-                    <span>Quản lý bài học</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 4. Drawer: Quản lý học phần của lộ trình */}
-      {selectedPath && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 h-full flex flex-col shadow-2xl overflow-hidden">
-            {/* Drawer Header */}
-            <div className="p-5 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
-                  QUẢN LÝ HỌC PHẦN LỘ TRÌNH
-                </span>
-                <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 truncate max-w-md">
-                  {selectedPath.title}
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleOpenCreateModule}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Thêm bài học</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPath(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-neutral-100 rounded hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Drawer Content */}
-            <div className="p-5 flex-1 overflow-y-auto space-y-3 text-xs">
-              {modulesLoading ? (
-                <div className="py-12 flex flex-col items-center justify-center text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin text-blue-600 mb-2" />
-                  <p>Đang tải danh sách học phần...</p>
-                </div>
-              ) : modules.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-lg">
-                  <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="font-semibold text-slate-700 dark:text-neutral-300">
-                    Chưa có bài học nào trong lộ trình này
-                  </p>
-                  <p className="text-slate-400 text-[11px] mt-1">
-                    Bấm &quot;Thêm bài học&quot; để soạn thảo nội dung Markdown, thời lượng và liên kết đề đánh giá.
-                  </p>
-                </div>
-              ) : (
-                modules.map((m, idx) => (
+            return (
+              <button
+                key={d.code}
+                type="button"
+                onClick={() => setSelectedDomainCode(d.code)}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+                  isSelected
+                    ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-600/30'
+                    : 'border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
                   <div
-                    key={m.id}
-                    className="p-4 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-2xs space-y-2"
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                      isSelected
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-400">
-                          #{idx + 1}
-                        </span>
-                        <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-                          {m.domain_code} &bull; {m.skill_code}
-                        </span>
-                        <h4 className="font-bold text-slate-900 dark:text-neutral-100">
-                          {m.title}
-                        </h4>
+                    <IconComp className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400">
+                    {d.subdomains.length} kỹ năng
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 block uppercase">
+                    Miền {d.domainNumber}
+                  </span>
+                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 mt-0.5 leading-snug">
+                    {d.title}
+                  </h3>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                  <span>Trạm sẵn sàng:</span>
+                  <span className="font-bold text-neutral-800 dark:text-zinc-200">
+                    {readyInDomain}/{totalInDomain}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tầng 2 & Tầng 3: Danh Sách Kỹ Năng Thành Phần và 4 Cấp Độ Kiểm Chứng */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <span>Miền {currentDomain.domainNumber}: {currentDomain.title}</span>
+                <span className="text-xs font-normal text-slate-500">
+                  ({filteredSubdomains.length} kỹ năng thành phần)
+                </span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                {currentDomain.desc}
+              </p>
+            </div>
+
+            <div className="relative w-full sm:w-72">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm kỹ năng thành phần..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="space-y-4">
+              <SkeletonCard className="h-44 w-full" />
+              <SkeletonCard className="h-44 w-full" />
+            </div>
+          ) : filteredSubdomains.length === 0 ? (
+            <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114]">
+              <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-xs text-slate-500">Không tìm thấy kỹ năng phù hợp.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredSubdomains.map((sub, sIdx) => {
+                const levels = getSubdomainLevels(sub, currentDomain.domainNumber, sIdx);
+
+                return (
+                  <div
+                    key={sub.id}
+                    className="p-5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-2xs space-y-4"
+                  >
+                    {/* Subdomain Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                            {sub.skillCode}
+                          </span>
+                          <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                            {sub.title}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-1">
+                          {sub.desc}
+                        </p>
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditModule(m)}
-                          className="p-1 text-slate-400 hover:text-blue-600 rounded"
-                          title="Sửa học phần"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteModule(m.id)}
-                          className="p-1 text-slate-400 hover:text-red-600 rounded"
-                          title="Xóa học phần"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        4 trạm kiểm chứng độc lập
+                      </span>
                     </div>
 
-                    <p className="text-slate-500 text-[11px] leading-relaxed">
-                      {m.description || 'Chuyên đề bồi dưỡng năng lực số.'}
-                    </p>
+                    {/* 4 Cấp Độ Kiểm Chứng Độc Lập */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {levels.map((lvl) => {
+                        const existingMod = findModule(currentDomain.code, sub.skillCode, lvl.levelNumber);
+                        const linkedAss = existingMod?.assessments;
+                        const isConfigured = Boolean(existingMod?.assessment_id && linkedAss);
+                        const duration = linkedAss?.duration_minutes || existingMod?.duration_minutes || lvl.durationMinutes || 15;
+                        const passingScore = linkedAss?.passing_score !== undefined ? Number(linkedAss.passing_score) : 100;
+                        const pts = linkedAss?.point_reward || existingMod?.point_reward || lvl.pointReward || 25;
+                        const sec = linkedAss?.security_settings || {};
+                        const hasAntiTab = sec.antiTabSwitch !== false;
+                        const hasAntiCopy = sec.antiCopy !== false;
 
-                    <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        {m.duration_minutes} phút
-                      </span>
-                      <span>&bull;</span>
-                      <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">
-                        +{m.point_reward} PTS
-                      </span>
-                      {m.assessments && (
-                        <>
-                          <span>&bull;</span>
-                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                            <LinkIcon className="w-3 h-3" />
-                            Đề: {m.assessments.title}
-                          </span>
-                        </>
-                      )}
+                        return (
+                          <div
+                            key={lvl.id}
+                            className={`p-4 rounded-xl border flex flex-col justify-between transition-all space-y-3 ${
+                              isConfigured
+                                ? 'border-blue-200 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/10'
+                                : 'border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/20'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              {/* Level Badge and Status */}
+                              <div className="flex items-center justify-between">
+                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300">
+                                  Cấp {lvl.levelNumber}: {lvl.levelName}
+                                </span>
+
+                                {isConfigured ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
+                                    <CheckCircle2 className="w-3 h-3" /> Sẵn sàng
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 font-mono">
+                                    <AlertCircle className="w-3 h-3" /> Chưa gắn đề
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Assessment Title */}
+                              <div>
+                                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+                                  Đề kiểm chứng
+                                </span>
+                                <h4
+                                  className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 min-h-[32px] mt-0.5"
+                                  title={linkedAss?.title || 'Chưa gắn đề'}
+                                >
+                                  {linkedAss?.title || 'Đang chuẩn bị đề khảo thí'}
+                                </h4>
+                              </div>
+
+                              {/* Station Parameters */}
+                              <div className="space-y-1.5 pt-1 text-[11px] font-mono">
+                                <div className="flex items-center justify-between text-slate-600 dark:text-zinc-400">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-slate-400" /> Thời lượng:
+                                  </span>
+                                  <strong className="text-neutral-900 dark:text-neutral-100">{duration} phút</strong>
+                                </div>
+
+                                <div className="flex items-center justify-between text-slate-600 dark:text-zinc-400">
+                                  <span className="flex items-center gap-1">
+                                    <CheckSquare className="w-3 h-3 text-slate-400" /> Chuẩn đạt:
+                                  </span>
+                                  <strong className="text-blue-600 dark:text-blue-400">{passingScore}%</strong>
+                                </div>
+
+                                <div className="flex items-center justify-between text-slate-600 dark:text-zinc-400">
+                                  <span className="flex items-center gap-1">
+                                    <Award className="w-3 h-3 text-slate-400" /> Thưởng:
+                                  </span>
+                                  <strong className="text-neutral-900 dark:text-neutral-100">+{pts} PTS</strong>
+                                </div>
+
+                                {/* Security Badges */}
+                                <div className="flex items-center gap-1 pt-1 flex-wrap">
+                                  {hasAntiTab && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
+                                      Chống đổi tab
+                                    </span>
+                                  )}
+                                  {hasAntiCopy && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
+                                      Chống copy
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Configure Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenStationConfig(currentDomain, sub, lvl)}
+                              className="w-full mt-2 py-2 px-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-neutral-900 dark:text-neutral-100 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                            >
+                              <Settings className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              <span>Cấu hình trạm</span>
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* 5. Modal: Tạo / Sửa Lộ trình */}
-      {isPathModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl max-w-lg w-full p-6 text-xs space-y-4">
-            <div className="flex items-center justify-between pb-2">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
-                {editingPath ? 'Chỉnh sửa lộ trình' : 'Tạo lộ trình học tập mới'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsPathModalOpen(false)}
-                className="p-1 rounded text-slate-400 hover:text-slate-900"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePath} className="space-y-3.5">
+      {/* DRAWER CẤU HÌNH TRẠM KIỂM CHỨNG ĐỘC LẬP */}
+      {isStationDrawerOpen && currentStationTarget && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#111114] w-full max-w-xl h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 dark:border-zinc-800 animate-in slide-in-from-right duration-200">
+            {/* Drawer Header */}
+            <div className="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
               <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                  Tiêu đề lộ trình <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Nền tảng Năng lực số cho Doanh nghiệp"
-                  value={pathTitle}
-                  onChange={(e) => setPathTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                  Mô tả mục tiêu
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Mục tiêu chuẩn đầu ra, đối tượng phù hợp..."
-                  value={pathDescription}
-                  onChange={(e) => setPathDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1.5">
-                  Miền năng lực liên kết
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {DOMAIN_OPTIONS.map((d) => {
-                    const isChecked = pathDomains.includes(d.code);
-                    return (
-                      <label
-                        key={d.code}
-                        className={`p-2 rounded border flex items-center gap-2 cursor-pointer transition ${
-                          isChecked
-                            ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold'
-                            : 'border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setPathDomains([...pathDomains, d.code]);
-                            } else {
-                              setPathDomains(pathDomains.filter((c) => c !== d.code));
-                            }
-                          }}
-                          className="rounded text-blue-600"
-                        />
-                        <span className="text-[11px] truncate">{d.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Phân hạng truy cập
-                  </label>
-                  <select
-                    value={pathTier}
-                    onChange={(e) => setPathTier(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
-                  >
-                    <option value="FREE">Miễn phí</option>
-                    <option value="VIP">VIP / Gói nâng cao</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Điểm thưởng hoàn thành
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={2000}
-                    value={pathPointReward}
-                    onChange={(e) => setPathPointReward(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={pathPublished}
-                    onChange={(e) => setPathPublished(e.target.checked)}
-                    className="rounded text-blue-600"
-                  />
-                  <span className="font-semibold text-slate-800 dark:text-neutral-200">
-                    Phát hành công khai cho học viên
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                    CẤU HÌNH TRẠM KIỂM CHỨNG
                   </span>
-                </label>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {currentStationTarget.subdomain.skillCode}
+                  </span>
+                </div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 truncate max-w-md mt-0.5">
+                  {currentStationTarget.subdomain.title}
+                </h2>
+                <span className="text-xs text-slate-500 font-mono">
+                  Cấp {currentStationTarget.level.levelNumber}: {currentStationTarget.level.levelName}
+                </span>
               </div>
 
-              <div className="pt-3 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPathModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-neutral-400 hover:bg-slate-50 cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingPath}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
-                >
-                  {savingPath ? 'Đang lưu...' : editingPath ? 'Cập nhật' : 'Tạo lộ trình'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 6. Modal: Tạo / Sửa Học phần */}
-      {isModuleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl max-w-xl w-full p-6 text-xs space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
-                {editingModule ? 'Chỉnh sửa học phần' : 'Thêm học phần vào lộ trình'}
-              </h3>
               <button
                 type="button"
-                onClick={() => setIsModuleModalOpen(false)}
-                className="p-1 rounded text-slate-400 hover:text-slate-900"
+                onClick={() => setIsStationDrawerOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveModule} className="space-y-3.5">
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                  Tiêu đề học phần <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Phân tích và trích xuất dữ liệu số cơ bản"
-                  value={moduleTitle}
-                  onChange={(e) => setModuleTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Miền năng lực
+            {/* Drawer Form Body */}
+            <form onSubmit={handleSaveStationConfig} className="p-5 flex-1 overflow-y-auto space-y-5 text-xs">
+              {/* Nhóm 1: Đề thi kiểm chứng */}
+              <div className="space-y-2 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Đề thi kiểm chứng (Ngân hàng đề)</span>
                   </label>
-                  <select
-                    value={moduleDomain}
-                    onChange={(e) => setModuleDomain(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
+                  <Link
+                    href="/admin/content"
+                    className="text-[11px] text-blue-600 hover:underline inline-flex items-center gap-1"
                   >
-                    {DOMAIN_OPTIONS.map((d) => (
-                      <option key={d.code} value={d.code}>
-                        {d.code} - {d.label}
-                      </option>
-                    ))}
-                  </select>
+                    <span>Mở Ngân hàng đề</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </Link>
                 </div>
 
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Mã kỹ năng thành phần (Skill Code)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: 1.1 hoặc 3.2"
-                    value={moduleSkillCode}
-                    onChange={(e) => setModuleSkillCode(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                  Cấp độ năng lực số (Account Level)
-                </label>
                 <select
-                  value={moduleLevel}
+                  value={stationAssessmentId}
                   onChange={(e) => {
-                    const lvl = e.target.value as any;
-                    setModuleLevel(lvl);
-                    if (lvl === 'BASIC') {
-                      setModulePointReward(15);
-                      setModuleDuration(15);
-                    } else if (lvl === 'INTERMEDIATE') {
-                      setModulePointReward(25);
-                      setModuleDuration(20);
-                    } else if (lvl === 'ADVANCED') {
-                      setModulePointReward(40);
-                      setModuleDuration(25);
-                    } else if (lvl === 'HIGHLY_ADVANCED') {
-                      setModulePointReward(60);
-                      setModuleDuration(30);
+                    const chosenId = e.target.value;
+                    setStationAssessmentId(chosenId);
+                    const found = availableAssessments.find((a) => a.id === chosenId);
+                    if (found) {
+                      setStationPassingScore(found.passing_score || 100);
+                      setStationDurationMinutes(found.duration_minutes || 15);
+                      setStationPointReward(found.point_reward || 25);
                     }
                   }}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="BASIC">Level 1: Basic (Căn bản - Nền tảng)</option>
-                  <option value="INTERMEDIATE">Level 2: Intermediate (Trung cấp - Ứng dụng)</option>
-                  <option value="ADVANCED">Level 3: Advanced (Nâng cao - Làm chủ)</option>
-                  <option value="HIGHLY_ADVANCED">Level 4: Highly Advanced (Chuyên sâu - Dẫn dắt)</option>
-                </select>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Đồng bộ chuẩn 4 cấp độ level của người học và khung năng lực số.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Thời lượng ước tính (phút)
-                  </label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={300}
-                    value={moduleDuration}
-                    onChange={(e) => setModuleDuration(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                    Điểm thưởng hoàn thành
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={500}
-                    value={modulePointReward}
-                    onChange={(e) => setModulePointReward(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Link Assessment from Bank */}
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                  Đề khảo thí liên kết (tùy chọn)
-                </label>
-                <select
-                  value={moduleAssessmentId}
-                  onChange={(e) => setModuleAssessmentId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none"
-                >
-                  <option value="">-- Không gắn đề kiểm tra --</option>
-                  {availableAssessments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.title}
+                  <option value="">-- Chưa gán đề (Đang chuẩn bị đề khảo thí) --</option>
+                  {availableAssessments.map((ass) => (
+                    <option key={ass.id} value={ass.id}>
+                      {ass.title} ({ass.questionCount || 0} câu - {ass.duration_minutes}p - Chuẩn {ass.passing_score}%)
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Gắn trực tiếp đề từ Ngân hàng đề NEXA. Người học hoàn thành bài kiểm tra này để chứng minh năng lực.
+
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Liên kết bài kiểm chứng chuẩn hóa cho Cấp {currentStationTarget.level.levelNumber} của kỹ năng này.
                 </p>
               </div>
 
-              {/* Markdown Content */}
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
-                  Nội dung học liệu (Markdown)
-                </label>
-                <textarea
-                  rows={5}
-                  placeholder="## Mục tiêu bài học&#10;&#10;Nội dung lý thuyết, bài giảng và hướng dẫn thực hành..."
-                  value={moduleContent}
-                  onChange={(e) => setModuleContent(e.target.value)}
-                  className="w-full font-mono text-xs p-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-900 dark:text-neutral-100 focus:outline-none focus:border-blue-600"
-                />
+              {/* Nhóm 2: Thời lượng làm bài và Chuẩn điểm */}
+              <div className="space-y-4 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
+                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Thời gian và Chuẩn điểm vượt trạm</span>
+                </h3>
+
+                {/* Thời lượng làm bài */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+                      Thời lượng làm bài (phút)
+                    </label>
+                    <span className="text-[11px] font-mono text-slate-400">Tự do thiết lập</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={5}
+                      max={300}
+                      value={stationDurationMinutes}
+                      onChange={(e) => setStationDurationMinutes(Math.max(5, parseInt(e.target.value, 10) || 15))}
+                      className="w-28 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                    <div className="flex items-center gap-1">
+                      {[15, 20, 30, 45, 60].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setStationDurationMinutes(m)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-mono cursor-pointer transition ${
+                            stationDurationMinutes === m
+                              ? 'bg-blue-600 text-white font-bold'
+                              : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:bg-slate-100'
+                          }`}
+                        >
+                          {m}p
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chuẩn điểm vượt qua */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+                      Chuẩn điểm vượt qua (%)
+                    </label>
+                    <span className="text-[11px] font-mono text-blue-600 font-bold">
+                      Hiện tại: {stationPassingScore}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={10}
+                      max={100}
+                      value={stationPassingScore}
+                      onChange={(e) => setStationPassingScore(Math.min(100, Math.max(10, parseInt(e.target.value, 10) || 100)))}
+                      className="w-28 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                    <div className="flex items-center gap-1">
+                      {[70, 80, 90, 100].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setStationPassingScore(pct)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-mono cursor-pointer transition ${
+                            stationPassingScore === pct
+                              ? 'bg-blue-600 text-white font-bold'
+                              : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:bg-slate-100'
+                          }`}
+                        >
+                          {pct}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Điểm thưởng PTS */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+                      Điểm thưởng hoàn thành (PTS)
+                    </label>
+                    <span className="text-[11px] font-mono text-slate-400">+{stationPointReward} PTS</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={500}
+                      value={stationPointReward}
+                      onChange={(e) => setStationPointReward(Math.max(0, parseInt(e.target.value, 10) || 25))}
+                      className="w-28 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                    <div className="flex items-center gap-1">
+                      {[15, 25, 40, 60].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setStationPointReward(p)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-mono cursor-pointer transition ${
+                            stationPointReward === p
+                              ? 'bg-blue-600 text-white font-bold'
+                              : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:bg-slate-100'
+                          }`}
+                        >
+                          +{p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="pt-3 flex justify-end gap-2">
+              {/* Nhóm 3: Giám sát Phòng thi (Toggle Switches) */}
+              <div className="space-y-4 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
+                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Giám sát phòng thi và Chống gian lận</span>
+                </h3>
+
+                {/* Chống đổi tab - TOGGLE SWITCH */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <span className="font-semibold text-slate-800 dark:text-zinc-200 block text-[11px]">
+                      Phủ trắng và cảnh báo khi đổi tab
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Tự động che màn hình bài thi khi thí sinh chuyển sang cửa sổ khác
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={stationAntiTabSwitch}
+                    onClick={() => setStationAntiTabSwitch(!stationAntiTabSwitch)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                      stationAntiTabSwitch ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        stationAntiTabSwitch ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {stationAntiTabSwitch && (
+                  <div className="pl-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block mb-1">
+                      Số lần vi phạm tối đa trước khi tự thu bài:
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={stationMaxTabViolations}
+                      onChange={(e) => setStationMaxTabViolations(Math.max(1, parseInt(e.target.value, 10) || 3))}
+                      className="w-24 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100"
+                    />
+                  </div>
+                )}
+
+                {/* Chống sao chép - TOGGLE SWITCH */}
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <div>
+                    <span className="font-semibold text-slate-800 dark:text-zinc-200 block text-[11px]">
+                      Chống sao chép nội dung
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Khóa chuột phải, chặn phím tắt Ctrl+C, Ctrl+U và phím F12
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={stationAntiCopy}
+                    onClick={() => setStationAntiCopy(!stationAntiCopy)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                      stationAntiCopy ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        stationAntiCopy ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Cooldown */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+                      Thời gian chờ thi lại nếu chưa đạt (phút)
+                    </label>
+                    <span className="text-[10px] font-mono text-slate-400">0 = cho thi lại ngay</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={1440}
+                    value={stationCooldownMinutes}
+                    onChange={(e) => setStationCooldownMinutes(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="w-24 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100"
+                  />
+                </div>
+              </div>
+
+              {/* Nhóm 4: Chuẩn đầu ra năng lực */}
+              <div className="space-y-3 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
+                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                  Chuẩn đầu ra năng lực
+                </h3>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block mb-1">
+                    Chuẩn đầu ra:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={stationBenchmark}
+                    onChange={(e) => setStationBenchmark(e.target.value)}
+                    placeholder="Mô tả chuẩn đầu ra năng lực của cấp độ..."
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block mb-1">
+                    Trọng tâm bồi dưỡng:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={stationGuidance}
+                    onChange={(e) => setStationGuidance(e.target.value)}
+                    placeholder="Gợi ý nội dung học tập và trọng tâm ôn luyện..."
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Drawer Footer Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setIsModuleModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-neutral-400 hover:bg-slate-50 cursor-pointer"
+                  onClick={() => setIsStationDrawerOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  disabled={savingModule}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
+                  disabled={savingStation}
+                  className="px-6 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  {savingModule ? 'Đang lưu...' : editingModule ? 'Cập nhật' : 'Thêm học phần'}
+                  {savingStation && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{savingStation ? 'Đang lưu...' : 'Lưu cấu hình trạm'}</span>
                 </button>
               </div>
             </form>

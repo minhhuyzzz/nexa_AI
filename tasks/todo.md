@@ -1,58 +1,112 @@
-# Danh Sách Nhiệm Vụ Triển Khai: Nâng Cấp 2 Dashboard (/admin & /personal/dashboard)
+# Danh Sách Nhiệm Vụ Triển Khai: Quản Trị Lộ Trình Phân Cấp SaaS Và Trạm Kiểm Chứng Độc Lập
 
-## Phase 1: Platform Admin Dashboard (/admin/dashboard)
-- [x] **Task 1.1: Visual Hierarchy Header & Action Bar**
-  - **Mô tả:** Đặt 1 nút Primary CTA xanh `#2563EB` cho hành động "Duyệt hồ sơ B2B", nút "Phân tích BI 5 miền" chuyển thành secondary outline. Nâng chiều cao nút đạt tối thiểu 44px trên mobile (`min-h-[44px] sm:min-h-0`).
-  - **Chấp nhận:** Phân cấp rõ rệt, người quản trị nhận diện ngay hành động trọng tâm.
-- [x] **Task 1.2: Chuẩn hóa 4 KPI Cards & 4 Queue Cards theo 5 mã màu**
-  - **Mô tả:** Đồng nhất icon container về monochrome/xanh, xóa bỏ gradient rườm rà, số liệu `font-mono tabular-nums`.
-  - **Chấp nhận:** 4 thẻ KPI và 4 thẻ hàng đợi cân đối, thanh lịch, đồng bộ với Dashboard B2B.
-- [x] **Task 1.3: Responsive Phễu năng lực & Bảng Nhật ký hoạt động**
-  - **Mô tả:** Chuyển bảng nhật ký hoạt động thành các card xếp chồng trên màn hình $< 768px$, đảm bảo không có thanh cuộn ngang `overflow-x` trên 390px.
-  - **Chấp nhận:** Hiển thị mượt mà trên 390px, 768px và 1440px.
-- [x] **Task 1.4: Tối ưu Form Modal Quản trị B2B (AddOrgModal)**
-  - **Mô tả:** Rà soát modal thêm tổ chức B2B: bố cục 1 cột, nhãn phía trên, validate on blur, câu báo lỗi có hướng dẫn sửa, đủ 4 trạng thái tương tác (`focus-ring`, `disabled`, `loading`, `error`).
-  - **Chấp nhận:** Trải nghiệm tạo tổ chức mượt mà, tỷ lệ hoàn thành cao.
+## Slice 4 (P0): Tái thiết kế Giao diện Quản trị Lộ trình SaaS tại `/admin/learning-paths`
+- [x] **Task 4.1: Xây dựng Giao diện Cây phân cấp Lộ trình 3 tầng (Miền -> Kỹ năng -> 4 Cấp độ)**
+  - **Mục tiêu:** Thay thế bảng danh sách phẳng bằng giao diện phân cấp SaaS hiện đại: 5 Miền năng lực dạng Thẻ/Accordion; khi mở Miền sẽ thấy các Kỹ năng thành phần chuẩn; mỗi kỹ năng mở ra 4 Cấp độ độc lập (Cơ bản, Trung cấp, Nâng cao, Chuyên sâu).
+  - **Tiêu chí nghiệm thu:**
+    - [x] Giao diện nhóm rõ ràng theo 5 Miền năng lực cốt lõi.
+    - [x] Mỗi kỹ năng thành phần hiển thị 4 huy hiệu cấp độ với trạng thái cấu hình (đã gắn đề / chưa gắn đề, thời lượng, chuẩn đạt).
+    - [x] Bấm vào bất kỳ cấp độ nào đều mở giao diện cấu hình chi tiết trạm đó.
+    - [x] Giao diện tuân thủ chuẩn Light Mode (`#FFFFFF`) và Dark Mode (`#000000`), không dùng `&`, không dùng đường kẻ ngang.
+  - **Kiểm tra:**
+    - [x] `npm run typecheck` thành công.
+    - [x] Giao diện hiển thị trực quan cấu trúc 3 tầng, không có lỗi console.
+  - **Phụ thuộc:** Không có
+  - **Tệp liên quan:** `src/app/(dashboard)/admin/learning-paths/page.tsx`
+  - **Quy mô:** Vừa (1 tệp)
 
-## Checkpoint 1: Platform Admin Dashboard Hoàn Tất
-- [x] Visual hierarchy rõ nét, phân cấp 1 nút Primary CTA duy nhất.
-- [x] Đồng nhất 5 mã màu chủ đạo, loại bỏ hoàn toàn màu cầu vồng.
-- [x] Bảng hoạt động chuyển thành stacked cards ở $< 768px$.
-- [x] `tsc --noEmit` xanh.
+- [x] **Task 4.2: Xây dựng Drawer / Modal Cấu hình Trạm Kiểm chứng Độc lập**
+  - **Mục tiêu:** Cung cấp bộ công cụ cấu hình linh hoạt cho từng cấp độ: Chọn đề từ Ngân hàng đề chuẩn, nhập Thời lượng (phút) tùy ý, nhập Chuẩn đạt (%) tùy ý, nhập Điểm thưởng PTS tùy ý, và mô tả Chuẩn đầu ra năng lực.
+  - **Tiêu chí nghiệm thu:**
+    - [x] Cho phép chọn đề thi kiểm chứng từ danh sách `assessments`.
+    - [x] Trường Thời lượng làm bài cho phép Admin nhập số phút tùy ý (không giới hạn 15 hay 20 phút).
+    - [x] Trường Chuẩn vượt qua cho phép Admin nhập số % tùy ý (70%, 80%, 100%...).
+    - [x] Trường Điểm thưởng PTS cho phép nhập số điểm tùy ý.
+    - [x] Lưu thành công vào `learning_modules` và cập nhật thông số tương ứng trong `assessments`.
+  - **Kiểm tra:**
+    - [x] Mở modal cấp độ, đổi thời lượng thành 30 phút, chuẩn đạt 100%, PTS 50 -> bấm Lưu thành công và dữ liệu được cập nhật vào CSDL.
+  - **Phụ thuộc:** Task 4.1
+  - **Tệp liên quan:** `src/app/(dashboard)/admin/learning-paths/page.tsx`, `src/app/api/admin/learning-modules/route.ts`, `src/app/api/admin/learning-modules/[id]/route.ts`
+  - **Quy mô:** Vừa (2-3 tệp)
 
-## Phase 2: Personal Learner Dashboard (/personal/dashboard)
-- [x] **Task 2.1: Tinh gọn Visual Hierarchy Hero Banner & Streak Tracker**
-  - **Mô tả:** Giữ bố cục luxury silk ribbon nhưng tinh chỉnh độ tương phản, đặt 1 nút Primary CTA "Bắt đầu khảo sát đầu vào / Học tiếp lộ trình" nổi bật, chuỗi streak tối ưu vùng bấm di động $\ge 44px$.
-  - **Chấp nhận:** Header và Hero banner gọn gàng, vùng chạm $\ge 44px$.
-- [x] **Task 2.2: Chuẩn hóa 4 Bento Metric Cards**
-  - **Mô tả:** Thay thế các dải gradient đa sắc ngẫu nhiên (`from-blue-50/40`, `from-emerald-50/40`, `from-amber-50/40`, `from-blue-50/80 via-sky-50`) bằng nền thẻ sạch `#F8FAFC` (Dark `#111114`), viền `#E2E8F0` (Dark `#27272A`), số liệu `font-mono tabular-nums`.
-  - **Chấp nhận:** 4 thẻ đo lường năng lực số cân xứng, tinh tế, sang trọng, tránh "AI slop".
-- [x] **Task 2.3: Tối ưu Responsive Radar Chart & Khung 5 Miền Năng Lực**
-  - **Mô tả:** Đảm bảo trên 390px biểu đồ Radar và 5 thanh tiến độ xếp chồng cân đối, các bước tiến độ tự động co giãn không tràn màn hình.
-  - **Chấp nhận:** Không có `overflow-x` trên mobile, giữ nguyên bố cục 2 cột trên 1440px.
-- [x] **Task 2.4: Tối ưu Form/Modal Khảo Sát Chẩn Đoán Đầu Vào (BaselineDiagnosticModal)**
-  - **Mô tả:** Chuẩn hóa form khảo sát: bố cục 1 cột rõ ràng, nhãn trên, validate on blur, thông báo lỗi chỉ dẫn cụ thể, đủ 4 trạng thái focus/disabled/loading/error.
-  - **Chấp nhận:** Trải nghiệm khảo sát đầu vào mượt mà, dễ chịu, không gây ức chế.
+## Checkpoint 1: Quản Trị Lộ Trình Phân Cấp SaaS Hoàn Tất
+- [x] Giao diện Quản trị Lộ trình hiển thị đúng mô hình 3 tầng phân cấp rõ ràng.
+- [x] Admin tự do cấu hình thời lượng, chuẩn đạt, điểm thưởng cho từng trạm cấp độ mà không bị ép buộc giá trị cứng.
+- [x] `npm run typecheck` đạt 0 lỗi.
 
-## Checkpoint 2: Personal Learner Dashboard Hoàn Tất
-- [x] Xóa bỏ toàn bộ gradient cầu vồng ở 4 thẻ chỉ số cá nhân.
-- [x] Chuỗi streak và các bước lộ trình hiển thị trơn tru trên 390px.
-- [x] Modal khảo sát chẩn đoán chuẩn hóa 1 cột và blur validation.
-- [x] `tsc --noEmit` xanh.
+## Slice 5 (P0): Đồng bộ Dữ liệu Lộ trình và Cấu hình Độc lập sang Personal
+- [x] **Task 5.1: Nâng cấp API `/api/personal/learning-path` để truyền nhận thông số động của từng cấp độ**
+  - **Mục tiêu:** Đảm bảo API trả về đầy đủ các thông số động của 4 cấp độ thuộc từng kỹ năng (thời lượng phút do admin đặt, chuẩn đạt % do admin đặt, điểm thưởng PTS, trạng thái hoàn thành).
+  - **Tiêu chí nghiệm thu:**
+    - [x] Trả về danh mục kỹ năng và thông tin trạm kiểm chứng kèm theo `duration_minutes`, `passing_score`, `point_reward`.
+    - [x] Ghi nhận chính xác cấp độ nào người dùng đã hoàn thành và cấp độ kế tiếp cần chinh phục.
+  - **Kiểm tra:**
+    - [x] Gọi GET `/api/personal/learning-path` trả về 200 với đầy đủ cấu hình thời lượng và chuẩn đạt của các trạm.
+  - **Phụ thuộc:** Checkpoint 1
+  - **Tệp liên quan:** `src/app/api/personal/learning-path/route.ts`
+  - **Quy mô:** Nhỏ (1 tệp)
 
-## Phase 3: Accessibility WCAG 2.2 AA & Bảng Đối Soát Tổng Thể
-- [x] **Task 3.1: Nâng cấp tương phản màu toàn bộ text phụ**
-  - **Mô tả:** Rà soát và thay thế toàn bộ `text-slate-400` (#94A3B8) thành `text-slate-500` (#64748B) trên cả 2 dashboard để đạt tỷ lệ tương phản $\ge 4.5:1$ theo WCAG AA.
-  - **Chấp nhận:** 100% văn bản đạt chuẩn độ tương phản WCAG 2.2 AA.
-- [x] **Task 3.2: Bổ sung aria-labels, viền focus bàn phím & Reduced Motion**
-  - **Mô tả:** Thêm `aria-label` cho tất cả các nút icon (đóng modal, sao chép, mũi tên), bổ sung `focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none`, tích hợp `motion-reduce:transition-none`.
-  - **Chấp nhận:** Thao tác bằng phím Tab trơn tru, screen reader đọc chuẩn ngữ nghĩa.
-- [x] **Task 3.3: Lập Bảng Đối Soát Tiếp Cận Toàn Diện và Kiểm Thử Tự Động**
-  - **Mô tả:** Tổng hợp bảng đối chiếu chi tiết Trước / Sau cho cả 2 màn hình; chạy kiểm thử `tsc --noEmit` và test suite.
-  - **Chấp nhận:** Bảng đối soát minh bạch, build và test xanh.
+- [x] **Task 5.2: Nâng cấp Modal Chi tiết Trạm tại `/personal/learning-path`**
+  - **Mục tiêu:** Cập nhật giao diện xem chi tiết trạm của người học: hiển thị 4 tab cấp độ, mỗi tab phản ánh đúng thời lượng và chuẩn đạt do Admin cấu hình; nút hành động hiển thị chuẩn xác trạng thái trạm.
+  - **Tiêu chí nghiệm thu:**
+    - [x] Tab cấp độ hiển thị đúng thời lượng thực tế (ví dụ: "Thời lượng: 30 phút") và chuẩn vượt trạm (ví dụ: "Chuẩn đạt: 100%").
+    - [x] Nút "Vào kiểm chứng vượt trạm" dẫn thẳng đến phòng thi toàn màn hình khi trạm đã có đề thi.
+    - [x] Khi chưa có đề thi, hiển thị trạng thái "Đang chuẩn bị đề khảo thí".
+    - [x] Khi đã vượt qua trạm, hiển thị huy hiệu "Đã vượt trạm" kèm điểm số đạt được.
+  - **Kiểm tra:**
+    - [x] Click vào kỹ năng bất kỳ, kiểm tra 4 tab cấp độ hiển thị thông số động đồng bộ với cấu hình bên Admin.
+  - **Phụ thuộc:** Task 5.1
+  - **Tệp liên quan:** `src/app/(dashboard)/personal/learning-path/page.tsx`
+  - **Quy mô:** Vừa (1 tệp)
 
-## Checkpoint 3: Hoàn Tất Toàn Bộ 3 Dashboard Hệ Thống
-- [x] Cả 3 Dashboard (Org B2B, Admin, Personal) đồng nhất 100% hệ thống 5 màu.
-- [x] Toàn bộ form 1 cột, top label, validate on blur.
-- [x] Đạt chuẩn responsive 390px, 768px, 1440px và WCAG 2.2 AA.
-- [x] Toàn bộ test suite (90/90 files, 1.429 tests) và build Next.js vượt qua thành công.
+## Checkpoint 2: Đồng Bộ Dữ Liệu Lộ Trình Hoàn Tất
+- [x] Mọi thay đổi cấu hình bên Admin lập tức phản ánh chính xác trên Modal chi tiết trạm bên Personal.
+- [x] Không có hiện tượng lệch thông số thời lượng hoặc chuẩn đạt giữa Admin và Personal.
+
+## Slice 6 (P0): Thích ứng Phòng thi Toàn màn hình và Chấm điểm Động
+- [x] **Task 6.1: Tự động điều chỉnh Thời lượng và Chuẩn đạt trong Phòng thi Toàn màn hình**
+  - **Mục tiêu:** Cập nhật trang `/personal/learning-path/assessment/[moduleId]` để đồng hồ đếm ngược chạy theo đúng `duration_minutes` của trạm, thanh tiêu đề hiển thị đúng `passing_score` của trạm.
+  - **Tiêu chí nghiệm thu:**
+    - [x] Timer đếm ngược khởi tạo chính xác theo thời lượng cấu hình của trạm (không còn mặc định 90 phút).
+    - [x] Hiển thị nhãn chuẩn đạt đúng số % quy định của trạm (ví dụ: "Chuẩn đạt: 100%" hoặc "Chuẩn đạt: 80%").
+    - [x] Tải câu hỏi thật từ đề thi gắn kèm; nếu đề chưa có câu hỏi thì thông báo thân thiện và cho phép quay về an toàn.
+  - **Kiểm tra:**
+    - [x] Vào làm bài kiểm chứng của trạm có thời lượng 20 phút -> đồng hồ hiển thị 20:00 và đếm ngược chính xác.
+  - **Phụ thuộc:** Checkpoint 2
+  - **Tệp liên quan:** `src/app/(fullscreen)/personal/learning-path/assessment/[moduleId]/page.tsx`, `src/app/api/personal/learning-path/assessment/[moduleId]/route.ts`
+  - **Quy mô:** Vừa (1-2 tệp)
+
+- [x] **Task 6.2: Đối chiếu Chuẩn đạt Động và Chấm điểm tại `/api/personal/learning-path/submit`**
+  - **Mục tiêu:** API nộp bài so sánh tỷ lệ đạt điểm của thí sinh với chuẩn đạt động của trạm, ghi nhận hoàn thành trạm, cộng điểm thưởng PTS và cập nhật điểm năng lực lũy tiến.
+  - **Tiêu chí nghiệm thu:**
+    - [x] Thí sinh đạt tỷ lệ điểm $\ge$ chuẩn đạt của trạm sẽ được đánh dấu `is_passed: true`, mở khóa trạm tiếp theo, nhận PTS và tăng điểm năng lực miền.
+    - [x] Thí sinh chưa đạt tỷ lệ điểm sẽ kích hoạt thời gian chờ làm lại (cooldown) và hiển thị bảng phân tích giải thích chi tiết.
+  - **Kiểm tra:**
+    - [x] Test unit `learning-path-verification.test.ts` kiểm thử đầy đủ các kịch bản chấm điểm với chuẩn đạt động.
+  - **Phụ thuộc:** Task 6.1
+  - **Tệp liên quan:** `src/app/api/personal/learning-path/submit/route.ts`, `src/features/learning-paths/services/learning-path-verification.test.ts`
+  - **Quy mô:** Vừa (2 tệp)
+
+## Slice 7 (P1): Chuẩn hóa Thẩm mỹ SaaS, Rà soát Thuật ngữ và Kiểm thử Hệ thống
+- [x] **Task 7.1: Chuẩn hóa Terminology, loại bỏ ký tự `&`, rà soát Light / Dark Mode**
+  - **Mục tiêu:** Rà soát toàn bộ văn bản giao diện trên cả Admin và Personal: loại bỏ ký tự `&`, thay bằng từ `và`; loại bỏ các từ ngữ gây bối rối; bảo đảm độ tương phản màu chuẩn WCAG AA cho cả Light Mode (`#FFFFFF`) và Dark Mode (`#000000`).
+  - **Tiêu chí nghiệm thu:**
+    - [x] Toàn bộ tiêu đề, nhãn menu, mô tả trạm không còn chứa ký tự `&`.
+    - [x] Không có đường viền ngang phân cách (`---`, `<hr>`).
+    - [x] Giao diện sắc nét, tin cậy, chuẩn SaaS giáo dục hiện đại.
+  - **Kiểm tra:**
+    - [x] Tìm kiếm ký tự `&` trong các tệp lộ trình -> 0 kết quả trên UI.
+  - **Phụ thuộc:** Checkpoint 2
+  - **Tệp liên quan:** Các tệp UI liên quan
+  - **Quy mô:** Nhỏ (2 tệp)
+
+- [x] **Task 7.2: Kiểm thử Toàn diện (End-to-End Verification)**
+  - **Mục tiêu:** Chạy toàn bộ bộ kiểm thử tự động, kiểm tra kiểu dữ liệu TypeScript và kiểm tra bản build sản phẩm.
+  - **Tiêu chí nghiệm thu:**
+    - [x] `npm run typecheck` đạt 0 lỗi.
+    - [x] `npx vitest run` vượt qua 100% các bài kiểm thử liên quan.
+    - [x] `npx next build` thành công.
+  - **Kiểm tra:**
+    - [x] Các lệnh kiểm tra chạy hoàn tất và trả về mã thành công 0.
+  - **Phụ thuộc:** Tất cả các task trên
+  - **Quy mô:** Nhỏ (Kiểm thử)
