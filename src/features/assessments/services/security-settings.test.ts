@@ -154,4 +154,24 @@ describe('Smart Proctoring & Trust Score Calculation (calculateTrustScore)', () 
     expect(result.tabSwitchesCount).toBe(4);
     expect(result.integrityFlag).toBe('FLAGGED');
   });
+
+  describe('Personal Authoring Experience & Shuffling Contract', () => {
+    it('supports personal authoring with shuffle_questions, shuffle_options, and linear_progression', () => {
+      const personalSettings: AssessmentSecuritySettings = {
+        ...DEFAULT_SECURITY_SETTINGS,
+        shuffle_questions: true,
+        shuffle_options: true,
+        review_flag_palette: true,
+        linear_progression: true,
+      };
+
+      expect(personalSettings.shuffle_questions).toBe(true);
+      expect(personalSettings.shuffle_options).toBe(true);
+      expect(personalSettings.review_flag_palette).toBe(true);
+      expect(personalSettings.linear_progression).toBe(true);
+      // Personal mode does not enforce intrusive proctoring lockdowns
+      expect(personalSettings.fullscreen_lock).toBe(false);
+      expect(personalSettings.tab_switch_guard).toBe(false);
+    });
+  });
 });

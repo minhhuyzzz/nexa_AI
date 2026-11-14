@@ -20,7 +20,7 @@ interface SecuritySettingsCardProps {
   onChange: (settings: AssessmentSecuritySettings) => void;
   disabled?: boolean;
   className?: string;
-  mode?: 'canonical' | 'proctored';
+  mode?: 'canonical' | 'proctored' | 'personal';
 }
 
 export function SecuritySettingsCard({
@@ -32,9 +32,16 @@ export function SecuritySettingsCard({
 }: SecuritySettingsCardProps) {
   const handleToggle = (key: keyof AssessmentSecuritySettings) => {
     if (disabled) return;
+    if (mode === 'personal') {
+      onChange({
+        ...value,
+        [key]: !value[key],
+      });
+      return;
+    }
     onChange({
       ...value,
-      // Mặc định luôn kích hoạt các lớp bảo vệ cơ bản của hệ thống
+      // Mặc định luôn kích hoạt các lớp bảo vệ cơ bản của hệ thống khi ở chế độ giám thị
       block_devtools: true,
       block_copy: true,
       [key]: !value[key],
@@ -54,7 +61,7 @@ export function SecuritySettingsCard({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* 1. Phần Giám sát phòng thi & Chống gian lận (chỉ áp dụng cho phòng thi giám sát) */}
-      {mode !== 'canonical' && (
+      {mode !== 'canonical' && mode !== 'personal' && (
         <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 space-y-3">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -186,14 +193,28 @@ export function SecuritySettingsCard({
             onChange={() => handleToggle('review_flag_palette')}
             disabled={disabled}
           />
+
+          {/* Làm bài tuần tự (Khóa câu trước) */}
+          <ToggleRow
+            label="Làm bài tuần tự (Khóa quay lại câu trước)"
+            description="Bắt buộc thí sinh hoàn thành từng câu theo thứ tự, không được quay lại sửa các câu đã trả lời."
+            icon={<ArrowRightCircle className="w-4 h-4" />}
+            checked={Boolean(value.linear_progression)}
+            onChange={() => handleToggle('linear_progression')}
+            disabled={disabled}
+          />
         </div>
       </div>
 
-      {/* 3. Ghi chú bảo mật tự động nền tảng (Always-on) */}
+      {/* 3. Ghi chú bảo mật hoặc cấu hình đề */}
       <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
         <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
         <div>
-          {mode === 'canonical' ? (
+          {mode === 'personal' ? (
+            <span>
+              <strong>Cài đặt đề thi cá nhân:</strong> Tùy chọn trộn câu hỏi, trộn đáp án và điều hướng làm bài sẽ áp dụng trực tiếp khi bạn tự luyện tập hoặc chia sẻ cho người khác cùng làm đề.
+            </span>
+          ) : mode === 'canonical' ? (
             <span>
               <strong>Chế độ khảo thí chuẩn hóa:</strong> Đề chuẩn được tối ưu cho việc tự đánh giá năng lực và học tập rèn luyện. Hệ thống tắt các chế độ giám sát khắt khe của phòng thi để người học có trải nghiệm tập trung, thoải mái nhất.
             </span>

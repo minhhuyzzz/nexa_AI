@@ -977,6 +977,7 @@ export function AuthoringEditorTwoPane({
             duration_minutes: Number(publishDuration) || 45,
             passing_score: Number(publishPassingScore) || 70,
             visibility: personalPublishMode === 'COMMUNITY' ? 'PUBLIC' : 'PERSONAL',
+            security_settings: securitySettings,
           }),
         });
         const data = await res.json();
@@ -2063,9 +2064,19 @@ export function AuthoringEditorTwoPane({
                   )}
 
                   {effectiveMode === 'PERSONAL' && (
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                      Đề thi được lưu trữ tự động trong <strong>Kho đề cá nhân</strong> của bạn. Bạn có thể tự vào làm bài luyện tập hoặc xem trước cấu trúc bất kỳ lúc nào mà không cần qua bước xuất bản phức tạp.
-                    </div>
+                    <>
+                      <div className="py-1">
+                        <SecuritySettingsCard
+                          value={securitySettings}
+                          onChange={setSecuritySettings}
+                          mode="personal"
+                        />
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
+                        Đề thi được lưu trữ tự động trong <strong>Kho đề cá nhân</strong> của bạn. Bạn có thể tự vào làm bài luyện tập hoặc xem trước cấu trúc bất kỳ lúc nào mà không cần qua bước xuất bản phức tạp.
+                      </div>
+                    </>
                   )}
 
                   {effectiveMode === 'ADMIN' && (

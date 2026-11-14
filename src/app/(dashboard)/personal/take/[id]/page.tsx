@@ -349,14 +349,18 @@ function AssessmentTakeContent({
         if (res.ok && data.assessment && data.items && data.items.length > 0) {
           let loadedItems: Question[] = data.items;
 
-          // Hòa trộn câu hỏi (Shuffle) cho bài khảo thí đầu vào để thí sinh không phân biệt được từng miền
+          // Hòa trộn câu hỏi (Shuffle Questions) cho bài khảo thí đầu vào hoặc khi cấu hình shuffle_questions = true
           const isIntakeExam = Boolean(
             effectiveId === CANONICAL_BASELINE_ID ||
             data.assessment.is_system_baseline ||
             data.assessment.title?.toLowerCase().includes('đầu vào')
           );
+          const shouldShuffleQuestions = Boolean(
+            isIntakeExam ||
+            data.assessment.security_settings?.shuffle_questions
+          );
 
-          if (isIntakeExam) {
+          if (shouldShuffleQuestions) {
             const orderStorageKey = `nexa_exam_shuffled_order_${effectiveId}`;
             if (isNewAttempt) {
               localStorage.removeItem(orderStorageKey);
@@ -388,6 +392,49 @@ function AssessmentTakeContent({
               loadedItems = shuffleArray(data.items);
               localStorage.setItem(orderStorageKey, JSON.stringify(loadedItems.map((it: Question) => it.id)));
             }
+          }
+
+          // Hòa trộn thứ tự đáp án (Shuffle Options) khi cấu hình shuffle_options = true
+          const shouldShuffleOptions = Boolean(
+            data.assessment.security_settings?.shuffle_options
+          );
+
+          if (shouldShuffleOptions) {
+            const optionsStorageKey = `nexa_exam_shuffled_options_${effectiveId}`;
+            if (isNewAttempt) {
+              localStorage.removeItem(optionsStorageKey);
+            }
+            let savedOptionsMap: Record<string, string[]> = {};
+            const savedOptionsStr = localStorage.getItem(optionsStorageKey);
+            if (savedOptionsStr && !isNewAttempt) {
+              try {
+                savedOptionsMap = JSON.parse(savedOptionsStr);
+              } catch {
+                savedOptionsMap = {};
+              }
+            }
+
+            const updatedOptionsMap: Record<string, string[]> = {};
+            loadedItems = loadedItems.map((item) => {
+              if (!item.options || item.options.length <= 1) return item;
+              const savedIds = savedOptionsMap[item.id];
+              if (savedIds && savedIds.length === item.options.length) {
+                const optMap = new Map(item.options.map((o) => [o.id, o]));
+                const restoredOpts: Option[] = [];
+                savedIds.forEach((id) => {
+                  const o = optMap.get(id);
+                  if (o) restoredOpts.push(o);
+                });
+                if (restoredOpts.length === item.options.length) {
+                  updatedOptionsMap[item.id] = savedIds;
+                  return { ...item, options: restoredOpts };
+                }
+              }
+              const shuffledOpts = shuffleArray(item.options);
+              updatedOptionsMap[item.id] = shuffledOpts.map((o) => o.id);
+              return { ...item, options: shuffledOpts };
+            });
+            localStorage.setItem(optionsStorageKey, JSON.stringify(updatedOptionsMap));
           }
 
           setAssessment(data.assessment);
@@ -929,6 +976,7 @@ function AssessmentTakeContent({
       localStorage.removeItem(`nexa_exam_draft_live_${effectiveId}`);
       localStorage.removeItem(`nexa_exam_draft_${assessmentId}`);
       localStorage.removeItem(`nexa_exam_shuffled_order_${effectiveId}`);
+      localStorage.removeItem(`nexa_exam_shuffled_options_${effectiveId}`);
 
       const isPerfectScore = Boolean(
         scores &&
