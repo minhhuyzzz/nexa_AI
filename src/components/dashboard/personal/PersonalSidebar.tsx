@@ -35,7 +35,7 @@ interface NavItem {
 
 const learningNavItems: NavItem[] = [
   { name: 'Tổng quan', href: '/personal/dashboard', icon: LayoutGrid },
-  { name: 'Bài đánh giá', href: '/personal/assessments', icon: ClipboardCheck },
+  { name: 'Khảo thí chuẩn', href: '/personal/assessments', icon: ClipboardCheck },
   { name: 'Lộ trình của tôi', href: '/personal/learning-path', icon: Route },
   { name: 'Bảng xếp hạng', href: '/personal/leaderboard', icon: Trophy },
   { name: 'Chứng chỉ', href: '/personal/credentials', icon: Award },
