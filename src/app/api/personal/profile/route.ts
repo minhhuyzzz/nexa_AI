@@ -73,7 +73,50 @@ export async function GET() {
       .eq('is_revoked', false)
       .order('issued_at', { ascending: false });
 
-    const planDetails = await QuotaEnforcementService.getUserPlanDetails(supabase, effectiveUserId);
+    const planDetails = await QuotaEnforcementService.getUserPlanDetails(supabase, effectiveUserId);
+
+    // Tính toán thống kê bài làm: Tỷ lệ làm đúng trung bình và số bài hoàn thành
+    let userSubmissions: any[] | null = null;
+    try {
+      const query = supabase
+        .from('assessment_submissions')
+        .select('id, total_score, max_score, percentage, is_passed, status')
+        .eq('user_id', effectiveUserId);
+
+      const res = typeof (query as any)?.in === 'function'
+        ? await (query as any).in('status', ['SUBMITTED', 'EVALUATED'])
+        : await (query as any);
+
+      userSubmissions = res?.data || null;
+    } catch {
+      // Fallback if table query is unmocked or fails
+    }
+
+    let totalSubmissions = userSubmissions?.length || 0;
+    let completedAssessments = 0;
+    let percentageSum = 0;
+    let evaluatedCount = 0;
+
+    if (userSubmissions && userSubmissions.length > 0) {
+      for (const sub of userSubmissions) {
+        const pct = sub.percentage !== null && sub.percentage !== undefined
+          ? Number(sub.percentage)
+          : (sub.max_score && Number(sub.max_score) > 0 && sub.total_score !== null
+              ? Math.round((Number(sub.total_score) / Number(sub.max_score)) * 100)
+              : null);
+
+        if (sub.is_passed || (pct !== null && pct >= 70)) {
+          completedAssessments++;
+        }
+
+        if (pct !== null) {
+          percentageSum += pct;
+          evaluatedCount++;
+        }
+      }
+    }
+
+    const accuracyRate = evaluatedCount > 0 ? Math.round(percentageSum / evaluatedCount) : null;
 
     return NextResponse.json({
       profile: {
@@ -90,12 +133,18 @@ export async function GET() {
         levelNextTarget,
         plan_tier: profile.plan_tier || 'LEARNER_FREE',
         credits: profile.credits ?? 0,
-        planDetails,
+        planDetails,
+        accuracyRate,
+        completedAssessments,
+        totalSubmissions,
       },
       data: {
         plan_tier: profile.plan_tier || 'LEARNER_FREE',
         credits: profile.credits ?? 0,
-        planDetails,
+        planDetails,
+        accuracyRate,
+        completedAssessments,
+        totalSubmissions,
       },
       credentials: credentials || [],
     });

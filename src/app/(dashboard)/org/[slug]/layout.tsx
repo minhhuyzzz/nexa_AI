@@ -7,6 +7,7 @@ import { OrgTopbar } from '@/components/dashboard/org/OrgTopbar';
 import { OrgSuspendedView } from '@/components/dashboard/org/OrgSuspendedView';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
 import { normalizeOrgRole } from '@/lib/auth/org-roles';
+import { MobileNavProvider } from '@/contexts/MobileNavContext';
 
 export const metadata: Metadata = {
   title: 'NEXA Business | Quản trị tổ chức',
@@ -90,14 +91,16 @@ export default async function OrgLayout({
   }
 
   return (
-    <div className="dashboard-shell min-h-screen flex bg-white dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
-      <OrgSidebar orgSlug={org.slug} orgName={org.name} userRole={userRole} />
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-black">
-        <OrgTopbar orgName={org.name} orgSlug={org.slug} userRole={userRole} />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
-          {children}
-        </main>
+    <MobileNavProvider>
+      <div className="dashboard-shell min-h-screen flex bg-white dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
+        <OrgSidebar orgSlug={org.slug} orgName={org.name} userRole={userRole} />
+        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-black">
+          <OrgTopbar orgName={org.name} orgSlug={org.slug} userRole={userRole} />
+          <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </MobileNavProvider>
   );
 }

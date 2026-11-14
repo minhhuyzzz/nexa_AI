@@ -112,7 +112,8 @@ export default function AdminLearningPathsPage() {
   const [stationAntiTabSwitch, setStationAntiTabSwitch] = useState<boolean>(true);
   const [stationMaxTabViolations, setStationMaxTabViolations] = useState<number>(3);
   const [stationAntiCopy, setStationAntiCopy] = useState<boolean>(true);
-  const [stationCooldownMinutes, setStationCooldownMinutes] = useState<number>(15);
+  const [stationShuffleQuestions, setStationShuffleQuestions] = useState<boolean>(true);
+  const [stationCooldownMinutes, setStationCooldownMinutes] = useState<number>(0);
   const [stationBenchmark, setStationBenchmark] = useState<string>('');
   const [stationGuidance, setStationGuidance] = useState<string>('');
 
@@ -205,7 +206,7 @@ export default function AdminLearningPathsPage() {
 
     setStationTitle(
       existing?.title ||
-        `${subdomain.title} - Cấp ${level.levelNumber} (${level.levelName})`
+        `${subdomain.title} - Mức ${level.levelNumber} (${level.levelName})`
     );
     setStationDescription(existing?.description || level.benchmarkStandard);
     setStationAssessmentId(existing?.assessment_id || '');
@@ -215,7 +216,7 @@ export default function AdminLearningPathsPage() {
     setStationPassingScore(
       linkedAssessment?.passing_score !== undefined
         ? Number(linkedAssessment.passing_score)
-        : 100
+        : 70
     );
     setStationPointReward(
       linkedAssessment?.point_reward || existing?.point_reward || level.pointReward || 25
@@ -223,9 +224,10 @@ export default function AdminLearningPathsPage() {
     setStationAntiTabSwitch(sec.antiTabSwitch !== false);
     setStationMaxTabViolations(Number(sec.maxTabSwitchViolations) || 3);
     setStationAntiCopy(sec.antiCopy !== false);
-    setStationCooldownMinutes(typeof sec.cooldownMinutes === 'number' ? sec.cooldownMinutes : 15);
-    setStationBenchmark(level.benchmarkStandard);
-    setStationGuidance(level.guidanceText);
+    setStationShuffleQuestions(sec.shuffleQuestions !== false);
+    setStationCooldownMinutes(0);
+    setStationBenchmark(existing?.description || level.benchmarkStandard);
+    setStationGuidance(existing?.content_markdown || level.guidanceText);
 
     setIsStationDrawerOpen(true);
   };
@@ -243,14 +245,16 @@ export default function AdminLearningPathsPage() {
         antiTabSwitch: stationAntiTabSwitch,
         maxTabSwitchViolations: stationMaxTabViolations,
         antiCopy: stationAntiCopy,
-        cooldownMinutes: stationCooldownMinutes,
+        cooldownMinutes: 0,
+        shuffleQuestions: stationShuffleQuestions,
       };
 
       const payload = {
         domain_code: domain.code,
         skill_code: subdomain.skillCode,
         title: stationTitle.trim(),
-        description: stationDescription.trim(),
+        description: stationBenchmark.trim() || stationDescription.trim(),
+        content_markdown: stationGuidance.trim(),
         duration_minutes: stationDurationMinutes,
         passing_score: stationPassingScore,
         point_reward: stationPointReward,
@@ -347,13 +351,13 @@ export default function AdminLearningPathsPage() {
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
               LỘ TRÌNH VÀ TRẠM KIỂM CHỨNG
             </span>
-            <span className="text-xs text-slate-400 dark:text-neutral-500">• 5 Miền Năng Lực Chuẩn Hóa</span>
+            <span className="text-xs text-slate-400 dark:text-neutral-500">• Khung Năng Lực Chuẩn Hóa</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Quản trị Trạm Kiểm chứng Năng lực
           </h1>
           <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-3xl leading-relaxed">
-            Cấu hình đề thi, thời lượng, chuẩn đạt và giám sát cho từng cấp độ trong 21 kỹ năng thành phần.
+            Cấu hình đề kiểm chứng, thời lượng, chuẩn đạt và quy chế giám sát cho các trạm bồi dưỡng năng lực số.
           </p>
         </div>
 
@@ -373,7 +377,7 @@ export default function AdminLearningPathsPage() {
       <div className="flex items-center justify-between py-1">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-zinc-300">
           <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <span>Cấu trúc 5 Miền Năng lực (21 Kỹ năng • 84 Trạm kiểm chứng)</span>
+          <span>Hệ thống Trạm Bồi dưỡng & Khảo thí Năng lực số</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
           <span>Đã gắn đề:</span>
@@ -424,7 +428,7 @@ export default function AdminLearningPathsPage() {
                     <IconComp className="w-4.5 h-4.5" />
                   </div>
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400">
-                    {d.subdomains.length} kỹ năng
+                    {d.subdomains.length} trạm kiến thức
                   </span>
                 </div>
 
@@ -467,7 +471,7 @@ export default function AdminLearningPathsPage() {
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm kỹ năng thành phần..."
+                placeholder="Tìm kiếm trạm bồi dưỡng..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -483,7 +487,7 @@ export default function AdminLearningPathsPage() {
           ) : filteredSubdomains.length === 0 ? (
             <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114]">
               <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs text-slate-500">Không tìm thấy kỹ năng phù hợp.</p>
+              <p className="text-xs text-slate-500">Không tìm thấy trạm phù hợp.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -512,18 +516,18 @@ export default function AdminLearningPathsPage() {
                       </div>
 
                       <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                        4 trạm kiểm chứng độc lập
+                        4 mức năng lực chuẩn hóa
                       </span>
                     </div>
 
-                    {/* 4 Cấp Độ Kiểm Chứng Độc Lập */}
+                    {/* 4 Mức Năng Lực Kiểm Chứng Độc Lập */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {levels.map((lvl) => {
                         const existingMod = findModule(currentDomain.code, sub.skillCode, lvl.levelNumber);
                         const linkedAss = existingMod?.assessments;
                         const isConfigured = Boolean(existingMod?.assessment_id && linkedAss);
                         const duration = linkedAss?.duration_minutes || existingMod?.duration_minutes || lvl.durationMinutes || 15;
-                        const passingScore = linkedAss?.passing_score !== undefined ? Number(linkedAss.passing_score) : 100;
+                        const passingScore = linkedAss?.passing_score !== undefined ? Number(linkedAss.passing_score) : 70;
                         const pts = linkedAss?.point_reward || existingMod?.point_reward || lvl.pointReward || 25;
                         const sec = linkedAss?.security_settings || {};
                         const hasAntiTab = sec.antiTabSwitch !== false;
@@ -542,7 +546,7 @@ export default function AdminLearningPathsPage() {
                               {/* Level Badge and Status */}
                               <div className="flex items-center justify-between">
                                 <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300">
-                                  Cấp {lvl.levelNumber}: {lvl.levelName}
+                                  Mức {lvl.levelNumber}: {lvl.levelName}
                                 </span>
 
                                 {isConfigured ? (
@@ -648,7 +652,7 @@ export default function AdminLearningPathsPage() {
                   {currentStationTarget.subdomain.title}
                 </h2>
                 <span className="text-xs text-slate-500 font-mono">
-                  Cấp {currentStationTarget.level.levelNumber}: {currentStationTarget.level.levelName}
+                  Mức {currentStationTarget.level.levelNumber}: {currentStationTarget.level.levelName}
                 </span>
               </div>
 
@@ -903,55 +907,32 @@ export default function AdminLearningPathsPage() {
                   </button>
                 </div>
 
-                {/* Cooldown */}
-                <div className="pt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
-                      Thời gian chờ thi lại nếu chưa đạt (phút)
-                    </label>
-                    <span className="text-[10px] font-mono text-slate-400">0 = cho thi lại ngay</span>
+                {/* Xáo trộn câu hỏi và đáp án */}
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <div>
+                    <span className="font-semibold text-slate-800 dark:text-zinc-200 block text-[11px]">
+                      Tự động xáo trộn câu hỏi & đáp án
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Ngẫu nhiên hóa thứ tự câu hỏi và phương án A, B, C, D khi thí sinh làm bài
+                    </span>
                   </div>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1440}
-                    value={stationCooldownMinutes}
-                    onChange={(e) => setStationCooldownMinutes(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                    className="w-24 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100"
-                  />
-                </div>
-              </div>
-
-              {/* Nhóm 4: Chuẩn đầu ra năng lực */}
-              <div className="space-y-3 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
-                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  Chuẩn đầu ra năng lực
-                </h3>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block mb-1">
-                    Chuẩn đầu ra:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={stationBenchmark}
-                    onChange={(e) => setStationBenchmark(e.target.value)}
-                    placeholder="Mô tả chuẩn đầu ra năng lực của cấp độ..."
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block mb-1">
-                    Trọng tâm bồi dưỡng:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={stationGuidance}
-                    onChange={(e) => setStationGuidance(e.target.value)}
-                    placeholder="Gợi ý nội dung học tập và trọng tâm ôn luyện..."
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  />
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={stationShuffleQuestions}
+                    onClick={() => setStationShuffleQuestions(!stationShuffleQuestions)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                      stationShuffleQuestions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        stationShuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 

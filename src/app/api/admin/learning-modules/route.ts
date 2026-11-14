@@ -87,7 +87,24 @@ export async function POST(request: NextRequest) {
     if (!auth.isAuthorized) return auth.errorResponse!;
 
     const body = await request.json().catch(() => null);
-    const parsed = createModuleSchema.safeParse(body);
+    const normalizedBody = body && typeof body === 'object' ? {
+      pathId: body.pathId ?? body.path_id,
+      domainCode: body.domainCode ?? body.domain_code,
+      skillCode: body.skillCode ?? body.skill_code,
+      title: body.title,
+      description: body.description,
+      durationMinutes: body.durationMinutes ?? body.duration_minutes,
+      pointReward: body.pointReward ?? body.point_reward,
+      contentMarkdown: body.contentMarkdown ?? body.content_markdown,
+      assessmentId: body.assessmentId ?? body.assessment_id,
+      passingScore: body.passingScore ?? body.passing_score,
+      securitySettings: body.securitySettings ?? body.security_settings,
+      accessTier: body.accessTier ?? body.access_tier,
+      isPublished: body.isPublished ?? body.is_published,
+      orderIndex: body.orderIndex ?? body.order_index,
+    } : {};
+
+    const parsed = createModuleSchema.safeParse(normalizedBody);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ' },

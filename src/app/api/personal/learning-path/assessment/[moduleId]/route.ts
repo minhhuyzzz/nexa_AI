@@ -30,8 +30,10 @@ export async function GET(
         id,
         title,
         description,
+        content_markdown,
         domain_code,
         skill_code,
+        order_index,
         duration_minutes,
         point_reward,
         assessment_id,
@@ -63,10 +65,9 @@ export async function GET(
       ? moduleRecord.assessments[0]
       : moduleRecord.assessments;
 
-    // 3. Check cooldown based on security settings (default 15 minutes, 0 means no cooldown)
-    const cooldownMinutes = typeof assessment?.security_settings?.cooldownMinutes === 'number'
-      ? assessment.security_settings.cooldownMinutes
-      : 15;
+    // 3. Cooldown: Disabled per system requirements to allow immediate retakes
+    const isOnCooldown = false;
+    const cooldownRemainingSeconds = 0;
 
     const { data: recentSubmissions } = await adminSupabase
       .from('assessment_submissions')
@@ -77,20 +78,8 @@ export async function GET(
       .limit(1);
 
     const lastSub = recentSubmissions?.[0];
-    let isOnCooldown = false;
-    let cooldownRemainingSeconds = 0;
 
-    if (cooldownMinutes > 0 && lastSub && !lastSub.is_passed && lastSub.submitted_at) {
-      const lastTime = new Date(lastSub.submitted_at).getTime();
-      const cooldownMs = cooldownMinutes * 60 * 1000;
-      const elapsed = Date.now() - lastTime;
-      if (elapsed < cooldownMs) {
-        isOnCooldown = true;
-        cooldownRemainingSeconds = Math.ceil((cooldownMs - elapsed) / 1000);
-      }
-    }
-
-    // 4. Fetch questions without leaking is_correct or explanation
+    // 4. Fetch questions with options and explanations for instant feedback
     const { data: rawItems, error: itemsError } = await adminSupabase
       .from('assessment_items')
       .select(`
@@ -99,10 +88,13 @@ export async function GET(
         prompt,
         points,
         order_index,
+        rubric_guide,
         item_options (
           id,
           content,
-          order_index
+          order_index,
+          is_correct,
+          explanation
         )
       `)
       .eq('assessment_id', moduleRecord.assessment_id)
@@ -115,21 +107,49 @@ export async function GET(
       );
     }
 
-    // Sanitize item_options: explicitly strip is_correct and explanation
-    const sanitizedItems = rawItems.map((item) => ({
-      id: item.id,
-      type: item.type,
-      prompt: item.prompt,
-      points: Number(item.points) > 0 ? Number(item.points) : 1,
-      orderIndex: item.order_index,
-      options: (item.item_options || [])
-        .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
-        .map((opt: any) => ({
+    const shouldShuffle = assessment?.security_settings?.shuffleQuestions !== false;
+    const solutionMap: Record<string, { correctOptionId: string; explanation: string }> = {};
+
+    const processedItems = rawItems.map((item) => {
+      const opts = [...(item.item_options || [])];
+      const correctOpt = opts.find((o: any) => o.is_correct);
+      if (correctOpt) {
+        solutionMap[item.id] = {
+          correctOptionId: correctOpt.id,
+          explanation: correctOpt.explanation || 'Đáp án chuẩn xác theo khung năng lực số.',
+        };
+      }
+
+      if (shouldShuffle) {
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+      } else {
+        opts.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
+      }
+
+      return {
+        id: item.id,
+        type: item.type,
+        prompt: item.prompt,
+        points: Number(item.points) > 0 ? Number(item.points) : 1,
+        orderIndex: item.order_index,
+        rubricGuide: item.rubric_guide || null,
+        options: opts.map((opt: any) => ({
           id: opt.id,
           content: opt.content,
           order_index: opt.order_index,
         })),
-    }));
+      };
+    });
+
+    if (shouldShuffle) {
+      for (let i = processedItems.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [processedItems[i], processedItems[j]] = [processedItems[j], processedItems[i]];
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -137,11 +157,13 @@ export async function GET(
         id: moduleRecord.id,
         title: moduleRecord.title,
         description: moduleRecord.description,
+        contentMarkdown: moduleRecord.content_markdown,
+        orderIndex: moduleRecord.order_index,
         domainCode: moduleRecord.domain_code,
         skillCode: moduleRecord.skill_code,
         durationMinutes: assessment?.duration_minutes || moduleRecord.duration_minutes || 15,
         pointReward: assessment?.point_reward || moduleRecord.point_reward || 30,
-        passingScore: Number(assessment?.passing_score ?? 100),
+        passingScore: Number(assessment?.passing_score ?? 70),
         securitySettings: (assessment?.security_settings as Record<string, any>) || {
           antiTabSwitch: true,
           maxTabSwitchViolations: 3,
@@ -154,7 +176,12 @@ export async function GET(
         title: assessment?.title,
         securitySettings: (assessment?.security_settings as Record<string, any>) || {},
       },
-      items: sanitizedItems,
+      candidate: {
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Thí sinh',
+        email: user.email || '',
+      },
+      items: processedItems,
+      solutionMap,
       isOnCooldown,
       cooldownRemainingSeconds,
       lastSubmission: lastSub

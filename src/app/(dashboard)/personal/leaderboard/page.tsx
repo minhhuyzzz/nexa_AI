@@ -159,7 +159,7 @@ function LeaderboardContent() {
 
             {/* Timeframe Filter Tabs: Tuần này / Tháng này / Tất cả */}
             <div className="pt-2 flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-2xs">
+              <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-2xs max-w-full overflow-x-auto no-scrollbar">
                 {PERIOD_TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = period === tab.id;
@@ -436,7 +436,8 @@ function LeaderboardContent() {
           </div>
         ) : (
           <div className="border border-slate-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-xs">
-            <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[480px] sm:min-w-0">
               <thead>
                 <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 text-[11px] font-semibold">
                   <th className="py-3 px-4 w-24 text-center">THỨ HẠNG</th>
@@ -531,6 +532,7 @@ function LeaderboardContent() {
                 })}
               </tbody>
             </table>
+          </div>
 
             {/* Pagination Controls (10 người / trang) */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4 bg-slate-50/70 dark:bg-zinc-900/40 text-xs text-slate-500 dark:text-neutral-400">

@@ -570,10 +570,10 @@
     "semantic_hash": "1d8102c5fa15f9ecf88b406e376cd109"
   },
   "src/app/(dashboard)/personal/competency/page.tsx": {
-    "mtime": 1794070854.508937,
-    "seen": 1794532981.6183746,
-    "ast_hash": "62a2cc5ee0c350e1ed41c90b2f4e9426",
-    "semantic_hash": "62a2cc5ee0c350e1ed41c90b2f4e9426"
+    "mtime": 1794641840.5265014,
+    "seen": 1794642368.1263788,
+    "ast_hash": "d67206504c84a66136f0abe7fcbf5531",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/contribute/new/page.tsx": {
     "mtime": 1794070854.519799,
@@ -594,9 +594,9 @@
     "semantic_hash": "ff13771e2294f1219c292a76a0d4d9d6"
   },
   "src/app/(dashboard)/personal/dashboard/page.tsx": {
-    "mtime": 1794534969.2510216,
-    "seen": 1794535813.9858644,
-    "ast_hash": "b1e46f3216464cb2e62aa98ffbb50e63",
+    "mtime": 1794641903.1758509,
+    "seen": 1794642368.1273115,
+    "ast_hash": "b3d0493d393164ef21ecc1467cfe8e02",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/grading/page.tsx": {
@@ -630,9 +630,9 @@
     "semantic_hash": "f9bc6cc109ace3e06f77a178a23a394d"
   },
   "src/app/(dashboard)/personal/learning-path/page.tsx": {
-    "mtime": 1794579005.5464928,
-    "seen": 1794625716.2830708,
-    "ast_hash": "d5eece652f80641faf28ddc424cae1ca",
+    "mtime": 1794646331.0604184,
+    "seen": 1794647385.4852715,
+    "ast_hash": "97cad4c9f494c939b24048b7948c7526",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/live-room/page.tsx": {
@@ -642,10 +642,10 @@
     "semantic_hash": "373ceffa43566b2fcfa1da9d7fc4f359"
   },
   "src/app/(dashboard)/personal/profile/page.tsx": {
-    "mtime": 1794487797.1532385,
-    "seen": 1794532981.618423,
-    "ast_hash": "7031ae00c4ee35a51f53a3b4831cafab",
-    "semantic_hash": "7031ae00c4ee35a51f53a3b4831cafab"
+    "mtime": 1794651885.296317,
+    "seen": 1794652528.6542978,
+    "ast_hash": "ab928325bdb59f39666851091062fd0a",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/settings/page.tsx": {
     "mtime": 1793544403.0218894,
@@ -1122,10 +1122,10 @@
     "semantic_hash": "9eed455c6284ca3a5a9277b4c46eedae"
   },
   "src/app/api/personal/profile/route.ts": {
-    "mtime": 1793552949.2148244,
-    "seen": 1794532981.6187222,
-    "ast_hash": "2e59a891cc90209869509b5c56af55b7",
-    "semantic_hash": "2e59a891cc90209869509b5c56af55b7"
+    "mtime": 1794651746.1058042,
+    "seen": 1794652528.7488809,
+    "ast_hash": "47ddd53136196c05256b56d99aa8bfa3",
+    "semantic_hash": ""
   },
   "src/app/api/plans/route.ts": {
     "mtime": 1792854400.757441,
@@ -1398,10 +1398,10 @@
     "semantic_hash": "3a5f3ad45c810fe710ab01537c45b7d6"
   },
   "src/components/dashboard/personal/PersonalSidebar.tsx": {
-    "mtime": 1794306011.2344296,
-    "seen": 1794532981.6188936,
-    "ast_hash": "1e12275b794799fd8442855ecf98a8bb",
-    "semantic_hash": "1e12275b794799fd8442855ecf98a8bb"
+    "mtime": 1794641817.2753341,
+    "seen": 1794642368.1999557,
+    "ast_hash": "0482c94f84928c24ffa1dedc866f9685",
+    "semantic_hash": ""
   },
   "src/components/dashboard/personal/PersonalTopbar.tsx": {
     "mtime": 1794409684.2545257,
@@ -3828,10 +3828,10 @@
     "semantic_hash": "8966593ad138bd052e3b4b7c1a9dbb71"
   },
   "src/features/competency/services/personal-dashboard-p0.test.ts": {
-    "mtime": 1793517819.4951432,
-    "seen": 1794532981.6191144,
-    "ast_hash": "9dfc629894e5ff4ed7e536fa1011bd41",
-    "semantic_hash": "9dfc629894e5ff4ed7e536fa1011bd41"
+    "mtime": 1794641914.0652797,
+    "seen": 1794642368.222449,
+    "ast_hash": "f8e06355c78252b7d4542c3e13241f7a",
+    "semantic_hash": ""
   },
   "src/features/security/admin-security-and-rbac.test.ts": {
     "mtime": 1793453832.2252197,
@@ -6048,21 +6048,21 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/learning-paths/page.tsx": {
-    "mtime": 1794578156.086665,
-    "seen": 1794625716.2725837,
-    "ast_hash": "de6e921c5a1d9b4830e06bdbd7e40d64",
+    "mtime": 1794644238.7552574,
+    "seen": 1794645190.1782036,
+    "ast_hash": "19f87a7c6fb4805c9cdb6b5657d89d55",
     "semantic_hash": ""
   },
   "src/app/api/admin/learning-modules/[id]/route.ts": {
-    "mtime": 1794569530.890956,
-    "seen": 1794575054.2079682,
-    "ast_hash": "02cd4a5ba7270d7ae7938ee063a1b8d5",
+    "mtime": 1794630983.8467407,
+    "seen": 1794632514.3894484,
+    "ast_hash": "9e77bbd0cb2cd1f95ccec736024cffb9",
     "semantic_hash": ""
   },
   "src/app/api/admin/learning-modules/route.ts": {
-    "mtime": 1794568994.0059688,
-    "seen": 1794575054.207975,
-    "ast_hash": "1e8ef034f059c27d8c7a4d00e2ac5aae",
+    "mtime": 1794630913.01834,
+    "seen": 1794632514.389455,
+    "ast_hash": "c65a6b01230f55cf1ce8be86ee67d525",
     "semantic_hash": ""
   },
   "src/app/api/admin/learning-paths/[id]/route.ts": {
@@ -6486,9 +6486,9 @@
     "semantic_hash": "6397a69de69b92f1da6e4865f6c329df"
   },
   "src/features/assessments/data/learning-curriculum.ts": {
-    "mtime": 1794572784.8857803,
-    "seen": 1794575054.2592473,
-    "ast_hash": "628d0bd53a60d74c80b08bf1a25e7476",
+    "mtime": 1794630859.6586359,
+    "seen": 1794632514.5407462,
+    "ast_hash": "169fec7e834cf2705376acb12bc2d1d1",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgSuspendedView.tsx": {
@@ -7140,27 +7140,45 @@
     "semantic_hash": ""
   },
   "src/app/(fullscreen)/personal/learning-path/assessment/[moduleId]/page.tsx": {
-    "mtime": 1794582978.6352186,
-    "seen": 1794625716.2842634,
-    "ast_hash": "7309e67e6a33233ab9a5d4d1ab22b947",
+    "mtime": 1794644756.9207032,
+    "seen": 1794645190.198404,
+    "ast_hash": "f87be35aade5a299dbf8f93d2b0f0f57",
     "semantic_hash": ""
   },
   "src/app/api/personal/learning-path/assessment/[moduleId]/route.ts": {
-    "mtime": 1794569946.3531876,
-    "seen": 1794575054.2249153,
-    "ast_hash": "81a8eaeca9d4cabf968a9636426b77e8",
+    "mtime": 1794644453.924508,
+    "seen": 1794645190.2263372,
+    "ast_hash": "e96b2fbf5a2ceafb5518205c464dc9c6",
     "semantic_hash": ""
   },
   "src/app/api/personal/learning-path/submit/route.ts": {
-    "mtime": 1794582773.5133705,
-    "seen": 1794625716.2953794,
-    "ast_hash": "bc16feb6379b3f370fe147277a69cb89",
+    "mtime": 1794634773.9007614,
+    "seen": 1794635492.5853825,
+    "ast_hash": "8f4d01e22104e3a4f3b800136a3e7e1b",
     "semantic_hash": ""
   },
   "src/features/learning-paths/services/learning-path-verification.test.ts": {
     "mtime": 1794583472.7966425,
     "seen": 1794625716.3177717,
     "ast_hash": "d8cee4f3090f1d50268b24a3763b12cc",
+    "semantic_hash": ""
+  },
+  "src/app/api/personal/learning-path/check-answer/route.ts": {
+    "mtime": 1794635001.7335606,
+    "seen": 1794635492.5849571,
+    "ast_hash": "d17acdcba19bea0c386359e39fd42ef0",
+    "semantic_hash": ""
+  },
+  "src/app/(fullscreen)/personal/learning-path/docs/[skillCode]/page.tsx": {
+    "mtime": 1794647346.5235274,
+    "seen": 1794647385.4913676,
+    "ast_hash": "d6ce6ca18cc358d19ad8eca8eded9490",
+    "semantic_hash": ""
+  },
+  "src/features/learning-paths/data/competency-station-docs.ts": {
+    "mtime": 1794645901.4736147,
+    "seen": 1794647385.6864278,
+    "ast_hash": "46769b1d1cc8616aa4cfc9cbe96ef856",
     "semantic_hash": ""
   },
   ".agents/skills/stageshow/package-lock.json": {

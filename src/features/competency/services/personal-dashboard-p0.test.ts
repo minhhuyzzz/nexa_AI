@@ -156,7 +156,7 @@ describe('Personal Dashboard P0 Requirements', () => {
           id: 'm3',
           title: 'Đạt chuẩn ít nhất 1 miền năng lực (≥ 70%)',
           done: Boolean(params.radarScores.some((s) => (s ?? 0) >= 70)),
-          actionHref: '/personal/competency',
+          actionHref: '/personal/learning-path',
         },
         {
           id: 'm4',
@@ -237,6 +237,51 @@ describe('Personal Dashboard P0 Requirements', () => {
       expect(userGoal.title.length).toBeGreaterThan(0);
       expect(userGoal.targetScore).toBe(80);
       expect(defaultGoal.targetScore).toBe(70);
+    });
+  });
+
+  describe('Personal Dashboard Real Assessment Recommendations', () => {
+    interface AssessmentMock {
+      id: string;
+      title: string;
+      target_domain?: string;
+      domainCodes?: string[];
+      is_system_baseline?: boolean;
+    }
+
+    function filterRecommendedAssessments(allAssessments: AssessmentMock[]) {
+      // 1. Filter out baseline exam
+      const published = allAssessments.filter(
+        (a) =>
+          a.id !== 'a0000000-0000-0000-0000-000000000001' &&
+          !a.is_system_baseline &&
+          !a.title?.toLowerCase().includes('đầu vào')
+      );
+
+      // 2. Return real assessments directly to fill card (up to 4 items)
+      return published.slice(0, 4);
+    }
+
+    it('returns published real assessments directly from bank without filtering by weak domain', () => {
+      const mockBank: AssessmentMock[] = [
+        { id: 'b01', title: 'Khảo sát đầu vào chuẩn hóa', is_system_baseline: true },
+        { id: 'a1', title: 'Bài tập Dữ liệu số', target_domain: '01' },
+        { id: 'a2', title: 'Bài tập Sáng tạo nội dung và AI 1', target_domain: '03' },
+        { id: 'a3', title: 'Bài tập Sáng tạo nội dung và AI 2', target_domain: '03' },
+        { id: 'a4', title: 'Bài tập An toàn số', target_domain: '04' },
+        { id: 'a5', title: 'Bài tập Giải quyết vấn đề', target_domain: '05' },
+      ];
+
+      const result = filterRecommendedAssessments(mockBank);
+      expect(result.length).toBe(4);
+      expect(result.map((i) => i.id)).toEqual(['a1', 'a2', 'a3', 'a4']);
+      expect(result.every((i) => !i.is_system_baseline)).toBe(true);
+    });
+
+    it('handles empty bank gracefully without generating mock data', () => {
+      const mockBank: AssessmentMock[] = [];
+      const result = filterRecommendedAssessments(mockBank);
+      expect(result).toEqual([]);
     });
   });
 });

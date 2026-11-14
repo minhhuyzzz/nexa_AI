@@ -32,7 +32,6 @@ import {
   Moon,
   Laptop,
   Zap,
-  Clock,
   Pencil,
   X,
   ChevronDown,
@@ -67,6 +66,9 @@ interface CredentialItem {
 
 interface LearningStats {
   completedAssessments: number;
+  overallScore: number | null;
+  accuracyRate: number | null;
+  totalSubmissions: number;
 }
 
 export default function LearnerProfilePage() {
@@ -105,6 +107,9 @@ function LearnerProfileContent() {
   const [credentials, setCredentials] = useState<CredentialItem[]>([]);
   const [learningStats, setLearningStats] = useState<LearningStats>({
     completedAssessments: 0,
+    overallScore: null,
+    accuracyRate: null,
+    totalSubmissions: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -121,8 +126,7 @@ function LearnerProfileContent() {
   // Toast message
   const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Modals for Danger Actions
-  const [showPauseModal, setShowPauseModal] = useState(false);
+  // Modal for Danger Action
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Settings: Section 1 - Privacy & Visibility
@@ -149,21 +153,29 @@ function LearnerProfileContent() {
         if (data.profile) {
           setProfile(data.profile);
           setEditNicknameValue(data.profile.nickname || '');
+          setLearningStats((prev) => ({
+            ...prev,
+            completedAssessments: data.profile.completedAssessments ?? prev.completedAssessments,
+            accuracyRate: data.profile.accuracyRate ?? null,
+            totalSubmissions: data.profile.totalSubmissions ?? 0,
+          }));
         }
         if (data.credentials) {
           setCredentials(data.credentials);
         }
       }
 
-      // 2. Load competency stats (chỉ lấy số bài hoàn thành)
+      // 2. Load competency stats (số bài hoàn thành và điểm trung bình năng lực số)
       try {
         const compRes = await fetch('/api/personal/competency-profile', { cache: 'no-store' });
         if (compRes.ok) {
           const compData = await compRes.json();
           if (compData.profile) {
-            setLearningStats({
-              completedAssessments: compData.profile.totalAssessmentsCompleted ?? 0,
-            });
+            setLearningStats((prev) => ({
+              ...prev,
+              completedAssessments: compData.profile.totalAssessmentsCompleted ?? prev.completedAssessments,
+              overallScore: compData.profile.overallScore ?? prev.overallScore,
+            }));
           }
         }
       } catch {
@@ -432,7 +444,7 @@ function LearnerProfileContent() {
       {/* TOP PROFILE HERO CARD - CÓ MÀU THEO ĐÚNG MẪU THIẾT KẾ (Nền xanh dịu + họa tiết trang trí) */}
       <div className="relative overflow-hidden p-6 bg-gradient-to-r from-[#EEF4FF] via-[#F6F9FF] to-[#E8F1FF] dark:from-zinc-900 dark:via-[#111114] dark:to-blue-950/30 border border-blue-100/90 dark:border-zinc-800 rounded-2xl shadow-xs">
         {/* Họa tiết góc trang trí hình khối đa giác theo mẫu (Faceted geometric shard decoration) */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-80 overflow-hidden select-none">
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-80 overflow-hidden select-none hidden sm:block">
           <svg viewBox="0 0 320 200" fill="none" className="w-full h-full opacity-60 dark:opacity-10">
             <polygon points="120,0 320,0 320,200 240,200" fill="url(#facet-grad-1)" />
             <polygon points="180,0 320,0 260,200" fill="url(#facet-grad-2)" opacity="0.6" />
@@ -563,24 +575,48 @@ function LearnerProfileContent() {
               </div>
             </div>
 
-            {/* Hàng 2: Tiến độ học tập số (Chỉ giữ Bài đã hoàn thành, loại bỏ Tỷ lệ đúng & Chủ đề đã học) */}
+            {/* Hàng 2: Tiến độ học tập số (Bài đã hoàn thành & Điểm năng lực số trung bình) */}
             <div className="pt-3">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-800 dark:text-zinc-200 mb-2">
                 <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={2} />
                 <span>Tiến độ học tập số</span>
               </div>
 
-              <div className="space-y-0.5">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">
-                    {learningStats.completedAssessments}
-                  </span>
-                  <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
-                    Bài đã hoàn thành
-                  </span>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Chỉ số 1: Bài đã hoàn thành */}
+                <div className="space-y-0.5">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">
+                      {learningStats.completedAssessments}
+                    </span>
+                    <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
+                      Bài đã hoàn thành
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                    Đạt chuẩn đánh giá (≥ 70%)
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
-                  Đạt chuẩn đánh giá (≥ 70%)
+
+                {/* Chỉ số 2: Tỷ lệ làm đúng (Đạt bao nhiêu đúng trên tất cả các bài làm) */}
+                <div className="space-y-0.5">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono tabular-nums">
+                      {learningStats.accuracyRate !== null
+                        ? `${learningStats.accuracyRate}%`
+                        : learningStats.overallScore !== null
+                        ? `${learningStats.overallScore}%`
+                        : '--%'}
+                    </span>
+                    <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
+                      Tỷ lệ làm đúng
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                    {learningStats.accuracyRate !== null
+                      ? `Trung bình trên ${learningStats.totalSubmissions} bài đã làm`
+                      : 'Chưa có dữ liệu bài làm'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -630,75 +666,77 @@ function LearnerProfileContent() {
         </div>
       </div>
 
-      {/* TAB 1: PROFILE & SETTINGS (2-COLUMN LAYOUT) */}
+      {/* TAB 1: PROFILE & SETTINGS (2-COLUMN LAYOUT ON DESKTOP, STACKED WITH HORIZONTAL SUBNAV ON MOBILE) */}
       {activeTab === 'PROFILE' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
-          {/* Cột trái: Subnav Neo */}
-          <aside className="lg:col-span-3 sticky top-20 space-y-1">
-            <button
-              type="button"
-              onClick={() => scrollToSection('section-privacy', 'privacy')}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                activeSection === 'privacy'
-                  ? 'bg-blue-50/80 dark:bg-zinc-800/80 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                  : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Shield className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-              <span>Quyền riêng tư</span>
-            </button>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start pt-2">
+          {/* Cột trái: Subnav Neo (Horizontal scrollable pills on mobile/tablet, vertical sticky on desktop) */}
+          <aside className="lg:col-span-3 lg:sticky lg:top-20 z-10 w-full overflow-hidden">
+            <div className="flex lg:flex-col gap-1.5 overflow-x-auto no-scrollbar pb-1.5 lg:pb-0">
+              <button
+                type="button"
+                onClick={() => scrollToSection('section-privacy', 'privacy')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                  activeSection === 'privacy'
+                    ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
+                    : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
+                }`}
+              >
+                <Shield className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                <span>Quyền riêng tư</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => scrollToSection('section-notifications', 'notifications')}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                activeSection === 'notifications'
-                  ? 'bg-blue-50/80 dark:bg-zinc-800/80 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                  : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Bell className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-              <span>Thông báo</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('section-notifications', 'notifications')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                  activeSection === 'notifications'
+                    ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
+                    : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
+                }`}
+              >
+                <Bell className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                <span>Thông báo</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => scrollToSection('section-appearance', 'appearance')}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                activeSection === 'appearance'
-                  ? 'bg-blue-50/80 dark:bg-zinc-800/80 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                  : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Monitor className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-              <span>Giao diện</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('section-appearance', 'appearance')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                  activeSection === 'appearance'
+                    ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
+                    : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
+                }`}
+              >
+                <Monitor className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                <span>Giao diện</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => scrollToSection('section-billing', 'billing')}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                activeSection === 'billing'
-                  ? 'bg-blue-50/80 dark:bg-zinc-800/80 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                  : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Layers className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-              <span>Gói dịch vụ</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('section-billing', 'billing')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                  activeSection === 'billing'
+                    ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
+                    : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
+                }`}
+              >
+                <Layers className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                <span>Gói dịch vụ</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => scrollToSection('section-account', 'account')}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                activeSection === 'account'
-                  ? 'bg-blue-50/80 dark:bg-zinc-800/80 text-blue-600 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400'
-                  : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <User className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-              <span>Dữ liệu &amp; tài khoản</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('section-account', 'account')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                  activeSection === 'account'
+                    ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
+                    : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
+                }`}
+              >
+                <User className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                <span>Dữ liệu &amp; tài khoản</span>
+              </button>
+            </div>
           </aside>
 
           {/* Cột phải: 5 Nhóm Card chi tiết */}
@@ -834,10 +872,10 @@ function LearnerProfileContent() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Thông báo
+                    Thông báo trong ứng dụng
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                    Tùy chọn nhận thông báo để không bỏ lỡ các hoạt động quan trọng.
+                    Tùy chọn hiển thị thông báo nội bộ để không bỏ lỡ các hoạt động học tập quan trọng.
                   </p>
                 </div>
               </div>
@@ -851,7 +889,7 @@ function LearnerProfileContent() {
                       <span>Bài đánh giá mới</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                      Nhận thông báo khi có bài đánh giá hoặc nhiệm vụ mới được giao.
+                      Hiển thị chuông thông báo khi có bài đánh giá hoặc nhiệm vụ mới được giao.
                     </p>
                   </div>
 
@@ -885,7 +923,7 @@ function LearnerProfileContent() {
                       <span>Nhắc nhở hạn chót</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                      Nhận nhắc nhở trước thời hạn nộp bài.
+                      Hiển thị nhắc nhở trong bảng điều khiển trước thời hạn nộp bài.
                     </p>
                   </div>
 
@@ -919,7 +957,7 @@ function LearnerProfileContent() {
                       <span>Kết quả &amp; điểm số</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                      Nhận thông báo khi có kết quả chấm điểm hoặc phân tích bài làm.
+                      Hiển thị thông báo khi có kết quả chấm điểm hoặc cập nhật hồ sơ năng lực số.
                     </p>
                   </div>
 
@@ -953,7 +991,7 @@ function LearnerProfileContent() {
                       <span>Cập nhật từ hệ thống</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                      Nhận thông tin về tính năng mới, cải tiến và các thông báo quan trọng từ NEXA.
+                      Hiển thị thông báo về tính năng mới và các cập nhật kỹ thuật quan trọng từ NEXA.
                     </p>
                   </div>
 
@@ -1153,28 +1191,7 @@ function LearnerProfileContent() {
                   </button>
                 </div>
 
-                {/* 5.2 Tạm ngừng tài khoản */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
-                  <div className="space-y-0.5 max-w-lg">
-                    <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                      <span>Tạm ngừng tài khoản</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                      Tạm thời vô hiệu hóa tài khoản. Bạn có thể kích hoạt lại bất kỳ lúc nào.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPauseModal(true)}
-                    className="px-3.5 py-1.5 rounded-md border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium transition-colors shadow-2xs cursor-pointer shrink-0"
-                  >
-                    <span>Tạm ngừng</span>
-                  </button>
-                </div>
-
-                {/* 5.3 Xóa tài khoản */}
+                {/* 5.2 Xóa tài khoản */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
                   <div className="space-y-0.5 max-w-lg">
                     <div className="text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
@@ -1355,48 +1372,7 @@ function LearnerProfileContent() {
         </div>
       )}
 
-      {/* MODAL 2: Tạm ngừng tài khoản */}
-      {showPauseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5" strokeWidth={1.75} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                  Tạm ngừng tài khoản?
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
-                  Tài khoản của bạn sẽ tạm thời chuyển sang trạng thái ngưng hoạt động. Bạn sẽ không nhận được thông báo mới, nhưng toàn bộ lịch sử khảo thí, chứng chỉ và điểm XP vẫn được bảo lưu an toàn.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3">
-              <button
-                type="button"
-                onClick={() => setShowPauseModal(false)}
-                className="px-3.5 py-1.5 rounded-md text-xs font-medium text-neutral-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPauseModal(false);
-                  showToast('Đã gửi yêu cầu tạm ngừng tài khoản. Bạn có thể đăng nhập lại bất kỳ lúc nào để mở lại.');
-                }}
-                className="px-4 py-1.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors shadow-xs"
-              >
-                Xác nhận tạm ngừng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: Xóa tài khoản (Danger) */}
+      {/* MODAL 2: Xóa tài khoản (Danger) */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white dark:bg-zinc-900 border border-rose-200 dark:border-rose-900/60 rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">

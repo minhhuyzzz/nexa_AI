@@ -31,6 +31,7 @@ import {
   Compass,
   Sparkles,
   TrendingUp,
+  FileText,
 } from 'lucide-react';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { SilkRibbonHeroIllustration } from '@/components/dashboard/personal/SilkRibbonHeroIllustration';
@@ -40,12 +41,16 @@ import { useCountUp } from '@/hooks/useCountUp';
 interface RealAssessment {
   id: string;
   title: string;
-  description: string;
-  duration_minutes: number;
-  passing_score: number;
+  description?: string;
+  duration_minutes?: number;
+  passing_score?: number;
   point_reward?: number;
   is_published?: boolean;
   status?: string;
+  questionCount?: number;
+  domainName?: string;
+  domainCodes?: string[];
+  target_domain?: string;
 }
 
 interface LeaderboardUser {
@@ -113,14 +118,8 @@ export default function LearnerDashboardPage() {
   const [assessments, setAssessments] = useState<RealAssessment[]>([]);
   const [baselineTest, setBaselineTest] = useState<{ id: string; title: string; duration_minutes?: number } | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
-  const [recommendedModules, setRecommendedModules] = useState<{
-    id: string;
-    title: string;
-    duration_minutes: number;
-    point_reward: number;
-    domain_code: string;
-  }[]>([]);
-  const [weakestDomainName, setWeakestDomainName] = useState<string>('');
+  const [recommendedAssessments, setRecommendedAssessments] = useState<RealAssessment[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
   const router = useRouter();
 
   const handleCloseBaselineModal = useCallback(() => {
@@ -232,6 +231,31 @@ export default function LearnerDashboardPage() {
       }
     }
 
+    async function loadRecommendations() {
+      setLoadingRecommendations(true);
+      try {
+        const asmRes = await fetch('/api/assessments', { cache: 'no-store' });
+        let allAssessments: RealAssessment[] = [];
+        if (asmRes.ok) {
+          const asmJson = await asmRes.json();
+          allAssessments = (asmJson.assessments || []).filter(
+            (a: any) =>
+              a.id !== 'a0000000-0000-0000-0000-000000000001' &&
+              !a.is_system_baseline &&
+              !a.title?.toLowerCase().includes('đầu vào')
+          );
+        }
+
+        // Lấy danh sách các bài khảo thí thật do nền tảng phát hành, lấp đầy card (tối đa 4 bài)
+        setRecommendedAssessments(allAssessments.slice(0, 4));
+      } catch (e) {
+        console.error('Failed to load recommended assessments:', e);
+        setRecommendedAssessments([]);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    }
+
     async function loadCompetencyProfile() {
       setLoadingCompetency(true);
       try {
@@ -256,36 +280,6 @@ export default function LearnerDashboardPage() {
         console.error('Failed to load competency profile:', e);
       } finally {
         setLoadingCompetency(false);
-      }
-    }
-
-    async function loadRecommendations() {
-      try {
-        const res = await fetch('/api/personal/learning-path', { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.hasTakenAssessment && Array.isArray(json.modules)) {
-            const targetDomain = json.unlockedFreeDomain;
-            if (targetDomain) {
-              const matched = json.modules.filter((m: any) => m.domain_code === targetDomain);
-              setRecommendedModules(matched.slice(0, 3));
-              const domainTitles: Record<string, string> = {
-                '01': 'Thông tin & Dữ liệu số',
-                '02': 'Giao tiếp & Cộng tác số',
-                '03': 'Sáng tạo Nội dung số',
-                '04': 'An toàn & Bảo mật số',
-                '05': 'Giải quyết Vấn đề số',
-              };
-              setWeakestDomainName(domainTitles[targetDomain] || `Miền ${targetDomain}`);
-            } else {
-              setRecommendedModules([]);
-            }
-          } else {
-            setRecommendedModules([]);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load recommended modules:', e);
       }
     }
 
@@ -425,8 +419,8 @@ export default function LearnerDashboardPage() {
       description: 'Nâng cao điểm số của một miền năng lực bất kỳ đạt mức chuẩn 70%.',
       icon: Target,
       done: Boolean(currentRadarData.some((d) => (d.score ?? 0) >= 70)),
-      actionHref: '/personal/competency',
-      actionLabel: 'Xem hồ sơ',
+      actionHref: '/personal/learning-path',
+      actionLabel: 'Xem lộ trình',
     },
     {
       id: 'm6',
@@ -782,10 +776,10 @@ export default function LearnerDashboardPage() {
                 </p>
               </div>
               <Link
-                href="/personal/competency"
+                href="/personal/learning-path"
                 className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1"
               >
-                <span>Xem chi tiết</span>
+                <span>Xem lộ trình</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -1248,8 +1242,8 @@ export default function LearnerDashboardPage() {
         </div>
       </div>
 
-      {/* 6. Row 2 of Bottom: Hoạt động gần đây, Gợi ý cho bạn & Mục tiêu nhanh */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${recommendedModules.length > 0 ? 'lg:grid-cols-3' : ''} gap-6`}>
+      {/* 6. Row 2 of Bottom: Hoạt động gần đây, Gợi ý cho bạn và Mục tiêu nhanh */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card 1: Hoạt động gần đây */}
         <div className="p-6 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div>
@@ -1317,42 +1311,64 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
-        {/* Card 2: Gợi ý bồi dưỡng theo khoảng trống năng lực (Chỉ hiện khi có bài trong thư viện chuẩn) */}
-        {recommendedModules.length > 0 && (
-          <div className="p-6 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-2 mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Gợi ý cho bạn
-                  </h3>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 text-[10px] font-mono font-bold">
-                  Bồi dưỡng khoảng trống
-                </span>
+        {/* Card 2: Gợi ý bài đánh giá theo khoảng trống năng lực hoặc tiêu biểu (Từ kho Admin thật) */}
+        <div className="p-6 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Gợi ý cho bạn
+                </h3>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400 mb-3">
-                Chuyên đề đề xuất nhằm bồi dưỡng <strong className="text-neutral-800 dark:text-neutral-200">{weakestDomainName}</strong>.
-              </p>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400 mb-3">
+              Các bài khảo thí tiêu biểu do nền tảng phát hành dành cho bạn.
+            </p>
 
+            {loadingRecommendations ? (
+              <div className="space-y-2.5 py-1">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-xl border border-slate-100 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/20 animate-pulse flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-zinc-800 shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="h-3 w-3/4 bg-slate-200 dark:bg-zinc-800 rounded" />
+                        <div className="h-2.5 w-1/2 bg-slate-200 dark:bg-zinc-800 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : recommendedAssessments.length > 0 ? (
               <div className="space-y-2.5">
-                {recommendedModules.map((mod) => (
+                {recommendedAssessments.map((asm) => (
                   <Link
-                    key={mod.id}
-                    href={`/personal/learning-path#module-${mod.id}`}
+                    key={asm.id}
+                    href={`/personal/assessments/${asm.id}`}
                     className="p-3 rounded-xl border border-slate-200/70 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-700 flex items-center justify-between gap-3 text-xs transition-all group bg-slate-50/50 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 shadow-2xs"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-blue-100/70 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                        <BookOpen className="w-4 h-4" strokeWidth={1.75} />
+                        <CheckSquare className="w-4 h-4" strokeWidth={1.75} />
                       </div>
                       <div className="truncate">
                         <div className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
-                          {mod.title}
+                          {asm.title}
                         </div>
-                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-0.5">
-                          {mod.duration_minutes || 15} phút &bull; +{mod.point_reward || 20} PTS
+                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-0.5 flex items-center gap-2">
+                          <span>{asm.duration_minutes || 30} phút</span>
+                          <span>&bull;</span>
+                          <span>Chuẩn đạt {asm.passing_score || 70}%</span>
+                          {asm.point_reward ? (
+                            <>
+                              <span>&bull;</span>
+                              <span className="text-blue-600 dark:text-blue-400 font-bold">+{asm.point_reward} PTS</span>
+                            </>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -1360,19 +1376,38 @@ export default function LearnerDashboardPage() {
                   </Link>
                 ))}
               </div>
-            </div>
-
-            <div className="pt-3 text-right">
-              <Link
-                href="/personal/learning-path"
-                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-              >
-                <span>Vào lộ trình bồi dưỡng</span>
-                <span>&rarr;</span>
-              </Link>
-            </div>
+            ) : (
+              <div className="py-7 px-3 text-center flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
+                <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-400 dark:text-neutral-500 mb-2">
+                  <FileText className="w-4 h-4" strokeWidth={1.5} />
+                </div>
+                <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  Chưa có bài đánh giá đề xuất
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1 max-w-[220px]">
+                  Hiện chưa có bài khảo thí nào được phát hành trong kho bài thi.
+                </p>
+                <Link
+                  href="/personal/assessments"
+                  className="mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-colors"
+                >
+                  Khám phá kho bài thi
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
           </div>
-        )}
+
+          <div className="pt-3 text-right">
+            <Link
+              href="/personal/assessments"
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+            >
+              <span>Xem tất cả bài đánh giá</span>
+              <span>&rarr;</span>
+            </Link>
+          </div>
+        </div>
 
         {/* Card 3: Mục tiêu nhanh — Phong cách Next Steps / Minimalist Borderless */}
         <div className="p-1 sm:p-2 bg-transparent flex flex-col justify-between">

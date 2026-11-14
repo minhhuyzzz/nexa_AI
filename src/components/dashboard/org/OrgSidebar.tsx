@@ -24,7 +24,9 @@ import {
   Radio,
   ClipboardCheck,
   LucideIcon,
+  X,
 } from 'lucide-react';
+import { useMobileNav } from '@/contexts/MobileNavContext';
 import {
   normalizeOrgRole,
   type StandardOrgRole,
@@ -75,12 +77,24 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
       pathname.startsWith(`/org/${orgSlug}/grading`) ||
       pathname.startsWith(`/org/${orgSlug}/live-room`));
 
+  const { isMobileOpen, closeMobile } = useMobileNav();
+
   // Khi vào phân hệ Khảo thí, Sidebar chính tự động chuyển thành Icon Rail (w-16)
   // Khi ở các trang khác, Sidebar chính mở rộng (w-64)
   const [isPrimaryCollapsed, setIsPrimaryCollapsed] = useState(isAssessmentRoute);
 
   useEffect(() => {
-    setIsPrimaryCollapsed(isAssessmentRoute);
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+        setIsPrimaryCollapsed(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAssessmentRoute) {
+      setIsPrimaryCollapsed(true);
+    }
   }, [isAssessmentRoute]);
 
   // MENU CHÍNH (PRIMARY):
@@ -197,7 +211,9 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
   ];
 
   return (
-    <div className="flex h-screen sticky top-0 z-30 shrink-0 select-none">
+    <>
+      {/* 1. Desktop & Tablet Sidebar (hidden on mobile < md) */}
+      <div className="hidden md:flex h-screen sticky top-0 z-30 shrink-0 select-none">
       {/* 1. PRIMARY SIDEBAR / ICON RAIL */}
       <aside
         className={`border-r border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0B] flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-in-out relative ${
@@ -407,8 +423,161 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
           </div>
         </aside>
       )}
+      </div>
+
+      {/* 2. Mobile Slide-over Sheet Drawer (visible on < md when isMobileOpen) */}
+      <div
+        className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+          isMobileOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div
+          className={`fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ${
+            isMobileOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+
+        {/* Slide-over Drawer Panel */}
+        <aside
+          className={`fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white dark:bg-[#0A0A0B] border-r border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col justify-between z-10 transition-transform duration-300 ease-in-out select-none ${
+            isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex flex-col h-full min-h-0">
+            {/* Header: Logo + Close X */}
+            <div className="h-16 px-4 flex items-center justify-between shrink-0">
+              <Link
+                href={`/org/${orgSlug}`}
+                onClick={closeMobile}
+                className="flex items-center gap-2 overflow-hidden"
+                title={orgName}
+              >
+                <NexaLogo size={26} showText={true} />
+              </Link>
+              <button
+                type="button"
+                onClick={closeMobile}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                title="Đóng menu"
+                aria-label="Đóng menu"
+              >
+                <X className="w-5 h-5" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            {/* Current Organization Info Card */}
+            <div className="p-3">
+              <div className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-2xs">
+                    <Building2 className="w-4 h-4" strokeWidth={1.75} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate" title={orgName}>
+                      {orgName}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1.5 mt-0.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      <span>Business</span>
+                      <span className="text-slate-300 dark:text-zinc-600">•</span>
+                      <span className="text-neutral-700 dark:text-zinc-300 truncate">{roleLabel}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Nav Links: clicking any closes drawer */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-1 space-y-4">
+              {navGroups.map((group, groupIdx) => (
+                <div key={groupIdx} className="space-y-1">
+                  {group.label && (
+                    <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                      {group.label}
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const active = isPrimaryActive(item);
+                      const Icon = item.icon;
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={closeMobile}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
+                            active
+                              ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
+                              : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 shrink-0 transition-colors ${
+                              active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                            }`}
+                            strokeWidth={1.75}
+                          />
+                          <span className="truncate">{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Assessment Sub-nav if in assessment route */}
+              {isAssessmentRoute && (
+                <div className="space-y-1 pt-2">
+                  <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    Danh mục khảo thí
+                  </div>
+                  <div className="space-y-1">
+                    {assessmentSubNavItems.map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <Link
+                          key={tab.href}
+                          href={tab.href}
+                          onClick={closeMobile}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all duration-150 ${
+                            tab.isActive
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold'
+                              : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-900/60'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                          <span className="truncate flex-1">{tab.name}</span>
+                          {tab.isActive && (
+                            <ChevronRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Feedback Card */}
+            <SidebarFeedbackCard
+              isCollapsed={false}
+              onOpenFeedback={() => {
+                closeMobile();
+                setShowFeedback(true);
+              }}
+              onHoverTooltip={() => {}}
+              title="Góp ý tổ chức"
+              description="Ý kiến đóng góp giúp cải thiện quản trị tổ chức."
+            />
+          </div>
+        </aside>
+      </div>
 
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
-    </div>
+    </>
   );
 }

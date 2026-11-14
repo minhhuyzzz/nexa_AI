@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { AdminSidebar } from '@/components/dashboard/admin/AdminSidebar';
 import { AdminTopbar } from '@/components/dashboard/admin/AdminTopbar';
+import { MobileNavProvider } from '@/contexts/MobileNavContext';
 
 export const metadata: Metadata = {
   title: 'NEXA Platform Admin | Điều hành nền tảng',
@@ -28,14 +29,16 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="dashboard-shell min-h-screen flex bg-white dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-black">
-        <AdminTopbar />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
-          {children}
-        </main>
+    <MobileNavProvider>
+      <div className="dashboard-shell min-h-screen flex bg-white dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-black">
+          <AdminTopbar />
+          <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </MobileNavProvider>
   );
 }

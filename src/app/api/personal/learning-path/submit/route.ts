@@ -8,6 +8,13 @@ export const dynamic = 'force-dynamic';
 const submitSchema = z.object({
   moduleId: z.string().uuid('Mã học phần không hợp lệ'),
   answers: z.record(z.string()),
+  practicalAnswers: z.record(
+    z.object({
+      textResponse: z.string().optional().nullable(),
+      evidenceUrl: z.string().optional().nullable(),
+      fileName: z.string().optional().nullable(),
+    })
+  ).optional(),
   tabSwitchCount: z.number().int().min(0).default(0),
   timeSpentSeconds: z.number().int().min(0).default(0),
 });
@@ -42,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { moduleId, answers, tabSwitchCount, timeSpentSeconds } = parsed.data;
+    const { moduleId, answers, practicalAnswers, tabSwitchCount, timeSpentSeconds } = parsed.data;
 
     // 2. Fetch module and linked assessment
     const { data: moduleRecord, error: moduleError } = await adminSupabase
@@ -146,24 +153,58 @@ export async function POST(request: NextRequest) {
       totalPoints += itemMaxPoints;
 
       const userSelectedOptionId = answers[item.id] || null;
-      const options = item.item_options || [];
-      const correctOption = options.find((opt: any) => opt.is_correct);
-      const chosenOption = options.find((opt: any) => opt.id === userSelectedOptionId);
+      const practicalSub = practicalAnswers?.[item.id];
+      const isPracticalType =
+        item.type === 'PRACTICAL_TASK' ||
+        item.type === 'PRACTICAL' ||
+        item.type === 'DIGITAL_EVIDENCE' ||
+        item.type === 'ESSAY';
 
-      const isCorrect = Boolean(chosenOption && chosenOption.is_correct);
+      let isCorrect = false;
+      let pointsAwarded = 0;
+      let explanation = 'Không có giải thích chi tiết.';
+      let correctOptionId: string | null = null;
+
+      if (isPracticalType) {
+        // Practical task in learning path is marked as completed if artifact/response is attached
+        const hasPracticalSubmission = Boolean(
+          practicalSub?.evidenceUrl ||
+          practicalSub?.fileName ||
+          practicalSub?.textResponse ||
+          userSelectedOptionId
+        );
+        isCorrect = hasPracticalSubmission;
+        pointsAwarded = isCorrect ? itemMaxPoints : 0;
+        explanation = isCorrect
+          ? 'Đã ghi nhận bài thực hành. Bằng chứng số được đính kèm đáp ứng tiêu chí chuẩn đầu ra học phần.'
+          : 'Học phần yêu cầu nộp tệp bài làm thực hành (Word/PDF/Excel) hoặc báo cáo để vượt trạm.';
+      } else {
+        const options = item.item_options || [];
+        const correctOption = options.find((opt: any) => opt.is_correct);
+        const chosenOption = options.find((opt: any) => opt.id === userSelectedOptionId);
+        correctOptionId = correctOption?.id || null;
+
+        isCorrect = Boolean(chosenOption && chosenOption.is_correct);
+        pointsAwarded = isCorrect ? itemMaxPoints : 0;
+        explanation =
+          chosenOption?.explanation ||
+          correctOption?.explanation ||
+          (isCorrect ? 'Phương án chính xác đáp ứng chuẩn năng lực số.' : 'Phương án chưa đáp ứng đúng tiêu chuẩn năng lực.');
+      }
+
       if (isCorrect) {
-        earnedPoints += itemMaxPoints;
+        earnedPoints += pointsAwarded;
       }
 
       return {
         itemId: item.id,
         prompt: item.prompt,
         userSelectedOptionId,
-        correctOptionId: correctOption?.id || null,
+        correctOptionId,
         isCorrect,
-        pointsAwarded: isCorrect ? itemMaxPoints : 0,
+        pointsAwarded,
         maxPoints: itemMaxPoints,
-        explanation: chosenOption?.explanation || correctOption?.explanation || 'Không có giải thích chi tiết.',
+        explanation,
       };
     });
 
@@ -202,19 +243,24 @@ export async function POST(request: NextRequest) {
 
     // Save individual item answers into submission_answers
     if (submission && breakdown.length > 0) {
-      const answersToInsert = breakdown.map((b) => ({
-        submission_id: submission.id,
-        item_id: b.itemId,
-        selected_option_id:
-          b.userSelectedOptionId &&
-          typeof b.userSelectedOptionId === 'string' &&
-          b.userSelectedOptionId.trim() !== ''
-            ? b.userSelectedOptionId.trim()
-            : null,
-        score_awarded: b.pointsAwarded,
-        is_correct: b.isCorrect,
-        auto_graded: true,
-      }));
+      const answersToInsert = breakdown.map((b) => {
+        const practicalSub = practicalAnswers?.[b.itemId];
+        return {
+          submission_id: submission.id,
+          item_id: b.itemId,
+          selected_option_id:
+            b.userSelectedOptionId &&
+            typeof b.userSelectedOptionId === 'string' &&
+            b.userSelectedOptionId.trim() !== ''
+              ? b.userSelectedOptionId.trim()
+              : null,
+          text_response: practicalSub?.textResponse || null,
+          evidence_url: practicalSub?.evidenceUrl || practicalSub?.fileName || null,
+          score_awarded: b.pointsAwarded,
+          is_correct: b.isCorrect,
+          auto_graded: true,
+        };
+      });
 
       try {
         const answersTable = adminSupabase.from('submission_answers');
