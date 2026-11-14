@@ -574,7 +574,7 @@ describe('Milestone 1 Route & Guard Empirical Challenger Suite', () => {
       expect(viewContent).toContain('<span>Vào phòng chờ</span>');
     });
 
-    it('TC-T3-03: Personal live-room embeds InlinePinEntryCard while personal dashboard stays focused', () => {
+    it('TC-T3-03: Personal live-room provides direct PIN access while personal dashboard stays focused', () => {
       const personalDashPath = path.resolve(
         process.cwd(),
         'src/app/(dashboard)/personal/dashboard/page.tsx'
@@ -587,7 +587,7 @@ describe('Milestone 1 Route & Guard Empirical Challenger Suite', () => {
         'src/components/dashboard/personal/live-room/PersonalLiveRoomDashboardView.tsx'
       );
       const personalLiveRoomContent = fs.readFileSync(personalLiveRoomPath, 'utf8');
-      expect(personalLiveRoomContent).toContain('<InlinePinEntryCard className="shadow-xs" />');
+      expect(personalLiveRoomContent).toContain('Vào phòng bằng PIN');
     });
 
     it('TC-T3-04: JSX emoji 👋 was removed from personal/dashboard/page.tsx', () => {

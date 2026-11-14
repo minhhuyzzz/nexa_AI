@@ -257,12 +257,12 @@ describe('Empirical Challenger M1: UI/UX & AGENTS.md Conformance Challenge', () 
   });
 
   describe('Challenge 9: Personal Dashboard & Live Room Direct PIN Entry Integration', () => {
-    it('renders InlinePinEntryCard in PersonalLiveRoomDashboardView', () => {
+    it('provides direct PIN entry in PersonalLiveRoomDashboardView', () => {
       const content = fs.readFileSync(
         path.join(rootDir, 'src/components/dashboard/personal/live-room/PersonalLiveRoomDashboardView.tsx'),
         'utf8'
       );
-      expect(content).toContain('<InlinePinEntryCard className="shadow-xs" />');
+      expect(content).toContain('Vào phòng bằng PIN');
     });
 
     it('does not render InlinePinEntryCard in personal dashboard page (moved to dedicated live-room)', () => {

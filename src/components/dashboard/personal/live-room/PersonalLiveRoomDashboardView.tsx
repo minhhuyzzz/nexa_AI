@@ -24,13 +24,11 @@ import {
   FileText,
   Lightbulb,
   Layers,
-  Sparkles,
   AlertCircle,
   RefreshCw,
   Link2,
   ChevronDown,
 } from 'lucide-react';
-import { InlinePinEntryCard } from '@/components/dashboard/live-room/InlinePinEntryCard';
 
 interface LiveRoomItem {
   id: string;
@@ -444,10 +442,8 @@ export function PersonalLiveRoomDashboardView() {
         </button>
       </div>
 
-      {/* 4. Main Content: Table (Left) + Side Cards (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Table & Filter (8/12 lg, 9/12 xl) */}
-        <div className="lg:col-span-8 xl:col-span-9 space-y-4 min-w-0">
+      {/* 4. Main Content: Filter & Table List (Full Width) */}
+      <div className="space-y-4 min-w-0">
           {/* Filter Bar */}
           <div className="p-3.5 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
             {/* Search Input */}
@@ -748,108 +744,6 @@ export function PersonalLiveRoomDashboardView() {
             )}
           </div>
         </div>
-
-        {/* Right Side Cards (Screen 01: Mẫu Gần Đây & Mẹo Tạo Phòng) (4/12 lg, 3/12 xl) */}
-        <div className="lg:col-span-4 xl:col-span-3 space-y-4">
-          <InlinePinEntryCard className="shadow-xs" />
-
-          {/* Card 1: Mẫu gần đây */}
-          <div className="p-5 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 shadow-xs space-y-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                  Mẫu gần đây
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Nhân bản nhanh cấu hình từ các phòng bạn đã tổ chức.
-              </p>
-            </div>
-
-            {recentTemplates.length > 0 ? (
-              <div className="space-y-2">
-                {recentTemplates.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/personal/live-room/new?cloneFrom=${item.id}`}
-                    className="p-3 rounded-lg border border-slate-100 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-blue-50/50 hover:border-blue-200 transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0" />
-                      <div className="min-w-0">
-                        <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 truncate">
-                          {item.title}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                          {item.durationMinutes} phút &bull; Mã: {item.roomCode}
-                        </div>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="py-6 px-2 text-center space-y-2">
-                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-400 flex items-center justify-center mx-auto">
-                  <Layers className="w-4 h-4" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                    Chưa có mẫu nào
-                  </p>
-                  <p className="text-[11px] text-slate-400 dark:text-zinc-500 leading-relaxed max-w-[200px] mx-auto">
-                    Các phòng đánh giá bạn tạo sẽ hiển thị tại đây để nhân bản nhanh.
-                  </p>
-                </div>
-                <Link
-                  href="/personal/live-room/new"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
-                >
-                  <span>Tạo phòng đầu tiên</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            )}
-
-            {recentTemplates.length > 0 && (
-              <Link
-                href="/personal/live-room/new"
-                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 pt-1"
-              >
-                <span>Tạo phòng mới từ mẫu</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            )}
-          </div>
-
-          {/* Card 2: Mẹo tổ chức hiệu quả */}
-          <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50/50 via-white to-slate-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900/80 border border-blue-100 dark:border-zinc-800 shadow-xs space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                Mẹo tổ chức hiệu quả
-              </h2>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
-              Bạn có thể nhân bản cấu hình từ phòng trước đó hoặc dùng mã PIN 6 số để học viên tham gia sảnh chờ nhanh chóng.
-            </p>
-            <button
-              type="button"
-              onClick={() =>
-                alert(
-                  'Quy trình tổ chức phòng đánh giá trực tiếp:\n1. Bấm "Mở phòng mới" và chọn bài đánh giá năng lực số.\n2. Chia sẻ mã PIN 6 số hoặc liên kết cho học viên.\n3. Nhấn "Bắt đầu làm bài" khi học viên đã có mặt đầy đủ trong sảnh chờ.\n4. Theo dõi tiến độ nộp bài và kết quả theo thời gian thực.'
-                )
-              }
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 pt-1 cursor-pointer"
-            >
-              <span>Xem hướng dẫn</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
   );
 }
