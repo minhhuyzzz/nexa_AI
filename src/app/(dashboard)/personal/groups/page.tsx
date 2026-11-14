@@ -322,7 +322,7 @@ function LearnerGroupsContent() {
         </div>
 
         {/* Action Buttons: Unified Dropdown Join + Create Group */}
-        <div className="flex items-center gap-2.5 shrink-0 relative">
+        <div className="flex items-center gap-2.5 shrink-0 relative flex-wrap sm:flex-nowrap">
           {/* Nút Tham gia bằng mã tinh gọn (Chọn Lớp/Nhóm hoặc Tổ chức) */}
           <div className="relative" ref={joinDropdownRef}>
             <button
@@ -347,7 +347,7 @@ function LearnerGroupsContent() {
 
             {/* Quick Join Popover */}
             {isJoinDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-72 p-1.5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] p-1.5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 {joinTarget === 'SELECT' ? (
                   <div className="space-y-0.5">
                     {/* Option 1: Tham gia Lớp / Nhóm học tập */}
@@ -453,7 +453,7 @@ function LearnerGroupsContent() {
       {/* 2. Tabs Stand & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2">
         {/* Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto text-xs font-semibold">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab('ALL')}

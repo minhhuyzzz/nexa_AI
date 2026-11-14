@@ -151,13 +151,13 @@ export default function StationDocsPage() {
           </div>
 
           {/* Right: Trạm selector tối giản, chữ rõ nét */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <select
               value={docItem.skillCode}
               onChange={(e) => {
                 router.push(`/personal/learning-path/docs/${e.target.value}?domain=${backDomain}`);
               }}
-              className="text-xs font-mono font-semibold py-1.5 px-3.5 rounded-full border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 cursor-pointer hidden sm:block shadow-xs"
+              className="text-xs font-mono font-semibold py-1.5 px-2.5 sm:px-3.5 rounded-full border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 cursor-pointer max-w-[130px] sm:max-w-xs truncate shadow-xs"
             >
               {Object.values(COMPETENCY_STATION_DOCS).map((item) => (
                 <option key={item.skillCode} value={item.skillCode}>
@@ -168,6 +168,26 @@ export default function StationDocsPage() {
           </div>
         </div>
       </header>
+
+      {/* Mobile / Tablet Horizontal Sticky TOC Pill Bar (< lg) */}
+      <div className="lg:hidden sticky top-16 z-30 bg-white/95 dark:bg-black/95 backdrop-blur-md px-4 py-2.5 overflow-x-auto no-scrollbar flex items-center gap-2">
+        {TOC_SECTIONS.map((sec) => {
+          const isActive = activeSection === sec.id;
+          return (
+            <a
+              key={sec.id}
+              href={`#${sec.id}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800'
+              }`}
+            >
+              {sec.title}
+            </a>
+          );
+        })}
+      </div>
 
       {/* Main SaaS Document Layout */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 lg:py-12">
@@ -201,7 +221,7 @@ export default function StationDocsPage() {
                 <p className="text-sm text-neutral-800 dark:text-zinc-200 leading-relaxed font-normal">
                   {docItem.overview}
                 </p>
-                <div className="pt-2 text-xs sm:text-sm text-neutral-700 dark:text-zinc-300 flex items-start gap-2 border-t border-slate-200 dark:border-zinc-800">
+                <div className="p-3 rounded-xl bg-slate-100/70 dark:bg-zinc-850/60 text-xs sm:text-sm text-neutral-700 dark:text-zinc-300 flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                   <span>
                     <strong className="text-neutral-900 dark:text-neutral-100 font-bold">Chuẩn đầu ra mục tiêu: </strong>
@@ -272,7 +292,7 @@ export default function StationDocsPage() {
                             </h4>
                           </div>
 
-                          <div className="flex items-center justify-between pt-1 text-[11px] font-mono border-t border-slate-100 dark:border-zinc-800">
+                          <div className="flex items-center justify-between pt-1.5 text-[11px] font-mono">
                             <span className={isSelected ? 'text-blue-600 font-bold' : 'text-slate-500'}>
                               {isSelected ? 'Đang chọn' : 'Xem chặng'}
                             </span>
@@ -302,7 +322,7 @@ export default function StationDocsPage() {
 
                   return (
                     <div className="p-6 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 space-y-5 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-slate-200 dark:border-zinc-800 pb-4">
+                      <div className="flex items-center justify-between gap-3 flex-wrap p-3 rounded-xl bg-white dark:bg-black/40">
                         <div className="flex items-center gap-3">
                           <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-mono font-bold text-xs shadow-sm">
                             CHẶNG 0{currentStep.stepNumber}
@@ -378,7 +398,7 @@ export default function StationDocsPage() {
                     key={lvl.levelNumber}
                     className="p-6 rounded-3xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all"
                   >
-                    <div className="flex items-center justify-between gap-4 flex-wrap border-b border-slate-100 dark:border-zinc-800 pb-3">
+                    <div className="flex items-center justify-between gap-4 flex-wrap p-3 rounded-2xl bg-slate-50/80 dark:bg-zinc-900/80">
                       <div className="flex items-center gap-3">
                         <span className="w-8 h-8 rounded-xl bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 font-mono font-bold text-xs flex items-center justify-center shadow-xs">
                           L{lvl.levelNumber}

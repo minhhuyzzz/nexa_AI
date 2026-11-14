@@ -158,7 +158,7 @@ export default function LearnerAssessmentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
             <Search
               className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               strokeWidth={1.75}
@@ -207,7 +207,7 @@ export default function LearnerAssessmentsPage() {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsDomainMenuOpen(false)}
                 />
-                <div className="absolute left-0 top-full mt-1.5 w-64 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
+                <div className="absolute left-0 top-full mt-1.5 w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
                   <div className="px-3 py-1.5 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Tích chọn miền
@@ -306,7 +306,7 @@ export default function LearnerAssessmentsPage() {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsTierMenuOpen(false)}
                 />
-                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
+                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
                   <div className="px-3 py-1.5 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Phân hạng

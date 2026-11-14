@@ -129,9 +129,16 @@ export function MasterCertificateCard({
         </div>
       )}
 
+      {/* Mobile Swipe Hint Badge */}
+      <div className="sm:hidden flex items-center justify-center gap-1.5 py-1 text-[11px] text-slate-500 font-mono">
+        <span>↔</span>
+        <span>Vuốt ngang để xem trọn vẹn chứng chỉ</span>
+      </div>
+
       {/* The Bespoke Certificate Canvas (A4 Landscape ~ 1.414 : 1) */}
-      <div className="relative overflow-hidden rounded-md border border-slate-300 shadow-xs bg-white select-none print:m-0 print:border-none print:shadow-none">
-        {/* Lớp phôi chứng chỉ: Làm mờ nhẹ khi đang khóa, sắc nét khi mở khóa */}
+      <div className="overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
+        <div className="min-w-[580px] sm:min-w-0 relative overflow-hidden rounded-md border border-slate-300 shadow-xs bg-white select-none print:m-0 print:border-none print:shadow-none">
+          {/* Lớp phôi chứng chỉ: Làm mờ nhẹ khi đang khóa, sắc nét khi mở khóa */}
         <div
           className={`relative w-full aspect-[1.414/1] min-h-[520px] sm:min-h-[620px] lg:min-h-[680px] p-8 sm:p-12 lg:p-16 flex flex-col justify-between bg-white text-slate-900 overflow-hidden font-sans transition-all duration-300 ${
             !isUnlocked
@@ -431,6 +438,7 @@ export function MasterCertificateCard({
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

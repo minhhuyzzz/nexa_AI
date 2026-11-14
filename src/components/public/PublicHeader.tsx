@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   Cpu,
   BookOpen,
+  Menu,
+  X,
 } from 'lucide-react';
 import { NexaLogo } from '@/components/brand/NexaLogo';
 
@@ -24,6 +26,29 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
   const currentPath = activePath || pathname;
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Auto-close mobile menu on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll and handle Escape when mobile menu is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsMobileOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isMobileOpen]);
 
   useEffect(() => {
     // Public pages are always in light mode
@@ -32,6 +57,9 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     let lastScrollY = window.scrollY;
 
     const handleScroll = () => {
+      // Don't hide header if mobile menu is open
+      if (isMobileOpen) return;
+
       const currentScrollY = window.scrollY;
 
       // Kiểm tra trạng thái cuộn khỏi đỉnh trang
@@ -63,7 +91,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isMobileOpen]);
 
   const frameworkDomains = [
     {
@@ -275,23 +303,103 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
           </Link>
         </nav>
 
-        {/* Right: Actions & Demo */}
-        <div className="flex items-center gap-3">
+        {/* Right: Actions & Mobile Hamburger */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/login"
-            className="text-xs font-medium text-slate-700 hover:text-slate-900 px-3 py-1.5 rounded-full hover:bg-slate-100/70 transition-colors"
+            className="text-xs font-medium text-slate-700 hover:text-slate-900 px-3 py-1.5 rounded-full hover:bg-slate-100/70 transition-colors hidden sm:inline-flex"
           >
             Đăng nhập
           </Link>
           <Link
             href="/register"
-            className="text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-4 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            className="text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-3.5 sm:px-4 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 shadow-xs"
           >
             <span>Đăng ký</span>
             <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
           </Link>
+
+          {/* Mobile Hamburger Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen((prev) => !prev)}
+            className="md:hidden p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label={isMobileOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={isMobileOpen}
+          >
+            {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Backdrop */}
+      {isMobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 top-16 bg-black/40 backdrop-blur-xs z-40 animate-in fade-in duration-200"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Slide-down Drawer Panel */}
+      {isMobileOpen && (
+        <div className="md:hidden fixed inset-x-0 top-16 bg-white z-50 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
+          <nav className="space-y-1">
+            <Link
+              href="/"
+              onClick={() => setIsMobileOpen(false)}
+              className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                currentPath === '/' ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Trang chủ
+            </Link>
+            <Link
+              href="/framework"
+              onClick={() => setIsMobileOpen(false)}
+              className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                currentPath === '/framework' ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Khung năng lực số
+            </Link>
+            <Link
+              href="/pricing"
+              onClick={() => setIsMobileOpen(false)}
+              className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                currentPath === '/pricing' ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Bảng giá
+            </Link>
+            <Link
+              href="/faq"
+              onClick={() => setIsMobileOpen(false)}
+              className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                currentPath === '/faq' ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Hướng dẫn
+            </Link>
+          </nav>
+
+          <div className="pt-2 space-y-2">
+            <Link
+              href="/login"
+              onClick={() => setIsMobileOpen(false)}
+              className="w-full py-2.5 px-4 rounded-xl border border-slate-200 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50 block transition-colors shadow-2xs"
+            >
+              Đăng nhập
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setIsMobileOpen(false)}
+              className="w-full py-2.5 px-4 rounded-xl bg-blue-600 text-center text-sm font-semibold text-white hover:bg-blue-700 block transition-colors shadow-xs"
+            >
+              Đăng ký tài khoản
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

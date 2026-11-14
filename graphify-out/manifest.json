@@ -522,10 +522,10 @@
     "semantic_hash": "5c53531d2dbc06e4a70296362aa3a7e0"
   },
   "src/app/(dashboard)/personal/assessments/page.tsx": {
-    "mtime": 1794238060.2602527,
-    "seen": 1794532981.6183512,
-    "ast_hash": "719aa8acb93a5fa72af52f42577631f0",
-    "semantic_hash": "719aa8acb93a5fa72af52f42577631f0"
+    "mtime": 1794660267.5142977,
+    "seen": 1794661156.8765717,
+    "ast_hash": "c725587c8ef26dc2029927555ad033a6",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/authoring/[id]/page.tsx": {
     "mtime": 1793527055.1820562,
@@ -612,10 +612,10 @@
     "semantic_hash": "611969f0314e917488a9c35947db490d"
   },
   "src/app/(dashboard)/personal/groups/page.tsx": {
-    "mtime": 1794224840.8895514,
-    "seen": 1794532981.6183965,
-    "ast_hash": "da5d716896f6f606efeaaad1aaa8ce37",
-    "semantic_hash": "da5d716896f6f606efeaaad1aaa8ce37"
+    "mtime": 1794660330.1843758,
+    "seen": 1794661156.8790612,
+    "ast_hash": "5dd6544840aa275876ed39d9e59fb6bc",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/layout.tsx": {
     "mtime": 1794654266.799023,
@@ -1386,10 +1386,10 @@
     "semantic_hash": "9ef784dfde5c22c848ef3d0746840d9a"
   },
   "src/components/dashboard/personal/MasterCertificateCard.tsx": {
-    "mtime": 1794070854.9071007,
-    "seen": 1794532981.6188898,
-    "ast_hash": "64c08174003331938bbe3e19485d1c69",
-    "semantic_hash": "64c08174003331938bbe3e19485d1c69"
+    "mtime": 1794660018.695025,
+    "seen": 1794661156.9118185,
+    "ast_hash": "aa1583bc8665a6fd58d7df302eb43f9e",
+    "semantic_hash": ""
   },
   "src/components/dashboard/personal/PersonalAvatarMenu.tsx": {
     "mtime": 1794410064.528349,
@@ -1470,10 +1470,10 @@
     "semantic_hash": "51b709d091d822989f91dd25811b1a7e"
   },
   "src/components/public/PublicHeader.tsx": {
-    "mtime": 1794326511.1094759,
-    "seen": 1794532981.6189253,
-    "ast_hash": "03d4d100f533722be2e4edadc97187b2",
-    "semantic_hash": "03d4d100f533722be2e4edadc97187b2"
+    "mtime": 1794660453.802222,
+    "seen": 1794661156.9143336,
+    "ast_hash": "f19850d54b1eea4b1fe69e5e373141a5",
+    "semantic_hash": ""
   },
   "src/database/migrations/01_core_schema.sql": {
     "mtime": 1792220626.8383913,
@@ -7170,9 +7170,9 @@
     "semantic_hash": ""
   },
   "src/app/(fullscreen)/personal/learning-path/docs/[skillCode]/page.tsx": {
-    "mtime": 1794647346.5235274,
-    "seen": 1794647385.4913676,
-    "ast_hash": "d6ce6ca18cc358d19ad8eca8eded9490",
+    "mtime": 1794660197.4138615,
+    "seen": 1794661156.881212,
+    "ast_hash": "d5369161e01f1971bd36fce9d90e1d55",
     "semantic_hash": ""
   },
   "src/features/learning-paths/data/competency-station-docs.ts": {
