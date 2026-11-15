@@ -177,10 +177,10 @@ export async function GET(
         activeLiveRoom: activeLiveRoom
           ? {
               id: activeLiveRoom.id,
-              roomCode: activeLiveRoom.room_code,
+              roomCode: activeLiveRoom.roomCode || activeLiveRoom.room_code,
               title: activeLiveRoom.title,
               status: activeLiveRoom.status,
-              durationMinutes: activeLiveRoom.duration_minutes,
+              durationMinutes: activeLiveRoom.durationMinutes || activeLiveRoom.duration_minutes || 45,
             }
           : null,
       },

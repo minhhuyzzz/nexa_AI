@@ -42,6 +42,9 @@ export async function POST(request: Request) {
         room_mode,
         is_active,
         is_locked,
+        status,
+        allow_late_join,
+        started_at,
         access_policy,
         proctoring_profile,
         class_id,
@@ -76,6 +79,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const isExamRunning = room.status === 'IN_PROGRESS' || Boolean(room.started_at);
+
+    // 3.1 Enforce Late Join Lockdown if room has already started
+    if (isExamRunning && room.allow_late_join === false) {
+      return NextResponse.json(
+        {
+          error: 'Ca thi đã bắt đầu và không cho phép thí sinh vào muộn.',
+          code: 'LATE_JOIN_BLOCKED',
+        },
+        { status: 403 }
+      );
+    }
+
     // 4. Enforce Group / Class Membership if room is bound to a class
     if (room.class_id) {
       const { data: membership } = await supabase
@@ -97,13 +113,15 @@ export async function POST(request: Request) {
     }
 
     // 5. Record participation in room_participants
+    const participantStatus = isExamRunning ? 'TAKING' : 'JOINED';
+
     await supabase
       .from('room_participants')
       .upsert(
         {
           room_id: room.id,
           user_id: user.id,
-          status: room.scheduled_start ? 'TAKING' : 'JOINED',
+          status: participantStatus,
         },
         { onConflict: 'room_id,user_id' }
       );
@@ -118,8 +136,8 @@ export async function POST(request: Request) {
       assessmentId: room.assessment_id,
       assessmentTitle: rawAssessment?.title || 'Bài thi khảo thí',
       durationMinutes: rawAssessment?.duration_minutes || 45,
-      hasStarted: !!room.scheduled_start,
-      startedAt: room.scheduled_start,
+      hasStarted: isExamRunning,
+      startedAt: room.started_at || null,
       isLocked: room.is_locked,
       accessPolicy: room.access_policy,
       proctoringProfile: room.proctoring_profile,

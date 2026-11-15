@@ -216,7 +216,7 @@ export async function GET(
 
     // Direct query fallback (or primary for preview mode / drafts / live instant feedback)
     if (responseItems.length === 0) {
-      const fetchClient = (isPreview || allowInstantFeedback) ? createAdminClient() : supabase;
+      const fetchClient = isPreview ? createAdminClient() : supabase;
       const { data: directItems, error: directError } = await fetchClient
         .from('assessment_items')
         .select(`
