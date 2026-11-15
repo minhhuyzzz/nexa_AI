@@ -193,10 +193,6 @@ function LiveControlContent() {
     }
   };
 
-  // Schedule Window State (Hẹn giờ ca thi ngày bắt đầu - kết thúc)
-  const [scheduleMode, setScheduleMode] = useState<'INSTANT' | 'SCHEDULED'>('INSTANT');
-  const [scheduledStartTime, setScheduledStartTime] = useState<string>('');
-  const [scheduledEndTime, setScheduledEndTime] = useState<string>('');
   const [mounted, setMounted] = useState(false);
 
   // Real Alerts (populated from genuine tab switch or disconnection events)
@@ -234,21 +230,7 @@ function LiveControlContent() {
           setIsLocked(data.room.isLocked ?? false);
           if (data.room.durationMinutes) setLobbyDuration(data.room.durationMinutes);
           if (data.room.themeId && !hasUserSelectedThemeRef.current) setLobbyTheme(data.room.themeId);
-          if (data.room.scheduledStart) {
-            try {
-              const sDate = new Date(data.room.scheduledStart);
-              setScheduledStartTime(new Date(sDate.getTime() - sDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
-            } catch {}
-          }
-          if (data.room.scheduledEnd) {
-            try {
-              const eDate = new Date(data.room.scheduledEnd);
-              setScheduledEndTime(new Date(eDate.getTime() - eDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
-            } catch {}
-          }
-          if (data.room.status === 'SCHEDULED') {
-            setScheduleMode('SCHEDULED');
-          }
+
 
           // Update countdown timer if in progress
           if (data.room.status === 'IN_PROGRESS') {
@@ -308,15 +290,6 @@ function LiveControlContent() {
 
   useEffect(() => {
     setMounted(true);
-    const d = new Date();
-    d.setMinutes(d.getMinutes() + 15);
-    d.setSeconds(0, 0);
-    setScheduledStartTime((prev) => prev || new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
-
-    const d2 = new Date();
-    d2.setMinutes(d2.getMinutes() + 120);
-    d2.setSeconds(0, 0);
-    setScheduledEndTime((prev) => prev || new Date(d2.getTime() - d2.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   }, []);
 
   useEffect(() => {
@@ -654,55 +627,7 @@ function LiveControlContent() {
 
   const handleStartExam = handleInitiateStartExam;
 
-  // 1.1 Action: Lưu lịch hẹn giờ ca thi (Scheduled Window)
-  const handleSaveSchedule = async () => {
-    if (!scheduledStartTime || !scheduledEndTime) {
-      alert('Vui lòng chọn ngày giờ bắt đầu và kết thúc ca thi.');
-      return;
-    }
-    const startD = new Date(scheduledStartTime);
-    const endD = new Date(scheduledEndTime);
-    if (endD <= startD) {
-      alert('Thời gian kết thúc ca thi phải sau thời gian bắt đầu.');
-      return;
-    }
-    setActionLoading(true);
-    try {
-      const res = await fetch('/api/evaluator/rooms', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomId,
-          action: 'SCHEDULE',
-          payload: {
-            scheduledStart: startD.toISOString(),
-            scheduledEnd: endD.toISOString(),
-            durationMinutes: Number(lobbyDuration) || 45,
-            themeId: lobbyTheme,
-          },
-        }),
-      });
-      if (res.ok) {
-        showToast('Đã lưu lịch hẹn giờ ca thi thành công!');
-        if (room) {
-          setRoom({
-            ...room,
-            status: 'SCHEDULED',
-            scheduledStart: startD.toISOString(),
-            scheduledEnd: endD.toISOString(),
-          });
-        }
-        fetchRoomState(true);
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(d.error || 'Không thể lên lịch ca thi.');
-      }
-    } catch {
-      alert('Lỗi kết nối khi lưu lịch ca thi.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+
 
   // 2. Action: Khóa / Mở khóa phòng
   const handleToggleLock = async () => {
@@ -1073,15 +998,6 @@ function LiveControlContent() {
                   <Users className="w-3.5 h-3.5 text-slate-400" />
                   <span>{totalJoined} thí sinh kết nối</span>
                 </span>
-                {room?.scheduledStart && (
-                  <>
-                    <span>&bull;</span>
-                    <span className="flex items-center gap-1 font-mono text-indigo-600 dark:text-indigo-400">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>Lịch: {new Date(room.scheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </span>
-                  </>
-                )}
               </div>
             </div>
 
@@ -1320,142 +1236,20 @@ function LiveControlContent() {
                   <div className="flex items-center gap-2">
                     <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 uppercase tracking-wider">
-                      Cài đặt phòng thi (Setup)
+                      Cài đặt phòng thi
                     </h2>
                   </div>
 
-                  <span className="text-[11px] font-mono font-medium text-slate-400">
-                    {scheduleMode === 'INSTANT' ? 'Trực tiếp' : 'Hẹn giờ'}
-                  </span>
+                  <div className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-neutral-400">
+                    <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                      {room?.durationMinutes || lobbyDuration} phút
+                    </span>
+                  </div>
                 </div>
 
-                {/* Chuyển đổi Chế độ: Phát đề trực tiếp vs Hẹn giờ ca thi */}
-                <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setScheduleMode('INSTANT')}
-                    className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      scheduleMode === 'INSTANT'
-                        ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
-                        : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-                    }`}
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>Phát trực tiếp</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setScheduleMode('SCHEDULED')}
-                    className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      scheduleMode === 'SCHEDULED'
-                        ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold'
-                        : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-                    }`}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Hẹn giờ ca thi</span>
-                  </button>
-                </div>
-
-                {/* NỘI DUNG 1: CẤU HÌNH THỜI GIAN THEO CHẾ ĐỘ */}
-                {scheduleMode === 'INSTANT' ? (
-                  /* 1A. Chế độ Phát Trực Tiếp: Chọn thời lượng làm bài */
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                        Thời lượng làm bài:
-                      </span>
-                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">
-                        {lobbyDuration} phút
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {[15, 30, 45, 60].map((mins) => (
-                        <button
-                          key={mins}
-                          type="button"
-                          onClick={() => setLobbyDuration(mins)}
-                          className={`py-1.5 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${
-                            lobbyDuration === mins
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
-                          }`}
-                        >
-                          {mins}p
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 text-xs">
-                      <span className="text-slate-400 text-[11px]">Tùy chỉnh:</span>
-                      <input
-                        type="number"
-                        min={5}
-                        max={360}
-                        value={lobbyDuration}
-                        onChange={(e) => setLobbyDuration(Math.max(5, Number(e.target.value) || 5))}
-                        className="w-16 px-2 py-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded text-xs text-center font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                      />
-                      <span className="text-[11px] text-slate-400">phút</span>
-                    </div>
-                  </div>
-                ) : (
-                  /* 1B. Chế độ Hẹn Giờ Ca Thi (Scheduled Window) */
-                  <div className="space-y-3 p-3.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/80 dark:border-indigo-900/40 text-xs">
-                    <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>Khung giờ diễn ra ca thi:</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-neutral-400 mb-1">
-                          Thời gian mở ca (Bắt đầu):
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={scheduledStartTime}
-                          onChange={(e) => setScheduledStartTime(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-mono font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-neutral-400 mb-1">
-                          Thời gian đóng ca (Kết thúc):
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={scheduledEndTime}
-                          onChange={(e) => setScheduledEndTime(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-mono font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                        />
-                      </div>
-
-                      <div className="pt-1 flex items-center justify-between text-xs">
-                        <span className="text-slate-600 dark:text-neutral-400 font-medium">
-                          Thời lượng mỗi lượt thi:
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min={5}
-                            max={360}
-                            value={lobbyDuration}
-                            onChange={(e) => setLobbyDuration(Math.max(5, Number(e.target.value) || 5))}
-                            className="w-14 px-2 py-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded text-xs text-center font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                          />
-                          <span className="text-[11px] text-slate-500">phút</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. Bộ chọn Theme Tinh Gọn (Theme Swatches) */}
-                <div className="space-y-2.5 pt-3 text-xs">
+                {/* 1. Bộ chọn Theme Tinh Gọn (Theme Swatches) */}
+                <div className="space-y-2.5 pt-1 text-xs">
                   <div className="flex items-center justify-between">
                     <label className="font-semibold text-neutral-800 dark:text-neutral-200">
                       Chủ đề giao diện:
@@ -1702,71 +1496,39 @@ function LiveControlContent() {
                   </div>
                 </div>
 
-                {/* 4. Action CTA Tương ứng Chế độ */}
+                {/* 4. Action CTA */}
                 <div className="pt-3 space-y-2">
-                  {scheduleMode === 'INSTANT' ? (
-                    <>
-                      {activeStartCountdown !== null ? (
-                        <div className="space-y-2">
-                          <div className="w-full py-3.5 rounded-xl bg-amber-500 text-white font-black text-center text-sm inline-flex items-center justify-center gap-2 shadow-md animate-pulse">
-                            <Clock className="w-4 h-4 animate-spin" />
-                            <span>Phát đề sau: {activeStartCountdown}s</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleCancelCountdown}
-                            className="w-full py-2 rounded-lg border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
-                          >
-                            Hủy đếm ngược
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleStartExam}
-                          disabled={actionLoading}
-                          className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
-                        >
-                          <Play className="w-4 h-4 fill-white" />
-                          <span>Bắt đầu phát đề thi</span>
-                        </button>
-                      )}
-
-                      <div className="text-[11px] text-center text-slate-400">
-                        {startCountdownOption > 0
-                          ? `Đồng hồ đếm ngược ${startCountdownOption}s sẽ hiển thị trên màn hình tất cả thí sinh trước khi mở bài thi.`
-                          : 'Bấm để chính thức tính giờ và phát đề ngay cho tất cả thí sinh trong sảnh.'}
+                  {activeStartCountdown !== null ? (
+                    <div className="space-y-2">
+                      <div className="w-full py-3.5 rounded-xl bg-amber-500 text-white font-black text-center text-sm inline-flex items-center justify-center gap-2 shadow-md animate-pulse">
+                        <Clock className="w-4 h-4 animate-spin" />
+                        <span>Phát đề sau: {activeStartCountdown}s</span>
                       </div>
-                    </>
-                  ) : (
-                    <>
                       <button
                         type="button"
-                        onClick={handleSaveSchedule}
-                        disabled={actionLoading}
-                        className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
+                        onClick={handleCancelCountdown}
+                        className="w-full py-2 rounded-lg border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
                       >
-                        <Calendar className="w-4 h-4" />
-                        <span>Lưu lịch hẹn giờ ca thi</span>
+                        Hủy đếm ngược
                       </button>
-
-                      {room?.scheduledStart && (
-                        <button
-                          type="button"
-                          onClick={handleStartExam}
-                          disabled={actionLoading}
-                          className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200 font-semibold text-xs inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
-                        >
-                          <Play className="w-3.5 h-3.5 text-blue-600 fill-current" />
-                          <span>Phát đề ngay lập tức (Không đợi lịch)</span>
-                        </button>
-                      )}
-
-                      <div className="text-[11px] text-center text-slate-400">
-                        Lịch thi sẽ được lưu vào hệ thống. Thí sinh sử dụng mã PIN để đăng nhập trong khung giờ đã định.
-                      </div>
-                    </>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleStartExam}
+                      disabled={actionLoading}
+                      className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
+                    >
+                      <Play className="w-4 h-4 fill-white" />
+                      <span>Bắt đầu phát đề thi</span>
+                    </button>
                   )}
+
+                  <div className="text-[11px] text-center text-slate-400">
+                    {startCountdownOption > 0
+                      ? `Đồng hồ đếm ngược ${startCountdownOption}s sẽ hiển thị trên màn hình tất cả thí sinh trước khi mở bài thi.`
+                      : 'Bấm để chính thức tính giờ và phát đề ngay cho tất cả thí sinh trong sảnh.'}
+                  </div>
                 </div>
               </div>
             </div>

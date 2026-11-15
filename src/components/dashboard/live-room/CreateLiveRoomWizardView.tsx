@@ -286,7 +286,7 @@ export function CreateLiveRoomWizardView({
           organizationId: orgId || undefined,
           themeId: 'minimal_white',
           scheduledStart: now.toISOString(),
-          durationMinutes: selectedAssessment.duration_minutes || 45,
+          durationMinutes: Number(durationMinutes) || selectedAssessment.duration_minutes || 45,
           allowLateJoin: false,
           autoSubmitOnTimeout: true,
           showPin: true,
@@ -599,6 +599,48 @@ export function CreateLiveRoomWizardView({
                     placeholder="VD: Khảo thí năng lực số ca sáng"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-600"
                   />
+                </div>
+
+                {/* Thời lượng làm bài */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      Thời lượng làm bài:
+                    </label>
+                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                      {durationMinutes} phút
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[15, 30, 45, 60].map((mins) => (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => setDurationMinutes(mins)}
+                        className={`py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer ${
+                          durationMinutes === mins
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                        }`}
+                      >
+                        {mins}p
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-400 text-[11px]">Tùy chỉnh:</span>
+                    <input
+                      type="number"
+                      min={5}
+                      max={360}
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(Math.max(5, Number(e.target.value) || 5))}
+                      className="w-16 px-2 py-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-center font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    />
+                    <span className="text-[11px] text-slate-400">phút</span>
+                  </div>
                 </div>
 
                 {/* Optional Class / Group Target */}
