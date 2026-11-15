@@ -635,7 +635,7 @@ function WaitingRoomContent() {
             }
 
             if (el) {
-              el.style.transform = `translate3d(${data.x}px, ${data.y}px, 0)`;
+              el.style.translate = `${data.x}px ${data.y}px`;
             }
           }
         }
@@ -822,9 +822,9 @@ function WaitingRoomContent() {
       )}
 
       {/* ===================== MAIN CONTENT ===================== */}
-      <main className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-10 max-w-5xl mx-auto w-full gap-4">
-        {/* Status Hero */}
-        <div className="text-center space-y-1.5">
+      <main className="flex-1 flex flex-col relative z-10 w-full">
+        {/* Status Hero - floating above */}
+        <div className="text-center py-3 sm:py-4 relative z-20">
           {countdownSeconds !== null ? (
             <>
               <span className="text-[11px] uppercase tracking-widest font-semibold text-slate-400 dark:text-neutral-500 font-mono block">
@@ -835,31 +835,31 @@ function WaitingRoomContent() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-col items-center gap-1">
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                 <Radio className="w-4 h-4 animate-pulse" />
                 <span className="text-sm font-semibold">Đang chờ Giám thị phát đề</span>
               </div>
-              <p className="text-xs text-slate-400 dark:text-neutral-500 max-w-sm">
+              <p className="text-xs text-slate-400 dark:text-neutral-500">
                 Màn hình làm bài sẽ tự động mở khi Giám thị phát đề.
               </p>
             </div>
           )}
         </div>
 
-        {/* ===================== ARENA ===================== */}
+        {/* ===================== ARENA — full bleed ===================== */}
         <div
           ref={arenaRef}
-          className="arena-dot-bg flex-1 w-full rounded-2xl min-h-[400px] sm:min-h-[480px] lg:min-h-[520px] relative overflow-hidden bg-slate-50 dark:bg-zinc-950 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]"
+          className="arena-depth flex-1 w-full relative overflow-hidden"
         >
           {/* Floating Reactions */}
           {floatingReactions.map((re) => (
             <div
               key={re.id}
               className="absolute pointer-events-none z-30 animate-reaction-rise"
-              style={{ left: `${re.xPercent}%`, bottom: '70px' }}
+              style={{ left: `${re.xPercent}%`, bottom: '80px' }}
             >
-              <div className="w-11 h-11 rounded-full bg-white dark:bg-zinc-800 shadow-[0_4px_24px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] border border-slate-100 dark:border-zinc-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center justify-center">
                 {re.reactionType === 'WAVE' ? (
                   <Hand className="w-5 h-5 text-amber-500" />
                 ) : re.reactionType === 'HEART' ? (
@@ -898,10 +898,10 @@ function WaitingRoomContent() {
                       else bubbleElementsRef.current.delete(key);
                     }}
                     className="absolute top-0 left-0 will-change-transform cursor-default select-none bubble-pop-in"
-                    style={{ transform: 'translate3d(24px, 24px, 0)' }}
+                    style={{ translate: '24px 24px' }}
                   >
                     <div
-                      className={`inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+                      className={`inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full text-[13px] font-semibold ${ 
                         isMe
                           ? 'bg-blue-600 text-white shadow-[0_4px_16px_rgba(37,99,235,0.35)] ring-4 ring-blue-600/15'
                           : 'bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-100 shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.04] dark:ring-white/[0.06]'
@@ -946,46 +946,44 @@ function WaitingRoomContent() {
             )}
           </div>
 
-          {/* Bottom Reaction Dock */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center justify-between gap-2 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm shadow-[0_-1px_0_0_rgba(0,0,0,0.05)] dark:shadow-[0_-1px_0_0_rgba(255,255,255,0.05)]">
-            <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-neutral-500 font-medium shrink-0">
-              <Users className="w-3 h-3" />
-              <span>{participants.length} thí sinh</span>
-            </div>
+          {/* Reaction Buttons — icon-only, bottom-right cluster */}
+          <div className="absolute bottom-5 right-5 z-20 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSendReaction('WAVE')}
+              className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all active:scale-90 cursor-pointer"
+              title="Vẫy tay"
+            >
+              <Hand className="w-4.5 h-4.5 text-amber-500" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSendReaction('HEART')}
+              className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all active:scale-90 cursor-pointer"
+              title="Gửi may mắn"
+            >
+              <Heart className="w-4.5 h-4.5 text-rose-500" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSendReaction('CHEER')}
+              className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center hover:bg-violet-50 dark:hover:bg-violet-950/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all active:scale-90 cursor-pointer"
+              title="Cổ vũ"
+            >
+              <Sparkles className="w-4.5 h-4.5 text-violet-500" />
+            </button>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400 dark:text-neutral-500 hidden sm:block">Gửi tương tác:</span>
-              <button
-                type="button"
-                onClick={() => handleSendReaction('WAVE')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-amber-700 dark:text-amber-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-amber-200/60 dark:border-amber-800/40"
-              >
-                <Hand className="w-3.5 h-3.5" />
-                <span>Vẫy tay</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSendReaction('HEART')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/70 text-rose-700 dark:text-rose-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-rose-200/60 dark:border-rose-800/40"
-              >
-                <Heart className="w-3.5 h-3.5" />
-                <span>May mắn</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSendReaction('CHEER')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-950/70 text-violet-700 dark:text-violet-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-violet-200/60 dark:border-violet-800/40"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Cố lên!</span>
-              </button>
-            </div>
+          {/* Participant count — bottom-left */}
+          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-neutral-500 font-medium">
+            <Users className="w-3.5 h-3.5" />
+            <span>{participants.length} thí sinh</span>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="shrink-0 text-center text-[11px] text-slate-300 dark:text-neutral-600 font-mono py-2.5 relative z-10">
+      {/* Footer — subtle watermark */}
+      <footer className="shrink-0 text-center text-[10px] text-slate-200 dark:text-neutral-700 font-mono py-1.5 relative z-10">
         NEXA • Khảo thí chuẩn hóa 5 miền năng lực số
       </footer>
 

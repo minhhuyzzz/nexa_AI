@@ -404,14 +404,28 @@
   background-size: 24px 24px;
 }
 
+.arena-depth {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.015) 50%, rgba(0,0,0,0.05) 100%),
+    radial-gradient(circle, #d4d4d8 0.7px, transparent 0.7px);
+  background-size: 100% 100%, 26px 26px;
+}
+
+.dark .arena-depth {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, rgba(255,255,255,0.012) 0%, transparent 50%, rgba(0,0,0,0.25) 100%),
+    radial-gradient(circle, #27272a 0.7px, transparent 0.7px);
+  background-size: 100% 100%, 26px 26px;
+}
+
 @keyframes bubble-pop-in {
-  0% { opacity: 0; transform: scale(0.4); }
-  70% { transform: scale(1.1); }
-  100% { opacity: 1; transform: scale(1); }
+  0% { opacity: 0; scale: 0.4; }
+  60% { opacity: 1; scale: 1.06; }
+  100% { opacity: 1; scale: 1; }
 }
 
 .bubble-pop-in {
-  animation: bubble-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: bubble-pop-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 
