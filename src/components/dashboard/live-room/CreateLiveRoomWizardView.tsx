@@ -331,7 +331,7 @@ export function CreateLiveRoomWizardView({
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>{isOrg ? 'Quay lại Phòng trực tiếp tổ chức' : 'Quay lại Phòng trực tiếp'}</span>
+          <span>Quay lại danh sách phòng thi</span>
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
@@ -339,16 +339,16 @@ export function CreateLiveRoomWizardView({
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
               <span className="text-xs font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
-                MỞ PHÒNG ĐÁNH GIÁ TRỰC TIẾP
+                PHÒNG THI TRỰC TIẾP
               </span>
             </div>
             <h1 className="text-2xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Chọn bài đánh giá & Mở sảnh chờ
+              Chọn đề thi & Mở sảnh chờ
             </h1>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
               {isOrg
-                ? 'Chọn bài đánh giá từ kho đề tổ chức hoặc thư viện chuẩn để mở phiên đánh giá trực tiếp.'
-                : 'Chọn bài đánh giá từ danh mục của bạn để cấp mã PIN và mở sảnh chờ làm bài trực tiếp.'}
+                ? 'Chọn đề thi từ kho đề tổ chức hoặc thư viện chuẩn để mở phòng thi trực tiếp.'
+                : 'Chọn đề thi từ danh mục của bạn để cấp mã PIN và mở sảnh chờ làm bài trực tiếp.'}
             </p>
           </div>
 
@@ -379,7 +379,7 @@ export function CreateLiveRoomWizardView({
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm bài đánh giá theo tên, mô tả..."
+                  placeholder="Tìm kiếm đề thi theo tên, mô tả..."
                   value={assessmentSearch}
                   onChange={(e) => setAssessmentSearch(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
@@ -516,7 +516,7 @@ export function CreateLiveRoomWizardView({
                             </span>
                           ) : (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700 shrink-0">
-                              Chuẩn 5 Miền
+                              Đề chuẩn hóa
                             </span>
                           )}
                         </div>
@@ -533,13 +533,13 @@ export function CreateLiveRoomWizardView({
                       <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-400" />
-                          {asm.duration_minutes}p
+                          {asm.duration_minutes} phút
                         </span>
                         <span>&bull;</span>
                         <span>{asm.questionCount || 40} câu</span>
                         <span>&bull;</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-sans">
-                          Đạt {asm.passing_score}%
+                          Chuẩn đạt {asm.passing_score}%
                         </span>
                       </div>
 
@@ -565,8 +565,8 @@ export function CreateLiveRoomWizardView({
           <div className="p-5 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 shadow-xs space-y-5">
             <div className="flex items-center gap-2 pb-3">
               <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider">
-                Đề đã chọn & Mở phòng
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Thông tin phòng thi
               </h2>
             </div>
 
@@ -576,8 +576,8 @@ export function CreateLiveRoomWizardView({
                 <div className="p-3.5 rounded-lg bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 space-y-1">
                   <div className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-300 uppercase">
                     {selectedAssessment.origin === 'MY_ASSESSMENT'
-                      ? (isOrg ? 'ĐỀ TỔ CHỨC' : 'ĐỀ CỦA BẠN')
-                      : 'CHUẨN HÓA HỆ THỐNG'}
+                      ? (isOrg ? 'Đề tổ chức' : 'Đề của bạn')
+                      : 'Đề chuẩn hóa'}
                   </div>
                   <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                     {selectedAssessment.title}
@@ -590,13 +590,13 @@ export function CreateLiveRoomWizardView({
                 {/* Editable Room Title */}
                 <div className="space-y-1.5">
                   <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
-                    Tên phòng / Ca đánh giá:
+                    Tên phòng thi:
                   </label>
                   <input
                     type="text"
                     value={roomTitle}
                     onChange={(e) => setRoomTitle(e.target.value)}
-                    placeholder="VD: Kiểm tra năng lực số 15 phút"
+                    placeholder="VD: Khảo thí năng lực số ca sáng"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
@@ -605,14 +605,14 @@ export function CreateLiveRoomWizardView({
                 {classList.length > 0 && (
                   <div className="space-y-1.5">
                     <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
-                      Gắn vào Lớp / Nhóm (Tùy chọn):
+                      Gắn vào lớp / nhóm (tùy chọn):
                     </label>
                     <select
                       value={selectedClassId}
                       onChange={(e) => setSelectedClassId(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer"
                     >
-                      <option value="">Không gắn (Phòng thi tự do theo mã PIN)</option>
+                      <option value="">Phòng tự do theo mã PIN (không gắn lớp)</option>
                       {classList.map((cls) => (
                         <option key={cls.id} value={cls.id}>
                           {cls.name}
@@ -631,17 +631,17 @@ export function CreateLiveRoomWizardView({
                     className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs inline-flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                   >
                     <Play className="w-4 h-4 fill-white" />
-                    <span>{submitting ? 'Đang khởi tạo phòng đánh giá...' : 'Mở phòng & Vào sảnh chờ ngay'}</span>
+                    <span>{submitting ? 'Đang khởi tạo phòng thi...' : 'Mở phòng & Vào sảnh chờ'}</span>
                   </button>
 
                   <p className="text-[11px] text-center text-slate-400 leading-relaxed">
-                    Hệ thống sẽ cấp mã PIN 6 số và mở sảnh chờ ngay lập tức. Bạn có thể thiết lập thêm theme và quy chế trong sảnh chờ trước khi phát đề.
+                    Hệ thống sẽ tự động cấp mã PIN 6 chữ số. Bạn có thể tùy chỉnh giao diện và quy chế làm bài trong sảnh chờ trước khi phát đề.
                   </p>
                 </div>
               </div>
             ) : (
               <div className="p-8 text-center text-xs text-slate-400">
-                Vui lòng chọn một bài đánh giá để mở phòng.
+                Vui lòng chọn một đề thi để mở phòng.
               </div>
             )}
           </div>
