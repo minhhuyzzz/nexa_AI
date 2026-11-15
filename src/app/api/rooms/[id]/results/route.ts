@@ -156,7 +156,8 @@ export async function GET(
     }
 
     const rawAssessment = Array.isArray(room.assessments) ? room.assessments[0] : room.assessments;
-    const durationMinutes = rawAssessment?.duration_minutes || 45;
+    const roomPublishSettings = (room.results_publish_settings as any) || {};
+    const durationMinutes = roomPublishSettings.duration_minutes || rawAssessment?.duration_minutes || 45;
     const startTimeMs = room.started_at ? new Date(room.started_at).getTime() : new Date(room.created_at).getTime();
 
     // Map candidate results

@@ -136,7 +136,7 @@ export async function GET(request: Request) {
         // @ts-expect-error join
         assessmentTitle: r.assessments?.title || 'Đề khảo thí',
         // @ts-expect-error join
-        durationMinutes: r.assessments?.duration_minutes || 45,
+        durationMinutes: (r.results_publish_settings as any)?.duration_minutes || r.assessments?.duration_minutes || 45,
         // @ts-expect-error join
         passingScore: r.assessments?.passing_score || 70,
         roomMode: r.room_mode,
@@ -266,7 +266,6 @@ export async function POST(request: Request) {
         title,
         room_mode: roomMode,
         theme_id: themeId,
-        duration_minutes: durationMinutes || 45,
         status: initialStatus,
         scheduled_start: scheduledStart || null,
         allow_late_join: allowLateJoin,
@@ -275,11 +274,14 @@ export async function POST(request: Request) {
         system_notifications_enabled: systemNotificationsEnabled,
         room_description: roomDescription || null,
         max_participants: maxParticipants,
-        results_publish_settings: resultsPublishSettings || {
-          show_score: true,
-          show_ranking: true,
-          show_answers: false,
-          scope: 'ALL',
+        results_publish_settings: {
+          ...(resultsPublishSettings || {
+            show_score: true,
+            show_ranking: true,
+            show_answers: false,
+            scope: 'ALL',
+          }),
+          duration_minutes: durationMinutes || 45,
         },
         is_active: true,
         is_locked: false,
@@ -291,7 +293,6 @@ export async function POST(request: Request) {
         assessment_id,
         room_mode,
         theme_id,
-        duration_minutes,
         status,
         is_active,
         created_at
@@ -312,7 +313,7 @@ export async function POST(request: Request) {
         assessmentId: newRoom.assessment_id,
         roomMode: newRoom.room_mode,
         themeId: newRoom.theme_id,
-        durationMinutes: newRoom.duration_minutes || durationMinutes || 45,
+        durationMinutes: durationMinutes || 45,
         status: newRoom.status,
         isActive: newRoom.is_active,
         createdAt: newRoom.created_at,
