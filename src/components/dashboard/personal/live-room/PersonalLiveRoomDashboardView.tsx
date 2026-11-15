@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Link2,
   ChevronDown,
+  Download,
 } from 'lucide-react';
 
 interface LiveRoomItem {
@@ -91,6 +92,67 @@ export function PersonalLiveRoomDashboardView() {
     setHeaderPinError('');
     setIsJoiningWithPin(true);
     router.push(`/live/waiting-room?pin=${cleanPin}`);
+  };
+
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadExcel = async (roomId: string, roomCode: string) => {
+    try {
+      setDownloadingId(roomId);
+      const res = await fetch(`/api/rooms/${roomId}/results`);
+      if (!res.ok) {
+        alert('Không thể tải dữ liệu kết quả phòng thi.');
+        return;
+      }
+      const data = await res.json();
+      const results = data.results || [];
+      const room = data.room || {};
+      const stats = data.stats || {};
+
+      const rows = [
+        ['BÁO CÁO KẾT QUẢ KHẢO THÍ TRỰC TIẾP (CÁ NHÂN)'],
+        ['Tên ca thi:', room.title || 'Ca thi trực tiếp'],
+        ['Mã PIN:', room.roomCode || roomCode],
+        ['Bài đánh giá:', room.assessmentTitle || '--'],
+        ['Thời lượng:', `${room.durationMinutes || 45} phút`],
+        ['Ngày xuất file:', new Date().toLocaleString('vi-VN')],
+        [''],
+        ['--- TỔNG QUAN CHỈ SỐ ---'],
+        ['Tổng thí sinh:', stats.totalJoined || results.length],
+        ['Đã nộp bài:', stats.totalSubmitted || results.filter((r: any) => r.status === 'SUBMITTED' || r.submittedAt).length],
+        ['Tỉ lệ nộp bài:', `${stats.submitPercent || 0}%`],
+        ['Điểm trung bình:', stats.averageScore ?? '--'],
+        ['Điểm cao nhất:', stats.highestScore ?? '--'],
+        ['Chuẩn đạt:', `${room.passingScore || 70}% chuẩn đạt`],
+        [''],
+        ['--- BẢNG ĐIỂM CHI TIẾT ---'],
+        ['Hạng', 'Mã Thí Sinh', 'Họ Và Tên', 'Điểm Số', 'Chuẩn Đạt', 'Thời Gian Hoàn Thành', 'Trạng Thái Nộp', 'Cảnh Báo Đổi Tab'],
+        ...results.map((r: any) => [
+          r.rank ?? '--',
+          r.studentCode ?? '--',
+          r.fullName ?? 'Thí sinh',
+          r.score !== null && r.score !== undefined ? r.score : '--',
+          r.score !== null && r.score >= (room.passingScore || 70) ? 'Đạt' : 'Chưa đạt',
+          r.timeTakenDisplay ?? '--',
+          r.isOnTime ? 'Đúng hạn' : 'Quá giờ',
+          r.proctoringSummary?.tab_switches ?? 0,
+        ]),
+      ];
+
+      const csvContent = '\uFEFF' + rows.map((row) => row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Ket_qua_ca_thi_${roomCode}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download excel error:', err);
+      alert('Lỗi xuất báo cáo kết quả.');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   // Fetch rooms for current evaluator
@@ -557,9 +619,19 @@ export function PersonalLiveRoomDashboardView() {
                                 <FileText className="w-4 h-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate" title={room.title}>
-                                  {room.title}
-                                </div>
+                                {isCompleted ? (
+                                  <Link
+                                    href={`/personal/live-room/${room.id}/results`}
+                                    className="font-semibold text-neutral-900 dark:text-neutral-100 truncate hover:text-blue-600 dark:hover:text-blue-400 block transition-colors"
+                                    title={`${room.title} (Nhấp để xem bảng kết quả trực tuyến)`}
+                                  >
+                                    {room.title}
+                                  </Link>
+                                ) : (
+                                  <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate" title={room.title}>
+                                    {room.title}
+                                  </div>
+                                )}
                                 <div className="text-[10px] text-slate-400 dark:text-neutral-500 whitespace-nowrap">
                                   {room.roomMode === 'OPEN' ? 'Tự do bằng PIN' : 'Theo danh sách'}
                                 </div>
@@ -685,13 +757,19 @@ export function PersonalLiveRoomDashboardView() {
                                   <span>Vào phòng</span>
                                 </Link>
                               ) : (
-                                <Link
-                                  href={`/personal/live-room/${room.id}/results`}
-                                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-200 hover:bg-slate-200 font-semibold text-xs inline-flex items-center gap-1"
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadExcel(room.id, room.roomCode)}
+                                  disabled={downloadingId === room.id}
+                                  className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 font-semibold text-xs inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                                  title="Tải bảng điểm & phân tích Excel"
                                 >
-                                  <BarChart2 className="w-3 h-3" />
-                                  <span>Xem kết quả</span>
-                                </Link>
+                                  {downloadingId === room.id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Download className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
                               )}
 
                               <button

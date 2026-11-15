@@ -221,7 +221,7 @@ export default function LiveRoomResultsPage() {
   const handleExportCSV = () => {
     if (!data?.results?.length) return;
     const rows = [
-      ['Hạng', 'Mã Thí Sinh', 'Họ Và Tên', 'Điểm Số (/100)', 'Thời Gian Hoàn Thành', 'Trạng Thái'],
+      ['Hạng', 'Mã Thí Sinh', 'Họ Và Tên', 'Điểm Số', 'Thời Gian Hoàn Thành', 'Trạng Thái'],
       ...data.results.map((r) => [
         r.rank,
         r.studentCode,
@@ -436,8 +436,7 @@ export default function LiveRoomResultsPage() {
           <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xs space-y-1">
             <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">Điểm trung bình</span>
             <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-              {stats.totalSubmitted > 0 ? stats.averageScore : '--'}{' '}
-              {stats.totalSubmitted > 0 && <span className="text-xs text-slate-400 dark:text-neutral-500 font-normal">/ 100</span>}
+              {stats.totalSubmitted > 0 ? stats.averageScore : '--'}
             </div>
             <div className="text-[11px] text-slate-400 dark:text-neutral-500">
               {stats.totalSubmitted > 0 ? 'Toàn bộ bài thi' : 'Chưa có điểm'}
@@ -448,8 +447,7 @@ export default function LiveRoomResultsPage() {
           <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xs space-y-1">
             <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">Điểm cao nhất</span>
             <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {stats.totalSubmitted > 0 ? stats.highestScore : '--'}{' '}
-              {stats.totalSubmitted > 0 && <span className="text-xs text-slate-400 dark:text-neutral-500 font-normal">/ 100</span>}
+              {stats.totalSubmitted > 0 ? stats.highestScore : '--'}
             </div>
             <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
               {stats.totalSubmitted > 0 ? 'Thủ khoa phòng' : 'Chưa có bài thi'}
@@ -515,7 +513,7 @@ export default function LiveRoomResultsPage() {
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 space-y-0.5">
                   <div className="text-slate-400 dark:text-neutral-500 text-[10px]">Điểm chuẩn đạt</div>
                   <div className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
-                    {room.passingScore || 70} / 100 điểm
+                    {room.passingScore || 70}% chuẩn đạt
                   </div>
                 </div>
               </div>
@@ -607,7 +605,7 @@ export default function LiveRoomResultsPage() {
                   <tr className="bg-slate-50 dark:bg-zinc-900 text-[11px] font-semibold text-slate-500 dark:text-neutral-400">
                     <th className="py-2.5 px-3 w-12 text-center">#</th>
                     <th className="py-2.5 px-3">Thí sinh</th>
-                    <th className="py-2.5 px-3 text-center">Điểm (/100)</th>
+                    <th className="py-2.5 px-3 text-center">Điểm số</th>
                     <th className="py-2.5 px-3">Thời gian hoàn thành</th>
                     <th className="py-2.5 px-3">Trạng thái</th>
                     {isHost && <th className="py-2.5 px-3 text-center">Cờ tin cậy</th>}
@@ -655,7 +653,7 @@ export default function LiveRoomResultsPage() {
                           </div>
                         </td>
 
-                        {/* Điểm (/100) */}
+                        {/* Điểm số */}
                         <td className="py-3 px-3 text-center">
                           {!effectiveShowScore ? (
                             <span className="font-mono text-xs text-slate-400 dark:text-neutral-500">Đã ẩn</span>

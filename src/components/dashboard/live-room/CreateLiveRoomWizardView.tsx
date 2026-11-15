@@ -469,7 +469,7 @@ export function CreateLiveRoomWizardView({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2.5">
               {filteredAssessments.map((asm) => {
                 const isSelected = asm.id === selectedAsmId;
 
@@ -477,65 +477,63 @@ export function CreateLiveRoomWizardView({
                   <div
                     key={asm.id}
                     onClick={() => handleSelectAssessment(asm)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all relative flex flex-col justify-between ${
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                       isSelected
-                        ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-600 ring-2 ring-blue-600/30 shadow-xs'
-                        : 'bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 shadow-xs'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-600 ring-2 ring-blue-600/30 shadow-xs'
+                        : 'bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-slate-50/50 dark:hover:bg-zinc-900/50 shadow-xs'
                     }`}
                   >
-                    <div>
-                      {/* Top Header */}
-                      <div className="flex items-start justify-between gap-3 mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                              isSelected
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300'
-                            }`}
-                          >
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div>
-                            {asm.origin === 'MY_ASSESSMENT' ? (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                {isOrg ? 'Đề tổ chức' : 'Đề của tôi'}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700">
-                                Chuẩn 5 Miền
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Checkmark Circle */}
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
-                            isSelected
-                              ? 'bg-blue-600 border-blue-600 text-white'
-                              : 'border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-900'
-                          }`}
-                        >
-                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                        </div>
+                    {/* Left: Checkmark, Icon, Title & Meta */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border transition-colors ${
+                          isSelected
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-900'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
 
-                      {/* Title & Description */}
-                      <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 line-clamp-1 mb-1">
-                        {asm.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 mb-3 leading-relaxed">
-                        {asm.description}
-                      </p>
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 truncate">
+                            {asm.title}
+                          </h3>
+                          {asm.origin === 'MY_ASSESSMENT' ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
+                              {isOrg ? 'Đề tổ chức' : 'Đề của tôi'}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700 shrink-0">
+                              Chuẩn 5 Miền
+                            </span>
+                          )}
+                        </div>
+                        {asm.description && (
+                          <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate mt-0.5">
+                            {asm.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Metadata Footer */}
-                    <div className="flex items-center justify-between pt-3 text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
-                      <div className="flex items-center gap-3">
+                    {/* Right: Duration, questions, passing & Select button */}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 text-[11px] font-mono tabular-nums text-slate-500 dark:text-neutral-400 shrink-0">
+                      <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-400" />
-                          {asm.duration_minutes} phút
+                          {asm.duration_minutes}p
                         </span>
                         <span>&bull;</span>
                         <span>{asm.questionCount || 40} câu</span>
@@ -545,8 +543,14 @@ export function CreateLiveRoomWizardView({
                         </span>
                       </div>
 
-                      <span className="text-[10px] font-sans px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold">
-                        {isSelected ? 'Đã chọn' : 'Chọn'}
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-bold'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {isSelected ? 'Đã chọn' : 'Chọn đề'}
                       </span>
                     </div>
                   </div>

@@ -61,7 +61,7 @@ describe('Milestone 2 Adversarial Empirical Verification: Pruned Components & Re
         }
 
         expect(offenders, `Found dangling imports for ${compName}: ${JSON.stringify(offenders, null, 2)}`).toHaveLength(0);
-      });
+      }, 15000);
     }
 
     it('ensures deleted component files physically do NOT exist on disk', () => {

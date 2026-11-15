@@ -449,4 +449,149 @@ describe('Milestone 5 TDD: Live Room Robustness & Edge Cases Suite', () => {
       expect(data.group.activeLiveRoom.status).toBe('WAITING');
     });
   });
+
+  // =========================================================================
+  // SUB-SUITE 5: Room Results & Podium & Countdown TDD
+  // =========================================================================
+  describe('GET /api/rooms/[id]/results & Exam Sounds', () => {
+    it('TC-RESULTS-01: Returns candidates with rankings for podium display without fixed / 100 scale', async () => {
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: 'usr-teacher-01', email: 'teacher@nexa.ai' } },
+        error: null,
+      });
+
+      mockSupabaseQuery['exam_rooms'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'room-results-uuid',
+            room_code: '391253',
+            title: 'Khảo thí định kỳ',
+            assessment_id: 'asm-1',
+            created_by: 'usr-teacher-01',
+            is_active: true,
+            status: 'FINISHED',
+            theme_id: 'minimal_white',
+            results_published: true,
+            results_publish_settings: { show_rank: true, show_score: true },
+            started_at: '2026-11-15T09:00:00Z',
+            ended_at: '2026-11-15T09:45:00Z',
+            scheduled_start: null,
+            scheduled_end: null,
+            created_at: '2026-11-15T08:50:00Z',
+            assessments: {
+              id: 'asm-1',
+              title: 'Bài thi năng lực số',
+              duration_minutes: 45,
+              passing_score: 70,
+            },
+          },
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['room_participants'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              id: 'p-1',
+              user_id: 'usr-student-01',
+              status: 'SUBMITTED',
+              is_ready: true,
+              score: 95,
+              submitted_at: '2026-11-15T09:30:00Z',
+              joined_at: '2026-11-15T08:55:00Z',
+              submission_id: 'sub-1',
+            },
+            {
+              id: 'p-2',
+              user_id: 'usr-student-02',
+              status: 'SUBMITTED',
+              is_ready: true,
+              score: 80,
+              submitted_at: '2026-11-15T09:35:00Z',
+              joined_at: '2026-11-15T08:56:00Z',
+              submission_id: 'sub-2',
+            },
+            {
+              id: 'p-3',
+              user_id: 'usr-student-03',
+              status: 'SUBMITTED',
+              is_ready: true,
+              score: 75,
+              submitted_at: '2026-11-15T09:40:00Z',
+              joined_at: '2026-11-15T08:57:00Z',
+              submission_id: 'sub-3',
+            },
+          ],
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['profiles'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'usr-student-01', full_name: 'Nguyễn Văn A', avatar_url: null },
+            { id: 'usr-student-02', full_name: 'Trần Thị B', avatar_url: null },
+            { id: 'usr-student-03', full_name: 'Lê Hoàng C', avatar_url: null },
+          ],
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['assessment_submissions'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'sub-1', proctoring_summary: { tab_switches: 0 } },
+            { id: 'sub-2', proctoring_summary: { tab_switches: 0 } },
+            { id: 'sub-3', proctoring_summary: { tab_switches: 0 } },
+          ],
+          error: null,
+        }),
+      };
+
+      const { GET } = await import('@/app/api/rooms/[id]/results/route');
+      const req = new Request('http://localhost:3000/api/rooms/room-results-uuid/results', {
+        method: 'GET',
+      });
+
+      const res = await GET(req, { params: Promise.resolve({ id: 'room-results-uuid' }) });
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.results.length).toBe(3);
+      // Top 1, 2, 3 verification for Podium
+      expect(data.results[0].rank).toBe(1);
+      expect(data.results[0].fullName).toBe('Nguyễn Văn A');
+      expect(data.results[0].score).toBe(95);
+
+      expect(data.results[1].rank).toBe(2);
+      expect(data.results[1].fullName).toBe('Trần Thị B');
+      expect(data.results[1].score).toBe(80);
+
+      expect(data.results[2].rank).toBe(3);
+      expect(data.results[2].fullName).toBe('Lê Hoàng C');
+      expect(data.results[2].score).toBe(75);
+
+      // Verify aggregate statistics do not contain any hardcoded / 100 string
+      expect(data.stats.averageScore).toBe(83.3);
+      expect(data.stats.highestScore).toBe(95);
+    });
+
+    it('TC-SOUND-01: Supports new COUNTDOWN and REACTION sound types', async () => {
+      const { examSound } = await import('@/lib/sound/exam-sound');
+      // In Node environment without AudioContext, examSound.play safely no-ops without throwing
+      expect(() => {
+        examSound.play('COUNTDOWN', false);
+        examSound.play('REACTION', false);
+        examSound.play('START', false);
+      }).not.toThrow();
+    });
+  });
 });

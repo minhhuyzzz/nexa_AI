@@ -3,7 +3,7 @@
 // Sử dụng Web Audio API thuần (zero external files, zero latency, 100% offline)
 // ==============================================================================
 
-export type ExamSoundType = 'JOIN' | 'START' | 'SUBMIT' | 'WARNING';
+export type ExamSoundType = 'JOIN' | 'START' | 'SUBMIT' | 'WARNING' | 'COUNTDOWN' | 'REACTION';
 
 class ExamSoundManager {
   private ctx: AudioContext | null = null;
@@ -87,6 +87,31 @@ class ExamSoundManager {
         gain.connect(ctx.destination);
         osc.start(now);
         osc.stop(now + 0.25);
+      } else if (type === 'COUNTDOWN') {
+        // Âm tích tắc đếm ngược ngân vang: Tinh tế dứt khoát
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'REACTION') {
+        // Âm phản hồi bong bóng tương tác: Vui tươi nẩy nhẹ
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
       }
     } catch {
       // Audio playback failsafe

@@ -92,6 +92,7 @@ interface RoomData {
   classId?: string | null;
   scheduledStart?: string | null;
   scheduledEnd?: string | null;
+  proctoringProfile?: any;
 }
 
 interface ActivityEvent {
@@ -125,6 +126,10 @@ function LiveControlContent() {
   const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
   const [isTimerPaused, setIsTimerPaused] = useState<boolean>(false);
 
+  // Countdown before starting exam (0 = Immediate, 5s, 10s, 30s, 60s)
+  const [startCountdownOption, setStartCountdownOption] = useState<number>(5);
+  const [activeStartCountdown, setActiveStartCountdown] = useState<number | null>(null);
+
   // Modals & Announcements
   const [announceModalOpen, setAnnounceModalOpen] = useState(false);
   const [announcementText, setAnnouncementText] = useState('');
@@ -157,6 +162,35 @@ function LiveControlContent() {
 
   // Active realtime channel reference
   const channelRef = useRef<any>(null);
+  const hasUserSelectedThemeRef = useRef<boolean>(false);
+
+  const handleSelectTheme = async (themeKey: RoomThemeId) => {
+    hasUserSelectedThemeRef.current = true;
+    setLobbyTheme(themeKey);
+    const targetId = roomId || room?.id;
+    if (targetId) {
+      try {
+        await fetch('/api/evaluator/rooms', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId: targetId,
+            action: 'UPDATE_SETTINGS',
+            payload: { themeId: themeKey },
+          }),
+        });
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'ROOM_STATE_CHANGE',
+            payload: { action: 'THEME_UPDATE', payload: { themeId: themeKey } },
+          });
+        }
+      } catch (e) {
+        console.error('Failed to persist theme:', e);
+      }
+    }
+  };
 
   // Schedule Window State (Hẹn giờ ca thi ngày bắt đầu - kết thúc)
   const [scheduleMode, setScheduleMode] = useState<'INSTANT' | 'SCHEDULED'>('INSTANT');
@@ -198,7 +232,7 @@ function LiveControlContent() {
           setRoom(data.room);
           setIsLocked(data.room.isLocked ?? false);
           if (data.room.durationMinutes) setLobbyDuration(data.room.durationMinutes);
-          if (data.room.themeId) setLobbyTheme(data.room.themeId);
+          if (data.room.themeId && !hasUserSelectedThemeRef.current) setLobbyTheme(data.room.themeId);
           if (data.room.scheduledStart) {
             try {
               const sDate = new Date(data.room.scheduledStart);
@@ -353,6 +387,8 @@ function LiveControlContent() {
         fetchRoomState(true);
       })
       .on('broadcast', { event: 'TAB_SWITCH_ALERT' }, (payload) => {
+        // Chỉ ghi nhận cảnh báo nếu ca thi thực sự bật giám sát đổi tab
+        if (room?.proctoringProfile && room.proctoringProfile.tab_switch_alert === false) return;
         const pName = payload.payload?.fullName || 'Thí sinh';
         const targetUserId = payload.payload?.userId;
         const now = new Date();
@@ -462,8 +498,8 @@ function LiveControlContent() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  // 1. Action: Bắt đầu phát đề thi
-  const handleStartExam = async () => {
+  // 1. Action: Thực thi phát đề thi sau khi đếm ngược xong
+  const handleExecuteStartExam = async () => {
     setActionLoading(true);
     try {
       const res = await fetch('/api/evaluator/rooms', {
@@ -525,6 +561,70 @@ function LiveControlContent() {
       setActionLoading(false);
     }
   };
+
+  // Kích hoạt phát đề kèm đếm ngược
+  const handleInitiateStartExam = () => {
+    if (startCountdownOption > 0) {
+      setActiveStartCountdown(startCountdownOption);
+      examSound.play('COUNTDOWN', lobbySound);
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'START_COUNTDOWN',
+          payload: {
+            seconds: startCountdownOption,
+            startedAt: Date.now(),
+          },
+        });
+      } catch (err) {
+        console.warn('[COUNTDOWN_BROADCAST_ERR]', err);
+      }
+    } else {
+      handleExecuteStartExam();
+    }
+  };
+
+  // Hủy đếm ngược
+  const handleCancelCountdown = () => {
+    setActiveStartCountdown(null);
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'CANCEL_COUNTDOWN',
+        payload: {},
+      });
+    } catch (err) {
+      console.warn('[CANCEL_COUNTDOWN_BROADCAST_ERR]', err);
+    }
+    showToast('Đã hủy đếm ngược phát đề.');
+  };
+
+  // Countdown timer hook before starting exam
+  useEffect(() => {
+    if (activeStartCountdown === null) return;
+    if (activeStartCountdown <= 0) {
+      setActiveStartCountdown(null);
+      handleExecuteStartExam();
+      return;
+    }
+
+    const t = setInterval(() => {
+      setActiveStartCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(t);
+          setActiveStartCountdown(null);
+          handleExecuteStartExam();
+          return null;
+        }
+        examSound.play('COUNTDOWN', lobbySound);
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(t);
+  }, [activeStartCountdown, lobbySound]);
+
+  const handleStartExam = handleInitiateStartExam;
 
   // 1.1 Action: Lưu lịch hẹn giờ ca thi (Scheduled Window)
   const handleSaveSchedule = async () => {
@@ -884,32 +984,106 @@ function LiveControlContent() {
           </Link>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <span className={`w-2.5 h-2.5 rounded-full ${room?.status === 'IN_PROGRESS' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
                 <h1 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight">
                   Phòng thi: {roomTitle}
                 </h1>
+
+                {/* Status Badge */}
+                {room?.status === 'IN_PROGRESS' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                    Đang làm bài
+                  </span>
+                ) : room?.status === 'SCHEDULED' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                    <Calendar className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                    Đã lên lịch
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    <Clock className="w-3 h-3 text-blue-600" />
+                    Sảnh chờ
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                {room?.status === 'IN_PROGRESS'
-                  ? 'Ca thi đang diễn ra. Giám sát thời gian thực, quản lý thí sinh và xử lý kỷ luật phòng thi.'
-                  : 'Sảnh chờ đang mở. Chia sẻ mã PIN để thí sinh tham gia và thiết lập quy chế trước khi phát đề.'}
-              </p>
+
+              {/* Inline Metadata Strip */}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-neutral-400 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200 max-w-[220px] truncate" title={assessmentTitle}>
+                    {assessmentTitle}
+                  </span>
+                </span>
+                <span>&bull;</span>
+                <span className="flex items-center gap-1 font-mono">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{room?.status === 'IN_PROGRESS' ? (room?.durationMinutes || 45) : lobbyDuration} phút</span>
+                </span>
+                <span>&bull;</span>
+                <span className="flex items-center gap-1 font-mono">
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{totalJoined} thí sinh kết nối</span>
+                </span>
+                {room?.scheduledStart && (
+                  <>
+                    <span>&bull;</span>
+                    <span className="flex items-center gap-1 font-mono text-indigo-600 dark:text-indigo-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Lịch: {new Date(room.scheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* Top Right Actions */}
-            <div className="flex items-center gap-2.5 shrink-0">
-              {room?.status !== 'IN_PROGRESS' ? (
+            {/* Top Right Actions & PIN Pill */}
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              {/* PIN Pill with Copy */}
+              <div className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center gap-2 font-mono shadow-2xs">
+                <span className="text-[11px] text-slate-400 uppercase font-sans font-bold">MÃ PIN:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400 text-sm tracking-wider">
+                  {displayPin}
+                </span>
                 <button
                   type="button"
-                  onClick={handleStartExam}
-                  disabled={actionLoading}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors shadow-sm cursor-pointer"
+                  onClick={handleCopyCode}
+                  className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                  title="Sao chép mã PIN"
                 >
-                  <Play className="w-4 h-4 fill-white" />
-                  <span>Bắt đầu phát đề thi</span>
+                  {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
+              </div>
+
+              {room?.status !== 'IN_PROGRESS' ? (
+                activeStartCountdown !== null ? (
+                  <div className="flex items-center gap-2">
+                    <span className="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold inline-flex items-center gap-2 shadow-sm animate-pulse">
+                      <Clock className="w-3.5 h-3.5 animate-spin" />
+                      <span>Phát đề sau: {activeStartCountdown}s</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCancelCountdown}
+                      className="px-3 py-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 text-xs font-semibold cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleStartExam}
+                    disabled={actionLoading}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    <span>Bắt đầu phát đề thi</span>
+                  </button>
+                )
               ) : (
                 <>
                   <button
@@ -951,110 +1125,6 @@ function LiveControlContent() {
         </div>
 
         {/* ======================================================================= */}
-        {/* 2. SUBHEADER METADATA STRIP                                            */}
-        {/* ======================================================================= */}
-        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            {/* Đề khảo thí */}
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 text-[11px]">Đề khảo thí:</span>
-                <span className="font-semibold text-neutral-900 dark:text-neutral-100 max-w-[240px] truncate" title={assessmentTitle}>
-                  {assessmentTitle}
-                </span>
-              </div>
-            </div>
-
-            {/* Thời lượng */}
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-slate-400" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 text-[11px]">Thời lượng:</span>
-                <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
-                  {room?.status === 'IN_PROGRESS' ? (room?.durationMinutes || 45) : lobbyDuration} phút
-                </span>
-              </div>
-            </div>
-
-            {/* Thí sinh */}
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-slate-400" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 text-[11px]">Thí sinh kết nối:</span>
-                <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
-                  {totalJoined}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* PIN Pill with Copy */}
-            <div className="px-3 py-1 rounded-lg bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 flex items-center gap-2 font-mono">
-              <span className="text-[11px] text-slate-400 uppercase font-sans">MÃ PIN:</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400 text-sm tracking-wider">
-                {displayPin}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                title="Sao chép mã PIN"
-              >
-                {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            {/* Live Status Badge */}
-            {room?.status === 'IN_PROGRESS' ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                Đang làm bài
-              </span>
-            ) : room?.status === 'SCHEDULED' ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                <Calendar className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                Đã lên lịch ca thi
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                <Clock className="w-3 h-3 text-blue-600" />
-                Sảnh chờ
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Banner thông báo Lịch hẹn giờ ca thi */}
-        {room?.scheduledStart && room?.status !== 'IN_PROGRESS' && (
-          <div className="p-4 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 flex flex-wrap items-center justify-between gap-3 text-xs text-indigo-950 dark:text-indigo-200 animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                  <span>Ca thi đã lên lịch mở:</span>
-                  <span className="font-mono text-indigo-600 dark:text-indigo-400">
-                    {new Date(room.scheduledStart).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })} &ndash; {room.scheduledEnd ? new Date(room.scheduledEnd).toLocaleString('vi-VN', { timeStyle: 'short' }) : ''}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Thí sinh có thể truy cập trước vào sảnh bằng mã PIN <strong className="font-mono text-blue-600">{displayPin}</strong>. Bạn có thể bấm phát đề bất kỳ lúc nào hoặc đợi đúng giờ.
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-[11px] font-mono font-bold text-indigo-700 dark:text-indigo-300">
-                Thời lượng: {room.durationMinutes || lobbyDuration} phút
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* ======================================================================= */}
         {/* PHÂN NHÁNH GIAO DIỆN: SẢNH CHỜ KHẢO THÍ SỐ vs BÀN GIÁM SÁT CA THI    */}
         {/* ======================================================================= */}
         {room?.status !== 'IN_PROGRESS' ? (
@@ -1064,9 +1134,9 @@ function LiveControlContent() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* CỘT TRÁI (7 / 12 COLS): ARENA STAGE & DANH SÁCH THÍ SINH VÀO SẢNH */}
             <div className="lg:col-span-7 space-y-5">
-              {/* Card 1: Arena Hero Display */}
-              <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="flex items-center justify-between pb-3">
+              {/* Card 1: Arena Hero Display - Tinh gọn */}
+              <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 p-5 sm:p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
                     <span>Sảnh chờ đang mở &ndash; Sẵn sàng đón thí sinh</span>
@@ -1083,24 +1153,21 @@ function LiveControlContent() {
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
-                  {/* Left: PIN 6 Số khổng lồ + Hướng dẫn */}
-                  <div className="sm:col-span-7 space-y-5 text-center sm:text-left">
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
-                        MÃ PIN THAM GIA
-                      </span>
-                      <div className="font-mono font-black text-5xl sm:text-6xl tracking-widest text-blue-600 dark:text-blue-400 py-1 tabular-nums">
-                        {displayPin.slice(0, 3)} {displayPin.slice(3)}
-                      </div>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-5 p-4 rounded-xl bg-slate-50/70 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800/80">
+                  {/* Left: PIN + Action buttons */}
+                  <div className="space-y-3 text-center sm:text-left flex-1">
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+                      MÃ PIN THAM GIA PHÒNG THI
+                    </span>
+                    <div className="font-mono font-black text-4xl sm:text-5xl tracking-widest text-blue-600 dark:text-blue-400 tabular-nums">
+                      {displayPin.slice(0, 3)} {displayPin.slice(3)}
                     </div>
 
-                    {/* Action buttons copy */}
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                       <button
                         type="button"
                         onClick={handleCopyCode}
-                        className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-neutral-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-neutral-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
                         {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                         <span>{copiedCode ? 'Đã chép PIN' : 'Chép mã PIN'}</span>
@@ -1114,51 +1181,31 @@ function LiveControlContent() {
                           navigator.clipboard.writeText(link);
                           showToast('Đã sao chép liên kết vào phòng thi!');
                         }}
-                        className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-slate-700 dark:text-neutral-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 hover:bg-slate-100 text-slate-700 dark:text-neutral-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Share2 className="w-3.5 h-3.5" />
                         <span>Chép liên kết</span>
                       </button>
                     </div>
 
-                    {/* Step-by-step instructions */}
-                    <div className="pt-3 space-y-2 text-xs text-slate-600 dark:text-neutral-400">
-                      <div className="flex items-start gap-2">
-                        <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                          1
-                        </span>
-                        <span>
-                          Thí sinh truy cập <strong className="text-neutral-900 dark:text-neutral-100">nexa.ai/live</strong> hoặc quét mã QR.
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                          2
-                        </span>
-                        <span>
-                          Nhập mã PIN <strong className="font-mono text-blue-600 dark:text-blue-400 font-bold">{displayPin}</strong> và Họ tên để vào sảnh.
-                        </span>
-                      </div>
-                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 pt-1">
+                      Thí sinh truy cập <strong className="text-neutral-900 dark:text-neutral-100 font-mono">nexa.ai/live</strong> hoặc quét mã QR để vào sảnh.
+                    </p>
                   </div>
 
-                  {/* Right: QR Code Card */}
-                  <div className="sm:col-span-5 flex flex-col items-center justify-center">
-                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs text-center space-y-1.5">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                          mounted && typeof window !== 'undefined'
-                            ? `${window.location.origin}/live?pin=${displayPin}`
-                            : `https://nexa.ai/live?pin=${displayPin}`
-                        )}`}
-                        alt={`QR Code PIN ${displayPin}`}
-                        suppressHydrationWarning
-                        className="w-36 h-36 rounded object-contain mx-auto"
-                      />
-                      <div className="text-[10px] font-mono font-medium text-slate-600">
-                        Quét mã vào phòng ngay
-                      </div>
-                    </div>
+                  {/* Right: QR Code Box */}
+                  <div className="shrink-0 p-2.5 rounded-xl bg-white border border-slate-200 dark:border-zinc-700 shadow-xs flex flex-col items-center">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(
+                        mounted && typeof window !== 'undefined'
+                          ? `${window.location.origin}/live?pin=${displayPin}`
+                          : `https://nexa.ai/live?pin=${displayPin}`
+                      )}`}
+                      alt={`Mã QR vào phòng ${displayPin}`}
+                      suppressHydrationWarning
+                      className="w-28 h-28 object-contain"
+                    />
+                    <span className="text-[10px] text-slate-400 font-medium mt-1">Quét vào sảnh</span>
                   </div>
                 </div>
               </div>
@@ -1394,7 +1441,7 @@ function LiveControlContent() {
                       return (
                         <div
                           key={themeKey}
-                          onClick={() => setLobbyTheme(themeKey)}
+                          onClick={() => handleSelectTheme(themeKey)}
                           className={`group relative rounded-xl border p-2.5 cursor-pointer transition-all ${
                             isSelected
                               ? 'border-blue-600 ring-2 ring-blue-600/30 shadow-xs'
@@ -1453,103 +1500,180 @@ function LiveControlContent() {
                     </button>
                   </div>
 
-                  <div className="space-y-2.5 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40">
-                    <label className="flex items-center justify-between cursor-pointer">
+                  <div className="space-y-3 p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40">
+                    {/* Setting 1: Đảo thứ tự câu hỏi */}
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Đảo thứ tự câu hỏi</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Đảo thứ tự câu hỏi</span>
                         <span className="text-[11px] text-slate-500 block">Trộn ngẫu nhiên câu hỏi theo từng thí sinh</span>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={lobbyShuffleQuestions}
-                        onChange={(e) => setLobbyShuffleQuestions(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyShuffleQuestions}
+                          onChange={(e) => setLobbyShuffleQuestions(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-                    <label className="flex items-center justify-between cursor-pointer">
+                    {/* Setting 2: Đảo thứ tự đáp án */}
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Đảo thứ tự đáp án</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Đảo thứ tự đáp án</span>
                         <span className="text-[11px] text-slate-500 block">Xáo trộn các lựa chọn A, B, C, D</span>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={lobbyShuffleOptions}
-                        onChange={(e) => setLobbyShuffleOptions(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyShuffleOptions}
+                          onChange={(e) => setLobbyShuffleOptions(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-                    <label className="flex items-center justify-between cursor-pointer">
+                    {/* Setting 3: Instant Feedback */}
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Báo đúng/sai tức thì (Instant Feedback)</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Báo đúng/sai tức thì (Instant Feedback)</span>
                         <span className="text-[11px] text-slate-500 block">Hiện kết quả đúng/sai ngay khi chọn phương án</span>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={lobbyInstantFeedback}
-                        onChange={(e) => setLobbyInstantFeedback(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyInstantFeedback}
+                          onChange={(e) => setLobbyInstantFeedback(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-                    <label className="flex items-center justify-between cursor-pointer">
+                    {/* Setting 4: Cảnh báo rời tab */}
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Cảnh báo rời tab làm bài</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Cảnh báo rời tab làm bài</span>
                         <span className="text-[11px] text-slate-500 block">Ghi nhận vi phạm khi thí sinh chuyển tab hoặc mất focus</span>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={lobbyTabSwitchAlert}
-                        onChange={(e) => setLobbyTabSwitchAlert(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyTabSwitchAlert}
+                          onChange={(e) => setLobbyTabSwitchAlert(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-                    <label className="flex items-center justify-between cursor-pointer">
+                    {/* Setting 5: Tự động nộp bài khi hết giờ */}
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Tự động nộp bài khi hết giờ</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Tự động nộp bài khi hết giờ</span>
                         <span className="text-[11px] text-slate-500 block">Thu bài tự động khi đồng hồ về 00:00</span>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={lobbyAutoSubmit}
-                        onChange={(e) => setLobbyAutoSubmit(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyAutoSubmit}
+                          onChange={(e) => setLobbyAutoSubmit(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-                    <label className="flex items-center justify-between cursor-pointer">
+                    {/* Setting 6: Khóa phòng sau phát đề */}
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Khóa phòng sau khi phát đề</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Khóa phòng sau khi phát đề</span>
                         <span className="text-[11px] text-slate-500 block">Không cho phép thí sinh vào muộn sau khi ca thi bắt đầu</span>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={lobbyLockLate}
-                        onChange={(e) => setLobbyLockLate(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyLockLate}
+                          onChange={(e) => setLobbyLockLate(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3.1. Cài đặt đếm ngược trước khi phát đề */}
+                <div className="space-y-2 pt-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Đếm ngược khi phát đề:</span>
+                    </span>
+                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">
+                      {startCountdownOption === 0 ? 'Tức thì (0s)' : `${startCountdownOption} giây`}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[
+                      { val: 0, label: '0s' },
+                      { val: 5, label: '5s' },
+                      { val: 10, label: '10s' },
+                      { val: 30, label: '30s' },
+                      { val: 60, label: '60s' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => setStartCountdownOption(opt.val)}
+                        className={`py-1.5 rounded text-xs font-mono font-semibold transition-colors cursor-pointer ${
+                          startCountdownOption === opt.val
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 {/* 4. Action CTA Tương ứng Chế độ */}
-                <div className="pt-4 space-y-2">
+                <div className="pt-3 space-y-2">
                   {scheduleMode === 'INSTANT' ? (
                     <>
-                      <button
-                        type="button"
-                        onClick={handleStartExam}
-                        disabled={actionLoading}
-                        className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
-                      >
-                        <Play className="w-4 h-4 fill-white" />
-                        <span>Bắt đầu phát đề thi</span>
-                      </button>
+                      {activeStartCountdown !== null ? (
+                        <div className="space-y-2">
+                          <div className="w-full py-3.5 rounded-xl bg-amber-500 text-white font-black text-center text-sm inline-flex items-center justify-center gap-2 shadow-md animate-pulse">
+                            <Clock className="w-4 h-4 animate-spin" />
+                            <span>Phát đề sau: {activeStartCountdown}s</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleCancelCountdown}
+                            className="w-full py-2 rounded-lg border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
+                          >
+                            Hủy đếm ngược
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleStartExam}
+                          disabled={actionLoading}
+                          className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
+                        >
+                          <Play className="w-4 h-4 fill-white" />
+                          <span>Bắt đầu phát đề thi</span>
+                        </button>
+                      )}
 
                       <div className="text-[11px] text-center text-slate-400">
-                        Bấm để chính thức tính giờ và phát đề cho tất cả thí sinh trong sảnh.
+                        {startCountdownOption > 0
+                          ? `Đồng hồ đếm ngược ${startCountdownOption}s sẽ hiển thị trên màn hình tất cả thí sinh trước khi mở bài thi.`
+                          : 'Bấm để chính thức tính giờ và phát đề ngay cho tất cả thí sinh trong sảnh.'}
                       </div>
                     </>
                   ) : (
@@ -1674,17 +1798,39 @@ function LiveControlContent() {
               {/* Card 4: Kỷ luật & Cảnh báo rời tab */}
               <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xs space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span className="font-semibold uppercase tracking-wider font-mono">CẢNH BÁO VI PHẠM</span>
-                  <AlertTriangle className={`w-3.5 h-3.5 ${alerts.length > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
+                  <span className="font-semibold uppercase tracking-wider font-mono">
+                    {room?.proctoringProfile?.tab_switch_alert ? 'CẢNH BÁO VI PHẠM' : 'GIÁM SÁT VI PHẠM'}
+                  </span>
+                  {room?.proctoringProfile?.tab_switch_alert ? (
+                    <AlertTriangle className={`w-3.5 h-3.5 ${alerts.length > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
+                  ) : (
+                    <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                  )}
                 </div>
-                <div className={`text-2xl font-bold font-mono ${alerts.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-neutral-900 dark:text-neutral-100'}`}>
-                  {alerts.length} <span className="text-xs font-normal text-slate-400">lần rời tab</span>
+                <div className={`text-2xl font-bold font-mono ${
+                  !room?.proctoringProfile?.tab_switch_alert
+                    ? 'text-neutral-500 text-lg'
+                    : alerts.length > 0
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-neutral-900 dark:text-neutral-100'
+                }`}>
+                  {room?.proctoringProfile?.tab_switch_alert ? (
+                    <>
+                      {alerts.length} <span className="text-xs font-normal text-slate-400">lần rời tab</span>
+                    </>
+                  ) : (
+                    'Không kích hoạt'
+                  )}
                 </div>
                 <div className="text-xs text-slate-500">
-                  {alerts.length > 0 ? (
-                    <span className="text-amber-600 font-medium">Đã ghi nhận vào biên bản</span>
+                  {room?.proctoringProfile?.tab_switch_alert ? (
+                    alerts.length > 0 ? (
+                      <span className="text-amber-600 font-medium">Đã ghi nhận vào biên bản</span>
+                    ) : (
+                      <span>Chưa có vi phạm nào</span>
+                    )
                   ) : (
-                    <span>Chưa có vi phạm nào</span>
+                    <span>Ca thi không giám sát đổi tab</span>
                   )}
                 </div>
               </div>
@@ -2095,15 +2241,28 @@ function LiveControlContent() {
                 <div className="bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs p-4 space-y-3">
                   <div className="flex items-center justify-between pb-2">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      {room?.proctoringProfile?.tab_switch_alert ? (
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4 text-slate-400" />
+                      )}
                       <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                        Cảnh báo rời tab ({alerts.length})
+                        {room?.proctoringProfile?.tab_switch_alert
+                          ? `Cảnh báo rời tab (${alerts.length})`
+                          : 'Giám sát đổi tab'}
                       </h2>
                     </div>
                   </div>
 
                   <div className="space-y-2.5 pt-1 text-xs">
-                    {alerts.length === 0 ? (
+                    {!room?.proctoringProfile?.tab_switch_alert ? (
+                      <div className="py-4 text-center space-y-1.5">
+                        <ShieldCheck className="w-6 h-6 text-slate-400 mx-auto" />
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400">
+                          Ca thi không áp dụng giám sát đổi tab.
+                        </div>
+                      </div>
+                    ) : alerts.length === 0 ? (
                       <div className="py-4 text-center space-y-1.5">
                         <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mx-auto" />
                         <div className="text-[11px] text-slate-500 dark:text-neutral-400">

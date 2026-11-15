@@ -17,7 +17,11 @@ import {
   Volume2,
   VolumeX,
   Wifi,
-  Monitor,
+  HelpCircle,
+  Heart,
+  Hand,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { examSound } from '@/lib/sound/exam-sound';
@@ -46,6 +50,89 @@ interface RoomData {
   assessmentItemCount?: number;
 }
 
+interface FloatingReaction {
+  id: string;
+  reactionType: 'WAVE' | 'HEART' | 'CHEER';
+  timestamp: number;
+  xPercent: number;
+}
+
+const BUBBLE_PALETTES = [
+  {
+    bg: 'bg-blue-50/90 dark:bg-blue-950/40',
+    border: 'border-blue-200 dark:border-blue-800/80',
+    text: 'text-blue-900 dark:text-blue-100',
+    avatarBg: 'bg-blue-600',
+    avatarText: 'text-white',
+    dot: 'bg-blue-500',
+  },
+  {
+    bg: 'bg-emerald-50/90 dark:bg-emerald-950/40',
+    border: 'border-emerald-200 dark:border-emerald-800/80',
+    text: 'text-emerald-900 dark:text-emerald-100',
+    avatarBg: 'bg-emerald-600',
+    avatarText: 'text-white',
+    dot: 'bg-emerald-500',
+  },
+  {
+    bg: 'bg-purple-50/90 dark:bg-purple-950/40',
+    border: 'border-purple-200 dark:border-purple-800/80',
+    text: 'text-purple-900 dark:text-purple-100',
+    avatarBg: 'bg-purple-600',
+    avatarText: 'text-white',
+    dot: 'bg-purple-500',
+  },
+  {
+    bg: 'bg-amber-50/90 dark:bg-amber-950/40',
+    border: 'border-amber-200 dark:border-amber-800/80',
+    text: 'text-amber-900 dark:text-amber-100',
+    avatarBg: 'bg-amber-600',
+    avatarText: 'text-white',
+    dot: 'bg-amber-500',
+  },
+  {
+    bg: 'bg-teal-50/90 dark:bg-teal-950/40',
+    border: 'border-teal-200 dark:border-teal-800/80',
+    text: 'text-teal-900 dark:text-teal-100',
+    avatarBg: 'bg-teal-600',
+    avatarText: 'text-white',
+    dot: 'bg-teal-500',
+  },
+  {
+    bg: 'bg-indigo-50/90 dark:bg-indigo-950/40',
+    border: 'border-indigo-200 dark:border-indigo-800/80',
+    text: 'text-indigo-900 dark:text-indigo-100',
+    avatarBg: 'bg-indigo-600',
+    avatarText: 'text-white',
+    dot: 'bg-indigo-500',
+  },
+  {
+    bg: 'bg-rose-50/90 dark:bg-rose-950/40',
+    border: 'border-rose-200 dark:border-rose-800/80',
+    text: 'text-rose-900 dark:text-rose-100',
+    avatarBg: 'bg-rose-600',
+    avatarText: 'text-white',
+    dot: 'bg-rose-500',
+  },
+  {
+    bg: 'bg-cyan-50/90 dark:bg-cyan-950/40',
+    border: 'border-cyan-200 dark:border-cyan-800/80',
+    text: 'text-cyan-900 dark:text-cyan-100',
+    avatarBg: 'bg-cyan-600',
+    avatarText: 'text-white',
+    dot: 'bg-cyan-500',
+  },
+];
+
+function getBubblePalette(idStr: string) {
+  let hash = 0;
+  for (let i = 0; i < idStr.length; i++) {
+    hash = (hash << 5) - hash + idStr.charCodeAt(i);
+    hash |= 0;
+  }
+  return BUBBLE_PALETTES[Math.abs(hash) % BUBBLE_PALETTES.length];
+}
+
 function WaitingRoomContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,10 +151,37 @@ function WaitingRoomContent() {
   // Sound settings (persisted in localStorage)
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  // Modal Quy chế & Hướng dẫn
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
+  // Incoming Countdown from Host
+  const [incomingCountdown, setIncomingCountdown] = useState<number | null>(null);
+
+  // Floating Reactions from candidates
+  const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
+
   // Current User
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentUserName, setCurrentUserName] = useState<string>('Thí sinh');
   const [currentUserInitials, setCurrentUserInitials] = useState<string>('TS');
+  const [currentUserAvatarUrl, setCurrentUserAvatarUrl] = useState<string | null>(null);
+
+  // 2D Physics Refs for gentle floating bubbles
+  const arenaRef = useRef<HTMLDivElement>(null);
+  const bubbleElementsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const physicsDataRef = useRef<
+    Map<
+      string,
+      {
+        x: number;
+        y: number;
+        vx: number;
+        vy: number;
+        w: number;
+        h: number;
+      }
+    >
+  >(new Map());
 
   // Countdown timer state (seconds until start if scheduled in future)
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
@@ -103,7 +217,7 @@ function WaitingRoomContent() {
         setCurrentUserId(user.id);
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, avatar_url')
           .eq('id', user.id)
           .single();
         if (profile?.full_name) {
@@ -115,6 +229,9 @@ function WaitingRoomContent() {
             .map((w: string) => w[0].toUpperCase())
             .join('');
           setCurrentUserInitials(initials || 'TS');
+        }
+        if (profile?.avatar_url) {
+          setCurrentUserAvatarUrl(profile.avatar_url);
         }
       }
     }
@@ -252,7 +369,7 @@ function WaitingRoomContent() {
     return () => clearInterval(timer);
   }, [room?.id, fetchStatus]);
 
-  // 4. Realtime Supabase Channel (Instant <100ms reactions)
+  // 4. Realtime Supabase Channel (Instant <100ms reactions, countdown & sync)
   useEffect(() => {
     const activeRoomId = room?.id || roomIdFromUrl;
     if (!activeRoomId) return;
@@ -262,10 +379,34 @@ function WaitingRoomContent() {
     channelRef.current = channel;
 
     channel
+      .on('broadcast', { event: 'START_COUNTDOWN' }, (payload) => {
+        const secs = Number(payload.payload?.seconds) || 5;
+        setIncomingCountdown(secs);
+        examSound.play('COUNTDOWN', soundEnabled);
+      })
+      .on('broadcast', { event: 'CANCEL_COUNTDOWN' }, () => {
+        setIncomingCountdown(null);
+      })
+      .on('broadcast', { event: 'PARTICIPANT_REACTION' }, (payload) => {
+        const data = payload.payload;
+        if (data?.reactionType) {
+          examSound.play('REACTION', soundEnabled);
+          setFloatingReactions((prev) => [
+            {
+              id: crypto.randomUUID(),
+              reactionType: data.reactionType,
+              timestamp: Date.now(),
+              xPercent: 15 + Math.random() * 70,
+            },
+            ...prev.slice(0, 8),
+          ]);
+        }
+      })
       .on('broadcast', { event: 'ROOM_STATE_CHANGE' }, (payload) => {
         const action = payload.payload?.action;
         if (action === 'START') {
           examSound.play('START', soundEnabled);
+          setIncomingCountdown(0);
           setStartingNotice(true);
           const targetAsmId = room?.assessmentId || assessmentIdFromUrl || 'baseline';
           const roomCode = room?.roomCode || pin;
@@ -273,7 +414,7 @@ function WaitingRoomContent() {
             router.push(
               `/personal/take/${targetAsmId}?roomId=${activeRoomId}&pin=${roomCode}`
             );
-          }, 250);
+          }, 400);
         } else {
           fetchStatus();
         }
@@ -322,6 +463,217 @@ function WaitingRoomContent() {
     fetchStatus,
   ]);
 
+  // 5. Incoming Countdown Timer hook
+  useEffect(() => {
+    if (incomingCountdown === null) return;
+    if (incomingCountdown <= 0) {
+      setStartingNotice(true);
+      return;
+    }
+
+    const t = setInterval(() => {
+      setIncomingCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(t);
+          setStartingNotice(true);
+          return 0;
+        }
+        examSound.play('COUNTDOWN', soundEnabled);
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(t);
+  }, [incomingCountdown, soundEnabled]);
+
+  // 6. Floating Reactions cleanup
+  useEffect(() => {
+    if (floatingReactions.length === 0) return;
+    const t = setTimeout(() => {
+      setFloatingReactions((prev) => prev.filter((r) => Date.now() - r.timestamp < 3000));
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [floatingReactions]);
+
+  // 7. Synchronize 2D Physics Nodes with Participants
+  useEffect(() => {
+    const arena = arenaRef.current;
+    const arenaW = arena?.clientWidth || 700;
+    const arenaH = arena?.clientHeight || 450;
+
+    const activeKeys = new Set<string>();
+
+    participants.forEach((p, idx) => {
+      const key = p.id || p.userId || String(idx);
+      activeKeys.add(key);
+
+      if (!physicsDataRef.current.has(key)) {
+        const margin = 20;
+        const initX = Math.random() * Math.max(20, arenaW - 190) + margin;
+        const initY = Math.random() * Math.max(20, arenaH - 80) + margin;
+        const angle = Math.random() * 2 * Math.PI;
+        const speed = 0.45 + Math.random() * 0.35;
+
+        physicsDataRef.current.set(key, {
+          x: initX,
+          y: initY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          w: 160,
+          h: 40,
+        });
+      }
+    });
+
+    // Remove deleted participants
+    for (const key of physicsDataRef.current.keys()) {
+      if (!activeKeys.has(key)) {
+        physicsDataRef.current.delete(key);
+        bubbleElementsRef.current.delete(key);
+      }
+    }
+  }, [participants]);
+
+  // 8. 60fps Physics Animation Loop (Wall & Inter-bubble Bouncing)
+  useEffect(() => {
+    let animId: number;
+
+    const tick = () => {
+      const arena = arenaRef.current;
+      if (arena) {
+        const arenaW = arena.clientWidth;
+        const arenaH = arena.clientHeight;
+
+        if (arenaW > 60 && arenaH > 60) {
+          const keys = Array.from(physicsDataRef.current.keys());
+          const items = keys.map((k) => ({
+            key: k,
+            data: physicsDataRef.current.get(k)!,
+            el: bubbleElementsRef.current.get(k),
+          }));
+
+          // 1. Position update & wall collisions
+          for (const item of items) {
+            const { data, el } = item;
+            if (el) {
+              data.w = el.offsetWidth || data.w;
+              data.h = el.offsetHeight || data.h;
+            }
+
+            data.x += data.vx;
+            data.y += data.vy;
+
+            const margin = 10;
+            // Left & Right
+            if (data.x <= margin) {
+              data.x = margin;
+              data.vx = Math.abs(data.vx);
+            } else if (data.x + data.w >= arenaW - margin) {
+              data.x = Math.max(margin, arenaW - margin - data.w);
+              data.vx = -Math.abs(data.vx);
+            }
+
+            // Top & Bottom
+            if (data.y <= margin) {
+              data.y = margin;
+              data.vy = Math.abs(data.vy);
+            } else if (data.y + data.h >= arenaH - margin) {
+              data.y = Math.max(margin, arenaH - margin - data.h);
+              data.vy = -Math.abs(data.vy);
+            }
+          }
+
+          // 2. Inter-bubble collisions (elastic repulsion)
+          for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+              const b1 = items[i].data;
+              const b2 = items[j].data;
+
+              const cx1 = b1.x + b1.w / 2;
+              const cy1 = b1.y + b1.h / 2;
+              const cx2 = b2.x + b2.w / 2;
+              const cy2 = b2.y + b2.h / 2;
+
+              const dx = cx2 - cx1;
+              const dy = cy2 - cy1;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              const minDist = (b1.w + b2.w) / 4 + (b1.h + b2.h) / 4 + 8;
+
+              if (dist < minDist && dist > 0.01) {
+                const nx = dx / dist;
+                const ny = dy / dist;
+
+                const kx = b1.vx - b2.vx;
+                const ky = b1.vy - b2.vy;
+                const p = nx * kx + ny * ky;
+
+                b1.vx -= p * nx;
+                b1.vy -= p * ny;
+                b2.vx += p * nx;
+                b2.vy += p * ny;
+
+                const overlap = (minDist - dist) * 0.5;
+                b1.x -= nx * overlap;
+                b1.y -= ny * overlap;
+                b2.x += nx * overlap;
+                b2.y += ny * overlap;
+              }
+            }
+          }
+
+          // 3. Gentle speed damping / boosting & direct DOM update
+          for (const item of items) {
+            const { data, el } = item;
+            const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
+            if (speed < 0.25) {
+              data.vx = (data.vx || 0.3) * 1.2;
+              data.vy = (data.vy || 0.3) * 1.2;
+            } else if (speed > 1.1) {
+              data.vx = (data.vx / speed) * 1.1;
+              data.vy = (data.vy / speed) * 1.1;
+            }
+
+            if (el) {
+              el.style.transform = `translate3d(${data.x}px, ${data.y}px, 0)`;
+            }
+          }
+        }
+      }
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // Send reaction to others
+  const handleSendReaction = (type: 'WAVE' | 'HEART' | 'CHEER') => {
+    examSound.play('REACTION', soundEnabled);
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'PARTICIPANT_REACTION',
+        payload: {
+          userId: currentUserId,
+          userName: currentUserName,
+          reactionType: type,
+        },
+      });
+    } catch {}
+
+    setFloatingReactions((prev) => [
+      {
+        id: crypto.randomUUID(),
+        reactionType: type,
+        timestamp: Date.now(),
+        xPercent: 15 + Math.random() * 70,
+      },
+      ...prev.slice(0, 8),
+    ]);
+  };
+
   const handleCopyPin = () => {
     const rawPin = room?.roomCode || pin;
     if (!rawPin) return;
@@ -340,12 +692,11 @@ function WaitingRoomContent() {
   if (loading && !room) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black p-6">
-        <div className="max-w-md w-full p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-3 shadow-xs">
-          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto" />
-          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+        <div className="flex flex-col items-center justify-center space-y-3 text-center animate-in fade-in">
+          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
+          <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
             Đang xác thực mã PIN và kết nối phòng chờ...
           </div>
-          <div className="text-xs text-slate-400 font-mono">Mã PIN: {pin}</div>
         </div>
       </div>
     );
@@ -376,250 +727,359 @@ function WaitingRoomContent() {
   const rawPin = room?.roomCode || pin;
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 lg:p-8 transition-colors">
-      {/* 1. Header Ca Thi Chuẩn Tinh Gọn */}
-      <header className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-950 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 font-mono">
-              PHÒNG CHỜ KHẢO THÍ TRỰC TIẾP
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 relative overflow-hidden">
+      {/* ===================== HEADER ===================== */}
+      <header className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 relative z-20 bg-white/95 dark:bg-black/95 backdrop-blur-sm shadow-[0_1px_0_0_#e2e8f0] dark:shadow-[0_1px_0_0_#27272a]">
+        {/* Left: Live indicator + Title */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-60" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
             </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 font-mono hidden sm:block">Live</span>
           </div>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            {room?.title || 'Phòng Khảo Thí Trực Tiếp'}
-          </h1>
-          <div className="text-xs flex items-center gap-2 flex-wrap text-slate-500 dark:text-neutral-400">
-            <span className="font-medium text-neutral-800 dark:text-neutral-200">{room?.assessmentTitle}</span>
-            <span>&bull;</span>
-            <span>Thời lượng: {room?.durationMinutes || 45} phút</span>
-            <span>&bull;</span>
-            <span className="font-semibold text-blue-600 dark:text-blue-400">
-              {participants.length} thí sinh đang trực tuyến
-            </span>
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate leading-tight">
+              {room?.title || 'Phòng Khảo Thí Trực Tiếp'}
+            </h1>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-neutral-500 mt-0.5">
+              <Clock className="w-3 h-3 shrink-0" />
+              <span>{room?.durationMinutes || 45} phút</span>
+              <span className="text-slate-300 dark:text-neutral-600">•</span>
+              <Users className="w-3 h-3 shrink-0 text-blue-500" />
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">{participants.length} trong sảnh</span>
+            </div>
           </div>
         </div>
 
-        {/* PIN Badge, Sound Toggle & Exit Action */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Sound Toggle */}
+        {/* Right: Controls */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Network status */}
+          <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
+            <Wifi className="w-3 h-3" />
+            <span>Ổn định</span>
+          </div>
+
+          {/* Help / Rules */}
+          <button
+            type="button"
+            onClick={() => setShowRulesModal(true)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            title="Quy chế làm bài"
+          >
+            <ShieldCheck className="w-4 h-4" />
+          </button>
+
+          {/* Sound */}
           <button
             type="button"
             onClick={toggleSound}
-            className={`p-2.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
               soundEnabled
-                ? 'border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
-                : 'border-slate-200 dark:border-zinc-800 text-slate-400 hover:text-slate-600'
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-zinc-900'
             }`}
-            title={soundEnabled ? 'Tắt âm thanh thông báo' : 'Bật âm thanh thông báo'}
+            title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
-          {/* PIN Copy Button */}
+          {/* PIN */}
           <button
             type="button"
             onClick={handleCopyPin}
-            className="px-3 sm:px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group"
-            title="Nhấn để sao chép mã PIN"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 transition-colors cursor-pointer group"
+            title="Sao chép mã PIN"
           >
-            <span className="text-[10px] uppercase font-bold tracking-wider block text-slate-400 dark:text-neutral-500 font-mono">
-              MÃ PIN
+            <span className="text-[11px] font-mono font-bold tracking-widest">
+              {rawPin.length === 6 ? `${rawPin.slice(0, 3)} ${rawPin.slice(3)}` : rawPin}
             </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base sm:text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 tracking-wider">
-                {rawPin.length === 6 ? `${rawPin.slice(0, 3)} ${rawPin.slice(3)}` : rawPin}
-              </span>
-              {copiedPin ? (
-                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              ) : (
-                <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 shrink-0" />
-              )}
-            </div>
+            {copiedPin ? (
+              <Check className="w-3 h-3 text-emerald-400 dark:text-emerald-600" />
+            ) : (
+              <Copy className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+            )}
           </button>
 
+          {/* Leave */}
           <Link
             href="/personal/dashboard"
-            className="px-3 sm:px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-neutral-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+            title="Rời phòng"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Rời phòng</span>
+            <LogOut className="w-4 h-4" />
           </Link>
         </div>
       </header>
 
-      {/* Starting Exam Trigger Banner */}
+      {/* Starting Banner */}
       {startingNotice && (
-        <div className="my-3 p-4 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 animate-pulse shadow-md">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>Giám thị đã phát đề! Đang chuyển hướng bạn vào màn hình làm bài...</span>
+        <div className="shrink-0 mx-4 sm:mx-6 lg:mx-8 mt-3 p-3.5 rounded-xl bg-blue-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg relative z-20">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>Giám thị đã phát đề! Đang chuyển vào màn hình làm bài...</span>
         </div>
       )}
 
-      {/* 2. Main Body: 2 Cột Đối Xứng */}
-      <main className="my-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Cột Trái: Trạng thái chờ, Thí sinh cá nhân & Danh sách phòng (8 cols) */}
-        <div className="lg:col-span-8 space-y-4">
-          {/* Card Trạng Thái Sảnh Chờ (Academic Deep Lobby Card) */}
-          <div className="p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-4 shadow-xs">
-            {countdownSeconds !== null ? (
-              <div className="space-y-2">
-                <span className="text-xs uppercase tracking-widest font-semibold block text-slate-500 dark:text-neutral-400 font-mono">
-                  Thời gian còn lại đến khi mở đề ca thi
-                </span>
-                <div className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
-                  {formatCountdown(countdownSeconds)}
-                </div>
+      {/* ===================== MAIN CONTENT ===================== */}
+      <main className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-10 max-w-5xl mx-auto w-full gap-4">
+        {/* Status Hero */}
+        <div className="text-center space-y-1.5">
+          {countdownSeconds !== null ? (
+            <>
+              <span className="text-[11px] uppercase tracking-widest font-semibold text-slate-400 dark:text-neutral-500 font-mono block">
+                Ca thi mở sau
+              </span>
+              <div className="text-4xl sm:text-5xl font-mono font-black tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+                {formatCountdown(countdownSeconds)}
               </div>
-            ) : (
-              <div className="space-y-3 py-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
-                  <Radio className="w-6 h-6 animate-pulse" />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                    Đang chờ Giám thị phát đề thi
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-md mx-auto leading-relaxed">
-                    Bạn đã kết nối thành công vào phòng thi. Màn hình làm bài sẽ tự động bắt đầu ngay khi Giám thị phát đề cho cả phòng.
-                  </p>
-                </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <Radio className="w-4 h-4 animate-pulse" />
+                <span className="text-sm font-semibold">Đang chờ Giám thị phát đề</span>
               </div>
-            )}
-
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-850 text-slate-700 dark:text-neutral-300">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-semibold text-emerald-700 dark:text-emerald-300">Đã sẵn sàng nhận đề</span>
-              </div>
-              <span className="text-slate-300 dark:text-zinc-600">&bull;</span>
-              <div className="flex items-center gap-1 text-slate-500 dark:text-neutral-400">
-                <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>{participants.length} thí sinh trong sảnh</span>
-              </div>
+              <p className="text-xs text-slate-400 dark:text-neutral-500 max-w-sm">
+                Màn hình làm bài sẽ tự động mở khi Giám thị phát đề.
+              </p>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Card Trạng Thái Cá Nhân (Device & Connection Check) */}
-          <div className="p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-5 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm font-mono shadow-xs shrink-0">
-                  {currentUserInitials}
-                </div>
-                <div className="space-y-0.5">
-                  <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                    {currentUserName}
-                  </div>
-                  <div className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Đã tham gia phòng thi &amp; Sẵn sàng nhận đề</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Verified badges */}
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50">
-                  <Wifi className="w-3.5 h-3.5" />
-                  <span>Mạng ổn định</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/50">
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>Thiết bị hợp lệ</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Danh sách các bạn cùng phòng thi */}
-            <div className="pt-2 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 font-semibold">
-                <span>Thí sinh cùng phòng thi ({participants.length})</span>
-                <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
-                  {participants.length} đã kết nối
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
-                {participants.length === 0 ? (
-                  <div className="text-xs text-slate-400 py-2">
-                    Bạn là thí sinh đầu tiên có mặt trong sảnh chờ.
-                  </div>
+        {/* ===================== ARENA ===================== */}
+        <div
+          ref={arenaRef}
+          className="arena-dot-bg flex-1 w-full rounded-2xl min-h-[400px] sm:min-h-[480px] lg:min-h-[520px] relative overflow-hidden bg-slate-50 dark:bg-zinc-950 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]"
+        >
+          {/* Floating Reactions */}
+          {floatingReactions.map((re) => (
+            <div
+              key={re.id}
+              className="absolute pointer-events-none z-30 animate-reaction-rise"
+              style={{ left: `${re.xPercent}%`, bottom: '70px' }}
+            >
+              <div className="w-11 h-11 rounded-full bg-white dark:bg-zinc-800 shadow-[0_4px_24px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] border border-slate-100 dark:border-zinc-700 flex items-center justify-center">
+                {re.reactionType === 'WAVE' ? (
+                  <Hand className="w-5 h-5 text-amber-500" />
+                ) : re.reactionType === 'HEART' ? (
+                  <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
                 ) : (
-                  participants.map((p) => {
-                    const isMe = p.userId === currentUserId;
-                    return (
-                      <div
-                        key={p.id}
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                          isMe
-                            ? 'border-blue-600/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 font-bold'
-                            : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-neutral-300'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="truncate max-w-[140px]">
-                          {p.fullName} {isMe ? '(Bạn)' : ''}
-                        </span>
-                      </div>
-                    );
-                  })
+                  <Sparkles className="w-5 h-5 text-violet-500 fill-violet-500" />
                 )}
               </div>
             </div>
+          ))}
+
+          {/* Bubble Canvas */}
+          <div className="absolute inset-0">
+            {participants.length === 0 ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Bạn đã vào phòng</p>
+                  <p className="text-xs text-slate-400 dark:text-neutral-500">Đang chờ các thí sinh khác tham gia...</p>
+                </div>
+              </div>
+            ) : (
+              participants.map((p, idx) => {
+                const isMe = p.userId === currentUserId;
+                const palette = getBubblePalette(p.userId || p.fullName);
+                const key = p.id || p.userId || String(idx);
+                const avatar = isMe ? (p.avatarUrl || currentUserAvatarUrl) : p.avatarUrl;
+
+                return (
+                  <div
+                    key={key}
+                    ref={(el) => {
+                      if (el) bubbleElementsRef.current.set(key, el);
+                      else bubbleElementsRef.current.delete(key);
+                    }}
+                    className="absolute top-0 left-0 will-change-transform cursor-default select-none bubble-pop-in"
+                    style={{ transform: 'translate3d(24px, 24px, 0)' }}
+                  >
+                    <div
+                      className={`inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+                        isMe
+                          ? 'bg-blue-600 text-white shadow-[0_4px_16px_rgba(37,99,235,0.35)] ring-4 ring-blue-600/15'
+                          : 'bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-100 shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.04] dark:ring-white/[0.06]'
+                      }`}
+                    >
+                      {/* Avatar */}
+                      {avatar ? (
+                        <img
+                          src={avatar}
+                          alt={p.fullName}
+                          className="w-6 h-6 rounded-full object-cover shrink-0"
+                          onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                            isMe
+                              ? 'bg-white/25 text-white'
+                              : `${palette.avatarBg} text-white`
+                          }`}
+                        >
+                          {p.initials || 'HV'}
+                        </span>
+                      )}
+
+                      {/* Name */}
+                      <span className="max-w-[120px] sm:max-w-[150px] truncate">
+                        {p.fullName}
+                        {isMe && <span className="opacity-60 font-normal ml-1 text-[11px]">(bạn)</span>}
+                      </span>
+
+                      {/* Live dot */}
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          isMe ? 'bg-white/70 animate-pulse' : palette.dot
+                        }`}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-        </div>
 
-        {/* Cột Phải: Quy chế & Hướng Dẫn Phòng Thi (4 cols) */}
-        <div className="lg:col-span-4 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-4 shadow-xs text-xs">
-          <div className="flex items-center gap-2 font-bold text-sm text-neutral-900 dark:text-neutral-100">
-            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Quy Chế &amp; Hướng Dẫn Làm Bài</span>
-          </div>
-
-          <div className="space-y-3 text-slate-600 dark:text-neutral-300 leading-relaxed">
-            <div className="flex items-start gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-              <span>Không chuyển tab hoặc thoát toàn màn hình trong suốt thời gian làm bài.</span>
+          {/* Bottom Reaction Dock */}
+          <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center justify-between gap-2 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm shadow-[0_-1px_0_0_rgba(0,0,0,0.05)] dark:shadow-[0_-1px_0_0_rgba(255,255,255,0.05)]">
+            <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-neutral-500 font-medium shrink-0">
+              <Users className="w-3 h-3" />
+              <span>{participants.length} thí sinh</span>
             </div>
 
-            <div className="flex items-start gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-              <span>Đáp án được hệ thống lưu tự động theo thời gian thực (Auto-save) sau mỗi lựa chọn.</span>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-              <span>Khi Giám thị bấm phát đề thi, màn hình làm bài sẽ tự động mở tức thì.</span>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-              <span>Bài thi tự động thu và chấm điểm khi hết giờ hoặc khi Giám thị kết thúc ca thi.</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900 space-y-2 text-[11px] text-slate-500 dark:text-neutral-400 font-medium">
-            <div className="flex justify-between">
-              <span>Thời lượng làm bài:</span>
-              <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">{room?.durationMinutes || 45} phút</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Ngưỡng đạt tiêu chuẩn:</span>
-              <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{room?.passingScore || 70}%</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Chế độ giám sát:</span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">Ghi nhận rời tab &amp; toàn màn hình</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400 dark:text-neutral-500 hidden sm:block">Gửi tương tác:</span>
+              <button
+                type="button"
+                onClick={() => handleSendReaction('WAVE')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-amber-700 dark:text-amber-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-amber-200/60 dark:border-amber-800/40"
+              >
+                <Hand className="w-3.5 h-3.5" />
+                <span>Vẫy tay</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendReaction('HEART')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/70 text-rose-700 dark:text-rose-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-rose-200/60 dark:border-rose-800/40"
+              >
+                <Heart className="w-3.5 h-3.5" />
+                <span>May mắn</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendReaction('CHEER')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-950/70 text-violet-700 dark:text-violet-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-violet-200/60 dark:border-violet-800/40"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Cố lên!</span>
+              </button>
             </div>
           </div>
         </div>
       </main>
 
-      {/* 3. Footer Chuẩn Tinh Gọn */}
-      <footer className="text-center text-[11px] text-slate-400 dark:text-neutral-500 font-mono py-2">
-        Hệ thống Khảo thí Thời gian thực NEXA • Khảo thí chuẩn hóa 5 miền năng lực số
+      {/* Footer */}
+      <footer className="shrink-0 text-center text-[11px] text-slate-300 dark:text-neutral-600 font-mono py-2.5 relative z-10">
+        NEXA • Khảo thí chuẩn hóa 5 miền năng lực số
       </footer>
+
+      {/* =================== RULES MODAL =================== */}
+      {showRulesModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowRulesModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-[#111114] shadow-2xl ring-1 ring-black/10 dark:ring-white/10 p-6 space-y-5 animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">Quy Chế Làm Bài</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRulesModal(false)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-slate-600 dark:text-neutral-300 leading-relaxed">
+              {[
+                'Không chuyển tab hoặc thoát toàn màn hình trong suốt thời gian làm bài.',
+                'Đáp án được tự động lưu sau mỗi lần chọn.',
+                'Hệ thống sẽ đếm ngược và tự động mở bài thi khi Giám thị phát đề.',
+                'Bài thi tự động thu và khóa câu trả lời khi hết giờ.',
+              ].map((rule, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span>{rule}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-[11px] font-medium text-slate-500 dark:text-neutral-400">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 text-center space-y-0.5">
+                <Clock className="w-3.5 h-3.5 mx-auto text-slate-400" />
+                <span className="block font-bold text-neutral-800 dark:text-neutral-200">{room?.durationMinutes || 45} phút</span>
+                <span className="block text-[10px]">Thời lượng</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 text-center space-y-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5 mx-auto text-blue-500" />
+                <span className="block font-bold text-blue-600 dark:text-blue-400">{room?.passingScore || 70}%</span>
+                <span className="block text-[10px]">Ngưỡng đạt</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 text-center space-y-0.5">
+                <ShieldCheck className="w-3.5 h-3.5 mx-auto text-slate-400" />
+                <span className="block font-bold text-neutral-800 dark:text-neutral-200">Thực tế</span>
+                <span className="block text-[10px]">Giám sát</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowRulesModal(false)}
+              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors cursor-pointer"
+            >
+              Đã hiểu, sẵn sàng!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* =================== COUNTDOWN OVERLAY =================== */}
+      {incomingCountdown !== null && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-neutral-950/90 backdrop-blur-md animate-in fade-in duration-300 text-white p-6">
+          <div className="text-center space-y-6 max-w-xs">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-blue-400 font-mono font-bold block">
+              Giám thị đang phát đề
+            </span>
+            <div className="text-[120px] sm:text-[160px] font-black tracking-tighter text-white tabular-nums leading-none" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {incomingCountdown > 0 ? incomingCountdown : '!'}
+            </div>
+            <p className="text-sm text-neutral-400 leading-relaxed">
+              {incomingCountdown > 0
+                ? `Bắt đầu sau ${incomingCountdown} giây — hãy sẵn sàng!`
+                : 'Đang mở bài thi...'}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

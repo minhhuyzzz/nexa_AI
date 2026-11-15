@@ -170,7 +170,7 @@ function ProjectorContent() {
   const joinUrl = mounted && typeof window !== 'undefined'
     ? `${window.location.origin}/live?pin=${displayPin}`
     : `https://nexa.ai/live?pin=${displayPin}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(joinUrl)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(joinUrl)}&margin=10`;
 
   const currentTheme = room?.themeId || 'minimal_white';
   const isDarkTheme = currentTheme === 'space_blue' || currentTheme === 'aurora' || currentTheme === 'dark_professional';
@@ -232,56 +232,45 @@ function ProjectorContent() {
         </div>
       </div>
 
-      {/* 2. Main Arena Stage for Classroom Projector */}
-      <div className="my-auto py-8">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Cột Trái: Hướng dẫn & Mã PIN khổng lồ */}
-          <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-xs sm:text-sm font-semibold">
-                <Radio className="w-4 h-4 animate-pulse" />
-                <span>Sảnh chờ máy chiếu &ndash; Sẵn sàng nhận thí sinh</span>
-              </div>
+      {/* 2. Main Arena Stage for Classroom Projector: QR Code Chính Diện To Rõ */}
+      <div className="my-auto py-6">
+        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-xs sm:text-sm font-semibold">
+            <Radio className="w-4 h-4 animate-pulse" />
+            <span>Sảnh chờ máy chiếu &ndash; Sẵn sàng nhận thí sinh</span>
+          </div>
 
-              <div className="text-sm sm:text-base font-semibold text-neutral-600 dark:text-neutral-300">
-                1. Mở trình duyệt trên điện thoại hoặc máy tính:
-              </div>
-              <div className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white font-mono tracking-wide">
-                nexa.ai/live
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <div className="text-sm sm:text-base font-semibold text-neutral-600 dark:text-neutral-300">
-                2. Nhập mã PIN phòng thi:
-              </div>
-              <div
-                onClick={handleCopyPin}
-                className="inline-block p-4 sm:p-6 rounded-3xl bg-white dark:bg-black/60 border-2 border-blue-500/40 shadow-2xl cursor-pointer hover:border-blue-500 transition-all"
-                title="Bấm để sao chép PIN"
-              >
-                <div className="font-mono font-black text-6xl sm:text-8xl tracking-widest text-blue-600 dark:text-blue-400 tabular-nums">
-                  {displayPin.slice(0, 3)} {displayPin.slice(3)}
-                </div>
-              </div>
-              <div className="text-xs text-neutral-400 font-mono">
-                {copied ? '✓ Đã sao chép mã PIN' : 'Nhấp vào mã PIN để sao chép'}
-              </div>
+          {/* QR Code Container Chính Diện */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <img
+              src={qrUrl}
+              alt={`Mã QR PIN ${displayPin}`}
+              suppressHydrationWarning
+              className="w-64 h-64 sm:w-80 sm:h-80 object-contain rounded-2xl mx-auto"
+            />
+            <div className="font-mono font-bold text-xs text-slate-800 uppercase tracking-widest">
+              Quét mã bằng điện thoại để vào phòng thi
             </div>
           </div>
 
-          {/* Cột Phải: Mã QR Khổng Lồ */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center">
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-2xl text-center space-y-3">
-              <img
-                src={qrUrl}
-                alt={`QR PIN ${displayPin}`}
-                suppressHydrationWarning
-                className="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-xl mx-auto"
-              />
-              <div className="font-mono font-bold text-xs text-slate-800 uppercase tracking-wider">
-                Quét mã để vào thẳng phòng thi
+          {/* Thông tin Mã PIN & Đường link song song */}
+          <div className="space-y-3">
+            <div className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400">
+              Hoặc mở trình duyệt truy cập <strong className="font-mono text-neutral-900 dark:text-white">nexa.ai/live</strong> và nhập mã PIN:
+            </div>
+
+            <div
+              onClick={handleCopyPin}
+              className="inline-block px-8 py-3.5 rounded-2xl bg-white dark:bg-black/60 border-2 border-blue-500/40 hover:border-blue-500 shadow-xl cursor-pointer transition-all"
+              title="Bấm để sao chép PIN"
+            >
+              <div className="font-mono font-black text-5xl sm:text-6xl tracking-widest text-blue-600 dark:text-blue-400 tabular-nums">
+                {displayPin.slice(0, 3)} {displayPin.slice(3)}
               </div>
+            </div>
+
+            <div className="text-[11px] text-neutral-400 font-mono">
+              {copied ? '✓ Đã sao chép mã PIN' : 'Nhấp vào mã PIN để sao chép'}
             </div>
           </div>
         </div>

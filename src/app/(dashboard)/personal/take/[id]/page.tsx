@@ -155,6 +155,7 @@ function AssessmentTakeContent({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [instantFeedbackEnabled, setInstantFeedbackEnabled] = useState(false);
+  const [tabSwitchAlertEnabled, setTabSwitchAlertEnabled] = useState(false);
   const [submittedResult, setSubmittedResult] = useState<any | null>(null);
   const [lastSaved, setLastSaved] = useState<string>('Vừa xong');
   const [analyzingState, setAnalyzingState] = useState<{
@@ -193,6 +194,14 @@ function AssessmentTakeContent({
     });
   }, []);
 
+  const isBaseline = Boolean(
+    assessmentId === 'baseline' ||
+    assessmentId === 'a0000000-0000-0000-0000-000000000001' ||
+    assessment?.is_system_baseline ||
+    assessment?.title?.toLowerCase().includes('đầu vào') ||
+    assessment?.title?.toLowerCase().includes('khảo thí đầu vào')
+  );
+
   const effectiveSecuritySettings = assessment?.security_settings || DEFAULT_SECURITY_SETTINGS;
 
   const proctoring = useSmartProctoring({
@@ -202,10 +211,16 @@ function AssessmentTakeContent({
       email: candidateUser.email,
       fullName: candidateUser.fullName,
     },
-    enabled: Boolean(assessment && !submittedResult && !isPreview),
+    enabled: Boolean(
+      assessment &&
+      !submittedResult &&
+      !isPreview &&
+      (roomId ? tabSwitchAlertEnabled : !isBaseline)
+    ),
     onViolation: (event) => {
-      // Nếu đang trong phòng thi Live trực tiếp, phát broadcast và ghi nhận sự kiện máy chủ
+      // Nếu đang trong phòng thi Live trực tiếp, chỉ phát broadcast và ghi nhận sự kiện nếu Host bật giám sát đổi tab
       if (roomId) {
+        if (!tabSwitchAlertEnabled) return;
         try {
           const supabase = createClient();
           supabase.channel(`room:${roomId}`).send({
@@ -457,6 +472,9 @@ function AssessmentTakeContent({
                   if ((roomData.room.proctoringProfile as any).instant_feedback) {
                     setInstantFeedbackEnabled(true);
                   }
+                  if ((roomData.room.proctoringProfile as any).tab_switch_alert) {
+                    setTabSwitchAlertEnabled(true);
+                  }
                 }
               }
             } catch {
@@ -536,14 +554,6 @@ function AssessmentTakeContent({
 
     loadAssessment();
   }, [assessmentId, roomId, pin]);
-
-  const isBaseline = Boolean(
-    assessmentId === 'baseline' ||
-    assessmentId === 'a0000000-0000-0000-0000-000000000001' ||
-    assessment?.is_system_baseline ||
-    assessment?.title?.toLowerCase().includes('đầu vào') ||
-    assessment?.title?.toLowerCase().includes('khảo thí đầu vào')
-  );
 
   // 2. Countdown Timer (Only for Formal Time-Limited Exams, NEVER for Intake Assessment, NEVER for Preview Mode)
   useEffect(() => {
@@ -628,10 +638,19 @@ function AssessmentTakeContent({
     return () => clearTimeout(debounceTimer);
   }, [roomId, candidateUser.id, selectedAnswers, textAnswers, questions.length]);
 
-  // 3. Smart Proctoring (Only for Formal Live Exam Rooms with PIN, NEVER for Intake Assessment)
+  // 3. Smart Proctoring (Only for Formal Live Exam Rooms with PIN when tab_switch_alert is enabled, NEVER for Intake Assessment)
   useEffect(() => {
-    // Khảo thí đầu vào hoàn toàn không cần cơ chế giám sát / chống gian lận
-    if (isBaseline || !roomId || loading || isSubmitting || submittedResult || isStage1Locked || activeStage !== 'STAGE_1_OBJECTIVE') {
+    // Khảo thí đầu vào hoặc phòng thi không bật giám sát tab -> hoàn toàn không kích hoạt bộ theo dõi
+    if (
+      isBaseline ||
+      !roomId ||
+      !tabSwitchAlertEnabled ||
+      loading ||
+      isSubmitting ||
+      submittedResult ||
+      isStage1Locked ||
+      activeStage !== 'STAGE_1_OBJECTIVE'
+    ) {
       return;
     }
 
@@ -719,7 +738,7 @@ function AssessmentTakeContent({
       window.removeEventListener('focus', handleWindowFocus);
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
     };
-  }, [isBaseline, roomId, loading, isSubmitting, submittedResult, isStage1Locked, activeStage]);
+  }, [isBaseline, roomId, tabSwitchAlertEnabled, loading, isSubmitting, submittedResult, isStage1Locked, activeStage]);
 
   // Split questions into 2 sections
   const stage1Questions = questions.filter(
