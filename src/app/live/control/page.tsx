@@ -294,7 +294,7 @@ function LiveControlContent() {
 
   useEffect(() => {
     fetchRoomState();
-    const interval = setInterval(() => fetchRoomState(true), 3500);
+    const interval = setInterval(() => fetchRoomState(true), 12000);
     return () => clearInterval(interval);
   }, [fetchRoomState]);
 
@@ -315,7 +315,7 @@ function LiveControlContent() {
     return () => clearInterval(timer);
   }, [room?.status, isTimerPaused]);
 
-  // Realtime Supabase Channel for participant events & tab switch
+  // Realtime Supabase Channel for participant events, Presence & tab switch
   useEffect(() => {
     if (!roomId) return;
     const supabase = createClient();
@@ -323,6 +323,90 @@ function LiveControlContent() {
     channelRef.current = channel;
 
     channel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = channel.presenceState();
+        const onlineMap = new Map<string, any>();
+        Object.values(presenceState).forEach((presences: any) => {
+          presences.forEach((p: any) => {
+            if (p?.userId && !onlineMap.has(p.userId)) {
+              onlineMap.set(p.userId, p);
+            }
+          });
+        });
+
+        if (onlineMap.size > 0) {
+          setParticipants((prev) => {
+            const prevMap = new Map(prev.map((it) => [it.userId, it]));
+            const updated = [...prev];
+
+            onlineMap.forEach((p, uid) => {
+              if (!prevMap.has(uid)) {
+                const rawName = p.fullName || `Học viên ${updated.length + 1}`;
+                const initials =
+                  p.initials ||
+                  rawName
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((w: string) => w[0])
+                    .slice(-2)
+                    .join('')
+                    .toUpperCase() ||
+                  'HV';
+                updated.push({
+                  id: p.id || uid,
+                  userId: uid,
+                  fullName: rawName,
+                  initials,
+                  avatarUrl: p.avatarUrl || null,
+                  status: 'WAITING',
+                  isReady: Boolean(p.isReady),
+                  connectionStatus: 'ONLINE',
+                  score: null,
+                  studentCode: `HV-${String(updated.length + 1).padStart(3, '0')}`,
+                  seatNumber: updated.length + 1,
+                  elapsedSeconds: 0,
+                  answersCount: 0,
+                  totalQuestions: 40,
+                  trustScore: 100,
+                  integrityFlag: 'HIGH_TRUST',
+                  violationsCount: 0,
+                });
+              } else {
+                const existing = prevMap.get(uid)!;
+                existing.connectionStatus = 'ONLINE';
+                if (typeof p.isReady === 'boolean') existing.isReady = p.isReady;
+              }
+            });
+            return updated;
+          });
+        }
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        newPresences.forEach((p: any) => {
+          if (p?.fullName) {
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            examSound.play('JOIN', lobbySound);
+            setRecentEvents((prev) => [
+              {
+                id: crypto.randomUUID(),
+                time: timeStr,
+                text: `${p.fullName} đã kết nối vào sảnh chờ.`,
+                type: 'CONNECTION',
+              },
+              ...prev.slice(0, 19),
+            ]);
+          }
+        });
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        const leftUserIds = new Set(leftPresences.map((p: any) => p.userId).filter(Boolean));
+        if (leftUserIds.size > 0) {
+          setParticipants((prev) =>
+            prev.map((p) => (leftUserIds.has(p.userId) ? { ...p, connectionStatus: 'OFFLINE' } : p))
+          );
+        }
+      })
       .on('broadcast', { event: 'PARTICIPANT_JOIN' }, (payload) => {
         const pName = payload.payload?.fullName || 'Thí sinh mới';
         const now = new Date();
@@ -337,7 +421,6 @@ function LiveControlContent() {
           },
           ...prev.slice(0, 19),
         ]);
-        fetchRoomState(true);
       })
       .on('broadcast', { event: 'PARTICIPANT_LEAVE' }, (payload) => {
         const pName = payload.payload?.fullName || 'Thí sinh';
@@ -356,11 +439,11 @@ function LiveControlContent() {
         if (leftUserId) {
           setParticipants((prev) => prev.filter((p) => p.userId !== leftUserId && p.id !== leftUserId));
         }
-        fetchRoomState(true);
       })
       .on('broadcast', { event: 'PARTICIPANT_READY' }, (payload) => {
         const pName = payload.payload?.fullName || 'Thí sinh';
         const isR = payload.payload?.isReady;
+        const targetUserId = payload.payload?.userId;
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         setRecentEvents((prev) => [
@@ -372,13 +455,37 @@ function LiveControlContent() {
           },
           ...prev.slice(0, 19),
         ]);
-        fetchRoomState(true);
+        if (targetUserId && typeof isR === 'boolean') {
+          setParticipants((prev) =>
+            prev.map((p) => (p.userId === targetUserId ? { ...p, isReady: isR } : p))
+          );
+        }
       })
       .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, (payload) => {
-        if (payload?.payload?.status === 'SUBMITTED') {
+        const targetUserId = payload?.payload?.userId;
+        const targetStatus = payload?.payload?.status;
+        const targetScore = payload?.payload?.score;
+        const answersCount = payload?.payload?.answersCount;
+        const totalQuestions = payload?.payload?.totalQuestions;
+
+        if (targetStatus === 'SUBMITTED') {
           examSound.play('SUBMIT', lobbySound);
         }
-        fetchRoomState(true);
+
+        if (targetUserId) {
+          setParticipants((prev) =>
+            prev.map((p) => {
+              if (p.userId !== targetUserId) return p;
+              return {
+                ...p,
+                status: targetStatus || p.status,
+                score: typeof targetScore === 'number' ? targetScore : p.score,
+                answersCount: typeof answersCount === 'number' ? answersCount : p.answersCount,
+                totalQuestions: typeof totalQuestions === 'number' ? totalQuestions : p.totalQuestions,
+              };
+            })
+          );
+        }
       })
       .on('broadcast', { event: 'TAB_SWITCH_ALERT' }, (payload) => {
         // Chỉ ghi nhận cảnh báo nếu ca thi thực sự bật giám sát đổi tab

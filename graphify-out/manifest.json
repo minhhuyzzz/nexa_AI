@@ -660,9 +660,9 @@
     "semantic_hash": "a02b377e96d6c0b2f6d6fc67948b2f06"
   },
   "src/app/(dashboard)/personal/take/[id]/page.tsx": {
-    "mtime": 1794720773.7212076,
-    "seen": 1794726177.0199482,
-    "ast_hash": "d689a109492fdd14675a9d13175f0782",
+    "mtime": 1794745612.4099422,
+    "seen": 1794746273.3541327,
+    "ast_hash": "62cca8932dffe342fcb8812f0b7f0bb0",
     "semantic_hash": ""
   },
   "src/app/api/admin/ai-gateway/route.ts": {
@@ -978,9 +978,9 @@
     "semantic_hash": "17d3be1bdd263637146ecd77f03de45b"
   },
   "src/app/api/evaluator/rooms/route.ts": {
-    "mtime": 1794714472.4705622,
-    "seen": 1794726177.0591054,
-    "ast_hash": "87cbb5bcdba0a48c684ac0b767239e66",
+    "mtime": 1794742213.3368418,
+    "seen": 1794746273.3719962,
+    "ast_hash": "b3ac556aeab920adf419a7f359cb364a",
     "semantic_hash": ""
   },
   "src/app/api/evaluator/submissions/route.ts": {
@@ -1146,15 +1146,15 @@
     "semantic_hash": "9886845261c207afb8eeb7c9e21d85e0"
   },
   "src/app/api/rooms/join/route.ts": {
-    "mtime": 1794716785.6921115,
-    "seen": 1794726177.0851521,
-    "ast_hash": "c230c6b235598a7d97eca7cccfbf75fd",
+    "mtime": 1794745295.8107235,
+    "seen": 1794746273.3882024,
+    "ast_hash": "d87f0ef7dc89795ec6c8aaa2eaebd6b9",
     "semantic_hash": ""
   },
   "src/app/api/rooms/status/route.ts": {
-    "mtime": 1794713875.152902,
-    "seen": 1794726177.0854979,
-    "ast_hash": "0c77b51f87c883fc815bca971ae9fd0c",
+    "mtime": 1794745238.312376,
+    "seen": 1794746273.3884525,
+    "ast_hash": "473a40f9bc5f805735a9aaad26c8f6f1",
     "semantic_hash": ""
   },
   "src/app/api/webhooks/payment/route.ts": {
@@ -1200,9 +1200,9 @@
     "semantic_hash": "2fcdb833aa8f1ee65ca36ecdcd3bb57e"
   },
   "src/app/live/control/page.tsx": {
-    "mtime": 1794724648.95911,
-    "seen": 1794726177.0884767,
-    "ast_hash": "88eb2c0bb308b755eb4e9cac508aab0c",
+    "mtime": 1794745511.3773506,
+    "seen": 1794746273.3898401,
+    "ast_hash": "92d2e02118a553e9ea298ad4fc8512c7",
     "semantic_hash": ""
   },
   "src/app/live/layout.tsx": {
@@ -1212,9 +1212,9 @@
     "semantic_hash": "0fe8bf8ca3b460fc5cdc4eb3731d5412"
   },
   "src/app/live/waiting-room/page.tsx": {
-    "mtime": 1794725369.2622032,
-    "seen": 1794726177.0898576,
-    "ast_hash": "4899ba31dec48a3142750682ff6ccbb3",
+    "mtime": 1794745591.326627,
+    "seen": 1794746273.3901918,
+    "ast_hash": "aa96c740eab6ab16b77bbf199379dcd8",
     "semantic_hash": ""
   },
   "src/app/not-found.tsx": {
@@ -3438,15 +3438,15 @@
     "semantic_hash": ""
   },
   "tasks/plan.md": {
-    "mtime": 1794719349.2489007,
-    "seen": 1794726177.3447335,
-    "ast_hash": "45984b042fdb34e16007fe0d25f83812",
+    "mtime": 1794740897.1303113,
+    "seen": 1794746273.5349212,
+    "ast_hash": "e46a6a31cdd90789243f1931716692e8",
     "semantic_hash": ""
   },
   "tasks/todo.md": {
-    "mtime": 1794721683.299615,
-    "seen": 1794726177.3447402,
-    "ast_hash": "fcf267e155a7abf83749c54b9dffa297",
+    "mtime": 1794741698.5480614,
+    "seen": 1794746273.5349247,
+    "ast_hash": "489a3c7d97f3a22759b1cda0524ebf84",
     "semantic_hash": ""
   },
   ".agents/skills/taste-skill/assets/readme-banner.webp": {
@@ -4134,9 +4134,9 @@
     "semantic_hash": "f2c84e6c7f52a924a906499d0c38ed86"
   },
   "src/app/(dashboard)/personal/live-room/[id]/results/page.tsx": {
-    "mtime": 1794719859.922986,
-    "seen": 1794726177.015321,
-    "ast_hash": "a74855815f1403fa1c55b33bd041910c",
+    "mtime": 1794736241.343032,
+    "seen": 1794746273.351992,
+    "ast_hash": "1ca3605ace70353e214fd543753869e4",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/live-room/new/page.tsx": {
@@ -4146,10 +4146,10 @@
     "semantic_hash": "40e31869383bd0d30094d7d58a0294a1"
   },
   "src/app/api/rooms/[id]/results/route.ts": {
-    "mtime": 1794193389.3785863,
-    "seen": 1794532981.6187258,
-    "ast_hash": "4bbfe5fccdc99602f42b849c182fc5d1",
-    "semantic_hash": "4bbfe5fccdc99602f42b849c182fc5d1"
+    "mtime": 1794742255.7157552,
+    "seen": 1794746273.3875434,
+    "ast_hash": "2d6ee47511d3a9aac31221ea459d9e8c",
+    "semantic_hash": ""
   },
   "src/app/api/rooms/announcements/route.ts": {
     "mtime": 1793530640.2625356,
@@ -4164,9 +4164,9 @@
     "semantic_hash": "fdf4d1a60f39c40110539ce617517257"
   },
   "src/app/live/submitted/page.tsx": {
-    "mtime": 1794721573.0675871,
-    "seen": 1794726177.0898526,
-    "ast_hash": "518654c61485d8d8e71a03ccfe810745",
+    "mtime": 1794736166.7861369,
+    "seen": 1794746273.3901882,
+    "ast_hash": "5d6898095d426df6315d5053a63aaf43",
     "semantic_hash": ""
   },
   "src/features/assessments/services/live-room-workflow.test.ts": {
@@ -6264,9 +6264,9 @@
     "semantic_hash": "287e1e5e5196dad6ff6595ba5ab79a97"
   },
   "src/components/dashboard/live-room/CreateLiveRoomWizardView.tsx": {
-    "mtime": 1794724319.8812919,
-    "seen": 1794726177.111706,
-    "ast_hash": "fc21b9fa9f0d108af9d2c3c68a2cc15c",
+    "mtime": 1794740997.2082644,
+    "seen": 1794746273.4017189,
+    "ast_hash": "cb517f09b82baefa96fa1cc4b3d22fe2",
     "semantic_hash": ""
   },
   "docs/ai-integration-architecture.md": {
@@ -6330,9 +6330,9 @@
     "semantic_hash": ""
   },
   "src/app/live/projector/page.tsx": {
-    "mtime": 1794724686.4609103,
-    "seen": 1794726177.089847,
-    "ast_hash": "65d1e55896c66f5fef8639f4c37f4b1d",
+    "mtime": 1794735711.192676,
+    "seen": 1794746273.3901846,
+    "ast_hash": "647d25a25d51756c6a6be0d92f0dc93e",
     "semantic_hash": ""
   },
   "docs/NEXA_ASSESSMENT_FLOW_RBAC_AND_REPORTS_SPEC_2026.md": {
@@ -7212,9 +7212,9 @@
     "semantic_hash": ""
   },
   "tests/challenger-m5-live-room-tdd.test.ts": {
-    "mtime": 1794721411.1377213,
-    "seen": 1794726177.229777,
-    "ast_hash": "cb82b4b2454873a2386e78d464b9b868",
+    "mtime": 1794737759.9548395,
+    "seen": 1794746273.4616733,
+    "ast_hash": "157faa2e2024ab8341184a154cad6646",
     "semantic_hash": ""
   },
   "docs/DANH_GIA_VA_THIET_KE_PHONG_THI_LIVE_2026.md": {
@@ -7227,6 +7227,30 @@
     "mtime": 1794719303.5966153,
     "seen": 1794726177.3378088,
     "ast_hash": "d438a35629624763991bce858d295435",
+    "semantic_hash": ""
+  },
+  "src/app/api/rooms/leave/route.ts": {
+    "mtime": 1794728856.961306,
+    "seen": 1794746273.3882072,
+    "ast_hash": "49eb0283daa4d384bd24bb67a663bd49",
+    "semantic_hash": ""
+  },
+  "docs/intent/live-exam-flow-and-results.md": {
+    "mtime": 1794733712.5096302,
+    "seen": 1794746273.5311213,
+    "ast_hash": "2a2c0f5ea0e5683c45983c7250716768",
+    "semantic_hash": ""
+  },
+  "docs/intent/live-room-setup-restructure.md": {
+    "mtime": 1794740885.3839762,
+    "seen": 1794746273.5313792,
+    "ast_hash": "ed5a205ef48013fa5ddba84398ab81a8",
+    "semantic_hash": ""
+  },
+  "docs/reviews/live-room-audit-and-scalability-report.md": {
+    "mtime": 1794743222.631359,
+    "seen": 1794746273.5315938,
+    "ast_hash": "80b718ab337d757133410600e6ed5ab1",
     "semantic_hash": ""
   },
   ".agents/skills/stageshow/package-lock.json": {

@@ -172,7 +172,13 @@ export async function GET(request: Request) {
 
     const hasStarted = effectiveStatus === 'IN_PROGRESS';
     const startedAt = room.started_at || null;
-    const durationMinutes = rawAssessment?.duration_minutes || 45;
+    const publishSettings = (typeof room.results_publish_settings === 'object' && room.results_publish_settings !== null)
+      ? (room.results_publish_settings as any)
+      : {};
+    const durationMinutes =
+      Number(publishSettings?.duration_minutes) ||
+      rawAssessment?.duration_minutes ||
+      45;
 
     let elapsedSeconds = 0;
     if (startedAt && hasStarted) {

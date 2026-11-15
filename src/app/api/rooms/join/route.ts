@@ -50,6 +50,8 @@ export async function POST(request: Request) {
         class_id,
         organization_id,
         scheduled_start,
+        theme_id,
+        results_publish_settings,
         assessments (
           id,
           title,
@@ -127,6 +129,13 @@ export async function POST(request: Request) {
       );
 
     const rawAssessment = Array.isArray(room.assessments) ? room.assessments[0] : room.assessments;
+    const publishSettings = (typeof room.results_publish_settings === 'object' && room.results_publish_settings !== null)
+      ? (room.results_publish_settings as any)
+      : {};
+    const durationMinutes =
+      Number(publishSettings?.duration_minutes) ||
+      rawAssessment?.duration_minutes ||
+      45;
 
     return NextResponse.json({
       success: true,
@@ -135,7 +144,8 @@ export async function POST(request: Request) {
       roomTitle: room.title,
       assessmentId: room.assessment_id,
       assessmentTitle: rawAssessment?.title || 'Bài thi khảo thí',
-      durationMinutes: rawAssessment?.duration_minutes || 45,
+      durationMinutes,
+      themeId: room.theme_id || 'minimal_white',
       hasStarted: isExamRunning,
       startedAt: room.started_at || null,
       isLocked: room.is_locked,

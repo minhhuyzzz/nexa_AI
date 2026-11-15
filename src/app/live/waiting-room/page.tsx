@@ -450,15 +450,15 @@ function WaitingRoomContent() {
     } catch {}
   }, [room?.id, room?.roomCode, roomIdFromUrl, pin, assessmentIdFromUrl, router, room?.themeId]);
 
-  // Run status polling every 3 seconds as a resilient backup
+  // Run status polling every 12 seconds as a lightweight resilient backup (Presence handles real-time roster)
   useEffect(() => {
     if (!room?.id) return;
     fetchStatus();
-    const timer = setInterval(fetchStatus, 3000);
+    const timer = setInterval(fetchStatus, 12000);
     return () => clearInterval(timer);
   }, [room?.id, fetchStatus]);
 
-  // 4. Realtime Supabase Channel (Instant <100ms reactions, countdown & sync)
+  // 4. Realtime Supabase Channel (Supabase Realtime Presence & Instant <100ms events)
   useEffect(() => {
     const activeRoomId = room?.id || roomIdFromUrl;
     if (!activeRoomId) return;
@@ -468,6 +468,56 @@ function WaitingRoomContent() {
     channelRef.current = channel;
 
     channel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = channel.presenceState();
+        const onlineMap = new Map<string, Participant>();
+
+        Object.values(presenceState).forEach((presences: any) => {
+          presences.forEach((p: any) => {
+            if (p?.userId && !onlineMap.has(p.userId)) {
+              onlineMap.set(p.userId, {
+                id: p.id || p.userId,
+                userId: p.userId,
+                fullName: p.fullName || 'Thí sinh',
+                initials: p.initials || 'TS',
+                avatarUrl: p.avatarUrl || null,
+                status: p.status || 'WAITING',
+                isReady: p.isReady ?? true,
+              });
+            }
+          });
+        });
+
+        const presenceList = Array.from(onlineMap.values());
+        if (presenceList.length > 0) {
+          setParticipants((prev) => {
+            const existingMap = new Map(prev.map((it) => [it.userId, it]));
+            presenceList.forEach((np) => {
+              existingMap.set(np.userId, {
+                ...(existingMap.get(np.userId) || {}),
+                ...np,
+              });
+            });
+            return Array.from(existingMap.values());
+          });
+        }
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        const hasOther = newPresences.some((p: any) => p.userId && p.userId !== currentUserId);
+        if (hasOther) {
+          examSound.play('JOIN', soundEnabled);
+        }
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        const leftIds = new Set(leftPresences.map((p: any) => p.userId).filter(Boolean));
+        if (leftIds.size > 0) {
+          setParticipants((prev) => prev.filter((p) => !leftIds.has(p.userId)));
+          leftIds.forEach((id) => {
+            physicsDataRef.current.delete(id);
+            bubbleElementsRef.current.delete(id);
+          });
+        }
+      })
       .on('broadcast', { event: 'START_COUNTDOWN' }, (payload) => {
         const secs = Number(payload.payload?.seconds) || 5;
         setIncomingCountdown(secs);
@@ -516,7 +566,6 @@ function WaitingRoomContent() {
         const newP = payload.payload;
         if (newP && newP.userId !== currentUserId) {
           examSound.play('JOIN', soundEnabled);
-          fetchStatus();
         }
       })
       .on('broadcast', { event: 'PARTICIPANT_LEAVE' }, (payload) => {
@@ -526,13 +575,32 @@ function WaitingRoomContent() {
           physicsDataRef.current.delete(leftId);
           bubbleElementsRef.current.delete(leftId);
         }
-        fetchStatus();
       })
-      .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, () => {
-        fetchStatus();
+      .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, (payload) => {
+        const updatedUserId = payload.payload?.userId;
+        const newStatus = payload.payload?.status;
+        if (updatedUserId && newStatus) {
+          setParticipants((prev) =>
+            prev.map((p) => (p.userId === updatedUserId ? { ...p, status: newStatus } : p))
+          );
+        }
       })
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         if (status === 'SUBSCRIBED' && currentUserId) {
+          // Track candidate in Realtime Presence memory
+          try {
+            await channel.track({
+              id: currentUserId,
+              userId: currentUserId,
+              fullName: currentUserName,
+              initials: currentUserInitials,
+              avatarUrl: currentUserAvatarUrl,
+              isReady: true,
+              status: 'WAITING',
+              joinedAt: Date.now(),
+            });
+          } catch {}
+
           // Broadcast presence immediately to host
           channel.send({
             type: 'broadcast',

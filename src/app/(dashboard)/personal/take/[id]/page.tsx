@@ -470,18 +470,23 @@ function AssessmentTakeContent({
 
           setAssessment(data.assessment);
           setQuestions(loadedItems);
-          const totalSec = (data.assessment.duration_minutes || 45) * 60;
+          let totalSec = (data.assessment.duration_minutes || 45) * 60;
           let remainingSec = totalSec;
 
-          // Late joiner check: if joining an active live room, deduct elapsed time
+          // Late joiner check: if joining an active live room, deduct elapsed time & use custom room duration
           if (roomId || pin) {
             try {
               const roomRes = await fetch(`/api/rooms/status?roomId=${roomId || ''}&pin=${pin || ''}`);
               if (roomRes.ok) {
                 const roomData = await roomRes.json();
+                if (roomData.room?.durationMinutes) {
+                  totalSec = Number(roomData.room.durationMinutes) * 60;
+                }
                 if (roomData.room?.startedAt) {
                   const elapsed = Math.max(0, Math.floor((Date.now() - new Date(roomData.room.startedAt).getTime()) / 1000));
                   remainingSec = Math.max(0, totalSec - elapsed);
+                } else {
+                  remainingSec = totalSec;
                 }
                 if (roomData.room?.themeId) {
                   setExamTheme(roomData.room.themeId);
@@ -582,7 +587,15 @@ function AssessmentTakeContent({
       setTimeRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleFinalSubmitRef.current(); // Auto submit when time expires
+          // Thêm Random Jitter (0 - 2000ms) khi nộp bài tự động trong phòng Live để tránh dồn tải DB
+          const jitterMs = roomId ? Math.floor(Math.random() * 2000) : 0;
+          if (jitterMs > 0) {
+            setTimeout(() => {
+              handleFinalSubmitRef.current();
+            }, jitterMs);
+          } else {
+            handleFinalSubmitRef.current();
+          }
           return 0;
         }
         return prev - 1;
