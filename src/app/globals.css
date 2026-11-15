@@ -405,17 +405,15 @@
 }
 
 .arena-depth {
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.015) 50%, rgba(0,0,0,0.05) 100%),
-    radial-gradient(circle, #d4d4d8 0.7px, transparent 0.7px);
-  background-size: 100% 100%, 26px 26px;
+  background-color: #ffffff;
+  background-image: radial-gradient(circle, #cbd5e1 0.9px, transparent 0.9px);
+  background-size: 26px 26px;
 }
 
 .dark .arena-depth {
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 45%, rgba(255,255,255,0.012) 0%, transparent 50%, rgba(0,0,0,0.25) 100%),
-    radial-gradient(circle, #27272a 0.7px, transparent 0.7px);
-  background-size: 100% 100%, 26px 26px;
+  background-color: #000000;
+  background-image: radial-gradient(circle, #27272a 0.9px, transparent 0.9px);
+  background-size: 26px 26px;
 }
 
 @keyframes bubble-pop-in {

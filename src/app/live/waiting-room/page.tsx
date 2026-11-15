@@ -426,6 +426,15 @@ function WaitingRoomContent() {
           fetchStatus();
         }
       })
+      .on('broadcast', { event: 'PARTICIPANT_LEAVE' }, (payload) => {
+        const leftId = payload.payload?.userId;
+        if (leftId) {
+          setParticipants((prev) => prev.filter((p) => p.userId !== leftId && p.id !== leftId));
+          physicsDataRef.current.delete(leftId);
+          bubbleElementsRef.current.delete(leftId);
+        }
+        fetchStatus();
+      })
       .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, () => {
         fetchStatus();
       })
@@ -439,6 +448,7 @@ function WaitingRoomContent() {
               userId: currentUserId,
               fullName: currentUserName,
               initials: currentUserInitials,
+              avatarUrl: currentUserAvatarUrl,
             },
           });
         }
@@ -458,6 +468,7 @@ function WaitingRoomContent() {
     currentUserId,
     currentUserName,
     currentUserInitials,
+    currentUserAvatarUrl,
     soundEnabled,
     router,
     fetchStatus,
@@ -682,6 +693,62 @@ function WaitingRoomContent() {
     setTimeout(() => setCopiedPin(false), 2000);
   };
 
+  const handleLeaveRoom = async () => {
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'PARTICIPANT_LEAVE',
+        payload: {
+          userId: currentUserId,
+          fullName: currentUserName,
+        },
+      });
+    } catch {}
+
+    try {
+      const activeRoomId = room?.id || roomIdFromUrl;
+      const activePin = room?.roomCode || pin;
+      await fetch('/api/rooms/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: activeRoomId, pin: activePin }),
+      });
+    } catch {}
+
+    router.push('/personal/dashboard');
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const activeRoomId = room?.id || roomIdFromUrl;
+      const activePin = room?.roomCode || pin;
+      if (activeRoomId || activePin) {
+        try {
+          channelRef.current?.send({
+            type: 'broadcast',
+            event: 'PARTICIPANT_LEAVE',
+            payload: {
+              userId: currentUserId,
+              fullName: currentUserName,
+            },
+          });
+        } catch {}
+
+        try {
+          navigator.sendBeacon?.(
+            '/api/rooms/leave',
+            JSON.stringify({ roomId: activeRoomId, pin: activePin })
+          );
+        } catch {}
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [room?.id, roomIdFromUrl, room?.roomCode, pin, currentUserId, currentUserName]);
+
   const formatCountdown = (totalSec: number) => {
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
@@ -803,13 +870,14 @@ function WaitingRoomContent() {
           </button>
 
           {/* Leave */}
-          <Link
-            href="/personal/dashboard"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+          <button
+            type="button"
+            onClick={handleLeaveRoom}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
             title="Rời phòng"
           >
             <LogOut className="w-4 h-4" />
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -859,9 +927,9 @@ function WaitingRoomContent() {
               className="absolute pointer-events-none z-30 animate-reaction-rise"
               style={{ left: `${re.xPercent}%`, bottom: '80px' }}
             >
-              <div className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center justify-center">
+              <div className="w-11 h-11 rounded-full bg-white/95 dark:bg-zinc-800/95 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center justify-center border border-slate-100 dark:border-zinc-700">
                 {re.reactionType === 'WAVE' ? (
-                  <Hand className="w-5 h-5 text-amber-500" />
+                  <Hand className="w-5 h-5 text-amber-500 fill-amber-500" />
                 ) : re.reactionType === 'HEART' ? (
                   <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
                 ) : (
@@ -946,31 +1014,31 @@ function WaitingRoomContent() {
             )}
           </div>
 
-          {/* Reaction Buttons — icon-only, bottom-right cluster */}
-          <div className="absolute bottom-5 right-5 z-20 flex items-center gap-2">
+          {/* Reaction Buttons — icon-only, fill đặc ruột, bottom-right cluster */}
+          <div className="absolute bottom-5 right-5 z-20 flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => handleSendReaction('WAVE')}
-              className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:scale-105 flex items-center justify-center transition-all active:scale-90 cursor-pointer group"
               title="Vẫy tay"
             >
-              <Hand className="w-4.5 h-4.5 text-amber-500" />
+              <Hand className="w-5 h-5 text-amber-500 fill-amber-500 transition-transform group-hover:scale-110" />
             </button>
             <button
               type="button"
               onClick={() => handleSendReaction('HEART')}
-              className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:scale-105 flex items-center justify-center transition-all active:scale-90 cursor-pointer group"
               title="Gửi may mắn"
             >
-              <Heart className="w-4.5 h-4.5 text-rose-500" />
+              <Heart className="w-5 h-5 text-rose-500 fill-rose-500 transition-transform group-hover:scale-110" />
             </button>
             <button
               type="button"
               onClick={() => handleSendReaction('CHEER')}
-              className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center hover:bg-violet-50 dark:hover:bg-violet-950/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:scale-105 flex items-center justify-center transition-all active:scale-90 cursor-pointer group"
               title="Cổ vũ"
             >
-              <Sparkles className="w-4.5 h-4.5 text-violet-500" />
+              <Sparkles className="w-5 h-5 text-violet-500 fill-violet-500 transition-transform group-hover:scale-110" />
             </button>
           </div>
 

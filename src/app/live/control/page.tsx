@@ -277,6 +277,7 @@ function LiveControlContent() {
               userId: p.userId || `u-${idx}`,
               fullName: rawName,
               initials,
+              avatarUrl: p.avatarUrl || p.avatar_url || null,
               status,
               isReady: Boolean(p.isReady),
               connectionStatus: p.connectionStatus || 'ONLINE',
@@ -362,6 +363,25 @@ function LiveControlContent() {
           },
           ...prev.slice(0, 19),
         ]);
+        fetchRoomState(true);
+      })
+      .on('broadcast', { event: 'PARTICIPANT_LEAVE' }, (payload) => {
+        const pName = payload.payload?.fullName || 'Thí sinh';
+        const leftUserId = payload.payload?.userId;
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        setRecentEvents((prev) => [
+          {
+            id: crypto.randomUUID(),
+            time: timeStr,
+            text: `${pName} đã rời sảnh chờ.`,
+            type: 'CONNECTION',
+          },
+          ...prev.slice(0, 19),
+        ]);
+        if (leftUserId) {
+          setParticipants((prev) => prev.filter((p) => p.userId !== leftUserId && p.id !== leftUserId));
+        }
         fetchRoomState(true);
       })
       .on('broadcast', { event: 'PARTICIPANT_READY' }, (payload) => {
@@ -1249,9 +1269,20 @@ function LiveControlContent() {
                         key={p.id}
                         className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-center gap-2"
                       >
-                        <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[11px] flex items-center justify-center shrink-0">
-                          {p.initials}
-                        </div>
+                        {p.avatarUrl ? (
+                          <img
+                            src={p.avatarUrl}
+                            alt={p.fullName}
+                            className="w-7 h-7 rounded-full object-cover shrink-0"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[11px] flex items-center justify-center shrink-0">
+                            {p.initials}
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
                             {p.fullName}
@@ -1936,9 +1967,20 @@ function LiveControlContent() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
-                                {p.initials}
-                              </div>
+                              {p.avatarUrl ? (
+                                <img
+                                  src={p.avatarUrl}
+                                  alt={p.fullName}
+                                  className="w-8 h-8 rounded-full object-cover shrink-0"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
+                                  {p.initials}
+                                </div>
+                              )}
                               <div className="min-w-0">
                                 <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
                                   {p.fullName}
@@ -2461,9 +2503,20 @@ function LiveControlContent() {
           <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center">
-                  {selectedCandidate.initials}
-                </div>
+                {selectedCandidate.avatarUrl ? (
+                  <img
+                    src={selectedCandidate.avatarUrl}
+                    alt={selectedCandidate.fullName}
+                    className="w-9 h-9 rounded-full object-cover shrink-0"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center">
+                    {selectedCandidate.initials}
+                  </div>
+                )}
                 <div>
                   <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                     {selectedCandidate.fullName}
