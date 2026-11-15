@@ -120,6 +120,8 @@ function AssessmentTakeContent({
   const searchParams = useSearchParams();
   const roomId = searchParams.get('roomId');
   const pin = searchParams.get('pin');
+  const themeParam = searchParams.get('theme');
+  const [examTheme, setExamTheme] = useState<string>(themeParam || 'minimal_white');
   const assignmentId = searchParams.get('assignmentId');
   const campaignId = searchParams.get('campaignId');
   const isPreview = isPreviewMode || searchParams.get('preview') === 'true';
@@ -326,28 +328,41 @@ function AssessmentTakeContent({
   useEffect(() => {
     async function loadAssessment() {
       try {
-        setLoading(true);
         setError(null);
-        const qp = new URLSearchParams();
-        if (assignmentId) qp.set('assignmentId', assignmentId);
-        if (campaignId) qp.set('campaignId', campaignId);
-        if (roomId) qp.set('roomId', roomId);
-        if (pin) qp.set('pin', pin);
-        if (isPreview) qp.set('preview', 'true');
-        const qs = qp.toString() ? `?${qp.toString()}` : '';
 
-        const res = await fetch(`/api/assessments/${effectiveId}${qs}`);
-        const data = await res.json();
+        // 0s Delay check: Đọc dữ liệu đã prefetch từ sảnh chờ trong sessionStorage
+        let data: any = null;
+        try {
+          const cacheKeyRoom = roomId ? `prefetched_assessment_${effectiveId}_${roomId}` : null;
+          const cachedStr = (cacheKeyRoom && sessionStorage.getItem(cacheKeyRoom)) || sessionStorage.getItem(`prefetched_assessment_${effectiveId}`);
+          if (cachedStr) {
+            data = JSON.parse(cachedStr);
+          }
+        } catch {}
 
-        if (res.status === 401) {
-          setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để làm bài.');
-          return;
-        }
+        if (!data) {
+          setLoading(true);
+          const qp = new URLSearchParams();
+          if (assignmentId) qp.set('assignmentId', assignmentId);
+          if (campaignId) qp.set('campaignId', campaignId);
+          if (roomId) qp.set('roomId', roomId);
+          if (pin) qp.set('pin', pin);
+          if (isPreview) qp.set('preview', 'true');
+          const qs = qp.toString() ? `?${qp.toString()}` : '';
 
-        if (res.status === 403 && (data.code === 'UPGRADE_REQUIRED' || data.error?.includes('PRO') || data.error?.includes('VIP') || data.error?.includes('nâng cấp'))) {
-          setIsUpgradeRequired(true);
-          setError(data.error || 'Bài khảo thí này yêu cầu nâng cấp gói tài khoản PRO để tham gia.');
-          return;
+          const res = await fetch(`/api/assessments/${effectiveId}${qs}`);
+          data = await res.json();
+
+          if (res.status === 401) {
+            setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để làm bài.');
+            return;
+          }
+
+          if (res.status === 403 && (data.code === 'UPGRADE_REQUIRED' || data.error?.includes('PRO') || data.error?.includes('VIP') || data.error?.includes('nâng cấp'))) {
+            setIsUpgradeRequired(true);
+            setError(data.error || 'Bài khảo thí này yêu cầu nâng cấp gói tài khoản PRO để tham gia.');
+            return;
+          }
         }
 
         if (data.alreadyCompleted) {
@@ -362,7 +377,7 @@ function AssessmentTakeContent({
 
         const isNewAttempt = searchParams.get('new') === '1';
 
-        if (res.ok && data.assessment && data.items && data.items.length > 0) {
+        if (data && data.assessment && data.items && data.items.length > 0) {
           let loadedItems: Question[] = data.items;
 
           // Hòa trộn câu hỏi (Shuffle Questions) cho bài khảo thí đầu vào hoặc khi cấu hình shuffle_questions = true
@@ -468,6 +483,9 @@ function AssessmentTakeContent({
                   const elapsed = Math.max(0, Math.floor((Date.now() - new Date(roomData.room.startedAt).getTime()) / 1000));
                   remainingSec = Math.max(0, totalSec - elapsed);
                 }
+                if (roomData.room?.themeId) {
+                  setExamTheme(roomData.room.themeId);
+                }
                 if (roomData.room?.proctoringProfile && typeof roomData.room.proctoringProfile === 'object') {
                   if ((roomData.room.proctoringProfile as any).instant_feedback) {
                     setInstantFeedbackEnabled(true);
@@ -482,6 +500,7 @@ function AssessmentTakeContent({
             }
           }
           setTimeRemaining(remainingSec);
+          setLoading(false);
 
           // If no MCQ/Scenario exists in the exam, start directly in Stage 2
           const hasObjective = loadedItems.some(
@@ -1051,7 +1070,7 @@ function AssessmentTakeContent({
           console.warn('Failed to update live room participant record:', e);
         }
 
-        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}&answered=${totalAnsCount}&total=${totalQCount}`);
+        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}&answered=${totalAnsCount}&total=${totalQCount}&theme=${examTheme}`);
         return;
       }
 
@@ -2149,8 +2168,16 @@ function AssessmentTakeContent({
   );
 
   // KHÔNG GIAN KHẢO THÍ TOÀN MÀN HÌNH (FULL-SCREEN EXAM CANVAS CHO TOÀN BỘ ĐỀ THI & ĐẦU VÀO)
+  const themeBgClasses: Record<string, string> = {
+    space_blue: 'bg-[#0a0f1d] text-sky-100',
+    aurora: 'bg-[#090b16] text-purple-100',
+    dark_professional: 'bg-[#09090b] text-neutral-100',
+    minimal_white: 'bg-[#F8FAFC] dark:bg-[#000000] text-neutral-900 dark:text-neutral-100',
+  };
+  const activeThemeClass = themeBgClasses[examTheme] || 'bg-[#F8FAFC] dark:bg-[#000000] text-neutral-900 dark:text-neutral-100';
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#F8FAFC] dark:bg-[#000000] flex flex-col text-neutral-900 dark:text-neutral-100 select-none overflow-hidden animate-in fade-in duration-200">
+    <div className={`fixed inset-0 z-50 flex flex-col select-none overflow-hidden animate-in fade-in duration-200 transition-colors ${activeThemeClass}`}>
       {/* 1. TOP HEADER (Transparent & Distraction-free) */}
       <header className="h-14 shrink-0 bg-transparent px-4 sm:px-6 flex items-center justify-between gap-4 z-20">
         {/* Left: Exit button & Autosave */}

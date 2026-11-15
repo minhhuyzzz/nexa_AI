@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
+import { QuestionReviewSection, QuestionReviewItem } from '@/components/dashboard/personal/QuestionReviewSection';
+import { RoomThemeId, ROOM_THEMES } from '@/types/live-room';
 
 interface CandidateResult {
   id: string;
@@ -82,6 +84,7 @@ interface ResultsData {
     highestScore: number;
   };
   results: CandidateResult[];
+  userReviewItems?: QuestionReviewItem[] | null;
 }
 
 export default function LiveRoomResultsPage() {
@@ -367,6 +370,8 @@ export default function LiveRoomResultsPage() {
             <span>Đề thi: {room.assessmentTitle}</span>
             <span>&bull;</span>
             <span>Hình thức: Phòng thi trực tiếp</span>
+            <span>&bull;</span>
+            <span>Chủ đề: {ROOM_THEMES[room.themeId as RoomThemeId]?.name || 'Trắng tối giản'}</span>
           </div>
         </div>
 
@@ -548,6 +553,36 @@ export default function LiveRoomResultsPage() {
               <CompetencyRadarChart data={radarScoresToUse} showPercentages={effectiveShowScore} size={320} />
             </div>
           </div>
+
+          {/* Question Review & Explanations (show_answers) */}
+          {publishSettings.show_answers ? (
+            data.userReviewItems && data.userReviewItems.length > 0 ? (
+              <div className="p-6 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Đáp án &amp; Giải thích chi tiết</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                      Xem lại từng câu hỏi, lựa chọn của bạn và đáp án chính thức từ ngân hàng câu hỏi.
+                    </p>
+                  </div>
+                </div>
+                <QuestionReviewSection items={data.userReviewItems} />
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Bạn đã hoàn thành bài thi. Chi tiết bài làm đang được hệ thống đồng bộ.</span>
+              </div>
+            )
+          ) : (
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-2.5">
+              <Eye className="w-4 h-4 text-slate-400 shrink-0" />
+              <span>Người tổ chức chưa bật chế độ xem lại đáp án và lời giải chi tiết cho ca thi này.</span>
+            </div>
+          )}
         </div>
       )}
 

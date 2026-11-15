@@ -1,74 +1,93 @@
-# Kế Hoạch Triển Khai: Tái Thiết Kế & Nâng Cấp Không Gian Phòng Thi Trực Tiếp
+# Kế Hoạch Triển Khai: Hoàn Thiện Luồng Live Exam, 0s Delay, Bục Vinh Danh & Themes
 
-## Tổng Quan (Overview)
-Kế hoạch này thực hiện nâng cấp toàn diện không gian phòng thi trực tiếp (Live Exam Room) của nền tảng NEXA AI trên cả hai đầu: Bảng điều khiển Giám thị (`/live/control`), Phòng chờ Thí sinh (`/live/waiting-room`), Màn hình làm bài (`/personal/take/[id]`), Màn hình nộp bài Thí sinh (`/live/submitted`) và Trang kết quả Giám thị (`/personal/live-room/[id]/results`). Toàn bộ giao diện được chuyển sang phong cách tối giản cao cấp (Apple / Swiss Design), tinh gọn tối đa các thành phần thừa, loại bỏ triệt để thang điểm 100 và lỗi tự động giám sát đổi tab, đồng thời bổ sung tính năng đếm ngược trước khi phát đề và Bục vinh danh (Podium) chung cuộc.
-
-## Quyết Định Kiến Trúc (Architecture Decisions)
-1. **Loại bỏ triệt để thang điểm 100:**
-   - Thay thế các chuỗi tĩnh `Điểm (/100)`, `/ 100` tại các thẻ KPI, bảng điểm và file CSV xuất ra thành `Điểm số` hoặc `Điểm đạt được`.
-   - Điểm số được hiển thị chuẩn hóa dựa trên tổng điểm câu hỏi hoặc số câu đúng thực tế.
-2. **Kiểm soát giám sát đổi tab có điều kiện:**
-   - Trong `src/app/(dashboard)/personal/take/[id]/page.tsx`, chỉ gắn event listener `visibilitychange` và `window.blur` khi `proctoringProfile?.tab_switch_alert === true`.
-   - Màn hình giám sát của Host tự động ẩn thẻ theo dõi vi phạm rời tab nếu phòng thi không bật tính năng này.
-3. **Bộ đếm ngược phát đề (Host & Candidate Synchronization):**
-   - Host có thể cấu hình thời gian đếm ngược trước khi đề được phát: `0s` (Tức thì), `5s`, `10s`, `30s`, `60s`.
-   - Khi Host bấm phát đề, hệ thống phát sự kiện Supabase Broadcast `START_COUNTDOWN` kèm số giây còn lại. Cả Host và Thí sinh đều thấy đồng hồ đếm ngược với âm thanh tích tắc Web Audio API. Khi hết giờ, Host gọi API `/api/rooms/start` và phát sự kiện `START` để cùng chuyển vào bài thi.
-4. **Phòng chờ Thí sinh với Bong bóng nổi (Floating Name Bubbles) & Tương tác Reaction:**
-   - Thay danh sách phẳng bằng vùng bong bóng nổi nhẹ nhàng với hiệu ứng CSS keyframe animation (`@keyframes float`).
-   - Hỗ trợ gửi các tương tác nhanh (vẫy tay, bắn tim, cổ vũ) qua kênh Supabase Broadcast và tạo hiệu ứng bong bóng bay lên.
-   - Chuyển card quy chế thành icon `(?)` / `HelpCircle` bật modal chi tiết khi click, giúp phòng chờ thoáng đãng và có chiều sâu.
-5. **Màn hình Nộp bài Thí sinh & Bục vinh danh Podium:**
-   - Duy trì chế độ toàn màn hình khi thí sinh nộp bài xong.
-   - Thí sinh nộp xong thấy ngay **Thẻ thành tích cá nhân** (Thứ hạng tạm thời, số câu làm được, điểm số, tỉ lệ chính xác %) kèm thông báo đợi công bố.
-   - Khi Giám thị bấm "Công bố kết quả", hệ thống phát sự kiện `RESULTS_PUBLISHED`, màn hình thí sinh chuyển sang **Bục vinh danh chung cuộc (Podium Top 1, 2, 3)** (sử dụng icon `Crown`, `Trophy`, `Medal`, `Award` từ `lucide-react`, tuyệt đối không dùng emoji).
+## 1. Tổng Quan (Overview)
+Kế hoạch này giải quyết triệt để 7 yêu cầu đã chốt trong `docs/intent/live-exam-flow-and-results.md` về trải nghiệm phòng thi trực tiếp (Live Exam) của nền tảng NEXA AI:
+1. **0s Delay khi phát đề:** Tải trước (prefetch) đề thi ngầm trong lúc thí sinh đợi ở sảnh chờ (`/live/waiting-room`), lưu trữ `sessionStorage` để khi vào màn hình làm bài (`/personal/take/[id]`) câu hỏi hiển thị tức thì, không bị xoay spinner "Đang chuẩn bị câu hỏi...".
+2. **Sửa lỗi 404 trang kết quả:** Thay thế truy vấn trực tiếp bị chặn bởi RLS của `exam_rooms` khi phòng đã kết thúc (`is_active = FALSE`) bằng cơ chế `createAdminClient()` có kiểm tra bảo mật (User phải là Host hoặc Participant).
+3. **Bục vinh danh Podium & Xếp hạng cá nhân:** Tự động mở bục vinh danh Top 1, 2, 3 và thứ hạng cá nhân trên màn hình Thí sinh (`/live/submitted`) ngay khi Host bấm "Kết thúc ca & Chấm điểm" hoặc khi hết giờ.
+4. **Tinh gọn điều khiển Giám thị:** Loại bỏ nút "Thu bài cả phòng" thừa trên topbar; nút "Kết thúc ca & Chấm điểm" tự động thu bài toàn bộ thí sinh, lưu đáp án và chốt điểm.
+5. **Cấu hình xem đáp án & giải thích (`show_answers`):** Thêm toggle quy chế cho Host; thí sinh chỉ xem được lời giải chi tiết tại trang kết quả nếu Host bật tùy chọn này.
+6. **Kích hoạt 4 chủ đề giao diện (Themes):** Đồng bộ thực tế 4 theme (*Trắng tối giản, Space Blue, Cyber Aurora, Dark Professional*) xuyên suốt tất cả các màn hình: Sảnh chờ, Máy chiếu, Màn hình làm bài, Màn hình nộp bài và Trang kết quả.
+7. **Cờ tin cậy (Trust score):** Hoạt động minh bạch khi bật giám sát tab, trừ điểm và hiển thị chính xác trên dashboard Giám thị.
 
 ---
 
-## Danh Sách Nhiệm Vụ (Task List)
+## 2. Quyết Định Kiến Trúc (Architecture Decisions)
 
-### Giai đoạn 1: Sửa lỗi Thang điểm 100 & Giám sát đổi tab
-- [ ] Task 1.1: Xóa bỏ triệt để thang điểm 100 tại trang Kết quả Giám thị và file xuất CSV
-- [ ] Task 1.2: Sửa logic tự động cảnh báo đổi tab khi Host không bật tính năng giám sát
+1. **Khắc phục lỗi 404 trang kết quả qua Admin Client an toàn:**
+   - Trong `src/app/api/rooms/[id]/results/route.ts`: API cần lấy thông tin phòng thi kể cả khi `is_active = FALSE`.
+   - Vì bảng `exam_rooms` có chính sách RLS `USING (is_active = TRUE OR created_by = auth.uid())`, thí sinh thông thường sẽ bị RLS lọc bỏ khi phòng kết thúc.
+   - Giải pháp: Xác thực danh tính qua `supabase.auth.getUser()`, sau đó sử dụng `createAdminClient()` để đọc phòng thi và kiểm tra: `user.id === room.created_by` HOẶC tồn tại bản ghi trong `room_participants` với `room_id = roomId AND user_id = user.id`. Nếu ca thi chưa công bố (`results_published = false`) và người gọi không phải Host -> trả về HTTP 403 `RESULTS_NOT_PUBLISHED`. Nếu đã công bố hoặc là Host -> trả về kết quả đầy đủ.
 
-### Checkpoint 1: Nền tảng Logic & Báo cáo kết quả sạch sẽ
-- [ ] Màn hình kết quả không còn bất kỳ chuỗi `100` nào.
-- [ ] Làm bài không bật giám sát tab thì không có cảnh báo vi phạm.
-- [ ] Bộ test Vitest hiện tại vượt qua 100%.
+2. **Cơ chế Prefetch đề thi 0s Delay:**
+   - Trong `src/app/live/waiting-room/page.tsx`: Ngay khi `room.assessmentId` đã xác định, thực hiện gọi ngầm `fetch('/api/assessments/' + room.assessmentId + '?roomId=' + room.id + '&pin=' + room.roomCode)` và lưu payload vào `sessionStorage.setItem('prefetched_assessment_' + room.assessmentId, JSON.stringify(data))`.
+   - Trong `src/app/(dashboard)/personal/take/[id]/page.tsx`: Kiểm tra `sessionStorage.getItem('prefetched_assessment_' + effectiveId)`. Nếu có, khởi tạo state câu hỏi ngay lập tức và đặt `loading = false` ngay từ lần render đầu tiên, loại bỏ hoàn toàn màn hình chờ xoay vòng.
 
-### Giai đoạn 2: Tinh gọn Bảng điều khiển Giám thị (`/live/control`)
-- [ ] Task 2.1: Tinh gọn Sảnh chờ Host, thay thế 6 checkbox bằng Toggle Switch
-- [ ] Task 2.2: Thêm bộ đếm ngược thời gian trước khi phát đề (0s - 60s) đồng bộ Realtime
+3. **Tự động Thu bài & Công bố kết quả một chạm:**
+   - Bỏ nút "Thu bài cả phòng" tại dòng 1113 `src/app/live/control/page.tsx`.
+   - Trong API `src/app/api/evaluator/rooms/route.ts` với action `END`: Tự động cập nhật tất cả thí sinh đang `TAKING` hoặc `JOINED` thành `SUBMITTED`, cập nhật `results_published: true`, `status: 'RESULTS_PUBLISHED'`.
+   - Broadcast sự kiện `RESULTS_PUBLISHED` và `ROOM_STATE_CHANGE` để màn hình Thí sinh `/live/submitted` lập tức bung mở Bục vinh danh Podium Top 3 và hiển thị thứ hạng cá nhân mà không cần tải lại trang.
 
-### Checkpoint 2: Host Control mượt mà & kiểm soát ca thi chuẩn xác
-- [ ] Giao diện Host tinh gọn, nút gạt hoạt động nhạy bén.
-- [ ] Kích hoạt đếm ngược phát đề phát tín hiệu chuẩn xác.
+4. **Kiểm soát quyền xem đáp án (`show_answers`):**
+   - Thêm nút gạt Switch "Cho phép xem đáp án & giải thích sau ca thi" trong mục Cài đặt khảo thí & Quy chế của Host (`/live/control`).
+   - Lưu vào `results_publish_settings.show_answers`.
+   - Trong `/api/rooms/[id]/results/route.ts`: Nếu `show_answers === true`, trả về dữ liệu câu hỏi, đáp án đúng và lời giải cho thí sinh; nếu `false`, ẩn hoàn toàn đáp án đúng.
+   - Tại `/personal/live-room/[id]/results/page.tsx`: Sử dụng `QuestionReviewSection` để hiển thị lời giải chi tiết khi được phép.
 
-### Giai đoạn 3: Tái thiết kế Phòng chờ Thí sinh (`/live/waiting-room`)
-- [ ] Task 3.1: Đưa trạng thái mạng lên topbar và chuyển card quy chế thành modal popup
-- [ ] Task 3.2: Xây dựng khu vực bong bóng thí sinh trôi lơ lửng và nút tương tác reaction
-- [ ] Task 3.3: Hiển thị màn hình đếm ngược số to ngân vang khi nhận tín hiệu từ Host
-
-### Checkpoint 3: Trải nghiệm Phòng chờ Thí sinh đẳng cấp & sống động
-- [ ] Bong bóng trôi lơ lửng hiển thị mượt mà, gửi reaction tức thì.
-- [ ] Đếm ngược số to hiển thị đồng bộ khi Host bấm phát đề.
-
-### Giai đoạn 4: Màn hình Nộp bài Thí sinh (`/live/submitted`) & Bục vinh danh Podium
-- [ ] Task 4.1: Xây dựng Thẻ thành tích cá nhân toàn màn hình sau khi nộp bài
-- [ ] Task 4.2: Tích hợp Bục vinh danh Podium Top 1-2-3 khi Giám thị công bố kết quả
-
-### Giai đoạn 5: Kiểm thử Toàn diện & Xác thực Hệ thống
-- [ ] Task 5.1: Bổ sung bộ test tự động TDD Vitest cho các tính năng mới
-- [ ] Task 5.2: Kiểm tra TypeScript, chạy toàn bộ 92 test suites và build dự án
-
-### Checkpoint Hoàn Tất (Complete)
-- [ ] Toàn bộ luồng hoạt động mượt mà từ Tạo phòng -> Đợi -> Đếm ngược -> Làm bài -> Nộp bài -> Công bố kết quả.
-- [ ] Không có hồi quy, 100% test files tiếp tục PASS.
+5. **Bộ Token CSS và Áp dụng 4 Theme toàn diện:**
+   - 4 Theme: `minimal_white` (Trắng tối giản), `space_blue` (Xanh không gian sâu), `aurora` (Cyber Aurora tím/ngọc), `dark_professional` (Đen carbon IT).
+   - Thiết lập wrapper theme class cho các trang: Sảnh chờ (`waiting-room`), Màn chiếu (`projector`), Làm bài (`take/[id]`), Nộp bài (`submitted`), Kết quả (`results`).
+   - Sảnh chờ thí sinh lắng nghe realtime sự kiện `THEME_UPDATE` từ Host để đổi theme ngay lập tức khi Host đổi lựa chọn.
 
 ---
 
-## Quản Trị Rủi Ro (Risks & Mitigations)
+## 3. Danh Sách Nhiệm Vụ (Task List)
+
+### Giai đoạn 1: Sửa Lỗi 404 Trang Kết Quả & Cơ Chế Xem Đáp Án (`show_answers`)
+- [ ] Task 1.1: Sửa lỗi 404 trang kết quả (`/api/rooms/[id]/results`) bằng Admin Client an toàn
+- [ ] Task 1.2: Bổ sung cấu hình & cơ chế xem đáp án chi tiết (`show_answers`) ở cả Backend và Frontend
+
+### Checkpoint 1: Kết Quả & Quyền Xem Đáp Án Hoạt Động Chuẩn Xác
+- [ ] Thí sinh bấm "Xem bảng điểm" không còn bị lỗi 404 "Không tìm thấy phòng thi".
+- [ ] Tùy chọn `show_answers` kiểm soát chính xác việc ẩn/hiện giải thích chi tiết câu hỏi.
+
+### Giai đoạn 2: Tự Động Thu Toàn Bộ Bài Làm Khi Kết Thúc Ca Thi
+- [ ] Task 2.1: Loại bỏ nút "Thu bài cả phòng" thừa trên thanh điều hướng Giám thị
+- [ ] Task 2.2: Tự động thu toàn bộ bài làm, cập nhật điểm và phát sóng kết thúc ca thi khi Host bấm kết thúc hoặc hết giờ
+
+### Checkpoint 2: Kết Thúc Ca Thi Liền Mạch & An Toàn
+- [ ] Nút "Thu bài cả phòng" đã được dọn sạch, topbar Giám thị tinh gọn.
+- [ ] Bấm "Kết thúc ca & Chấm điểm" tự động chốt bài của mọi thí sinh và phát broadcast công bố kết quả.
+
+### Giai đoạn 3: Prefetch Đề Thi Ngầm Tại Sảnh Chờ (0s Delay Phát Đề)
+- [ ] Task 3.1: Gọi prefetch dữ liệu câu hỏi ngầm ngay khi thí sinh ngồi ở sảnh chờ (`/live/waiting-room`)
+- [ ] Task 3.2: Đọc dữ liệu từ cache `sessionStorage` trong màn hình làm bài (`take/[id]`) để mở đề tức thì (0s delay)
+
+### Checkpoint 3: Trải Nghiệm Mở Đề Mượt Mà, Không Giật Lag
+- [ ] Thí sinh chuyển từ sảnh chờ vào làm bài tức thì < 0.5s, không còn thấy spinner xoay "Đang chuẩn bị câu hỏi khảo thí...".
+
+### Giai đoạn 4: Áp Dụng 4 Chủ Đề Giao Diện (Themes) Toàn Diện
+- [ ] Task 4.1: Đồng bộ Theme tại Sảnh chờ thí sinh (`/live/waiting-room`) và Máy chiếu (`/live/projector`) theo Realtime
+- [ ] Task 4.2: Đồng bộ Theme tại Màn hình làm bài (`take/[id]`), Màn hình nộp bài (`submitted`) và Trang kết quả (`results`)
+
+### Checkpoint 4: Giao Diện Chủ Đề Đẹp Mắt & Thống Nhất
+- [ ] Đổi theme ở Giám thị lập tức chuyển màu sảnh chờ thí sinh và màn chiếu.
+- [ ] 4 theme hiển thị đồng bộ chuẩn xác trên cả 5 màn hình của buổi thi.
+
+### Giai đoạn 5: Bục Vinh Danh Podium Top 1-2-3 & Cờ Tin Cậy Giám Sát
+- [ ] Task 5.1: Mở khóa tức thì Bục vinh danh và Xếp hạng cá nhân trên màn hình Thí sinh (`/live/submitted`)
+- [ ] Task 5.2: Hoàn thiện hiển thị Cờ tin cậy (Trust score) và Cảnh báo vi phạm trên Dashboard Giám thị
+
+### Giai đoạn 6: Kiểm Thử Toàn Diện & Thẩm Định Hệ Thống
+- [ ] Task 6.1: Viết test TDD Vitest cho các tính năng mới
+- [ ] Task 6.2: Kiểm tra TypeScript (`npm run typecheck`), chạy toàn bộ test suite (`npx vitest run`)
+
+---
+
+## 4. Quản Trị Rủi Ro (Risks & Mitigations)
 | Rủi ro | Mức độ | Biện pháp giảm thiểu |
 | --- | --- | --- |
-| Lệch thời gian đếm ngược giữa Host và Thí sinh do độ trễ mạng | Trung bình | Gửi `startTime` (timestamp tương đối/tuyệt đối) trong payload broadcast để client tự căn chỉnh chính xác. |
-| Hiệu ứng bong bóng gây quá tải DOM khi phòng có quá nhiều thí sinh | Thấp | Giới hạn hiển thị tối đa 40 bong bóng cùng lúc trên canvas/vùng CSS, phân bổ vị trí ngẫu nhiên không chồng chéo. |
-| Vi phạm quy tắc AGENTS.md về emoji trong JSX khi làm Bục vinh danh | Cao | Dùng icon chuẩn của `lucide-react` (`Crown`, `Trophy`, `Medal`, `Award`), tuyệt đối không render ký tự emoji. |
+| Lạm dụng Admin Client gây rò rỉ dữ liệu phòng thi khác | Cao | Luôn xác thực session `getUser()` trước; kiểm tra chặt chẽ user có phải là Host hoặc có trong `room_participants` của đúng `roomId` đó không. |
+| Cache sessionStorage bị stale nếu Host đổi đề thi vào phút chót | Trung bình | Khóa key cache theo `prefetched_assessment_${assessmentId}_${roomId}` và xóa cache khi ca thi kết thúc hoặc rời phòng. |
+| Giao diện Theme tối gây giảm độ tương phản trên màn hình làm bài | Thấp | Kiểm tra độ tương phản theo chuẩn WCAG AA; dùng token màu chuẩn đã quy định trong `AGENTS.md`. |
+| Vi phạm quy tắc AGENTS.md về emoji trong JSX | Cao | Sử dụng 100% icon từ thư viện `lucide-react` (`Crown`, `Trophy`, `Medal`, `Award`), tuyệt đối không render emoji. |

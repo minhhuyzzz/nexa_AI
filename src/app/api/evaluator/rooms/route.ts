@@ -438,14 +438,42 @@ export async function PATCH(request: Request) {
     }
 
     if (action === 'END') {
+      // 1. Tự động thu toàn bộ bài làm của thí sinh đang thi hoặc chưa nộp
+      await supabase
+        .from('room_participants')
+        .update({
+          status: 'SUBMITTED',
+          submitted_at: now,
+        })
+        .eq('room_id', roomId)
+        .neq('status', 'SUBMITTED');
+
+      // 2. Chuyển trạng thái phòng thi
+      const shouldPublish = Boolean(payload?.publishResults || payload?.publishSettings || payload?.showAnswers !== undefined);
+      const publishSettings = payload?.publishSettings || (payload?.showAnswers !== undefined ? {
+        show_score: true,
+        show_ranking: true,
+        show_answers: payload.showAnswers,
+        scope: 'ALL',
+      } : undefined);
+
+      const updateData: Record<string, any> = {
+        status: shouldPublish ? 'RESULTS_PUBLISHED' : 'ENDED',
+        is_active: false,
+        scheduled_end: now,
+        ended_at: now,
+      };
+
+      if (shouldPublish) {
+        updateData.results_published = true;
+      }
+      if (publishSettings) {
+        updateData.results_publish_settings = publishSettings;
+      }
+
       const { data: updatedRoom, error: updateError } = await supabase
         .from('exam_rooms')
-        .update({
-          status: 'ENDED',
-          is_active: false,
-          scheduled_end: now,
-          ended_at: now,
-        })
+        .update(updateData)
         .eq('id', roomId)
         .eq('created_by', user.id)
         .select()

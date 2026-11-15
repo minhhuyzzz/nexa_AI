@@ -159,6 +159,7 @@ function LiveControlContent() {
   const [lobbyInstantFeedback, setLobbyInstantFeedback] = useState<boolean>(false);
   const [lobbyForceFullscreen, setLobbyForceFullscreen] = useState<boolean>(false);
   const [lobbyTabSwitchAlert, setLobbyTabSwitchAlert] = useState<boolean>(true);
+  const [lobbyShowAnswers, setLobbyShowAnswers] = useState<boolean>(true);
 
   // Active realtime channel reference
   const channelRef = useRef<any>(null);
@@ -539,6 +540,13 @@ function LiveControlContent() {
               shuffle_options: lobbyShuffleOptions,
               force_fullscreen: lobbyForceFullscreen,
               tab_switch_alert: lobbyTabSwitchAlert,
+              show_answers: lobbyShowAnswers,
+            },
+            resultsPublishSettings: {
+              show_score: true,
+              show_ranking: true,
+              show_answers: lobbyShowAnswers,
+              scope: 'ALL',
             },
           },
         }),
@@ -744,11 +752,28 @@ function LiveControlContent() {
       const res = await fetch('/api/evaluator/rooms', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, action: 'END' }),
+        body: JSON.stringify({
+          roomId,
+          action: 'END',
+          payload: {
+            showAnswers: lobbyShowAnswers,
+            publishSettings: {
+              show_score: true,
+              show_ranking: true,
+              show_answers: lobbyShowAnswers,
+              scope: 'ALL',
+            },
+          },
+        }),
       });
       if (res.ok) {
         try {
           const supabase = createClient();
+          await supabase.channel(`room:${roomId}`).send({
+            type: 'broadcast',
+            event: 'RESULTS_PUBLISHED',
+            payload: { roomId, action: 'END', publishedAt: new Date().toISOString() },
+          });
           await supabase.channel(`room:${roomId}`).send({
             type: 'broadcast',
             event: 'ROOM_STATE_CHANGE',
@@ -1105,27 +1130,16 @@ function LiveControlContent() {
                   </button>
                 )
               ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleBulkSubmitAll}
-                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-slate-700 dark:text-neutral-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                    title="Thu bài đồng loạt tất cả thí sinh"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Thu bài cả phòng</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleEndExam}
-                    disabled={actionLoading}
-                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-                  >
-                    <Square className="w-3.5 h-3.5 fill-white" />
-                    <span>Kết thúc ca &amp; Chấm điểm</span>
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={handleEndExam}
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                  title="Kết thúc ca thi, tự động thu bài toàn bộ thí sinh và chốt điểm"
+                >
+                  <Square className="w-3.5 h-3.5 fill-white" />
+                  <span>Kết thúc ca &amp; Chấm điểm</span>
+                </button>
               )}
 
               <button
@@ -1628,6 +1642,23 @@ function LiveControlContent() {
                           type="checkbox"
                           checked={lobbyLockLate}
                           onChange={(e) => setLobbyLockLate(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {/* Setting 7: Cho phép xem đáp án & giải thích sau ca thi */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Xem đáp án &amp; giải thích</span>
+                        <span className="text-[11px] text-slate-500 block">Cho phép thí sinh xem lại lời giải chi tiết sau ca thi</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={lobbyShowAnswers}
+                          onChange={(e) => setLobbyShowAnswers(e.target.checked)}
                           className="sr-only peer"
                         />
                         <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
@@ -2205,7 +2236,13 @@ function LiveControlContent() {
                               }`}
                             >
                               <span className="font-bold">{String(idx + 1).padStart(2, '0')}</span>
-                              <span className="text-[9px] truncate max-w-[38px]">{p.initials}</span>
+                              <div className="flex items-center gap-0.5">
+                                {p.avatarUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={p.avatarUrl} alt="" className="w-3 h-3 rounded-full object-cover" />
+                                ) : null}
+                                <span className="text-[9px] truncate max-w-[36px]">{p.initials}</span>
+                              </div>
                             </div>
                           );
                         })}

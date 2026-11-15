@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { examSound } from '@/lib/sound/exam-sound';
+import { RoomThemeId, ROOM_THEMES } from '@/types/live-room';
 
 interface Participant {
   id: string;
@@ -48,6 +49,53 @@ interface RoomData {
   startedAt?: string | null;
   scheduledStart?: string | null;
   assessmentItemCount?: number;
+  themeId?: RoomThemeId;
+}
+
+function getThemeStyles(themeId: RoomThemeId = 'minimal_white') {
+  switch (themeId) {
+    case 'space_blue':
+      return {
+        bg: 'bg-[#0a0f1d] text-sky-100',
+        header: 'bg-[#0d1527]/90 text-sky-100 shadow-[0_1px_0_0_#1e293b]',
+        canvasBg: 'bg-[#0d1527]/50 border-sky-900/60 shadow-sky-950/40',
+        dotPattern: 'rgba(56, 189, 248, 0.18)',
+        subtext: 'text-sky-300/80',
+        badgeBg: 'bg-sky-950/80 text-sky-300 border-sky-800/80',
+        interactiveBg: 'bg-[#0d1527]/90 border-sky-800/60',
+      };
+    case 'aurora':
+      return {
+        bg: 'bg-[#090b16] text-purple-100',
+        header: 'bg-[#101326]/90 text-purple-100 shadow-[0_1px_0_0_#2e1065]',
+        canvasBg: 'bg-[#101326]/50 border-purple-900/60 shadow-purple-950/40',
+        dotPattern: 'rgba(192, 132, 252, 0.18)',
+        subtext: 'text-purple-300/80',
+        badgeBg: 'bg-purple-950/80 text-purple-300 border-purple-800/80',
+        interactiveBg: 'bg-[#101326]/90 border-purple-800/60',
+      };
+    case 'dark_professional':
+      return {
+        bg: 'bg-[#09090b] text-neutral-100',
+        header: 'bg-[#121215]/90 text-neutral-100 shadow-[0_1px_0_0_#27272a]',
+        canvasBg: 'bg-[#121215]/50 border-zinc-800/80 shadow-black/40',
+        dotPattern: 'rgba(161, 161, 170, 0.14)',
+        subtext: 'text-neutral-400',
+        badgeBg: 'bg-zinc-900/80 text-zinc-300 border-zinc-700/80',
+        interactiveBg: 'bg-[#18181b]/90 border-zinc-800',
+      };
+    case 'minimal_white':
+    default:
+      return {
+        bg: 'bg-white text-neutral-900',
+        header: 'bg-white/95 text-neutral-900 shadow-[0_1px_0_0_#e2e8f0]',
+        canvasBg: 'bg-white/80 border-slate-200/80 shadow-slate-100',
+        dotPattern: 'rgba(100, 116, 139, 0.14)',
+        subtext: 'text-slate-500',
+        badgeBg: 'bg-slate-100 text-slate-700 border-slate-200',
+        interactiveBg: 'bg-white/90 border-slate-200/80',
+      };
+  }
 }
 
 interface FloatingReaction {
@@ -280,6 +328,7 @@ function WaitingRoomContent() {
               passingScore: 70,
               hasStarted: data.hasStarted || false,
               startedAt: data.startedAt,
+              themeId: data.themeId || 'minimal_white',
             };
             setRoom(roomData);
 
@@ -316,6 +365,44 @@ function WaitingRoomContent() {
     };
   }, [pin, roomIdFromUrl, router]);
 
+  // 2.1. Prefetch Assessment Data in Background for 0s Delay
+  useEffect(() => {
+    const targetAsmId = room?.assessmentId || assessmentIdFromUrl;
+    const targetRoomId = room?.id || roomIdFromUrl;
+    if (!targetAsmId) return;
+
+    const cacheKey = targetRoomId
+      ? `prefetched_assessment_${targetAsmId}_${targetRoomId}`
+      : `prefetched_assessment_${targetAsmId}`;
+
+    try {
+      if (sessionStorage.getItem(cacheKey)) return;
+    } catch {}
+
+    const controller = new AbortController();
+    async function prefetch() {
+      try {
+        const qp = new URLSearchParams();
+        if (targetRoomId) qp.set('roomId', targetRoomId);
+        const pCode = room?.roomCode || pin;
+        if (pCode) qp.set('pin', pCode);
+
+        const res = await fetch(`/api/assessments/${targetAsmId}?${qp.toString()}`, {
+          signal: controller.signal,
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.assessment && json.items && json.items.length > 0) {
+            sessionStorage.setItem(cacheKey, JSON.stringify(json));
+            sessionStorage.setItem(`prefetched_assessment_${targetAsmId}`, JSON.stringify(json));
+          }
+        }
+      } catch {}
+    }
+    prefetch();
+    return () => controller.abort();
+  }, [room?.assessmentId, assessmentIdFromUrl, room?.id, roomIdFromUrl, room?.roomCode, pin]);
+
   // 3. Status Polling (Fallback for participant roster & room status changes)
   const fetchStatus = useCallback(async () => {
     const activeRoomId = room?.id || roomIdFromUrl;
@@ -331,6 +418,7 @@ function WaitingRoomContent() {
         setRoom((prev) => ({
           ...prev,
           ...data.room,
+          themeId: data.room.themeId || prev?.themeId || 'minimal_white',
         }));
 
         const list: Participant[] = data.participants || [];
@@ -351,15 +439,16 @@ function WaitingRoomContent() {
         if (data.room.hasStarted || data.room.status === 'IN_PROGRESS') {
           setStartingNotice(true);
           const targetAsmId = data.room.assessmentId || assessmentIdFromUrl || 'baseline';
+          const currentTheme = data.room.themeId || room?.themeId || 'minimal_white';
           setTimeout(() => {
             router.push(
-              `/personal/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode || pin}`
+              `/personal/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode || pin}&theme=${currentTheme}`
             );
           }, 300);
         }
       }
     } catch {}
-  }, [room?.id, room?.roomCode, roomIdFromUrl, pin, assessmentIdFromUrl, router]);
+  }, [room?.id, room?.roomCode, roomIdFromUrl, pin, assessmentIdFromUrl, router, room?.themeId]);
 
   // Run status polling every 3 seconds as a resilient backup
   useEffect(() => {
@@ -410,11 +499,15 @@ function WaitingRoomContent() {
           setStartingNotice(true);
           const targetAsmId = room?.assessmentId || assessmentIdFromUrl || 'baseline';
           const roomCode = room?.roomCode || pin;
+          const currentTheme = room?.themeId || 'minimal_white';
           setTimeout(() => {
             router.push(
-              `/personal/take/${targetAsmId}?roomId=${activeRoomId}&pin=${roomCode}`
+              `/personal/take/${targetAsmId}?roomId=${activeRoomId}&pin=${roomCode}&theme=${currentTheme}`
             );
-          }, 400);
+          }, 250);
+        } else if (action === 'THEME_UPDATE' && payload.payload?.payload?.themeId) {
+          const nextTheme = payload.payload.payload.themeId;
+          setRoom((prev) => (prev ? { ...prev, themeId: nextTheme } : prev));
         } else {
           fetchStatus();
         }
@@ -792,11 +885,12 @@ function WaitingRoomContent() {
   }
 
   const rawPin = room?.roomCode || pin;
+  const themeStyles = getThemeStyles(room?.themeId);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 relative overflow-hidden">
+    <div className={`min-h-screen flex flex-col relative overflow-hidden transition-colors duration-300 ${themeStyles.bg}`}>
       {/* ===================== HEADER ===================== */}
-      <header className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 relative z-20 bg-white/95 dark:bg-black/95 backdrop-blur-sm shadow-[0_1px_0_0_#e2e8f0] dark:shadow-[0_1px_0_0_#27272a]">
+      <header className={`shrink-0 px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 relative z-20 backdrop-blur-sm transition-colors duration-300 ${themeStyles.header}`}>
         {/* Left: Live indicator + Title */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center gap-1.5 shrink-0">

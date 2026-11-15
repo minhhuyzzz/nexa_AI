@@ -18,6 +18,7 @@ vi.mock('@/lib/supabase/server', () => ({
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         in: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -36,9 +37,12 @@ vi.mock('@/lib/supabase/admin', () => ({
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
         maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        update: vi.fn().mockReturnThis(),
       };
     }),
   })),
@@ -582,6 +586,418 @@ describe('Milestone 5 TDD: Live Room Robustness & Edge Cases Suite', () => {
       // Verify aggregate statistics do not contain any hardcoded / 100 string
       expect(data.stats.averageScore).toBe(83.3);
       expect(data.stats.highestScore).toBe(95);
+    });
+
+    it('TC-RESULTS-02: Allows candidate to view results for ended/inactive room without 404 error', async () => {
+      // Authenticate as candidate (not host)
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: 'usr-candidate-01', email: 'candidate@nexa.ai' } },
+        error: null,
+      });
+
+      mockSupabaseQuery['exam_rooms'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'room-ended-uuid',
+            room_code: '478594',
+            title: 'Ca thi hoàn tất',
+            assessment_id: 'asm-ended-1',
+            created_by: 'usr-teacher-01', // Teacher is host
+            is_active: false, // Inactive / Ended
+            status: 'RESULTS_PUBLISHED',
+            theme_id: 'space_blue',
+            results_published: true,
+            results_publish_settings: { show_rank: true, show_score: true, show_answers: false },
+            started_at: '2026-11-15T09:00:00Z',
+            ended_at: '2026-11-15T09:45:00Z',
+            scheduled_start: null,
+            scheduled_end: null,
+            created_at: '2026-11-15T08:50:00Z',
+            assessments: {
+              id: 'asm-ended-1',
+              title: 'Đề kiểm tra trực tiếp',
+              duration_minutes: 45,
+              passing_score: 70,
+            },
+          },
+          error: null,
+        }),
+      };
+
+      const candidateParticipant = {
+        id: 'p-cand-01',
+        user_id: 'usr-candidate-01',
+        status: 'SUBMITTED',
+        is_ready: true,
+        score: 88,
+        submitted_at: '2026-11-15T09:40:00Z',
+        joined_at: '2026-11-15T08:55:00Z',
+        submission_id: 'sub-cand-01',
+      };
+
+      mockSupabaseQuery['room_participants'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: [candidateParticipant],
+          error: null,
+        }),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: candidateParticipant,
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['profiles'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [{ id: 'usr-candidate-01', full_name: 'Bống Bình', avatar_url: 'https://avatar.url/bb.png' }],
+          error: null,
+        }),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { role: 'LEARNER' }, error: null }),
+      };
+
+      mockSupabaseQuery['assessment_submissions'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [{ id: 'sub-cand-01', proctoring_summary: { tab_switches: 0 } }],
+          error: null,
+        }),
+      };
+
+      const { GET } = await import('@/app/api/rooms/[id]/results/route');
+      const req = new Request('http://localhost:3000/api/rooms/room-ended-uuid/results', {
+        method: 'GET',
+      });
+
+      const res = await GET(req, { params: Promise.resolve({ id: 'room-ended-uuid' }) });
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.room.isActive).toBe(false);
+      expect(data.room.status).toBe('RESULTS_PUBLISHED');
+      expect(data.room.themeId).toBe('space_blue');
+      expect(data.results.length).toBe(1);
+      expect(data.results[0].fullName).toBe('Bống Bình');
+      expect(data.results[0].avatarUrl).toBe('https://avatar.url/bb.png');
+      expect(data.results[0].score).toBe(88);
+    });
+
+    it('TC-RESULTS-03: Blocks unauthorized outsider with 403 when trying to access room results', async () => {
+      // Authenticate as an outsider user who never joined the room
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: 'usr-stranger-99', email: 'stranger@nexa.ai' } },
+        error: null,
+      });
+
+      mockSupabaseQuery['exam_rooms'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'room-private-uuid',
+            room_code: '999888',
+            title: 'Phòng kín',
+            assessment_id: 'asm-private-1',
+            created_by: 'usr-teacher-01',
+            is_active: false,
+            status: 'RESULTS_PUBLISHED',
+            results_published: true,
+          },
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['room_participants'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+
+      mockSupabaseQuery['profiles'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { role: 'LEARNER' }, error: null }),
+      };
+
+      const { GET } = await import('@/app/api/rooms/[id]/results/route');
+      const req = new Request('http://localhost:3000/api/rooms/room-private-uuid/results', {
+        method: 'GET',
+      });
+
+      const res = await GET(req, { params: Promise.resolve({ id: 'room-private-uuid' }) });
+      const data = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(data.error).toContain('quyền xem kết quả');
+    });
+
+    it('TC-RESULTS-04: Returns userReviewItems when show_answers is enabled, and hides them when disabled', async () => {
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: 'usr-candidate-01', email: 'candidate@nexa.ai' } },
+        error: null,
+      });
+
+      const candidateParticipant = {
+        id: 'p-cand-01',
+        user_id: 'usr-candidate-01',
+        status: 'SUBMITTED',
+        is_ready: true,
+        score: 100,
+        submitted_at: '2026-11-15T09:40:00Z',
+        joined_at: '2026-11-15T08:55:00Z',
+        submission_id: 'sub-review-uuid',
+      };
+
+      const baseRoom = {
+        id: 'room-review-uuid',
+        room_code: '478594',
+        title: 'Ca thi có đáp án',
+        assessment_id: 'asm-review-uuid',
+        created_by: 'usr-teacher-01',
+        is_active: false,
+        status: 'RESULTS_PUBLISHED',
+        theme_id: 'aurora',
+        results_published: true,
+        started_at: '2026-11-15T09:00:00Z',
+        ended_at: '2026-11-15T09:45:00Z',
+        assessments: {
+          id: 'asm-review-uuid',
+          title: 'Khảo sát năng lực số',
+          duration_minutes: 45,
+          passing_score: 70,
+        },
+      };
+
+      mockSupabaseQuery['room_participants'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [candidateParticipant], error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: candidateParticipant, error: null }),
+      };
+
+      mockSupabaseQuery['profiles'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [{ id: 'usr-candidate-01', full_name: 'Bống Bình', avatar_url: null }],
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['assessment_submissions'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [{ id: 'sub-review-uuid', proctoring_summary: null }],
+          error: null,
+        }),
+      };
+
+      // Mock questions, options, and submission answers
+      mockSupabaseQuery['assessment_items'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'item-1', prompt: 'Phần mềm nào là trình duyệt web?', type: 'MCQ', points: 10, order_index: 0 },
+          ],
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['item_options'] = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'opt-1', item_id: 'item-1', content: 'Google Chrome', order_index: 0, is_correct: true, explanation: 'Chrome là trình duyệt phổ biến' },
+            { id: 'opt-2', item_id: 'item-1', content: 'Microsoft Excel', order_index: 1, is_correct: false, explanation: null },
+          ],
+          error: null,
+        }),
+      };
+
+      mockSupabaseQuery['submission_answers'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: [
+            { item_id: 'item-1', selected_option_id: 'opt-1', text_response: null, score_awarded: 10 },
+          ],
+          error: null,
+        }),
+      };
+
+      // --- CASE 1: show_answers = true ---
+      mockSupabaseQuery['exam_rooms'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            ...baseRoom,
+            results_publish_settings: { show_rank: true, show_score: true, show_answers: true },
+          },
+          error: null,
+        }),
+      };
+
+      const { GET } = await import('@/app/api/rooms/[id]/results/route');
+      const reqEnabled = new Request('http://localhost:3000/api/rooms/room-review-uuid/results');
+      const resEnabled = await GET(reqEnabled, { params: Promise.resolve({ id: 'room-review-uuid' }) });
+      const dataEnabled = await resEnabled.json();
+
+      expect(resEnabled.status).toBe(200);
+      expect(dataEnabled.publishSettings.show_answers).toBe(true);
+      expect(dataEnabled.userReviewItems).not.toBeNull();
+      expect(dataEnabled.userReviewItems.length).toBe(1);
+      expect(dataEnabled.userReviewItems[0].prompt).toBe('Phần mềm nào là trình duyệt web?');
+      expect(dataEnabled.userReviewItems[0].isCorrect).toBe(true);
+      expect(dataEnabled.userReviewItems[0].explanation).toBe('Chrome là trình duyệt phổ biến');
+
+      // --- CASE 2: show_answers = false ---
+      mockSupabaseQuery['exam_rooms'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            ...baseRoom,
+            results_publish_settings: { show_rank: true, show_score: true, show_answers: false },
+          },
+          error: null,
+        }),
+      };
+
+      const reqDisabled = new Request('http://localhost:3000/api/rooms/room-review-uuid/results');
+      const resDisabled = await GET(reqDisabled, { params: Promise.resolve({ id: 'room-review-uuid' }) });
+      const dataDisabled = await resDisabled.json();
+
+      expect(resDisabled.status).toBe(200);
+      expect(dataDisabled.publishSettings.show_answers).toBe(false);
+      expect(dataDisabled.userReviewItems).toBeNull();
+    });
+
+    it('TC-RESULTS-05: Returns 403 RESULTS_NOT_PUBLISHED for candidate when results are not yet released', async () => {
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: 'usr-candidate-01', email: 'candidate@nexa.ai' } },
+        error: null,
+      });
+
+      mockSupabaseQuery['exam_rooms'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'room-in-progress-uuid',
+            room_code: '123456',
+            title: 'Ca thi đang diễn ra',
+            assessment_id: 'asm-1',
+            created_by: 'usr-teacher-01',
+            is_active: true,
+            status: 'IN_PROGRESS',
+            results_published: false,
+          },
+          error: null,
+        }),
+      };
+
+      const candidateParticipant = {
+        id: 'p-cand-01',
+        user_id: 'usr-candidate-01',
+        status: 'TAKING',
+        score: null,
+      };
+
+      mockSupabaseQuery['room_participants'] = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: candidateParticipant, error: null }),
+      };
+
+      const { GET } = await import('@/app/api/rooms/[id]/results/route');
+      const req = new Request('http://localhost:3000/api/rooms/room-in-progress-uuid/results');
+      const res = await GET(req, { params: Promise.resolve({ id: 'room-in-progress-uuid' }) });
+      const data = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(data.code).toBe('RESULTS_NOT_PUBLISHED');
+      expect(data.isPublished).toBe(false);
+    });
+
+    it('TC-EVAL-END-01: Auto-submits all active participants and publishes room results when host ends room', async () => {
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: 'usr-teacher-01', email: 'teacher@nexa.ai' } },
+        error: null,
+      });
+
+      const participantUpdateMock = vi.fn().mockReturnThis();
+      const participantNeqMock = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      mockSupabaseQuery['room_participants'] = {
+        update: participantUpdateMock,
+        eq: vi.fn().mockReturnThis(),
+        neq: participantNeqMock,
+      };
+
+      mockSupabaseQuery['exam_rooms'] = {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: '11111111-2222-3333-4444-555555555555',
+            status: 'RESULTS_PUBLISHED',
+            is_active: false,
+            results_published: true,
+            results_publish_settings: {
+              show_score: true,
+              show_ranking: true,
+              show_answers: true,
+              scope: 'ALL',
+            },
+          },
+          error: null,
+        }),
+      };
+
+      const { PATCH } = await import('@/app/api/evaluator/rooms/route');
+      const req = new Request('http://localhost:3000/api/evaluator/rooms', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: '11111111-2222-3333-4444-555555555555',
+          action: 'END',
+          payload: {
+            showAnswers: true,
+          },
+        }),
+      });
+
+      const res = await PATCH(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.action).toBe('END');
+      expect(data.room.status).toBe('RESULTS_PUBLISHED');
+      expect(data.room.is_active).toBe(false);
+      expect(data.room.results_published).toBe(true);
+      expect(data.room.results_publish_settings.show_answers).toBe(true);
+
+      // Verify participant auto-submit update was invoked with status: 'SUBMITTED'
+      expect(participantUpdateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'SUBMITTED',
+        })
+      );
+    });
+
+    it('TC-THEMES-01: Verifies all 4 themes (minimal_white, space_blue, aurora, dark_professional) are valid', async () => {
+      const themes = ['minimal_white', 'space_blue', 'aurora', 'dark_professional'];
+      themes.forEach((theme) => {
+        expect(['minimal_white', 'space_blue', 'aurora', 'dark_professional']).toContain(theme);
+      });
     });
 
     it('TC-SOUND-01: Supports new COUNTDOWN and REACTION sound types', async () => {

@@ -215,6 +215,14 @@ function LiveSubmittedContent() {
         setIsPublished(true);
         fetchStatus();
       })
+      .on('broadcast', { event: 'ROOM_STATE_CHANGE' }, (payload) => {
+        if (payload.payload?.action === 'END' || payload.payload?.action === 'EXAM_ENDED') {
+          setIsPublished(true);
+          fetchStatus();
+        } else if (payload.payload?.action === 'THEME_UPDATE' && payload.payload?.payload?.themeId) {
+          setRoom((prev) => (prev ? { ...prev, themeId: payload.payload.payload.themeId } : prev));
+        }
+      })
       .subscribe();
 
     return () => {
@@ -225,8 +233,17 @@ function LiveSubmittedContent() {
   const accuracyPercent =
     totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 100;
 
+  const currentTheme = (searchParams.get('theme') as RoomThemeId) || room?.themeId || 'minimal_white';
+  const themeClasses: Record<string, string> = {
+    space_blue: 'bg-[#0a0f1d] text-sky-100',
+    aurora: 'bg-[#090b16] text-purple-100',
+    dark_professional: 'bg-[#09090b] text-neutral-100',
+    minimal_white: 'bg-white dark:bg-black text-neutral-900 dark:text-neutral-100',
+  };
+  const activeThemeClass = themeClasses[currentTheme] || 'bg-white dark:bg-black text-neutral-900 dark:text-neutral-100';
+
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 lg:p-8 select-none transition-colors">
+    <div className={`min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8 select-none transition-colors ${activeThemeClass}`}>
       {/* 1. Header Ca Thi */}
       <header className="flex items-center justify-between pb-4 max-w-4xl mx-auto w-full">
         <div className="flex items-center gap-2">

@@ -111,11 +111,18 @@ function ProjectorContent() {
     if (!targetRoomId) return;
 
     const supabase = createClient();
-    const channel = supabase.channel(`room:${targetRoomId}:projector`);
+    const channel = supabase.channel(`room:${targetRoomId}`);
 
     channel
       .on('broadcast', { event: 'PARTICIPANT_JOIN' }, () => {
         fetchData();
+      })
+      .on('broadcast', { event: 'ROOM_STATE_CHANGE' }, (payload) => {
+        if (payload.payload?.action === 'THEME_UPDATE' && payload.payload?.payload?.themeId) {
+          setRoom((prev) => (prev ? { ...prev, themeId: payload.payload.payload.themeId } : prev));
+        } else {
+          fetchData();
+        }
       })
       .on('broadcast', { event: 'START_EXAM' }, () => {
         fetchData();
@@ -173,15 +180,16 @@ function ProjectorContent() {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(joinUrl)}&margin=10`;
 
   const currentTheme = room?.themeId || 'minimal_white';
-  const isDarkTheme = currentTheme === 'space_blue' || currentTheme === 'aurora' || currentTheme === 'dark_professional';
+  const themeBgClass = {
+    minimal_white: 'bg-white text-neutral-900',
+    space_blue: 'bg-[#0a0f1d] text-sky-100',
+    aurora: 'bg-[#090b16] text-purple-100',
+    dark_professional: 'bg-[#09090b] text-neutral-100',
+  }[currentTheme] || 'bg-white text-neutral-900';
 
   return (
     <div
-      className={`min-h-screen flex flex-col justify-between p-6 sm:p-10 transition-colors select-none ${
-        isDarkTheme
-          ? 'bg-[#0A0A0B] text-white'
-          : 'bg-[#F8FAFC] text-neutral-900'
-      }`}
+      className={`min-h-screen flex flex-col justify-between p-6 sm:p-10 transition-colors select-none ${themeBgClass}`}
     >
       {/* 1. Header Bar */}
       <div className="flex items-center justify-between pb-6">
