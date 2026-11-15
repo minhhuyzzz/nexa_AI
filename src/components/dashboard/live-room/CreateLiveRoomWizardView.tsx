@@ -286,7 +286,7 @@ export function CreateLiveRoomWizardView({
           organizationId: orgId || undefined,
           themeId: 'minimal_white',
           scheduledStart: now.toISOString(),
-          durationMinutes: Number(durationMinutes) || 45,
+          durationMinutes: selectedAssessment.duration_minutes || 45,
           allowLateJoin: false,
           autoSubmitOnTimeout: true,
           showPin: true,
@@ -583,7 +583,7 @@ export function CreateLiveRoomWizardView({
                     {selectedAssessment.title}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
-                    {selectedAssessment.questionCount || 40} câu hỏi &bull; {selectedAssessment.typeLabel || 'Trắc nghiệm & Tự luận'}
+                    {selectedAssessment.questionCount || 40} câu hỏi &bull; {selectedAssessment.typeLabel || 'Trắc nghiệm & Tự luận'} &bull; {selectedAssessment.duration_minutes || 45} phút
                   </div>
                 </div>
 
@@ -621,50 +621,6 @@ export function CreateLiveRoomWizardView({
                     </select>
                   </div>
                 )}
-
-                {/* Customizable Duration Minutes */}
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="font-semibold text-neutral-800 dark:text-neutral-200">
-                      Thời lượng làm bài:
-                    </label>
-                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm tabular-nums">
-                      {durationMinutes} phút
-                    </span>
-                  </div>
-
-                  {/* Quick Select Buttons */}
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[15, 30, 45, 60].map((mins) => (
-                      <button
-                        key={mins}
-                        type="button"
-                        onClick={() => setDurationMinutes(mins)}
-                        className={`py-1.5 rounded text-xs font-mono font-semibold transition-colors ${
-                          durationMinutes === mins
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200'
-                        }`}
-                      >
-                        {mins}p
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Custom Number Input */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[11px] text-slate-500">Hoặc tùy chỉnh:</span>
-                    <input
-                      type="number"
-                      min={5}
-                      max={360}
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(Math.max(5, Number(e.target.value) || 5))}
-                      className="w-20 px-2 py-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded text-xs text-center font-mono font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                    />
-                    <span className="text-[11px] text-slate-500">phút</span>
-                  </div>
-                </div>
 
                 {/* Instant Launch Action Button */}
                 <div className="pt-3 space-y-2">
