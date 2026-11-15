@@ -10,7 +10,22 @@ export async function GET(
     const { id } = await params;
     const url = new URL(request.url);
     const isPreview = url.searchParams.get('preview') === 'true';
+    const roomId = url.searchParams.get('roomId');
     const supabase = await createClient();
+
+    let allowInstantFeedback = false;
+    if (roomId) {
+      try {
+        const { data: roomDoc } = await supabase
+          .from('exam_rooms')
+          .select('proctoring_profile')
+          .eq('id', roomId)
+          .maybeSingle();
+        if (roomDoc?.proctoring_profile && typeof roomDoc.proctoring_profile === 'object') {
+          allowInstantFeedback = Boolean((roomDoc.proctoring_profile as any).instant_feedback);
+        }
+      } catch {}
+    }
 
     // 1. Check authentication
     const {
@@ -185,8 +200,8 @@ export async function GET(
     // 4. Fetch questions and options
     let responseItems: any[] = [];
 
-    // For regular exam takers, attempt the leak-proof RPC
-    if (!isPreview) {
+    // For regular exam takers, attempt the leak-proof RPC (unless instant feedback is enabled for live exam)
+    if (!isPreview && !allowInstantFeedback) {
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_assessment_for_candidate', {
           p_assessment_id: assessment.id,
@@ -199,9 +214,9 @@ export async function GET(
       }
     }
 
-    // Direct query fallback (or primary for preview mode / drafts)
+    // Direct query fallback (or primary for preview mode / drafts / live instant feedback)
     if (responseItems.length === 0) {
-      const fetchClient = isPreview ? createAdminClient() : supabase;
+      const fetchClient = (isPreview || allowInstantFeedback) ? createAdminClient() : supabase;
       const { data: directItems, error: directError } = await fetchClient
         .from('assessment_items')
         .select(`
@@ -248,8 +263,8 @@ export async function GET(
             id: opt.id,
             content: opt.content,
             order_index: opt.order_index,
-            is_correct: isPreview ? opt.is_correct : undefined,
-            explanation: isPreview ? opt.explanation : undefined,
+            is_correct: (isPreview || allowInstantFeedback) ? opt.is_correct : undefined,
+            explanation: (isPreview || allowInstantFeedback) ? opt.explanation : undefined,
           })),
       }));
     }

@@ -234,7 +234,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { roomId, isLocked, isActive, status, proctoringProfile, themeId } = body;
+    const { roomId, isLocked, isActive, status, proctoringProfile, themeId, resultsPublishSettings } = body;
 
     if (!roomId) {
       return NextResponse.json({ error: 'Thiếu mã định danh phòng thi (roomId)' }, { status: 400 });
@@ -257,6 +257,7 @@ export async function PATCH(request: Request) {
     if (status) updateData.status = status;
     if (proctoringProfile) updateData.proctoring_profile = proctoringProfile;
     if (themeId) updateData.theme_id = themeId;
+    if (resultsPublishSettings) updateData.results_publish_settings = resultsPublishSettings;
 
     const { data: updatedRoom, error: updateError } = await supabase
       .from('exam_rooms')

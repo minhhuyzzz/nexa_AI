@@ -19,6 +19,7 @@ import {
   Lock,
   RefreshCw,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface Assessment {
   id: string;
@@ -73,6 +74,24 @@ export function CreateLiveRoomWizardView({
   const [roomTitle, setRoomTitle] = useState('');
   const [durationMinutes, setDurationMinutes] = useState<number>(45);
   const [submitting, setSubmitting] = useState(false);
+  const [classList, setClassList] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>(classIdFromQuery || '');
+
+  // Load Classes for the current user/org
+  useEffect(() => {
+    async function loadClasses() {
+      try {
+        const supabase = createClient();
+        let q = supabase.from('classes').select('id, name');
+        if (orgId) {
+          q = q.eq('organization_id', orgId);
+        }
+        const { data } = await q.order('name');
+        if (data) setClassList(data);
+      } catch {}
+    }
+    loadClasses();
+  }, [orgId]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 1. Fetch available assessments (System + Personal Authored) - Load once on mount
@@ -263,7 +282,7 @@ export function CreateLiveRoomWizardView({
           title: roomTitle.trim() || selectedAssessment.title,
           assessmentId: selectedAssessment.id,
           roomMode: 'OPEN',
-          classId: classIdFromQuery || undefined,
+          classId: selectedClassId || classIdFromQuery || undefined,
           organizationId: orgId || undefined,
           themeId: 'minimal_white',
           scheduledStart: now.toISOString(),
@@ -577,6 +596,27 @@ export function CreateLiveRoomWizardView({
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
+
+                {/* Optional Class / Group Target */}
+                {classList.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
+                      Gắn vào Lớp / Nhóm (Tùy chọn):
+                    </label>
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => setSelectedClassId(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer"
+                    >
+                      <option value="">Không gắn (Phòng thi tự do theo mã PIN)</option>
+                      {classList.map((cls) => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Customizable Duration Minutes */}
                 <div className="space-y-2 pt-2">

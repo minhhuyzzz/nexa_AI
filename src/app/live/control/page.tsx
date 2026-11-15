@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { RoomThemeId, ROOM_THEMES } from '@/types/live-room';
+import { examSound } from '@/lib/sound/exam-sound';
 
 interface Participant {
   id: string;
@@ -146,6 +147,16 @@ function LiveControlContent() {
   const [lobbyAutoSubmit, setLobbyAutoSubmit] = useState<boolean>(true);
   const [lobbyLockLate, setLobbyLockLate] = useState<boolean>(false);
   const [lobbySound, setLobbySound] = useState<boolean>(true);
+
+  // Advanced Exam & Proctoring Rules
+  const [lobbyShuffleQuestions, setLobbyShuffleQuestions] = useState<boolean>(true);
+  const [lobbyShuffleOptions, setLobbyShuffleOptions] = useState<boolean>(true);
+  const [lobbyInstantFeedback, setLobbyInstantFeedback] = useState<boolean>(false);
+  const [lobbyForceFullscreen, setLobbyForceFullscreen] = useState<boolean>(false);
+  const [lobbyTabSwitchAlert, setLobbyTabSwitchAlert] = useState<boolean>(true);
+
+  // Active realtime channel reference
+  const channelRef = useRef<any>(null);
 
   // Schedule Window State (Hẹn giờ ca thi ngày bắt đầu - kết thúc)
   const [scheduleMode, setScheduleMode] = useState<'INSTANT' | 'SCHEDULED'>('INSTANT');
@@ -300,12 +311,14 @@ function LiveControlContent() {
     if (!roomId) return;
     const supabase = createClient();
     const channel = supabase.channel(`room:${roomId}`);
+    channelRef.current = channel;
 
     channel
       .on('broadcast', { event: 'PARTICIPANT_JOIN' }, (payload) => {
         const pName = payload.payload?.fullName || 'Thí sinh mới';
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        examSound.play('JOIN', lobbySound);
         setRecentEvents((prev) => [
           {
             id: crypto.randomUUID(),
@@ -333,7 +346,10 @@ function LiveControlContent() {
         ]);
         fetchRoomState(true);
       })
-      .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, () => {
+      .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, (payload) => {
+        if (payload?.payload?.status === 'SUBMITTED') {
+          examSound.play('SUBMIT', lobbySound);
+        }
         fetchRoomState(true);
       })
       .on('broadcast', { event: 'TAB_SWITCH_ALERT' }, (payload) => {
@@ -341,6 +357,7 @@ function LiveControlContent() {
         const targetUserId = payload.payload?.userId;
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        examSound.play('WARNING', lobbySound);
         setAlerts((prev) => [
           {
             id: crypto.randomUUID(),
@@ -391,9 +408,10 @@ function LiveControlContent() {
       .subscribe();
 
     return () => {
+      channelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [roomId, fetchRoomState, selectedCandidate]);
+  }, [roomId, fetchRoomState, selectedCandidate, lobbySound]);
 
   // Derived Real Counts
   const totalJoined = participants.length;
@@ -459,11 +477,19 @@ function LiveControlContent() {
             themeId: lobbyTheme,
             autoSubmitOnTimeout: lobbyAutoSubmit,
             allowLateJoin: !lobbyLockLate,
+            proctoringProfile: {
+              instant_feedback: lobbyInstantFeedback,
+              shuffle_questions: lobbyShuffleQuestions,
+              shuffle_options: lobbyShuffleOptions,
+              force_fullscreen: lobbyForceFullscreen,
+              tab_switch_alert: lobbyTabSwitchAlert,
+            },
           },
         }),
       });
       if (res.ok) {
         showToast('Đã phát đề thi! Bắt đầu tính giờ làm bài trực tiếp.');
+        examSound.play('START', lobbySound);
         if (room) {
           setRoom({
             ...room,
@@ -475,12 +501,18 @@ function LiveControlContent() {
         }
         setCountdownSeconds((Number(lobbyDuration) || 45) * 60);
         try {
-          const supabase = createClient();
-          await supabase.channel(`room:${roomId}`).send({
-            type: 'broadcast',
-            event: 'ROOM_STATE_CHANGE',
-            payload: { action: 'START' },
-          });
+          if (channelRef.current) {
+            await channelRef.current.send({
+              type: 'broadcast',
+              event: 'ROOM_STATE_CHANGE',
+              payload: {
+                action: 'START',
+                roomId,
+                assessmentId: room?.assessmentId,
+                durationMinutes: Number(lobbyDuration) || 45,
+              },
+            });
+          }
         } catch {}
         fetchRoomState(true);
       } else {
@@ -949,9 +981,9 @@ function LiveControlContent() {
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-slate-400" />
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 text-[11px]">Thí sinh:</span>
+                <span className="text-slate-400 text-[11px]">Thí sinh kết nối:</span>
                 <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
-                  {totalJoined} / {maxCap}
+                  {totalJoined}
                 </span>
               </div>
             </div>
@@ -1137,7 +1169,7 @@ function LiveControlContent() {
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h2 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                      Thí sinh trong sảnh chờ ({totalJoined} / {maxCap})
+                      Thí sinh trong sảnh chờ ({totalJoined})
                     </h2>
                   </div>
 
@@ -1330,71 +1362,155 @@ function LiveControlContent() {
                   </div>
                 )}
 
-                {/* 2. Bộ chọn Theme với HÌNH ẢNH MINH HỌA THẬT */}
+                {/* 2. Bộ chọn Theme Tinh Gọn (Theme Swatches) */}
                 <div className="space-y-2.5 pt-3 text-xs">
                   <div className="flex items-center justify-between">
                     <label className="font-semibold text-neutral-800 dark:text-neutral-200">
-                      Chủ đề giao diện (Themes):
+                      Chủ đề giao diện:
                     </label>
                     <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
                       {ROOM_THEMES[lobbyTheme]?.name}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {(Object.keys(ROOM_THEMES) as RoomThemeId[]).map((themeKey) => {
                       const th = ROOM_THEMES[themeKey];
                       const isSelected = lobbyTheme === themeKey;
+
+                      let previewBg = 'bg-white border-slate-200 text-neutral-900';
+                      let dotColor = 'bg-blue-600';
+                      if (themeKey === 'space_blue') {
+                        previewBg = 'bg-[#0f172a] border-slate-700 text-slate-100';
+                        dotColor = 'bg-blue-400';
+                      } else if (themeKey === 'aurora') {
+                        previewBg = 'bg-gradient-to-br from-slate-950 via-teal-950 to-slate-900 border-teal-800/60 text-teal-100';
+                        dotColor = 'bg-teal-400';
+                      } else if (themeKey === 'dark_professional') {
+                        previewBg = 'bg-black border-zinc-800 text-zinc-100';
+                        dotColor = 'bg-blue-600';
+                      }
+
                       return (
                         <div
                           key={themeKey}
                           onClick={() => setLobbyTheme(themeKey)}
-                          className={`group relative rounded-xl border overflow-hidden cursor-pointer transition-all ${
+                          className={`group relative rounded-xl border p-2.5 cursor-pointer transition-all ${
                             isSelected
-                              ? 'border-blue-600 ring-2 ring-blue-600/40 shadow-sm'
+                              ? 'border-blue-600 ring-2 ring-blue-600/30 shadow-xs'
                               : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700'
                           }`}
                         >
-                          {/* Image preview artwork */}
-                          <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-zinc-900">
-                            <img
-                              src={th.imagePath}
-                              alt={th.name}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            {isSelected && (
-                              <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs">
-                                <Check className="w-3 h-3 stroke-[3]" />
+                          {/* Miniature visual canvas */}
+                          <div className={`w-full h-14 rounded-lg border p-2 flex flex-col justify-between mb-2 transition-transform duration-200 group-hover:scale-[1.02] ${previewBg}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="w-10 h-1.5 rounded-full bg-current opacity-30" />
+                              <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+                            </div>
+                            <div className="space-y-1">
+                              <span className="block w-3/4 h-1 rounded bg-current opacity-20" />
+                              <div className="flex items-center gap-1">
+                                <span className="w-3 h-3 rounded-xs border border-current opacity-40" />
+                                <span className="w-12 h-1 rounded bg-current opacity-25" />
                               </div>
-                            )}
-                            <div className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/60 text-white backdrop-blur-2xs">
-                              {th.tagline}
                             </div>
                           </div>
 
-                          <div className="p-2 bg-white dark:bg-zinc-950">
-                            <div className="font-bold text-[11px] text-neutral-900 dark:text-neutral-100 truncate">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-bold text-[11px] text-neutral-900 dark:text-neutral-100 truncate">
                               {th.name}
-                            </div>
-                            <div className="text-[10px] text-slate-500 dark:text-neutral-400 truncate">
-                              {th.description}
-                            </div>
+                            </span>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={3} />
+                            )}
                           </div>
+                          <span className="text-[10px] text-slate-500 dark:text-neutral-400 truncate block mt-0.5">
+                            {th.tagline}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* 3. Quy chế làm bài Toggles */}
+                {/* 3. Quy chế làm bài & Giám sát */}
                 <div className="space-y-3 pt-3 text-xs">
-                  <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
-                    Quy chế khảo thí &amp; Giám sát:
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
+                      Cài đặt khảo thí &amp; Quy chế:
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !lobbySound;
+                        setLobbySound(next);
+                        if (next) examSound.play('JOIN', true);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      {lobbySound ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5 text-slate-400" />}
+                      <span>{lobbySound ? 'Âm thanh: Bật' : 'Âm thanh: Tắt'}</span>
+                    </button>
+                  </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40">
                     <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-slate-700 dark:text-neutral-300">Tự động nộp bài khi hết giờ</span>
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Đảo thứ tự câu hỏi</span>
+                        <span className="text-[11px] text-slate-500 block">Trộn ngẫu nhiên câu hỏi theo từng thí sinh</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={lobbyShuffleQuestions}
+                        onChange={(e) => setLobbyShuffleQuestions(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Đảo thứ tự đáp án</span>
+                        <span className="text-[11px] text-slate-500 block">Xáo trộn các lựa chọn A, B, C, D</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={lobbyShuffleOptions}
+                        onChange={(e) => setLobbyShuffleOptions(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Báo đúng/sai tức thì (Instant Feedback)</span>
+                        <span className="text-[11px] text-slate-500 block">Hiện kết quả đúng/sai ngay khi chọn phương án</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={lobbyInstantFeedback}
+                        onChange={(e) => setLobbyInstantFeedback(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Cảnh báo rời tab làm bài</span>
+                        <span className="text-[11px] text-slate-500 block">Ghi nhận vi phạm khi thí sinh chuyển tab hoặc mất focus</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={lobbyTabSwitchAlert}
+                        onChange={(e) => setLobbyTabSwitchAlert(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Tự động nộp bài khi hết giờ</span>
+                        <span className="text-[11px] text-slate-500 block">Thu bài tự động khi đồng hồ về 00:00</span>
+                      </div>
                       <input
                         type="checkbox"
                         checked={lobbyAutoSubmit}
@@ -1404,21 +1520,14 @@ function LiveControlContent() {
                     </label>
 
                     <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-slate-700 dark:text-neutral-300">Khóa phòng sau khi phát đề</span>
+                      <div>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium block">Khóa phòng sau khi phát đề</span>
+                        <span className="text-[11px] text-slate-500 block">Không cho phép thí sinh vào muộn sau khi ca thi bắt đầu</span>
+                      </div>
                       <input
                         type="checkbox"
                         checked={lobbyLockLate}
                         onChange={(e) => setLobbyLockLate(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-slate-700 dark:text-neutral-300">Âm thanh khi có thí sinh vào</span>
-                      <input
-                        type="checkbox"
-                        checked={lobbySound}
-                        onChange={(e) => setLobbySound(e.target.checked)}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                       />
                     </label>

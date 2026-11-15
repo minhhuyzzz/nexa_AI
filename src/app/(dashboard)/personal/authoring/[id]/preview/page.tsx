@@ -185,13 +185,13 @@ export default function PersonalAuthoringPreviewPage({
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
           <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
-            BƯỚC 3: KIỂM ĐỊNH CHẤT LƯỢNG ĐỀ
+            BƯỚC 3: XEM TRƯỚC VÀ XUẤT BẢN
           </span>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Xem trước &amp; Kiểm định đề
+              Xem trước đề thi
             </h1>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
               {assessment?.title} • Mã đề: ASM-{id.slice(0, 6).toUpperCase()}
@@ -228,7 +228,7 @@ export default function PersonalAuthoringPreviewPage({
           {/* Validation Checklist Panel */}
           <div className="p-6 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
             <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              Kiểm tra tiêu chuẩn chất lượng đề
+              Kiểm tra tiêu chuẩn đề thi
             </h2>
 
             <div className="space-y-3 text-xs">
@@ -386,7 +386,7 @@ export default function PersonalAuthoringPreviewPage({
         <div className="lg:col-span-4 space-y-4">
           <div className="p-6 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-              Thông số kiểm định
+              Thông số đề thi
             </h2>
 
             <div className="space-y-3 text-xs">

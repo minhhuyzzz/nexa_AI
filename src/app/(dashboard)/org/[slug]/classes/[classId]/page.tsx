@@ -168,21 +168,35 @@ export default async function OrgClassDetailPage({
     .limit(30);
 
   // 6. Check active live exam room for this class
-  const { data: activeLiveRoom } = await adminSupabase
-    .from('live_rooms')
-    .select('id, room_code, title, status, duration_minutes')
+  const { data: rawActiveRoom } = await adminSupabase
+    .from('exam_rooms')
+    .select('id, room_code, title, status, is_active, assessments(duration_minutes)')
     .eq('class_id', realClassId)
-    .in('status', ['WAITING', 'IN_PROGRESS'])
+    .eq('is_active', true)
+    .in('status', ['WAITING', 'IN_PROGRESS', 'SCHEDULED'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  const activeLiveRoom = rawActiveRoom
+    ? {
+        id: rawActiveRoom.id,
+        room_code: rawActiveRoom.room_code,
+        title: rawActiveRoom.title,
+        status: rawActiveRoom.status,
+        duration_minutes:
+          (Array.isArray(rawActiveRoom.assessments)
+            ? (rawActiveRoom.assessments[0] as any)?.duration_minutes
+            : (rawActiveRoom.assessments as any)?.duration_minutes) || 45,
+      }
+    : null;
 
   const availableAssessments = (rawAssessments || []).map((ass: any) => ({
     id: ass.id,
     title: ass.title,
     durationMinutes: ass.duration_minutes || 60,
     questionCount: Array.isArray(ass.assessment_items) ? ass.assessment_items.length : 0,
-    rubricTitle: 'Thang điểm 100 — 5 miền năng lực số',
+    rubricTitle: 'Khảo thí theo chuẩn năng lực số',
   }));
 
   const formattedClass: OrgClassItem = {

@@ -154,6 +154,7 @@ function AssessmentTakeContent({
   const [isRoomPaused, setIsRoomPaused] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [instantFeedbackEnabled, setInstantFeedbackEnabled] = useState(false);
   const [submittedResult, setSubmittedResult] = useState<any | null>(null);
   const [lastSaved, setLastSaved] = useState<string>('Vừa xong');
   const [analyzingState, setAnalyzingState] = useState<{
@@ -451,6 +452,11 @@ function AssessmentTakeContent({
                 if (roomData.room?.startedAt) {
                   const elapsed = Math.max(0, Math.floor((Date.now() - new Date(roomData.room.startedAt).getTime()) / 1000));
                   remainingSec = Math.max(0, totalSec - elapsed);
+                }
+                if (roomData.room?.proctoringProfile && typeof roomData.room.proctoringProfile === 'object') {
+                  if ((roomData.room.proctoringProfile as any).instant_feedback) {
+                    setInstantFeedbackEnabled(true);
+                  }
                 }
               }
             } catch {
@@ -986,6 +992,8 @@ function AssessmentTakeContent({
 
       // Handle Live Room Submission Sync
       if (roomId) {
+        const totalAnsCount = Object.keys(selectedAnswers).length;
+        const totalQCount = questions.length;
         try {
           const supabase = createClient();
           const {
@@ -998,17 +1006,33 @@ function AssessmentTakeContent({
                 status: 'SUBMITTED',
                 score: objectiveEarned,
                 submitted_at: new Date().toISOString(),
-                answers_count: Object.keys(selectedAnswers).length,
-                total_questions: questions.length,
+                answers_count: totalAnsCount,
+                total_questions: totalQCount,
               })
               .eq('room_id', roomId)
               .eq('user_id', user.id);
+
+            // Broadcast submission event immediately to host
+            try {
+              const liveCh = supabase.channel(`room:${roomId}`);
+              await liveCh.send({
+                type: 'broadcast',
+                event: 'PARTICIPANT_STATUS_CHANGE',
+                payload: {
+                  userId: user.id,
+                  status: 'SUBMITTED',
+                  score: objectiveEarned,
+                  answersCount: totalAnsCount,
+                  totalQuestions: totalQCount,
+                },
+              });
+            } catch {}
           }
         } catch (e) {
           console.warn('Failed to update live room participant record:', e);
         }
 
-        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}`);
+        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}&answered=${totalAnsCount}&total=${totalQCount}`);
         return;
       }
 
@@ -1816,39 +1840,64 @@ function AssessmentTakeContent({
             {q.options?.map((opt, oIdx) => {
               const letter = String.fromCharCode(65 + oIdx);
               const isSelected = selectedAnswers[q.id] === opt.id;
+              const hasAnsweredCurrentQ = Boolean(selectedAnswers[q.id]);
+              const showInstant = instantFeedbackEnabled && hasAnsweredCurrentQ && opt.is_correct !== undefined;
+              const isCorrectOpt = Boolean(opt.is_correct);
+
+              let containerClasses = 'border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-blue-300 dark:hover:border-zinc-700 hover:bg-slate-50/60 dark:hover:bg-zinc-850/60';
+              let badgeClasses = 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 group-hover:text-blue-600 dark:group-hover:text-blue-400';
+              let indicatorContent = isSelected ? <Check className="w-3 h-3 stroke-[3]" /> : null;
+              let indicatorClasses = isSelected ? 'bg-blue-600 text-white shadow-xs' : 'border border-slate-300 dark:border-zinc-700 opacity-40 group-hover:opacity-80';
+
+              if (showInstant) {
+                if (isCorrectOpt) {
+                  containerClasses = 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/25 ring-2 ring-emerald-600/20';
+                  badgeClasses = 'bg-emerald-600 text-white shadow-xs';
+                  indicatorClasses = 'bg-emerald-600 text-white shadow-xs';
+                  indicatorContent = <Check className="w-3 h-3 stroke-[3]" />;
+                } else if (isSelected && !isCorrectOpt) {
+                  containerClasses = 'border-rose-600 dark:border-rose-500 bg-rose-50/60 dark:bg-rose-950/25 ring-2 ring-rose-600/20';
+                  badgeClasses = 'bg-rose-600 text-white shadow-xs';
+                  indicatorClasses = 'bg-rose-600 text-white shadow-xs';
+                  indicatorContent = <X className="w-3 h-3 stroke-[3]" />;
+                }
+              } else if (isSelected) {
+                containerClasses = 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/25 ring-2 ring-blue-600/20 dark:ring-blue-500/20 shadow-xs';
+                badgeClasses = 'bg-blue-600 text-white shadow-xs shadow-blue-500/30';
+              }
 
               return (
                 <button
                   key={opt.id}
                   type="button"
-                  disabled={isStage1Locked}
+                  disabled={isStage1Locked || (instantFeedbackEnabled && hasAnsweredCurrentQ)}
                   onClick={() => handleSelectOption(q.id, opt.id)}
-                  className={`w-full p-4 rounded-2xl border text-left flex items-center gap-3.5 sm:gap-4 transition-all duration-150 group cursor-pointer ${
-                    isSelected
-                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/25 ring-2 ring-blue-600/20 dark:ring-blue-500/20 shadow-xs'
-                      : 'border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-blue-300 dark:hover:border-zinc-700 hover:bg-slate-50/60 dark:hover:bg-zinc-850/60'
-                  } ${isStage1Locked ? 'cursor-not-allowed opacity-75' : ''}`}
+                  className={`w-full p-4 rounded-2xl border text-left flex items-center gap-3.5 sm:gap-4 transition-all duration-150 group cursor-pointer ${containerClasses} ${
+                    isStage1Locked || (instantFeedbackEnabled && hasAnsweredCurrentQ) ? 'cursor-not-allowed opacity-90' : ''
+                  }`}
                 >
                   <span
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/30'
-                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                    }`}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors ${badgeClasses}`}
                   >
                     {letter}
                   </span>
                   <span className="text-xs sm:text-sm font-medium flex-1 text-neutral-900 dark:text-neutral-100 leading-snug">
                     {opt.content}
                   </span>
+                  {showInstant && isCorrectOpt && (
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                      Chính xác
+                    </span>
+                  )}
+                  {showInstant && isSelected && !isCorrectOpt && (
+                    <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 shrink-0">
+                      Chưa đúng
+                    </span>
+                  )}
                   <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                      isSelected
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'border border-slate-300 dark:border-zinc-700 opacity-40 group-hover:opacity-80'
-                    }`}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${indicatorClasses}`}
                   >
-                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    {indicatorContent}
                   </div>
                 </button>
               );

@@ -114,13 +114,16 @@ export async function GET(
     let activeLiveRoom: any = null;
     try {
       const roomQuery = supabase
-        .from('live_rooms')
-        .select('id, room_code, title, status, duration_minutes, scheduled_start');
+        .from('exam_rooms')
+        .select('id, room_code, title, status, is_active, scheduled_start');
 
       if (typeof (roomQuery as any)?.eq === 'function') {
         let q = (roomQuery as any).eq('class_id', classId);
+        if (typeof q?.eq === 'function') {
+          q = q.eq('is_active', true);
+        }
         if (typeof q?.in === 'function') {
-          q = q.in('status', ['WAITING', 'IN_PROGRESS']);
+          q = q.in('status', ['WAITING', 'IN_PROGRESS', 'SCHEDULED']);
         }
         if (typeof q?.order === 'function') {
           q = q.order('created_at', { ascending: false });
@@ -130,10 +133,26 @@ export async function GET(
         }
         if (typeof q?.maybeSingle === 'function') {
           const { data: roomData } = await q.maybeSingle();
-          activeLiveRoom = roomData;
+          if (roomData) {
+            activeLiveRoom = {
+              id: roomData.id,
+              roomCode: roomData.room_code,
+              title: roomData.title,
+              status: roomData.status,
+              scheduledStart: roomData.scheduled_start,
+            };
+          }
         } else if (typeof q?.single === 'function') {
           const { data: roomData } = await q.single();
-          activeLiveRoom = roomData;
+          if (roomData) {
+            activeLiveRoom = {
+              id: roomData.id,
+              roomCode: roomData.room_code,
+              title: roomData.title,
+              status: roomData.status,
+              scheduledStart: roomData.scheduled_start,
+            };
+          }
         }
       }
     } catch {

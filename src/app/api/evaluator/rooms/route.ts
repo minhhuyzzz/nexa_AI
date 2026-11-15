@@ -373,6 +373,11 @@ export async function PATCH(request: Request) {
           scheduled_start: now,
           started_at: now,
           is_active: true,
+          ...(payload?.themeId ? { theme_id: payload.themeId } : {}),
+          ...(payload?.resultsPublishSettings ? { results_publish_settings: payload.resultsPublishSettings } : {}),
+          ...(payload?.proctoringProfile ? { proctoring_profile: payload.proctoringProfile } : {}),
+          ...(payload?.autoSubmitOnTimeout !== undefined ? { auto_submit_on_timeout: payload.autoSubmitOnTimeout } : {}),
+          ...(payload?.allowLateJoin !== undefined ? { allow_late_join: payload.allowLateJoin } : {}),
         })
         .eq('id', roomId)
         .eq('created_by', user.id)

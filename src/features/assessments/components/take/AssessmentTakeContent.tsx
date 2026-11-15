@@ -1018,6 +1018,8 @@ export function AssessmentTakeContent({
 
       // Handle Live Room Submission Sync
       if (roomId) {
+        const totalAnsCount = Object.keys(selectedAnswers).length;
+        const totalQCount = questions.length;
         try {
           const supabase = createClient();
           const {
@@ -1030,17 +1032,33 @@ export function AssessmentTakeContent({
                 status: 'SUBMITTED',
                 score: objectiveEarned,
                 submitted_at: new Date().toISOString(),
-                answers_count: Object.keys(selectedAnswers).length,
-                total_questions: questions.length,
+                answers_count: totalAnsCount,
+                total_questions: totalQCount,
               })
               .eq('room_id', roomId)
               .eq('user_id', user.id);
+
+            // Broadcast submission event immediately to host
+            try {
+              const liveCh = supabase.channel(`room:${roomId}`);
+              await liveCh.send({
+                type: 'broadcast',
+                event: 'PARTICIPANT_STATUS_CHANGE',
+                payload: {
+                  userId: user.id,
+                  status: 'SUBMITTED',
+                  score: objectiveEarned,
+                  answersCount: totalAnsCount,
+                  totalQuestions: totalQCount,
+                },
+              });
+            } catch {}
           }
         } catch (e) {
           console.warn('Failed to update live room participant record:', e);
         }
 
-        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}`);
+        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}&answered=${totalAnsCount}&total=${totalQCount}`);
         return;
       }
     } catch (err: any) {

@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users,
   Radio,
-  ArrowRight,
   ShieldCheck,
   RefreshCw,
   LogOut,
@@ -15,8 +14,13 @@ import {
   AlertCircle,
   Check,
   Copy,
+  Volume2,
+  VolumeX,
+  Wifi,
+  Monitor,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { examSound } from '@/lib/sound/exam-sound';
 
 interface Participant {
   id: string;
@@ -47,8 +51,8 @@ function WaitingRoomContent() {
   const searchParams = useSearchParams();
 
   const pin = searchParams.get('pin') || '';
-  const roomId = searchParams.get('roomId') || '';
-  const assessmentId = searchParams.get('assessmentId') || '';
+  const roomIdFromUrl = searchParams.get('roomId') || '';
+  const assessmentIdFromUrl = searchParams.get('assessmentId') || '';
 
   const [room, setRoom] = useState<RoomData | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -57,17 +61,38 @@ function WaitingRoomContent() {
   const [startingNotice, setStartingNotice] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
 
-  // Current User & Ready Toggle
+  // Sound settings (persisted in localStorage)
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Current User
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentUserName, setCurrentUserName] = useState<string>('Thí sinh');
   const [currentUserInitials, setCurrentUserInitials] = useState<string>('TS');
-  const [isReady, setIsReady] = useState(false);
-  const [togglingReady, setTogglingReady] = useState(false);
 
-  // Countdown timer state (seconds until start)
-  const [countdownSeconds, setCountdownSeconds] = useState<number>(300);
+  // Countdown timer state (seconds until start if scheduled in future)
+  const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
 
-  // Fetch Current User
+  const channelRef = useRef<any>(null);
+
+  // Load sound preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('nexa_exam_sound');
+      if (saved !== null) setSoundEnabled(saved === 'true');
+    } catch {}
+  }, []);
+
+  const toggleSound = () => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('nexa_exam_sound', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  // 1. Fetch Current User Profile
   useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
@@ -96,146 +121,206 @@ function WaitingRoomContent() {
     loadUser();
   }, []);
 
-  // Poll room status
-  const fetchStatus = useCallback(async () => {
-    if (!pin && !roomId) return;
-    try {
-      const res = await fetch(`/api/rooms/status?roomId=${roomId}&pin=${pin}`);
-      if (!res.ok) {
-        if (!room) {
-          const errData = await res.json().catch(() => ({}));
-          setError(errData.error || 'Không tìm thấy thông tin phòng thi hoặc phòng thi đã kết thúc.');
-        }
+  // 2. Auto Join Room (Calls POST /api/rooms/join to officially register candidate in room_participants)
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function joinRoom() {
+      if (!pin && !roomIdFromUrl) {
+        setError('Thiếu mã PIN hoặc mã định danh phòng thi');
+        setLoading(false);
         return;
       }
 
+      setLoading(true);
+      try {
+        // If we have PIN, call official join API
+        if (pin) {
+          const res = await fetch('/api/rooms/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            if (!isCancelled) {
+              setError(errData.error || 'Không thể tham gia phòng thi.');
+              setLoading(false);
+            }
+            return;
+          }
+
+          const data = await res.json();
+          if (!isCancelled && data.success) {
+            const roomData: RoomData = {
+              id: data.roomId,
+              roomCode: data.roomCode || pin,
+              title: data.roomTitle || 'Phòng Khảo Thí Trực Tiếp',
+              assessmentId: data.assessmentId,
+              assessmentTitle: data.assessmentTitle || 'Bài thi khảo thí',
+              durationMinutes: data.durationMinutes || 45,
+              passingScore: 70,
+              hasStarted: data.hasStarted || false,
+              startedAt: data.startedAt,
+            };
+            setRoom(roomData);
+
+            // If exam has already started when candidate joins, redirect immediately
+            if (data.hasStarted) {
+              setStartingNotice(true);
+              router.push(
+                `/personal/take/${data.assessmentId}?roomId=${data.roomId}&pin=${data.roomCode || pin}`
+              );
+              return;
+            }
+          }
+        } else if (roomIdFromUrl) {
+          // Fallback if entering with roomId
+          const res = await fetch(`/api/rooms/status?roomId=${roomIdFromUrl}`);
+          const data = await res.json();
+          if (!isCancelled && data.success && data.room) {
+            setRoom(data.room);
+          }
+        }
+      } catch (err: any) {
+        if (!isCancelled) {
+          setError(err?.message || 'Lỗi kết nối máy chủ');
+        }
+      } finally {
+        if (!isCancelled) setLoading(false);
+      }
+    }
+
+    joinRoom();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [pin, roomIdFromUrl, router]);
+
+  // 3. Status Polling (Fallback for participant roster & room status changes)
+  const fetchStatus = useCallback(async () => {
+    const activeRoomId = room?.id || roomIdFromUrl;
+    const activePin = room?.roomCode || pin;
+    if (!activeRoomId && !activePin) return;
+
+    try {
+      const res = await fetch(`/api/rooms/status?roomId=${activeRoomId}&pin=${activePin}`);
+      if (!res.ok) return;
+
       const data = await res.json();
       if (data.success && data.room) {
-        setRoom(data.room);
+        setRoom((prev) => ({
+          ...prev,
+          ...data.room,
+        }));
 
         const list: Participant[] = data.participants || [];
         setParticipants(list);
 
-        // Check if current user is ready
-        if (currentUserId) {
-          const myRecord = list.find((p) => p.userId === currentUserId);
-          if (myRecord) {
-            setIsReady(myRecord.isReady || false);
-          }
-        }
-
-        // Calculate countdown to start if scheduled
+        // Check future scheduled start
         if (data.room.scheduledStart) {
           const diff = Math.max(
             0,
             Math.floor((new Date(data.room.scheduledStart).getTime() - Date.now()) / 1000)
           );
-          setCountdownSeconds(diff);
+          setCountdownSeconds(diff > 0 ? diff : null);
+        } else {
+          setCountdownSeconds(null);
         }
 
-        // Trigger auto-redirect when Evaluator starts exam
+        // Auto-redirect if host starts exam
         if (data.room.hasStarted || data.room.status === 'IN_PROGRESS') {
           setStartingNotice(true);
-          const targetAsmId = data.room.assessmentId || assessmentId || 'baseline';
+          const targetAsmId = data.room.assessmentId || assessmentIdFromUrl || 'baseline';
           setTimeout(() => {
             router.push(
               `/personal/take/${targetAsmId}?roomId=${data.room.id}&pin=${data.room.roomCode || pin}`
             );
-          }, 400);
+          }, 300);
         }
       }
-    } catch {
-      // Keep offline resilient
-    } finally {
-      setLoading(false);
-    }
-  }, [pin, roomId, currentUserId, assessmentId, router, room]);
+    } catch {}
+  }, [room?.id, room?.roomCode, roomIdFromUrl, pin, assessmentIdFromUrl, router]);
 
+  // Run status polling every 3 seconds as a resilient backup
   useEffect(() => {
+    if (!room?.id) return;
     fetchStatus();
     const timer = setInterval(fetchStatus, 3000);
     return () => clearInterval(timer);
-  }, [fetchStatus]);
+  }, [room?.id, fetchStatus]);
 
-  // Unified Realtime Supabase Channel
+  // 4. Realtime Supabase Channel (Instant <100ms reactions)
   useEffect(() => {
-    const activeRoomId = room?.id || roomId;
+    const activeRoomId = room?.id || roomIdFromUrl;
     if (!activeRoomId) return;
 
     const supabase = createClient();
     const channel = supabase.channel(`room:${activeRoomId}`);
+    channelRef.current = channel;
 
     channel
       .on('broadcast', { event: 'ROOM_STATE_CHANGE' }, (payload) => {
         const action = payload.payload?.action;
         if (action === 'START') {
+          examSound.play('START', soundEnabled);
           setStartingNotice(true);
-          const targetAsmId = room?.assessmentId || assessmentId || 'baseline';
+          const targetAsmId = room?.assessmentId || assessmentIdFromUrl || 'baseline';
           const roomCode = room?.roomCode || pin;
           setTimeout(() => {
             router.push(
               `/personal/take/${targetAsmId}?roomId=${activeRoomId}&pin=${roomCode}`
             );
-          }, 300);
+          }, 250);
         } else {
+          fetchStatus();
+        }
+      })
+      .on('broadcast', { event: 'PARTICIPANT_JOIN' }, (payload) => {
+        const newP = payload.payload;
+        if (newP && newP.userId !== currentUserId) {
+          examSound.play('JOIN', soundEnabled);
           fetchStatus();
         }
       })
       .on('broadcast', { event: 'PARTICIPANT_STATUS_CHANGE' }, () => {
         fetchStatus();
       })
-      .on('broadcast', { event: 'PARTICIPANT_JOIN' }, () => {
-        fetchStatus();
-      })
-      .on('broadcast', { event: 'PARTICIPANT_READY' }, () => {
-        fetchStatus();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [room?.id, roomId, room?.assessmentId, room?.roomCode, assessmentId, pin, router, fetchStatus]);
-
-  // Handle Ready Toggle
-  const handleToggleReady = async () => {
-    if (!room?.id) return;
-    setTogglingReady(true);
-    const nextState = !isReady;
-    setIsReady(nextState);
-
-    try {
-      const res = await fetch('/api/rooms/ready', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomId: room.id,
-          isReady: nextState,
-        }),
-      });
-
-      if (!res.ok) {
-        setIsReady(!nextState);
-      } else {
-        try {
-          const supabase = createClient();
-          await supabase.channel(`room:${room.id}`).send({
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED' && currentUserId) {
+          // Broadcast presence immediately to host
+          channel.send({
             type: 'broadcast',
-            event: 'PARTICIPANT_READY',
+            event: 'PARTICIPANT_JOIN',
             payload: {
               userId: currentUserId,
               fullName: currentUserName,
-              isReady: nextState,
+              initials: currentUserInitials,
             },
           });
-        } catch {}
-      }
-    } catch {
-      setIsReady(!nextState);
-    } finally {
-      setTogglingReady(false);
-    }
-  };
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+    };
+  }, [
+    room?.id,
+    roomIdFromUrl,
+    room?.assessmentId,
+    room?.roomCode,
+    assessmentIdFromUrl,
+    pin,
+    currentUserId,
+    currentUserName,
+    currentUserInitials,
+    soundEnabled,
+    router,
+    fetchStatus,
+  ]);
 
   const handleCopyPin = () => {
     const rawPin = room?.roomCode || pin;
@@ -249,7 +334,7 @@ function WaitingRoomContent() {
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
     const s = totalSec % 60;
-    return `${String(h).padStart(2, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   if (loading && !room) {
@@ -258,7 +343,7 @@ function WaitingRoomContent() {
         <div className="max-w-md w-full p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-3 shadow-xs">
           <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto" />
           <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            Đang kết nối phòng chờ thi trực tiếp...
+            Đang xác thực mã PIN và kết nối phòng chờ...
           </div>
           <div className="text-xs text-slate-400 font-mono">Mã PIN: {pin}</div>
         </div>
@@ -273,7 +358,7 @@ function WaitingRoomContent() {
           <AlertCircle className="w-9 h-9 text-rose-500 mx-auto" />
           <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">{error}</div>
           <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
-            Vui lòng kiểm tra lại mã PIN do Giám thị cung cấp hoặc xác nhận bạn đã tham gia đúng lớp học của ca thi.
+            Vui lòng kiểm tra lại mã PIN do Giám thị cung cấp hoặc xác nhận ca thi còn đang mở.
           </p>
           <div className="flex items-center justify-center gap-2 pt-2">
             <Link
@@ -289,7 +374,6 @@ function WaitingRoomContent() {
   }
 
   const rawPin = room?.roomCode || pin;
-  const readyParticipants = participants.filter((p) => p.isReady);
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 lg:p-8 transition-colors">
@@ -297,8 +381,8 @@ function WaitingRoomContent() {
       <header className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-950 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 font-mono">
               PHÒNG CHỜ KHẢO THÍ TRỰC TIẾP
             </span>
           </div>
@@ -306,29 +390,44 @@ function WaitingRoomContent() {
             {room?.title || 'Phòng Khảo Thí Trực Tiếp'}
           </h1>
           <div className="text-xs flex items-center gap-2 flex-wrap text-slate-500 dark:text-neutral-400">
-            <span>{room?.assessmentTitle}</span>
+            <span className="font-medium text-neutral-800 dark:text-neutral-200">{room?.assessmentTitle}</span>
             <span>&bull;</span>
             <span>Thời lượng: {room?.durationMinutes || 45} phút</span>
             <span>&bull;</span>
             <span className="font-semibold text-blue-600 dark:text-blue-400">
-              {participants.length} thí sinh trực tuyến
+              {participants.length} thí sinh đang trực tuyến
             </span>
           </div>
         </div>
 
-        {/* PIN Badge & Exit Action */}
-        <div className="flex items-center gap-3">
+        {/* PIN Badge, Sound Toggle & Exit Action */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Sound Toggle */}
+          <button
+            type="button"
+            onClick={toggleSound}
+            className={`p-2.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+              soundEnabled
+                ? 'border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
+                : 'border-slate-200 dark:border-zinc-800 text-slate-400 hover:text-slate-600'
+            }`}
+            title={soundEnabled ? 'Tắt âm thanh thông báo' : 'Bật âm thanh thông báo'}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+
+          {/* PIN Copy Button */}
           <button
             type="button"
             onClick={handleCopyPin}
-            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group"
+            className="px-3 sm:px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group"
             title="Nhấn để sao chép mã PIN"
           >
-            <span className="text-[10px] uppercase font-bold tracking-wider block text-slate-400 dark:text-neutral-500">
+            <span className="text-[10px] uppercase font-bold tracking-wider block text-slate-400 dark:text-neutral-500 font-mono">
               MÃ PIN
             </span>
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 tracking-wider">
+              <span className="text-base sm:text-lg font-bold font-mono text-neutral-900 dark:text-neutral-100 tracking-wider">
                 {rawPin.length === 6 ? `${rawPin.slice(0, 3)} ${rawPin.slice(3)}` : rawPin}
               </span>
               {copiedPin ? (
@@ -341,43 +440,67 @@ function WaitingRoomContent() {
 
           <Link
             href="/personal/dashboard"
-            className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-neutral-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+            className="px-3 sm:px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-neutral-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Rời phòng</span>
+            <span className="hidden sm:inline">Rời phòng</span>
           </Link>
         </div>
       </header>
 
       {/* Starting Exam Trigger Banner */}
       {startingNotice && (
-        <div className="my-3 p-4 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 animate-pulse shadow-xs">
+        <div className="my-3 p-4 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 animate-pulse shadow-md">
           <CheckCircle2 className="w-4 h-4" />
-          <span>Giám thị đã phát đề! Đang chuyển hướng bạn vào màn hình làm bài ngay...</span>
+          <span>Giám thị đã phát đề! Đang chuyển hướng bạn vào màn hình làm bài...</span>
         </div>
       )}
 
       {/* 2. Main Body: 2 Cột Đối Xứng */}
       <main className="my-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Cột Trái: Đồng hồ đếm ngược, Thí sinh cá nhân & Danh sách phòng (8 cols) */}
+        {/* Cột Trái: Trạng thái chờ, Thí sinh cá nhân & Danh sách phòng (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
-          {/* Card Đồng Hồ Đếm Ngược */}
-          <div className="p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-3 shadow-xs">
-            <span className="text-xs uppercase tracking-widest font-semibold block text-slate-500 dark:text-neutral-400 font-mono">
-              Thời gian còn lại đến khi bắt đầu ca thi
-            </span>
+          {/* Card Trạng Thái Sảnh Chờ (Academic Deep Lobby Card) */}
+          <div className="p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-center space-y-4 shadow-xs">
+            {countdownSeconds !== null ? (
+              <div className="space-y-2">
+                <span className="text-xs uppercase tracking-widest font-semibold block text-slate-500 dark:text-neutral-400 font-mono">
+                  Thời gian còn lại đến khi mở đề ca thi
+                </span>
+                <div className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+                  {formatCountdown(countdownSeconds)}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 py-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
+                  <Radio className="w-6 h-6 animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                    Đang chờ Giám thị phát đề thi
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-md mx-auto leading-relaxed">
+                    Bạn đã kết nối thành công vào phòng thi. Màn hình làm bài sẽ tự động bắt đầu ngay khi Giám thị phát đề cho cả phòng.
+                  </p>
+                </div>
+              </div>
+            )}
 
-            <div className="text-5xl sm:text-6xl font-mono font-bold tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
-              {formatCountdown(countdownSeconds)}
-            </div>
-
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-850 text-slate-700 dark:text-neutral-300">
-              <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{participants.length} người đã vào phòng ({readyParticipants.length} đã sẵn sàng)</span>
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-850 text-slate-700 dark:text-neutral-300">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-300">Đã sẵn sàng nhận đề</span>
+              </div>
+              <span className="text-slate-300 dark:text-zinc-600">&bull;</span>
+              <div className="flex items-center gap-1 text-slate-500 dark:text-neutral-400">
+                <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>{participants.length} thí sinh trong sảnh</span>
+              </div>
             </div>
           </div>
 
-          {/* Card Trạng Thái Cá Nhân & Nút Sẵn Sàng */}
+          {/* Card Trạng Thái Cá Nhân (Device & Connection Check) */}
           <div className="p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
@@ -388,56 +511,60 @@ function WaitingRoomContent() {
                   <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                     {currentUserName}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-                    <span>{isReady ? 'Trạng thái: Đã sẵn sàng nhận đề' : 'Trạng thái: Chưa sẵn sàng'}</span>
+                  <div className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Đã tham gia phòng thi &amp; Sẵn sàng nhận đề</span>
                   </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleToggleReady}
-                disabled={togglingReady}
-                className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-xs inline-flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
-                  isReady
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>{isReady ? 'Đã xác nhận sẵn sàng' : 'Tôi đã sẵn sàng'}</span>
-              </button>
+              {/* Verified badges */}
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50">
+                  <Wifi className="w-3.5 h-3.5" />
+                  <span>Mạng ổn định</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/50">
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Thiết bị hợp lệ</span>
+                </span>
+              </div>
             </div>
 
-            {/* Danh sách các thí sinh khác */}
+            {/* Danh sách các bạn cùng phòng thi */}
             <div className="pt-2 space-y-2">
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 font-semibold">
                 <span>Thí sinh cùng phòng thi ({participants.length})</span>
-                <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400">
-                  {readyParticipants.length}/{participants.length} sẵn sàng
+                <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+                  {participants.length} đã kết nối
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
-                {participants.map((p) => {
-                  const isMe = p.userId === currentUserId;
-                  return (
-                    <div
-                      key={p.id}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                        p.isReady
-                          ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300'
-                          : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-neutral-300'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.isReady ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                      <span className="truncate max-w-[130px]">
-                        {p.fullName} {isMe ? '(Bạn)' : ''}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+                {participants.length === 0 ? (
+                  <div className="text-xs text-slate-400 py-2">
+                    Bạn là thí sinh đầu tiên có mặt trong sảnh chờ.
+                  </div>
+                ) : (
+                  participants.map((p) => {
+                    const isMe = p.userId === currentUserId;
+                    return (
+                      <div
+                        key={p.id}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                          isMe
+                            ? 'border-blue-600/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 font-bold'
+                            : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-neutral-300'
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="truncate max-w-[140px]">
+                          {p.fullName} {isMe ? '(Bạn)' : ''}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -468,7 +595,7 @@ function WaitingRoomContent() {
 
             <div className="flex items-start gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-              <span>Bài thi tự động thu và chấm điểm khi hết giờ hoặc khi giám thị kết thúc ca thi.</span>
+              <span>Bài thi tự động thu và chấm điểm khi hết giờ hoặc khi Giám thị kết thúc ca thi.</span>
             </div>
           </div>
 
@@ -479,11 +606,11 @@ function WaitingRoomContent() {
             </div>
             <div className="flex justify-between">
               <span>Ngưỡng đạt tiêu chuẩn:</span>
-              <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">70% (Chuẩn 5 miền)</span>
+              <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{room?.passingScore || 70}%</span>
             </div>
             <div className="flex justify-between">
               <span>Chế độ giám sát:</span>
-              <span className="font-semibold text-neutral-800 dark:text-neutral-200">Ghi nhận rời tab &amp; thời gian thực</span>
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">Ghi nhận rời tab &amp; toàn màn hình</span>
             </div>
           </div>
         </div>
@@ -491,7 +618,7 @@ function WaitingRoomContent() {
 
       {/* 3. Footer Chuẩn Tinh Gọn */}
       <footer className="text-center text-[11px] text-slate-400 dark:text-neutral-500 font-mono py-2">
-        Hệ thống Khảo thí Thời gian thực NEXA &bull; Khảo thí chuẩn hóa 5 miền năng lực số
+        Hệ thống Khảo thí Thời gian thực NEXA • Khảo thí chuẩn hóa 5 miền năng lực số
       </footer>
     </div>
   );
@@ -499,7 +626,7 @@ function WaitingRoomContent() {
 
 export default function WaitingRoomPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải phòng chờ...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-xs text-slate-400">Đang tải phòng chờ...</div>}>
       <WaitingRoomContent />
     </Suspense>
   );

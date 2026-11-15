@@ -69,6 +69,18 @@ function LiveSubmittedContent() {
 
   // 1. Fetch current profile
   useEffect(() => {
+    // Read fallback stats from searchParams immediately
+    const queryAns = Number(searchParams.get('answered'));
+    const queryTot = Number(searchParams.get('total'));
+    if (!isNaN(queryAns) && queryAns > 0) {
+      setAnsweredCount(queryAns);
+    }
+    if (!isNaN(queryTot) && queryTot > 0) {
+      setTotalQuestions(queryTot);
+    }
+    const now = new Date();
+    setSubmitTimeStr(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}, ${now.toLocaleDateString('vi-VN')}`);
+
     async function loadUser() {
       const supabase = createClient();
       const {
@@ -92,10 +104,10 @@ function LiveSubmittedContent() {
             .maybeSingle();
 
           if (myParticipant) {
-            if (typeof myParticipant.answers_count === 'number') {
+            if (typeof myParticipant.answers_count === 'number' && myParticipant.answers_count > 0) {
               setAnsweredCount(myParticipant.answers_count);
             }
-            if (typeof myParticipant.total_questions === 'number') {
+            if (typeof myParticipant.total_questions === 'number' && myParticipant.total_questions > 0) {
               setTotalQuestions(myParticipant.total_questions);
             }
             if (myParticipant.score !== null && myParticipant.score !== undefined) {
@@ -111,7 +123,7 @@ function LiveSubmittedContent() {
       }
     }
     loadUser();
-  }, [roomId]);
+  }, [roomId, searchParams]);
 
   // 2. Fetch room status & peers
   const fetchStatus = useCallback(async () => {
