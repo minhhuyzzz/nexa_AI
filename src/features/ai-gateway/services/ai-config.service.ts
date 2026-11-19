@@ -11,7 +11,7 @@ export interface AIFlowConfig {
 }
 
 export interface AIGatewaySettings {
-  provider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI' | 'ON_PREMISE';
+  provider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI' | 'DEEPSEEK' | 'ON_PREMISE' | 'OPENROUTER';
   apiKey: string;
   defaultModel: string;
   endpointUrl?: string;

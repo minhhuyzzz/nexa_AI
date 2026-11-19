@@ -10,6 +10,7 @@ import {
   Moon,
   FolderLock,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -118,12 +119,12 @@ export function AdminAvatarMenu() {
                 </Link>
 
                 <Link
-                  href="/admin/settings?tab=ai"
+                  href="/admin/ai-gateway"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
-                  <Settings className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Cấu hình AI Gateway</span>
+                  <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                  <span>Cổng kết nối AI</span>
                 </Link>
 
                 {/* Dark/Light mode toggle switch */}

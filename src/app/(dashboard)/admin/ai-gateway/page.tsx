@@ -1,28 +1,24 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import {
+  Sparkles,
+  RefreshCw,
   Cpu,
   Zap,
-  Clock,
-  DollarSign,
-  RefreshCw,
-  Key,
-  Layers,
-  Sparkles,
-  BarChart3,
   CheckCircle2,
   AlertTriangle,
   Search,
   Database,
-  Coins,
+  Layers,
+  Save,
+  Key,
   ShieldCheck,
-  Building2,
   Check,
-  ChevronRight,
-  X,
-  ExternalLink,
+  Loader2,
+  Eye,
+  EyeOff,
+  ChevronDown,
 } from 'lucide-react';
 
 interface AiGatewayStats {
@@ -31,13 +27,8 @@ interface AiGatewayStats {
   totalCompletionTokens: number;
   totalTokens: number;
   avgLatencyMs: number;
-  p95LatencyMs?: number;
   errorCount?: number;
   errorRatePercent?: number;
-  totalCostUsd: number;
-  totalCostVnd: number;
-  models: Record<string, number>;
-  features: Record<string, number>;
 }
 
 interface AiEventLog {
@@ -47,51 +38,61 @@ interface AiEventLog {
   prompt_tokens: number;
   completion_tokens: number;
   latency_ms: number;
-  cost_estimated: number;
-  created_at: string;
   status?: string;
+  created_at: string;
 }
 
 interface AiGatewayConfig {
-  provider: string;
+  provider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI' | 'DEEPSEEK' | 'ON_PREMISE' | 'OPENROUTER';
   defaultModel: string;
   endpointUrl?: string;
-  maskedApiKey: string;
+  maskedApiKey?: string;
+  hasCustomApiKey?: boolean;
   costBudgetMonthlyUsd?: number;
   monthlyBudgetUsd?: number;
-  flows?: Record<string, any>;
-  updatedAt?: string;
 }
 
+const PROVIDER_OPTIONS = [
+  { id: 'GOOGLE_GEMINI', name: 'Google Gemini', defaultModel: 'gemini-2.5-flash', defaultEndpoint: '', hint: 'Tốc độ cao, chi phí tối ưu' },
+  { id: 'OPENROUTER', name: 'OpenRouter (Router đa mô hình)', defaultModel: 'deepseek/deepseek-chat', defaultEndpoint: 'https://openrouter.ai/api/v1', hint: 'Định tuyến mọi model: Gemini, GPT, Claude, DeepSeek' },
+  { id: 'OPENAI', name: 'OpenAI (ChatGPT / Router tương thích)', defaultModel: 'gpt-4o-mini', defaultEndpoint: 'https://api.openai.com/v1', hint: 'gpt-4o, gpt-4o-mini hoặc router chuẩn OpenAI' },
+  { id: 'DEEPSEEK', name: 'DeepSeek', defaultModel: 'deepseek-chat', defaultEndpoint: 'https://api.deepseek.com', hint: 'deepseek-chat, deepseek-reasoner' },
+  { id: 'ANTHROPIC_CLAUDE', name: 'Anthropic Claude', defaultModel: 'claude-3-5-sonnet', defaultEndpoint: 'https://api.anthropic.com/v1', hint: 'claude-3-5-sonnet, claude-3-5-haiku' },
+];
+
 const FEATURE_LABELS: Record<string, string> = {
-  RUBRIC_GRADING: 'Chấm Rubric và đánh giá minh chứng',
-  COMPETENCY_ANALYSIS: 'Phân tích hồ sơ năng lực số và lộ trình',
-  AUTHORING_ASSIST: 'Trợ lý soạn đề khảo thí',
-  SIMILAR_QUESTION: 'Tạo câu hỏi tương tự',
-  EXPLAIN_OPTIONS: 'Giải thích đáp án',
-  GENERATE_BY_DOMAIN: 'Sinh câu hỏi theo miền năng lực',
-  HEALTH_CHECK: 'Kiểm tra sức khỏe cổng AI',
-  OTHER: 'Nghiệp vụ khác / Hệ thống',
+  RUBRIC_GRADING: 'Chấm Rubric & Minh chứng',
+  COMPETENCY_ANALYSIS: 'Phân tích Năng lực 5 Miền',
+  AUTHORING_ASSIST: 'Trợ lý Soạn Đề',
+  SIMILAR_QUESTION: 'Tạo Câu Hỏi Tương Tự',
+  EXPLAIN_OPTIONS: 'Giải Thích Đáp Án',
+  GENERATE_BY_DOMAIN: 'Sinh Câu Hỏi Theo Miền',
+  HEALTH_CHECK: 'Kiểm Tra Sức Khỏe',
+  OTHER: 'Hệ thống / Nghiệp vụ khác',
 };
 
-export default function AdminAiGatewayPage() {
+function AdminAiGatewayContent() {
   const [stats, setStats] = useState<AiGatewayStats | null>(null);
   const [events, setEvents] = useState<AiEventLog[]>([]);
   const [config, setConfig] = useState<AiGatewayConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
   const [flow, setFlow] = useState<'all' | 'personal' | 'org'>('all');
   const [searchLog, setSearchLog] = useState('');
 
-  // Modal configuration
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [editingProvider, setEditingProvider] = useState<string>('GOOGLE_GEMINI');
-  const [editingApiKey, setEditingApiKey] = useState('');
-  const [editingModel, setEditingModel] = useState('gemini-2.5-flash');
-  const [editingEndpointUrl, setEditingEndpointUrl] = useState('');
-  const [editingBudget, setEditingBudget] = useState(200);
-  const [savingConfig, setSavingConfig] = useState(false);
-  const [configSuccessMsg, setConfigSuccessMsg] = useState('');
+  // Dropdown states
+  const [isFlowDropdownOpen, setIsFlowDropdownOpen] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  // Configuration Form State (Unified Model/Provider Setup)
+  const [provider, setProvider] = useState<'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI' | 'DEEPSEEK' | 'ON_PREMISE' | 'OPENROUTER'>('GOOGLE_GEMINI');
+  const [modelName, setModelName] = useState('');
+  const [endpointUrl, setEndpointUrl] = useState('');
+  const [budgetUsd, setBudgetUsd] = useState<number>(200);
+  const [customApiKey, setCustomApiKey] = useState('');
+  const [hasServerKey, setHasServerKey] = useState(true);
 
   const fetchData = async (selectedPeriod = period, selectedFlow = flow) => {
     try {
@@ -100,17 +101,24 @@ export default function AdminAiGatewayPage() {
       const data = await res.json();
       if (data.stats) {
         setStats(data.stats);
-        setEvents(data.recentEvents || []);
+      }
+      if (data.recentEvents) {
+        setEvents(data.recentEvents);
       }
       if (data.config) {
         setConfig(data.config);
-        setEditingProvider(data.config.provider || 'GOOGLE_GEMINI');
-        setEditingModel(data.config.defaultModel || 'gemini-2.5-flash');
-        setEditingEndpointUrl(data.config.endpointUrl || '');
-        setEditingBudget(data.config.costBudgetMonthlyUsd ?? data.config.monthlyBudgetUsd ?? 200);
+        if (data.config.provider) setProvider(data.config.provider);
+        if (data.config.defaultModel) setModelName(data.config.defaultModel);
+        if (typeof data.config.endpointUrl === 'string') setEndpointUrl(data.config.endpointUrl);
+        if (typeof data.config.costBudgetMonthlyUsd === 'number') {
+          setBudgetUsd(data.config.costBudgetMonthlyUsd);
+        } else if (typeof data.config.monthlyBudgetUsd === 'number') {
+          setBudgetUsd(data.config.monthlyBudgetUsd);
+        }
+        setHasServerKey(Boolean(data.config.maskedApiKey || !data.config.hasCustomApiKey));
       }
-    } catch (e) {
-      console.error('Failed to load AI gateway stats', e);
+    } catch (err) {
+      console.error('Failed to load AI gateway data:', err);
     } finally {
       setLoading(false);
     }
@@ -120,50 +128,67 @@ export default function AdminAiGatewayPage() {
     fetchData(period, flow);
   }, [period, flow]);
 
+  useEffect(() => {
+    setIsFlowDropdownOpen(false);
+  }, [flow]);
+
+  // Dynamic budget binding for tests
+  const monthlyBudgetUsd = config?.costBudgetMonthlyUsd ?? config?.monthlyBudgetUsd ?? 200.0;
+
+  const handleProviderChange = (newProvider: 'GOOGLE_GEMINI' | 'ANTHROPIC_CLAUDE' | 'OPENAI' | 'DEEPSEEK' | 'ON_PREMISE' | 'OPENROUTER') => {
+    setProvider(newProvider);
+    const matched = PROVIDER_OPTIONS.find((p) => p.id === newProvider);
+    if (matched) {
+      setModelName(matched.defaultModel);
+      if (newProvider === 'OPENROUTER') {
+        setEndpointUrl(matched.defaultEndpoint || 'https://openrouter.ai/api/v1');
+      } else if (newProvider === 'GOOGLE_GEMINI') {
+        setEndpointUrl('');
+      }
+    }
+  };
+
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingConfig(true);
-    setConfigSuccessMsg('');
+    setSaving(true);
+    setSaveSuccess(false);
+
     try {
-      const payload: Record<string, any> = {
-        provider: editingProvider,
-        defaultModel: editingModel,
-        costBudgetMonthlyUsd: Number(editingBudget),
+      const payload: Record<string, unknown> = {
+        provider,
+        defaultModel: modelName.trim(),
+        endpointUrl: endpointUrl.trim(),
+        costBudgetMonthlyUsd: Number(budgetUsd) || monthlyBudgetUsd,
       };
-      if (editingApiKey.trim()) {
-        payload.apiKey = editingApiKey.trim();
+
+      if (customApiKey.trim()) {
+        payload.apiKey = customApiKey.trim();
       }
-      if (editingProvider === 'ON_PREMISE' || editingEndpointUrl.trim()) {
-        payload.endpointUrl = editingEndpointUrl.trim();
-      }
+
       const res = await fetch('/api/admin/ai-gateway', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const result = await res.json();
-      if (res.ok) {
-        setConfigSuccessMsg('Đã lưu cấu hình AI Gateway thành công vào cơ sở dữ liệu');
-        setEditingApiKey('');
-        setTimeout(() => {
-          setIsConfigModalOpen(false);
-          setConfigSuccessMsg('');
-        }, 1200);
-        fetchData(period, flow);
-      } else {
-        alert(result.error || 'Lỗi khi lưu cấu hình');
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Lỗi khi lưu cấu hình');
       }
+
+      setSaveSuccess(true);
+      setCustomApiKey('');
+      setTimeout(() => setSaveSuccess(false), 3500);
+      fetchData(period, flow);
     } catch (err) {
-      console.error('Save config error', err);
-      alert('Không thể kết nối đến máy chủ lưu cấu hình');
+      alert(err instanceof Error ? err.message : 'Không thể lưu cấu hình');
     } finally {
-      setSavingConfig(false);
+      setSaving(false);
     }
   };
 
-  // Real KPI metrics from Database
+  // Metrics Display
   const totalReq = stats?.totalRequests ?? 0;
-  const errorRate = stats?.errorRatePercent ? stats.errorRatePercent.toFixed(2) : '0,00';
   const totalTokens = stats?.totalTokens ?? 0;
   const totalTokensDisplay =
     totalTokens >= 1_000_000
@@ -172,45 +197,10 @@ export default function AdminAiGatewayPage() {
       ? (totalTokens / 1_000).toFixed(1) + 'k'
       : totalTokens.toLocaleString('vi-VN');
   const avgLatency = stats?.avgLatencyMs ?? 0;
-  const p95Latency = stats?.p95LatencyMs ?? 0;
-  const totalCostUsd = stats?.totalCostUsd ?? 0;
-  const totalCostVnd = stats?.totalCostVnd ?? 0;
-  const totalCostDisplay =
-    totalCostVnd >= 1_000_000
-      ? (totalCostVnd / 1_000_000).toFixed(2) + ' triệu đ'
-      : `${totalCostVnd.toLocaleString('vi-VN')} đ`;
+  const errorRate = stats?.errorRatePercent ?? 0;
+  const successRate = Math.max(0, Number((100 - errorRate).toFixed(1)));
 
-  // Real dynamic breakdown of models
-  const modelsList = useMemo(() => {
-    const raw = stats?.models || {};
-    return Object.entries(raw)
-      .map(([name, count]) => {
-        const percent = totalReq > 0 ? Number(((count / totalReq) * 100).toFixed(1)) : 0;
-        return {
-          name,
-          calls: count.toLocaleString('vi-VN'),
-          percent,
-        };
-      })
-      .sort((a, b) => b.percent - a.percent);
-  }, [stats?.models, totalReq]);
-
-  // Real dynamic breakdown of features
-  const featuresList = useMemo(() => {
-    const raw = stats?.features || {};
-    return Object.entries(raw)
-      .map(([code, count]) => {
-        const percent = totalReq > 0 ? Number(((count / totalReq) * 100).toFixed(1)) : 0;
-        return {
-          name: FEATURE_LABELS[code] || code,
-          calls: count.toLocaleString('vi-VN'),
-          percent,
-        };
-      })
-      .sort((a, b) => b.percent - a.percent);
-  }, [stats?.features, totalReq]);
-
-  // Filter logs by search term
+  // Filtered Events
   const filteredEvents = useMemo(() => {
     if (!searchLog.trim()) return events;
     const term = searchLog.toLowerCase();
@@ -224,13 +214,6 @@ export default function AdminAiGatewayPage() {
     });
   }, [events, searchLog]);
 
-  // Budget calculations (real usage vs monthly quota)
-  const monthlyBudgetUsd = config?.costBudgetMonthlyUsd ?? config?.monthlyBudgetUsd ?? 200.0;
-  const budgetUsedPercent = Math.min(
-    100,
-    Number(((totalCostUsd / monthlyBudgetUsd) * 100).toFixed(1))
-  );
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* 1. Header */}
@@ -238,419 +221,342 @@ export default function AdminAiGatewayPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-              Quản trị Cổng AI Gateway và Chi phí
+              Cổng kết nối AI
             </h1>
-            <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-md">
-              Dữ liệu thực tế 100%
+            <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 rounded-md">
+              AI Gateway
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Giám sát lưu lượng AI, chi phí USD/VND theo lượt gọi thực tế từ cơ sở dữ liệu telemetry.
+          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-1">
+            Quản trị kết nối mô hình trí tuệ nhân tạo và giám sát lưu lượng xử lý thực tế toàn sàn.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => setIsConfigModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
-          >
-            <Key className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cấu hình Model và Khóa API</span>
-          </button>
-          <button
-            onClick={() => fetchData(period, flow)}
-            disabled={loading}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Làm mới</span>
-          </button>
-        </div>
+        <button
+          onClick={() => fetchData(period, flow)}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Làm mới</span>
+        </button>
       </div>
 
-      {/* 2. Filter Controls: Flow Isolation Pills & Period Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Flow Selector Pills: Tất cả luồng | Cá nhân | Tổ chức */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl w-fit text-xs font-semibold">
-          <button
-            onClick={() => setFlow('all')}
-            className={`px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-              flow === 'all'
-                ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>Tất cả luồng</span>
-          </button>
-          <button
-            onClick={() => setFlow('personal')}
-            className={`px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-              flow === 'personal'
-                ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>Cá nhân</span>
-          </button>
-          <button
-            onClick={() => setFlow('org')}
-            className={`px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-              flow === 'org'
-                ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>Tổ chức</span>
-          </button>
-        </div>
-
-        {/* Period Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl w-fit text-xs font-semibold">
-          {(['24h', '7d', '30d', 'all'] as const).map((p) => {
-            const label =
-              p === '24h'
-                ? '24 giờ qua'
-                : p === '7d'
-                ? '7 ngày qua'
-                : p === '30d'
-                ? '30 ngày qua'
-                : 'Toàn thời gian';
-            return (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                  period === p
-                    ? 'bg-white dark:bg-[#111114] text-blue-600 shadow-xs'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 3. 6 Key Metrics Cards (Real telemetry) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <div className="flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5" />
-              <span>Tổng lượt gọi AI</span>
-            </div>
+      {/* Notifications */}
+      {saveSuccess && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.75} />
+            <span>Đã cập nhật cấu hình Cổng AI thành công vào cơ sở dữ liệu.</span>
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
+          <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+            AI_GATEWAY: ACTIVE
+          </span>
+        </div>
+      )}
+
+      {/* 2. 4 Clean Metric Cards (Đo lường dữ liệu thực tế) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
+            <span className="font-medium">Tổng lượt gọi AI</span>
+            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums my-0.5">
             {loading ? '...' : totalReq.toLocaleString('vi-VN')}
           </div>
-          <div className="text-[10px] text-slate-400">Chu kỳ {period}</div>
+          <span className="text-[10px] text-slate-400">Chu kỳ {period === 'all' ? 'toàn thời gian' : period}</span>
         </div>
 
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <div className="flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Tỷ lệ lỗi</span>
-            </div>
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
+            <span className="font-medium">Tổng Token tiêu thụ</span>
+            <Database className="w-4 h-4 text-purple-600 dark:text-purple-400" />
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {loading ? '...' : `${errorRate}%`}
-          </div>
-          <div className="text-[10px] text-slate-400">Lỗi mạng/API</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <div className="flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5" />
-              <span>Token tiêu thụ</span>
-            </div>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
+          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums my-0.5">
             {loading ? '...' : totalTokensDisplay}
           </div>
-          <div className="text-[10px] text-slate-400">Prompt + Output</div>
+          <span className="text-[10px] text-slate-400">Prompt + Output tokens</span>
         </div>
 
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Độ trễ trung bình</span>
-            </div>
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
+            <span className="font-medium">Độ trễ trung bình</span>
+            <Zap className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
+          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums my-0.5">
             {loading ? '...' : `${avgLatency} ms`}
           </div>
-          <div className="text-[10px] text-slate-400">Thời gian phản hồi</div>
+          <span className="text-[10px] text-slate-400">Thời gian phản hồi mô hình</span>
         </div>
 
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <div className="flex items-center gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>P95 latency</span>
-            </div>
+        <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
+            <span className="font-medium">Tỷ lệ thành công</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {loading ? '...' : `${p95Latency.toLocaleString('vi-VN')} ms`}
+          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums my-0.5">
+            {loading ? '...' : `${successRate}%`}
           </div>
-          <div className="text-[10px] text-slate-400">95% cuộc gọi dưới ngưỡng</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <div className="flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5" />
-              <span>Chi phí AI thực tế</span>
-            </div>
-          </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums my-0.5">
-            {loading ? '...' : totalCostDisplay}
-          </div>
-          <div className="text-[10px] text-slate-400 font-mono">
-            ~${totalCostUsd.toFixed(4)} USD
-          </div>
+          <span className="text-[10px] text-slate-400">Yêu cầu hoàn thành hợp lệ</span>
         </div>
       </div>
 
-      {/* 4. Middle Grid: Phân bổ theo mô hình & Phân bổ theo nghiệp vụ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left: Phân bổ theo mô hình */}
-        <div className="lg:col-span-6 bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-4">
-          <div>
-            <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Phân bổ theo mô hình
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Tỷ lệ lượt gọi và thống kê thực tế theo từng mô hình AI trong hệ thống.
-            </p>
+      {/* 3. Unified Model & Provider Setup Card */}
+      <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+              <Cpu className="w-4 h-4" strokeWidth={1.75} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                Cấu hình Nhà cung cấp &amp; Kết nối AI
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400">
+                Quản trị kết nối mô hình và định mức ngân sách vận hành
+              </p>
+            </div>
           </div>
 
-          {modelsList.length === 0 ? (
-            <div className="py-8 text-center text-slate-400 text-xs">
-              Chưa có dữ liệu gọi mô hình AI trong chu kỳ này.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="text-slate-400 text-[11px] font-medium">
-                    <th className="py-2.5 pr-2">Mô hình</th>
-                    <th className="py-2.5 px-2">Lượt gọi</th>
-                    <th className="py-2.5 pl-2 text-right">Tỷ lệ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modelsList.map((m, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40">
-                      <td className="py-2.5 pr-2 font-mono font-medium text-neutral-800 dark:text-zinc-200">
-                        {m.name}
-                      </td>
-                      <td className="py-2.5 px-2 tabular-nums text-slate-600 dark:text-zinc-300">
-                        {m.calls}
-                      </td>
-                      <td className="py-2.5 pl-2 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="tabular-nums text-slate-500 w-10 text-[11px]">{m.percent}%</span>
-                          <div className="w-16 h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-                            <div className="h-full bg-blue-600 rounded-full" style={{ width: `${m.percent}%` }} />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-neutral-400">
+              Định mức: <strong className="font-mono text-neutral-900 dark:text-neutral-100">${(Number(budgetUsd) || monthlyBudgetUsd).toFixed(2)} USD</strong>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Sẵn sàng
+            </span>
+          </div>
         </div>
 
-        {/* Right: Phân bổ theo nghiệp vụ */}
-        <div className="lg:col-span-6 bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-4">
-          <div>
-            <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Phân bổ theo nghiệp vụ
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Tỷ trọng sử dụng AI theo từng tính năng trong nền tảng NEXA.
-            </p>
-          </div>
-
-          {featuresList.length === 0 ? (
-            <div className="py-8 text-center text-slate-400 text-xs">
-              Chưa có dữ liệu nghiệp vụ AI trong chu kỳ này.
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
-              {/* Counter summary */}
-              <div className="w-28 h-28 rounded-full border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center shrink-0">
-                <span className="text-base font-bold text-neutral-900 dark:text-white tabular-nums">
-                  {totalReq.toLocaleString('vi-VN')}
-                </span>
-                <span className="text-[10px] text-slate-400">lượt gọi</span>
-              </div>
-
-              {/* List */}
-              <div className="flex-1 w-full space-y-2 text-xs">
-                {featuresList.map((f, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
-                      <span className="text-slate-600 dark:text-zinc-300 truncate max-w-[170px]" title={f.name}>
-                        {f.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] tabular-nums">
-                      <span className="text-slate-400">{f.calls} lượt</span>
-                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{f.percent}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 5. Provider & Routing + Quota Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Provider card */}
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Provider &amp; Kết nối
-            </h3>
-            <span className="text-[10px] text-slate-400">Kiến trúc 8 lớp</span>
-          </div>
-          <div className="space-y-2 pt-1 text-xs">
-            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 flex items-center justify-between border border-slate-100 dark:border-zinc-800">
-              <div>
-                <div className="font-semibold text-neutral-800 dark:text-zinc-200">Google Gemini</div>
-                <div className="text-[10px] text-slate-400 font-mono">
-                  {config?.defaultModel || 'gemini-2.5-flash'}
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
-                ● Đang hoạt động
-              </span>
-            </div>
-            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900 flex items-center justify-between border border-slate-100 dark:border-zinc-800">
-              <div>
-                <div className="font-semibold text-neutral-800 dark:text-zinc-200">Khóa API kết nối</div>
-                <div className="text-[10px] text-slate-400 font-mono">
-                  {config?.maskedApiKey || 'Đã cấu hình qua môi trường'}
-                </div>
-              </div>
-              <button
-                onClick={() => setIsConfigModalOpen(true)}
-                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+        <form onSubmit={handleSaveConfig} className="space-y-4 pt-1">
+          {/* Row 1: Provider & Model */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300 mb-1.5">
+                Nhà cung cấp (Provider)
+              </label>
+              <select
+                value={provider}
+                onChange={(e) => handleProviderChange(e.target.value as any)}
+                className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer"
               >
-                Đổi khóa
-              </button>
+                <option value="GOOGLE_GEMINI">Google Gemini (Khuyến nghị)</option>
+                <option value="OPENROUTER">OpenRouter (Router đa mô hình)</option>
+                <option value="OPENAI">OpenAI (ChatGPT / Router tương thích)</option>
+                <option value="DEEPSEEK">DeepSeek</option>
+                <option value="ANTHROPIC_CLAUDE">Anthropic Claude</option>
+              </select>
             </div>
-          </div>
-        </div>
 
-        {/* Model assignment card */}
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-3">
-          <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-            Mô hình theo luồng nghiệp vụ
-          </h3>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Chấm Rubric &amp; Minh chứng</span>
-              <span className="font-mono font-semibold text-blue-600">
-                {config?.flows?.rubricGrading?.model || 'gemini-2.5-flash'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Phân tích Năng lực 5 Miền</span>
-              <span className="font-mono font-semibold text-blue-600">
-                {config?.flows?.competencyAnalysis?.model || 'gemini-2.5-flash'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-zinc-400">Trợ lý Soạn Đề AI</span>
-              <span className="font-mono font-semibold text-blue-600">
-                {config?.defaultModel || 'gemini-2.5-flash'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Budget control */}
-        <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Kiểm soát Chi phí &amp; Hạn mức
-            </h3>
-            <span className="text-[10px] text-slate-400">Ngân sách định mức</span>
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between text-xs mb-1.5">
-              <span className="font-bold text-neutral-900 dark:text-neutral-100 text-base tabular-nums">
-                ${monthlyBudgetUsd.toFixed(2)} USD
-              </span>
-              <span className="text-slate-500 text-[11px]">
-                Đã dùng: ${totalCostUsd.toFixed(2)} USD ({budgetUsedPercent}%)
-              </span>
-            </div>
-            <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all"
-                style={{ width: `${budgetUsedPercent}%` }}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300">
+                  Mô hình AI (Tùy chọn)
+                </label>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  Mặc định: {PROVIDER_OPTIONS.find((p) => p.id === provider)?.defaultModel}
+                </span>
+              </div>
+              <input
+                type="text"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="Để trống dùng mặc định, hoặc nhập model tùy ý (gpt-4o, deepseek-v3...)"
+                className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
           </div>
-          <div className="pt-2 text-[11px] text-slate-500">
-            Tương đương: <strong className="text-neutral-800 dark:text-neutral-200">{totalCostDisplay}</strong> trên dữ liệu đo lường.
+
+          {/* Row 2: Base URL & Monthly Budget */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300 mb-1.5">
+                Base URL / Endpoint (Tùy chọn)
+              </label>
+              <input
+                type="text"
+                value={endpointUrl}
+                onChange={(e) => setEndpointUrl(e.target.value)}
+                placeholder={
+                  provider === 'OPENROUTER'
+                    ? 'https://openrouter.ai/api/v1'
+                    : 'Mặc định nhà cung cấp, hoặc dán URL router...'
+                }
+                className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-blue-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300 mb-1.5">
+                Định mức ngân sách tháng (USD)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="10000"
+                  step="10"
+                  value={budgetUsd}
+                  onChange={(e) => setBudgetUsd(Math.max(1, parseFloat(e.target.value) || 0))}
+                  placeholder="200"
+                  className="w-full pl-3.5 pr-14 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm font-mono tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-600"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                  USD
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Row 3: Custom API Key Input with Eye Toggle */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300 mb-1.5">
+              Khóa API (API Key)
+            </label>
+            <div className="relative">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                value={customApiKey}
+                onChange={(e) => setCustomApiKey(e.target.value)}
+                placeholder={hasServerKey ? 'Đang dùng khóa mặc định từ .env (nhập vào để ghi đè)...' : 'Dán khóa API kết nối...'}
+                className="w-full pl-3.5 pr-11 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-blue-600"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                title={showApiKey ? 'Ẩn khóa API' : 'Hiện khóa API'}
+              >
+                {showApiKey ? (
+                  <EyeOff className="w-4 h-4" strokeWidth={1.75} />
+                ) : (
+                  <Eye className="w-4 h-4" strokeWidth={1.75} />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>{saving ? 'Đang lưu...' : 'Lưu cấu hình AI'}</span>
+            </button>
+          </div>
+        </form>
       </div>
 
-      {/* 6. Request Logs Table */}
-      <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs space-y-4 p-5">
+      {/* 4. Telemetry Logs Table */}
+      <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs space-y-4 p-5">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-              Nhật ký Yêu cầu AI (Telemetry Logs)
+              Nhật ký yêu cầu AI (Telemetry Logs)
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Chi tiết các lượt gọi AI thực tế được ghi nhận vào bảng <code className="text-blue-600 font-mono">ai_usage_events</code>.
+              Chi tiết các lượt gọi mô hình thực tế được ghi nhận vào bảng cơ sở dữ liệu <code className="text-blue-600 font-mono">ai_usage_events</code>.
             </p>
           </div>
 
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchLog}
-              onChange={(e) => setSearchLog(e.target.value)}
-              placeholder="Tìm theo nghiệp vụ, mô hình, ID..."
-              className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white w-64 focus:outline-none focus:ring-1 focus:ring-blue-600"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchLog}
+                onChange={(e) => setSearchLog(e.target.value)}
+                placeholder="Tìm theo nghiệp vụ, model..."
+                className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white w-48 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              />
+            </div>
+
+            {/* Flow Selector Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsFlowDropdownOpen(!isFlowDropdownOpen)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <span>
+                  {flow === 'all' ? 'Tất cả luồng' : flow === 'personal' ? 'Cá nhân' : 'Tổ chức'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {isFlowDropdownOpen && (
+                <div className="absolute right-0 mt-1 w-36 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-lg py-1 z-20">
+                  <button
+                    type="button"
+                    onClick={() => setFlow('all')}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
+                      flow === 'all'
+                        ? 'bg-blue-50 text-blue-600 font-semibold dark:bg-blue-950/40'
+                        : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    Tất cả luồng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFlow('personal')}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
+                      flow === 'personal'
+                        ? 'bg-blue-50 text-blue-600 font-semibold dark:bg-blue-950/40'
+                        : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    Cá nhân
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFlow('org')}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
+                      flow === 'org'
+                        ? 'bg-blue-50 text-blue-600 font-semibold dark:bg-blue-950/40'
+                        : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    Tổ chức
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Period Dropdown Selection */}
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value as any)}
+              className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer shadow-2xs"
+            >
+              <option value="24h">24 giờ qua</option>
+              <option value="7d">7 ngày qua</option>
+              <option value="30d">30 ngày qua</option>
+              <option value="all">Toàn thời gian</option>
+            </select>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="text-slate-400 font-medium">
-                <th className="py-2.5 pr-4">Nghiệp vụ</th>
-                <th className="py-2.5 px-3">Luồng</th>
-                <th className="py-2.5 px-4">Mô hình</th>
-                <th className="py-2.5 px-4">Prompt / Completion</th>
-                <th className="py-2.5 px-4">Độ trễ</th>
-                <th className="py-2.5 px-4">Chi phí ước tính</th>
-                <th className="py-2.5 pl-4 text-right">Thời gian</th>
+              <tr className="bg-slate-50/70 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 font-medium">
+                <th className="py-2.5 px-3">Thời gian</th>
+                <th className="py-2.5 px-3">Nghiệp vụ</th>
+                <th className="py-2.5 px-3">Mô hình</th>
+                <th className="py-2.5 px-3">Prompt / Output Token</th>
+                <th className="py-2.5 px-3">Độ trễ</th>
+                <th className="py-2.5 px-3 text-right">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
               {filteredEvents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
                     {searchLog
                       ? 'Không tìm thấy nhật ký yêu cầu nào phù hợp với từ khóa.'
                       : 'Chưa có nhật ký yêu cầu AI nào được ghi nhận trong chu kỳ này.'}
@@ -658,50 +564,44 @@ export default function AdminAiGatewayPage() {
                 </tr>
               ) : (
                 filteredEvents.map((log) => {
-                  const costVnd = Math.round((log.cost_estimated || 0) * 25400);
                   const isFailed = log.status === 'FAILED';
                   return (
                     <tr
                       key={log.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/40 transition-colors"
+                      className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/40 transition-colors"
                     >
-                      <td className="py-3 pr-4 font-semibold text-neutral-900 dark:text-neutral-100">
-                        <div className="flex items-center gap-1.5">
-                          {isFailed && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" title="Yêu cầu thất bại" />
-                          )}
-                          <span>{FEATURE_LABELS[log.feature] || log.feature}</span>
-                        </div>
+                      <td className="py-3 px-3 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                        {new Date(log.created_at).toLocaleString('vi-VN')}
                       </td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                            (log as any).organization_id || (log as any).flow === 'org'
-                              ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
-                              : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                          }`}
-                        >
-                          {(log as any).organization_id || (log as any).flow === 'org' ? 'Tổ chức' : 'Cá nhân'}
-                        </span>
+
+                      <td className="py-3 px-3 font-semibold text-neutral-900 dark:text-neutral-100">
+                        {FEATURE_LABELS[log.feature] || log.feature}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-700 dark:text-zinc-300">
+
+                      <td className="py-3 px-3 font-mono text-slate-700 dark:text-zinc-300">
                         {log.model}
                       </td>
-                      <td className="py-3 px-4 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
-                        {(log.prompt_tokens || 0).toLocaleString('vi-VN')} /{' '}
-                        {(log.completion_tokens || 0).toLocaleString('vi-VN')}
+
+                      <td className="py-3 px-3 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
+                        {(log.prompt_tokens || 0).toLocaleString('vi-VN')} / {(log.completion_tokens || 0).toLocaleString('vi-VN')}
                       </td>
-                      <td className="py-3 px-4 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
+
+                      <td className="py-3 px-3 tabular-nums text-slate-600 dark:text-zinc-400 font-mono">
                         {log.latency_ms} ms
                       </td>
-                      <td className="py-3 px-4 tabular-nums font-semibold text-neutral-800 dark:text-zinc-200">
-                        {costVnd > 0 ? `${costVnd.toLocaleString('vi-VN')} đ` : '< 1 đ'}
-                        <span className="text-[10px] text-slate-400 font-normal ml-1">
-                          (${Number(log.cost_estimated || 0).toFixed(5)})
-                        </span>
-                      </td>
-                      <td className="py-3 pl-4 text-right text-slate-500 whitespace-nowrap">
-                        {new Date(log.created_at).toLocaleString('vi-VN')}
+
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                        {isFailed ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                            <AlertTriangle className="w-3 h-3" />
+                            Thất bại
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            <Check className="w-3 h-3" />
+                            Thành công
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -711,190 +611,25 @@ export default function AdminAiGatewayPage() {
           </table>
         </div>
 
-        <div className="pt-3 flex items-center justify-between text-xs text-slate-400">
-          <div>
-            Hiển thị {filteredEvents.length} trong tổng số {events.length} sự kiện gần nhất (chu kỳ {period})
-          </div>
+        <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
+          <span>Hiển thị {filteredEvents.length} sự kiện trong chu kỳ</span>
+          <span className="font-mono text-[11px]">AI GATEWAY TELEMETRY</span>
         </div>
       </div>
-
-      {/* 7. Modal Cấu hình Model Keys */}
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                  Cấu hình AI Gateway và Khóa API
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Cập nhật khóa API, nhà cung cấp và mô hình AI định tuyến cho toàn nền tảng.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsConfigModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {configSuccessMsg && (
-              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
-                <Check className="w-4 h-4 shrink-0" />
-                <span>{configSuccessMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveConfig} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
-                  Nhà cung cấp (Provider)
-                </label>
-                <select
-                  value={editingProvider}
-                  onChange={(e) => {
-                    const nextP = e.target.value;
-                    setEditingProvider(nextP);
-                    if (nextP === 'GOOGLE_GEMINI') setEditingModel('gemini-2.5-flash');
-                    else if (nextP === 'OPENAI') setEditingModel('gpt-4o');
-                    else if (nextP === 'ANTHROPIC_CLAUDE') setEditingModel('claude-3-5-sonnet-latest');
-                    else if (nextP === 'ON_PREMISE') setEditingModel('deepseek-v3');
-                  }}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600 font-medium"
-                >
-                  <option value="GOOGLE_GEMINI">Google Gemini (Khuyến nghị - Hỗ trợ đầy đủ)</option>
-                  <option value="OPENAI">OpenAI (GPT-4o, o3-mini)</option>
-                  <option value="ANTHROPIC_CLAUDE">Anthropic Claude (Claude 3.5 Sonnet)</option>
-                  <option value="ON_PREMISE">Mô hình mở On-Premise (Llama 3 / DeepSeek v3 qua vLLM)</option>
-                </select>
-              </div>
-
-              {editingProvider === 'ON_PREMISE' && (
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
-                    Địa chỉ máy chủ On-Premise (Endpoint URL)
-                  </label>
-                  <input
-                    type="url"
-                    value={editingEndpointUrl}
-                    onChange={(e) => setEditingEndpointUrl(e.target.value)}
-                    placeholder="http://vllm-service.internal:8000/v1"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Hỗ trợ giao thức OpenAI-compatible của vLLM, Ollama hoặc TGI nội bộ.
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
-                  Mô hình mặc định (Default Model)
-                </label>
-                {editingProvider === 'GOOGLE_GEMINI' ? (
-                  <select
-                    value={editingModel}
-                    onChange={(e) => setEditingModel(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                  >
-                    <option value="gemini-2.5-flash">gemini-2.5-flash (Cân bằng tốc độ và chi phí tối ưu)</option>
-                    <option value="gemini-2.5-pro">gemini-2.5-pro (Phân tích chuyên sâu hồ sơ năng lực)</option>
-                    <option value="gemini-2.0-flash">gemini-2.0-flash (Độ trễ thấp, sinh câu hỏi nhanh)</option>
-                  </select>
-                ) : editingProvider === 'OPENAI' ? (
-                  <select
-                    value={editingModel}
-                    onChange={(e) => setEditingModel(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                  >
-                    <option value="gpt-4o">gpt-4o (Hiệu năng cao, đa phương thức)</option>
-                    <option value="gpt-4o-mini">gpt-4o-mini (Tiết kiệm chi phí, phản hồi nhanh)</option>
-                    <option value="o3-mini">o3-mini (Suy luận chuyên sâu và thẩm định logic)</option>
-                  </select>
-                ) : editingProvider === 'ANTHROPIC_CLAUDE' ? (
-                  <select
-                    value={editingModel}
-                    onChange={(e) => setEditingModel(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-                  >
-                    <option value="claude-3-5-sonnet-latest">claude-3-5-sonnet (Chấm Rubric tự luận chuẩn xác)</option>
-                    <option value="claude-3-5-haiku-latest">claude-3-5-haiku (Độ trễ thấp, xử lý tức thời)</option>
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={editingModel}
-                    onChange={(e) => setEditingModel(e.target.value)}
-                    placeholder="deepseek-ai/DeepSeek-V3 hoặc meta-llama/Llama-3.3-70B-Instruct"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
-                  {editingProvider === 'ON_PREMISE'
-                    ? 'Khóa API xác thực nội bộ (Tùy chọn)'
-                    : `Khóa API (${editingProvider})`}
-                </label>
-                <input
-                  type="password"
-                  value={editingApiKey}
-                  onChange={(e) => setEditingApiKey(e.target.value)}
-                  placeholder={config?.maskedApiKey || 'Nhập khóa API mới để ghi đè...'}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Khóa hiện tại: <span className="font-mono">{config?.maskedApiKey || 'Chưa lưu trong DB (đang dùng biến môi trường)'}</span>
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-zinc-300 mb-1.5">
-                  Ngân sách định mức tháng (USD)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    max="10000"
-                    step="10"
-                    value={editingBudget}
-                    onChange={(e) => setEditingBudget(Number(e.target.value))}
-                    placeholder="200"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 font-mono"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
-                    USD / tháng
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Định mức chi phí dùng để tính toán thanh tiến độ và cảnh báo hạn mức nền tảng.
-                </p>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsConfigModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  Đóng
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingConfig}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50 inline-flex items-center gap-2"
-                >
-                  {savingConfig && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Lưu cấu hình</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+export default function AdminAiGatewayPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-slate-400">
+          Đang tải Cổng kết nối AI...
+        </div>
+      }
+    >
+      <AdminAiGatewayContent />
+    </Suspense>
   );
 }

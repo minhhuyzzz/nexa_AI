@@ -7,19 +7,24 @@ import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 export const dynamic = 'force-dynamic';
 
 const updateSettingsSchema = z.object({
-  platformName: z.string().min(1).default('NEXA'),
+  platformName: z.string().min(1).default('NEXA AI'),
   supportEmail: z.string().email().default('support@nexa.edu.vn'),
   systemTimezone: z.string().default('Asia/Ho_Chi_Minh'),
+  dateTimeFormat: z.string().default('DD/MM/YYYY HH:mm'),
   maintenanceMode: z.boolean().default(false),
   defaultLanguage: z.string().default('vi'),
-  sessionTimeout: z.string().default('8h'),
-  dataRetention: z.string().default('36m'),
-  maxUploadSize: z.string().default('50mb'),
-  requireContentModeration: z.boolean().default(true),
-  isolateCanonicalBank: z.boolean().default(true),
-  immutableAuditLogs: z.boolean().default(true),
-  alertEmails: z.array(z.string().email()).default(['ops@nexa.edu.vn']),
   // Dynamic PTS Gamification Policy
+  dailyLoginPts: z.number().int().min(1).max(50).default(1),
+  streakMilestonePts: z.number().int().min(0).max(100).default(10),
+  contributionApprovedPts: z.number().int().min(0).max(200).default(20),
+  // Backward compatibility fields (optional)
+  sessionTimeout: z.string().optional().default('8h'),
+  dataRetention: z.string().optional().default('36m'),
+  maxUploadSize: z.string().optional().default('50mb'),
+  requireContentModeration: z.boolean().optional().default(true),
+  isolateCanonicalBank: z.boolean().optional().default(true),
+  immutableAuditLogs: z.boolean().optional().default(true),
+  alertEmails: z.array(z.string().email()).optional().default([]),
   gamificationPolicy: z.object({
     contributionMcqDefaultPts: z.number().int().min(0).default(20),
     contributionScenarioDefaultPts: z.number().int().min(0).default(50),
@@ -88,6 +93,7 @@ export async function POST(request: NextRequest) {
           platformName: validatedData.platformName,
           supportEmail: validatedData.supportEmail,
           systemTimezone: validatedData.systemTimezone,
+          dateTimeFormat: validatedData.dateTimeFormat,
           maintenanceMode: validatedData.maintenanceMode,
           defaultLanguage: validatedData.defaultLanguage,
         },
@@ -110,13 +116,18 @@ export async function POST(request: NextRequest) {
       },
       {
         key: 'gamification_reward_policy',
-        value: validatedData.gamificationPolicy || {
-          contributionMcqDefaultPts: 20,
-          contributionScenarioDefaultPts: 50,
-          contributionPracticalFileDefaultPts: 100,
-          bugReportDefaultPts: 150,
-          minRewardPts: 0,
-          maxRewardPts: 500,
+        value: {
+          dailyLoginPts: validatedData.dailyLoginPts,
+          streakMilestonePts: validatedData.streakMilestonePts,
+          contributionApprovedPts: validatedData.contributionApprovedPts,
+          ...(validatedData.gamificationPolicy || {
+            contributionMcqDefaultPts: 20,
+            contributionScenarioDefaultPts: 50,
+            contributionPracticalFileDefaultPts: 100,
+            bugReportDefaultPts: 150,
+            minRewardPts: 0,
+            maxRewardPts: 500,
+          }),
         },
         updated_at: new Date().toISOString(),
         updated_by: auth.user!.id,

@@ -8,7 +8,7 @@ import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 export const dynamic = 'force-dynamic';
 
 const updateAiConfigSchema = z.object({
-  provider: z.enum(['GOOGLE_GEMINI', 'ANTHROPIC_CLAUDE', 'OPENAI', 'ON_PREMISE']).default('GOOGLE_GEMINI'),
+  provider: z.enum(['GOOGLE_GEMINI', 'ANTHROPIC_CLAUDE', 'OPENAI', 'DEEPSEEK', 'ON_PREMISE', 'OPENROUTER']).default('GOOGLE_GEMINI'),
   apiKey: z.string().optional(),
   defaultModel: z.string().optional(),
   endpointUrl: z.string().optional(),
@@ -138,6 +138,7 @@ export async function GET(request: NextRequest | Request) {
       config: {
         provider: currentConfig.provider,
         defaultModel: currentConfig.defaultModel,
+        endpointUrl: currentConfig.endpointUrl || '',
         maskedApiKey,
         apiKeyMasked: maskedApiKey,
         costBudgetMonthlyUsd: monthlyBudgetUsd,
@@ -213,9 +214,15 @@ export async function POST(request: NextRequest) {
       provider,
     };
 
-    if (defaultModel) {
-      patchPayload.defaultModel = defaultModel;
-    }
+    const defaultModelFallbacks: Record<string, string> = {
+      GOOGLE_GEMINI: 'gemini-2.5-flash',
+      OPENAI: 'gpt-4o-mini',
+      DEEPSEEK: 'deepseek-chat',
+      ANTHROPIC_CLAUDE: 'claude-3-5-sonnet',
+      OPENROUTER: 'deepseek/deepseek-chat',
+      ON_PREMISE: 'local-model',
+    };
+    patchPayload.defaultModel = defaultModel?.trim() || defaultModelFallbacks[provider] || 'gemini-2.5-flash';
 
     if (endpointUrl !== undefined) {
       patchPayload.endpointUrl = endpointUrl.trim();

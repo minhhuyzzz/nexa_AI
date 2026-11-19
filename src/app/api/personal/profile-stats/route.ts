@@ -84,11 +84,24 @@ export async function GET() {
         }
       } catch {}
 
+      let dailyDelta = 1;
+      try {
+        const { data: settingRow } = await db
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'gamification_reward_policy')
+          .maybeSingle();
+        if (settingRow?.value && typeof settingRow.value === 'object' && 'dailyLoginPts' in settingRow.value) {
+          const cfgPts = Number((settingRow.value as Record<string, unknown>).dailyLoginPts);
+          if (cfgPts > 0) dailyDelta = cfgPts;
+        }
+      } catch {}
+
       try {
         if (typeof db?.rpc === 'function') {
           const grantRes = await PointLedgerService.grantPoints(db, {
             userId: effectiveUserId,
-            delta: 1,
+            delta: dailyDelta,
             eventType: 'STREAK_BONUS',
             sourceType: 'SYSTEM',
             idempotencyKey: `DAILY_LOGIN_${effectiveUserId}_${todayStr}`,
