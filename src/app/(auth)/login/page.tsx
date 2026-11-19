@@ -47,6 +47,7 @@ function LoginForm() {
       // Safe local redirect check (prevent Open Redirect vulnerability)
       let destination = data.redirectUrl || '/dashboard';
       if (
+        data.redirectUrl !== '/admin/dashboard' &&
         redirectParam &&
         redirectParam.startsWith('/') &&
         !redirectParam.startsWith('//') &&

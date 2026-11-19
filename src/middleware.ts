@@ -40,19 +40,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
-  // Smart workspace redirect for /dashboard: respect active organization context
-  if (pathname === '/dashboard') {
-    const activeWs = request.cookies.get('nexa_active_workspace')?.value;
-    const orgSlug = request.cookies.get('nexa_active_org_slug')?.value;
-    const url = request.nextUrl.clone();
-    if (activeWs?.startsWith('org_') && orgSlug) {
-      url.pathname = `/org/${orgSlug}`;
-      return NextResponse.redirect(url, 307);
-    }
-    url.pathname = '/personal/dashboard';
-    return NextResponse.redirect(url, 307);
-  }
-
   // Backward-compatibility redirect: /evaluator/* -> /personal/*
   if (pathname.startsWith('/evaluator')) {
     const url = request.nextUrl.clone();
@@ -219,6 +206,20 @@ export async function middleware(request: NextRequest) {
   if (isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = targetDashboard;
+    return NextResponse.redirect(url);
+  }
+
+  // Smart workspace redirect for /dashboard: respect user role and active organization context
+  if (pathname === '/dashboard') {
+    const url = request.nextUrl.clone();
+    url.pathname = targetDashboard;
+    return NextResponse.redirect(url, 307);
+  }
+
+  // Superadmin Master Authority: always enter admin dashboard directly (never lands in /personal/*)
+  if (isSuperadmin && pathname.startsWith('/personal')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/dashboard';
     return NextResponse.redirect(url);
   }
 
