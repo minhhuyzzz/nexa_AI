@@ -943,6 +943,8 @@ export function AssessmentTakeContent({
         assessmentTitle: assessment?.title || 'Bài Khảo Thí Năng Lực Số',
         objectiveScore: submitData.totalScore ?? submitData.objectiveScore ?? objectiveEarned,
         totalObjectiveScore: submitData.maxScore ?? totalObjectivePoints,
+        correctAnswersCount: submitData.correctAnswersCount ?? (submitData.evaluations ? submitData.evaluations.filter((e: any) => e.isCorrect).length : objectiveEarned),
+        totalQuestionsCount: submitData.totalQuestionsCount ?? questions.length,
         totalPracticalPoints,
         totalExamPoints: (submitData.maxScore ?? totalObjectivePoints) + totalPracticalPoints,
         hasPractical: stage2Questions.length > 0,
@@ -1640,9 +1642,9 @@ export function AssessmentTakeContent({
             {/* Right: Key Stats (5 cols) */}
             <div className="lg:col-span-5 flex flex-col justify-between gap-3">
               <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
-                <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">Điểm trắc nghiệm:</span>
+                <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">Số câu làm đúng:</span>
                 <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
-                  {submittedResult.objectiveScore} / {submittedResult.totalObjectiveScore} đ
+                  {submittedResult.correctAnswersCount ?? submittedResult.objectiveScore} / {submittedResult.totalQuestionsCount ?? submittedResult.totalObjectiveScore} câu
                 </div>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tự động chấm 0.01s</span>
               </div>
@@ -1650,7 +1652,7 @@ export function AssessmentTakeContent({
               <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
                 <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">Tỷ lệ đạt chuẩn:</span>
                 <div className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                  {submittedResult.percentage ?? Math.round((submittedResult.objectiveScore / (submittedResult.totalObjectiveScore || 1)) * 100)}%
+                  {submittedResult.percentage ?? Math.round(((submittedResult.correctAnswersCount ?? submittedResult.objectiveScore) / ((submittedResult.totalQuestionsCount ?? submittedResult.totalObjectiveScore) || 1)) * 100)}%
                 </div>
                 <span className="text-[10px] text-slate-500">Mục tiêu chuẩn hóa: 70%</span>
               </div>

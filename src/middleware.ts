@@ -9,6 +9,12 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname === '/login' || pathname === '/register';
   const isSuspendedPage = pathname === '/account-suspended';
   const isAdminRoute = pathname.startsWith('/admin');
+  const isAdminApiRoute = pathname.startsWith('/api/admin');
+  const isProtectedApiRoute =
+    isAdminApiRoute ||
+    pathname.startsWith('/api/personal') ||
+    pathname.startsWith('/api/assessments') ||
+    pathname.startsWith('/api/organizations');
   const isProtectedDashboard =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/personal') ||
@@ -67,13 +73,21 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Fast Short-Circuit: Public pages require ZERO auth checks or remote calls
-  if (!isAuthPage && !isProtectedDashboard) {
+  if (!isAuthPage && !isProtectedDashboard && !isAdminApiRoute && !isProtectedApiRoute) {
     return NextResponse.next({ request });
   }
 
   // 4. Fast Cookie Check: If user has no Supabase auth cookie, avoid remote HTTPS calls
   const cookies = request.cookies.getAll();
   const hasAuthCookie = cookies.some((c) => c.name.includes('-auth-token'));
+
+  // If visiting protected admin API without auth cookie -> 401 immediately
+  if (isAdminApiRoute && !hasAuthCookie) {
+    return NextResponse.json(
+      { error: 'Yêu cầu đăng nhập tài khoản quản trị viên' },
+      { status: 401 }
+    );
+  }
 
   // If visiting protected dashboard without any auth cookie
   if (isProtectedDashboard && !hasAuthCookie) {
@@ -85,6 +99,11 @@ export async function middleware(request: NextRequest) {
 
   // If visiting /login or /register without any auth cookie -> immediate allow in 0ms
   if (isAuthPage && !hasAuthCookie) {
+    return NextResponse.next({ request });
+  }
+
+  // If visiting protected API (non-admin) without auth cookie, allow route handler to handle auth
+  if (isProtectedApiRoute && !hasAuthCookie) {
     return NextResponse.next({ request });
   }
 
@@ -119,6 +138,12 @@ export async function middleware(request: NextRequest) {
 
   // If token is invalid or expired
   if (!user) {
+    if (isAdminApiRoute) {
+      return NextResponse.json(
+        { error: 'Yêu cầu đăng nhập tài khoản quản trị viên' },
+        { status: 401 }
+      );
+    }
     if (isProtectedDashboard) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
@@ -128,10 +153,10 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Query profile to get role, onboarding status, and suspension status
+  // Query profile to get role, onboarding status, suspension status, and admin role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_onboarded, is_suspended, tokens_revoked_at')
+    .select('role, is_onboarded, is_suspended, tokens_revoked_at, admin_role')
     .eq('id', user.id)
     .single();
 
@@ -202,6 +227,22 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = targetDashboard;
     return NextResponse.redirect(url);
+  }
+
+  // RBAC: Admin API route strictly for verified Superadmin or Platform Admin
+  if (isAdminApiRoute && !isSuperadmin) {
+    const isPlatformAdmin =
+      profile?.role === 'ADMIN' ||
+      profile?.role === 'SUPERADMIN' ||
+      ['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'CONTENT_ADMIN', 'FINANCE_ADMIN', 'AI_OPERATOR'].includes(
+        profile?.admin_role || ''
+      );
+    if (!isPlatformAdmin) {
+      return NextResponse.json(
+        { error: 'Bạn không có quyền truy cập khu vực quản trị nền tảng (Platform Admin)' },
+        { status: 403 }
+      );
+    }
   }
 
   return supabaseResponse;

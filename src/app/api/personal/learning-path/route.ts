@@ -32,7 +32,25 @@ function normalizeDomainCode(code: string | null | undefined): string {
   return match ? match[1].padStart(2, '0') : '01';
 }
 
-export async function GET() {
+const DOMAIN_STATION_TOTALS: Record<string, number> = {
+  '01': 12,
+  '02': 24,
+  '03': 16,
+  '04': 16,
+  '05': 16,
+  D1: 12,
+  D2: 24,
+  D3: 16,
+  D4: 16,
+  D5: 16,
+};
+
+let cachedLearningModules: any[] | null = null;
+let cachedModulesTime = 0;
+
+export async function GET(request: Request): Promise<NextResponse>;
+export async function GET(): Promise<NextResponse>;
+export async function GET(request?: Request): Promise<NextResponse> {
   try {
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
@@ -47,80 +65,214 @@ export async function GET() {
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Fetch latest AI analysis with 4-step pathway
-    const { data: latestAnalysis } = await adminSupabase
-      .from('competency_analyses')
-      .select('id, submission_id, overall_level, radar_data, skill_gaps, strengths, weaknesses, pedagogical_feedback, learning_pathway, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // 3. Fetch module progress
-    const { data: progressList } = await adminSupabase
-      .from('user_learning_progress')
-      .select('module_id, is_completed, completed_at, points_awarded')
-      .eq('user_id', user.id);
-
-    // 4. Fetch user profile for subscription plan / role
-    let isProUser = false;
-    try {
-      const profTable = adminSupabase?.from?.('profiles');
-      if (profTable && typeof profTable.select === 'function') {
-        const { data: profile } = await profTable
-          .select('subscription_tier, role, admin_role')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        isProUser =
-          profile?.subscription_tier === 'PRO' ||
-          profile?.subscription_tier === 'ENTERPRISE' ||
-          profile?.role === 'ADMIN' ||
-          Boolean(profile?.admin_role);
-      }
-    } catch {
-      // Graceful fallback for test mocks
+    // Optional query param / header from client storage for 1:1 synchronization
+    let clientUnlockedDomain: string | null = null;
+    if (request && typeof request.url === 'string') {
+      try {
+        const urlObj = new URL(request.url);
+        clientUnlockedDomain = urlObj.searchParams.get('clientUnlockedDomain');
+      } catch {}
     }
 
-    // 5. Fetch latest competency snapshot to detect weakest domain
+    // 2. Fetch parallel data for lightning-fast performance (<200ms)
+    const analysisPromise = (async () => {
+      try {
+        const tbl = adminSupabase?.from?.('competency_analyses');
+        if (tbl && typeof tbl.select === 'function') {
+          return await tbl
+            .select('id, submission_id, overall_level, radar_data, skill_gaps, strengths, weaknesses, pedagogical_feedback, learning_pathway, created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        }
+      } catch {}
+      return { data: null };
+    })();
+
+    const progressPromise = (async () => {
+      try {
+        const tbl = adminSupabase?.from?.('user_learning_progress');
+        if (tbl && typeof tbl.select === 'function') {
+          return await tbl
+            .select('module_id, is_completed, completed_at, points_awarded')
+            .eq('user_id', user.id);
+        }
+      } catch {}
+      return { data: [] };
+    })();
+
+    const profilePromise = (async () => {
+      try {
+        const profTable = adminSupabase?.from?.('profiles');
+        if (profTable && typeof profTable.select === 'function') {
+          return await profTable
+            .select('subscription_tier, role, admin_role')
+            .eq('id', user.id)
+            .maybeSingle();
+        }
+      } catch {}
+      return { data: null };
+    })();
+
+    const snapshotPromise = (async () => {
+      try {
+        const snapTable = adminSupabase?.from?.('learner_competency_snapshots');
+        if (snapTable && typeof snapTable.select === 'function') {
+          return await snapTable
+            .select('domain_scores, overall_score, created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        }
+      } catch {}
+      return { data: null };
+    })();
+
+    const rawModulesPromise = (async () => {
+      try {
+        const now = Date.now();
+        if (process.env.NODE_ENV !== 'test' && cachedLearningModules && now - cachedModulesTime < 60_000) {
+          return { data: cachedLearningModules };
+        }
+        const tbl = adminSupabase?.from?.('learning_modules');
+        if (tbl && typeof tbl.select === 'function') {
+          const res = await tbl
+            .select(`
+              *,
+              assessments (
+                id,
+                title,
+                passing_score,
+                duration_minutes,
+                point_reward,
+                security_settings
+              )
+            `)
+            .eq('is_published', true)
+            .order('order_index', { ascending: true });
+          if (res?.data && res.data.length > 0) {
+            cachedLearningModules = res.data;
+            cachedModulesTime = now;
+          }
+          return res;
+        }
+      } catch {}
+      return { data: [] };
+    })();
+
+    const submissionsPromise = (async () => {
+      try {
+        const tbl = adminSupabase?.from?.('assessment_submissions');
+        if (tbl && typeof tbl.select === 'function') {
+          return await tbl
+            .select('id, assessment_id, total_score, percentage, is_passed, status, submitted_at')
+            .eq('user_id', user.id)
+            .order('submitted_at', { ascending: false });
+        }
+      } catch {}
+      return { data: [] };
+    })();
+
+    const [
+      analysisRes,
+      progressRes,
+      profileRes,
+      snapshotRes,
+      rawModulesRes,
+      submissionsRes,
+    ] = await Promise.all([
+      analysisPromise,
+      progressPromise,
+      profilePromise,
+      snapshotPromise,
+      rawModulesPromise,
+      submissionsPromise,
+    ]);
+
+    const latestAnalysis = analysisRes?.data || null;
+    const progressList = progressRes?.data || [];
+    const profile = profileRes?.data || null;
+    const latestSnapshot = snapshotRes?.data || null;
+    const rawModules = rawModulesRes?.data || [];
+    const userSubmissions = (submissionsRes?.data as any[]) || [];
+
+    const isProUser =
+      profile?.subscription_tier === 'PRO' ||
+      profile?.subscription_tier === 'ENTERPRISE' ||
+      profile?.role === 'ADMIN' ||
+      Boolean(profile?.admin_role);
+
+    // 3. Detect weakest domain & freemium unlocked status
     let unlockedFreeDomain: string | null = null;
     let weakestScore = 999;
     let domainScores: Record<string, number | null> | null = null;
-    let latestSnapshot: any = null;
-    let hasTakenAssessment = false;
+    let hasTakenAssessment = userSubmissions.length > 0;
 
-    try {
-      const snapTable = adminSupabase?.from?.('learner_competency_snapshots');
-      if (snapTable && typeof snapTable.select === 'function') {
-        const { data } = await snapTable
-          .select('domain_scores, overall_score, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        latestSnapshot = data;
-        if (data?.domain_scores) {
-          domainScores = data.domain_scores as Record<string, number | null>;
-          ['01', '02', '03', '04', '05'].forEach((code) => {
-            const numKey = parseInt(code, 10);
-            const score = domainScores![code] ?? domainScores![`D${numKey}`] ?? domainScores![String(numKey)];
-            if (score !== null && score !== undefined && score < weakestScore) {
-              weakestScore = score;
-              unlockedFreeDomain = code;
-            }
-          });
-          if (unlockedFreeDomain) {
-            hasTakenAssessment = true;
-          }
+    if (latestSnapshot?.domain_scores) {
+      domainScores = latestSnapshot.domain_scores as Record<string, number | null>;
+      ['01', '02', '03', '04', '05'].forEach((code) => {
+        const numKey = parseInt(code, 10);
+        const score = domainScores![code] ?? domainScores![`D${numKey}`] ?? domainScores![String(numKey)];
+        if (score !== null && score !== undefined && score < weakestScore) {
+          weakestScore = score;
+          unlockedFreeDomain = code;
         }
+      });
+      if (unlockedFreeDomain) {
+        hasTakenAssessment = true;
       }
-    } catch {
-      // Graceful fallback for test mocks
     }
 
-    // Fallback: If snapshot is missing or unreadable due to RLS, compute from assessment_submissions
-    if (!hasTakenAssessment) {
+    // Fast check radar_data from latestAnalysis if domain_scores was not in snapshot
+    if (!domainScores && latestAnalysis?.radar_data && typeof latestAnalysis.radar_data === 'object') {
+      const radar = latestAnalysis.radar_data as Record<string, any>;
+      domainScores = {};
+      ['01', '02', '03', '04', '05'].forEach((code) => {
+        const num = parseInt(code, 10);
+        const s = radar[code] ?? radar[`D${num}`] ?? radar[String(num)];
+        if (s !== undefined && s !== null) {
+          const numS = Number(s);
+          domainScores![code] = numS;
+          domainScores![`D${num}`] = numS;
+          if (numS < weakestScore) {
+            weakestScore = numS;
+            unlockedFreeDomain = code;
+          }
+        }
+      });
+      if (unlockedFreeDomain) {
+        hasTakenAssessment = true;
+      }
+    }
+
+    // Check if learning pathway specifies target domain (AI recommendation alignment)
+    if (latestAnalysis?.learning_pathway && Array.isArray(latestAnalysis.learning_pathway) && latestAnalysis.learning_pathway.length > 0) {
+      const firstStep = latestAnalysis.learning_pathway[0];
+      const targetStr = String(firstStep?.targetSkill || firstStep?.title || '');
+      const match = targetStr.match(/(\d+)/);
+      if (match) {
+        const pathwayCode = match[1].padStart(2, '0');
+        // If snapshot domain scores are tied for lowest (e.g. both 0), align with AI pathway
+        if (domainScores && domainScores[pathwayCode] !== undefined && domainScores[pathwayCode] === weakestScore) {
+          unlockedFreeDomain = pathwayCode;
+        } else if (!unlockedFreeDomain) {
+          unlockedFreeDomain = pathwayCode;
+        }
+      }
+    }
+
+    // Client explicitly saved choice alignment
+    if (clientUnlockedDomain) {
+      const normClient = normalizeDomainCode(clientUnlockedDomain);
+      if (['01', '02', '03', '04', '05'].includes(normClient)) {
+        unlockedFreeDomain = normClient;
+      }
+    }
+
+    // Fallback ONLY IF user has taken assessment but domain scores are still missing
+    if (hasTakenAssessment && !domainScores) {
       try {
         const queryClient = (supabase && typeof supabase.from === 'function') ? supabase : adminSupabase;
         const testSelect = queryClient?.from?.('assessment_submissions');
@@ -141,7 +293,9 @@ export async function GET() {
                 lowestCode = norm;
               }
             });
-            unlockedFreeDomain = lowestCode;
+            if (!unlockedFreeDomain) {
+              unlockedFreeDomain = lowestCode;
+            }
           }
         }
       } catch (sumErr) {
@@ -153,42 +307,13 @@ export async function GET() {
       unlockedFreeDomain = normalizeDomainCode(unlockedFreeDomain);
     }
 
-    // 6. Fetch published modules and map freemium lock state
-    const { data: rawModules } = await adminSupabase
-      .from('learning_modules')
-      .select(`
-        *,
-        assessments (
-          id,
-          title,
-          passing_score,
-          duration_minutes,
-          point_reward,
-          security_settings
-        )
-      `)
-      .eq('is_published', true)
-      .order('order_index', { ascending: true });
-
-    const assessmentIds = (rawModules || [])
-      .map((m: any) => m.assessment_id)
-      .filter(Boolean);
-
+    // 4. Map user submissions in memory (zero extra database network queries)
     const recentSubmissionsMap: Record<string, any> = {};
-    if (assessmentIds.length > 0) {
-      const { data: userSubmissions } = await adminSupabase
-        .from('assessment_submissions')
-        .select('id, assessment_id, total_score, percentage, is_passed, status, submitted_at')
-        .eq('user_id', user.id)
-        .in('assessment_id', assessmentIds)
-        .order('submitted_at', { ascending: false });
-
-      (userSubmissions || []).forEach((sub: any) => {
-        if (!recentSubmissionsMap[sub.assessment_id]) {
-          recentSubmissionsMap[sub.assessment_id] = sub;
-        }
-      });
-    }
+    (userSubmissions || []).forEach((sub: any) => {
+      if (sub.assessment_id && !recentSubmissionsMap[sub.assessment_id]) {
+        recentSubmissionsMap[sub.assessment_id] = sub;
+      }
+    });
 
     const progressMap = new Map((progressList || []).map((p: any) => [p.module_id, p]));
 
@@ -228,6 +353,24 @@ export async function GET() {
       };
     });
 
+    // 5. Compute track learning progress for all 5 domains (stations completed / total stations)
+    const domainProgress: Record<string, { completed: number; total: number; percent: number }> = {};
+    ['01', '02', '03', '04', '05'].forEach((code) => {
+      const num = parseInt(code, 10);
+      const dKey = `D${num}`;
+      const totalStations = DOMAIN_STATION_TOTALS[code] || 16;
+      const completedModules = modules.filter((m: any) => m.domain_code === code && m.is_completed).length;
+      const percent = Math.min(100, Math.round((completedModules / totalStations) * 100));
+
+      const info = {
+        completed: completedModules,
+        total: totalStations,
+        percent,
+      };
+      domainProgress[code] = info;
+      domainProgress[dKey] = info;
+    });
+
     return NextResponse.json({
       success: true,
       analysis: latestAnalysis || null,
@@ -237,6 +380,7 @@ export async function GET() {
       isProUser,
       domainScores,
       hasTakenAssessment,
+      domainProgress,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

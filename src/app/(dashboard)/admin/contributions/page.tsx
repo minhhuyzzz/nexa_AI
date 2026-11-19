@@ -27,7 +27,7 @@ import type { ContributionItem } from '@/types/contributions';
 export default function AdminContributionsPage() {
   const [contributions, setContributions] = useState<ContributionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'needs_revision'>('pending');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ContributionItem | null>(null);
 
@@ -69,7 +69,7 @@ export default function AdminContributionsPage() {
 
   const countPending = contributions.filter((c) => c.status === 'pending').length;
   const countApproved = contributions.filter((c) => c.status === 'approved').length;
-  const countNeedsRevision = contributions.filter((c) => c.status === 'needs_revision').length;
+  const countRejected = contributions.filter((c) => c.status === 'rejected').length;
 
   const [customPoints, setCustomPoints] = useState<number>(50);
 
@@ -126,39 +126,40 @@ export default function AdminContributionsPage() {
     }
   };
 
-  const handleRequestRevision = async () => {
-    if (!selectedItem || !reviewFeedback.trim()) {
-      alert('Vui lòng nhập lý do / ý kiến phản hồi cần bổ sung');
-      return;
-    }
+  const handleReject = async () => {
+    if (!selectedItem) return;
     try {
       setActionSubmitting(true);
+      const feedback =
+        reviewFeedback.trim() || 'Đề xuất chưa đạt tiêu chuẩn kỹ thuật hoặc trùng lặp nội dung với ngân hàng đề hiện có.';
+
       const res = await fetch('/api/contributions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedItem.id,
-          status: 'NEEDS_REVISION',
-          adminFeedback: reviewFeedback.trim(),
+          status: 'REJECTED',
+          adminFeedback: feedback,
           pointsRewarded: 0,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setActionSuccessMsg('Đã gửi yêu cầu bổ sung đến học viên thành công.');
+        setActionSuccessMsg('Đã từ chối đề xuất đóng góp thành công.');
         await fetchContributions();
         setSelectedItem((prev) =>
           prev
             ? {
                 ...prev,
-                status: 'needs_revision',
-                adminFeedback: reviewFeedback.trim(),
+                status: 'rejected',
+                adminFeedback: feedback,
+                pointsRewarded: 0,
               }
             : null
         );
       } else {
-        alert(data.error || 'Lỗi khi gửi yêu cầu bổ sung');
+        alert(data.error || 'Lỗi khi từ chối đề xuất');
       }
     } catch (e) {
       alert('Lỗi kết nối máy chủ');
@@ -246,15 +247,15 @@ export default function AdminContributionsPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('needs_revision')}
+            onClick={() => setActiveTab('rejected')}
             className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'needs_revision'
+              activeTab === 'rejected'
                 ? 'bg-rose-700 text-white'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'needs_revision' ? 'bg-white' : 'bg-rose-600'}`} />
-            <span>Cần bổ sung ({countNeedsRevision})</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'rejected' ? 'bg-white' : 'bg-rose-600'}`} />
+            <span>Bị từ chối ({countRejected})</span>
           </button>
         </div>
 
@@ -335,17 +336,17 @@ export default function AdminContributionsPage() {
                 {item.status === 'approved' ? (
                   <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-[11px] border border-emerald-200 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                    <span>Đã duyệt (+100đ)</span>
+                    <span>Đã duyệt (+{item.pointsRewarded || 50} PTS)</span>
                   </span>
                 ) : item.status === 'pending' ? (
                   <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-semibold text-[11px] border border-amber-200 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>Cần thẩm định</span>
+                    <span>Chờ thẩm định</span>
                   </span>
                 ) : (
                   <span className="px-2.5 py-1 rounded-md bg-rose-50 text-rose-800 font-semibold text-[11px] border border-rose-200 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                    <span>Đã yêu cầu bổ sung</span>
+                    <span>Bị từ chối</span>
                   </span>
                 )}
 
@@ -508,18 +509,18 @@ export default function AdminContributionsPage() {
                 <button
                   type="button"
                   disabled={actionSubmitting}
-                  onClick={handleRequestRevision}
-                  className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                  onClick={handleReject}
+                  className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>{actionSubmitting ? 'Đang gửi...' : 'Yêu cầu bổ sung'}</span>
+                  <X className="w-3.5 h-3.5" />
+                  <span>{actionSubmitting ? 'Đang xử lý...' : 'Từ chối đề xuất'}</span>
                 </button>
 
                 <button
                   type="button"
                   disabled={actionSubmitting}
                   onClick={handleApprove}
-                  className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                  className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{actionSubmitting ? 'Đang duyệt...' : `Phê duyệt (+${customPoints} PTS)`}</span>

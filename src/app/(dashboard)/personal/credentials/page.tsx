@@ -50,8 +50,9 @@ export default function LearnerCredentialsPage() {
 
   const candidateName = data?.candidateName || 'Học Viên Nexa';
   const points = data?.points ?? 0;
-  const targetPoints = data?.requiredPoints ?? 500;
-  const isUnlocked = Boolean(data?.isUnlocked);
+  // Khóa chứng chỉ theo yêu cầu nền tảng: nâng mốc 10.000 điểm và luôn khóa
+  const targetPoints = 10000;
+  const isUnlocked = false;
   const pointsRemaining = Math.max(0, targetPoints - points);
   const progressPercent = Math.min(100, Math.round((points / targetPoints) * 100));
 
@@ -99,14 +100,10 @@ export default function LearnerCredentialsPage() {
       <div className="p-4 sm:p-5 rounded-md bg-white border border-slate-200 shadow-xs space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 font-medium gap-1">
           <span>
-            Tiến độ mở khóa: <strong className="text-slate-900 font-mono">{points} / {targetPoints} điểm</strong> ({progressPercent}%)
+            Tiến độ mở khóa: <strong className="text-slate-900 dark:text-neutral-100 font-mono">{points} / {targetPoints.toLocaleString('vi-VN')} điểm</strong> ({progressPercent}%)
           </span>
-          <span className={isUnlocked ? 'font-semibold text-emerald-700' : 'font-semibold text-sky-700'}>
-            {isUnlocked
-              ? 'Đã đủ điều kiện mở khóa Level 4'
-              : data?.isRoadmapCompleted === false
-              ? `Chưa hoàn thành 100% lộ trình${pointsRemaining > 0 ? ` (còn thiếu ${pointsRemaining} điểm)` : ''}`
-              : `Còn thiếu ${pointsRemaining} điểm`}
+          <span className="font-semibold text-slate-500 dark:text-neutral-400">
+            Tính năng tạm khóa (còn thiếu {pointsRemaining.toLocaleString('vi-VN')} điểm)
           </span>
         </div>
         <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200/60">

@@ -152,20 +152,19 @@ export async function POST(
 
     // Insert Item (Dual-client fallback if RLS or service role is required)
     let newItem: any = null;
+    const itemPayload = {
+      assessment_id: assessmentId,
+      competency_id: competencyId,
+      type: standardType,
+      prompt: prompt.trim(),
+      points,
+      order_index: nextOrderIndex,
+      difficulty_level: 'FOUNDATION',
+    };
+
     const { data: insertedItem, error: itemError } = await supabase
       .from('assessment_items')
-      .insert({
-        assessment_id: assessmentId,
-        competency_id: competencyId,
-        type: standardType,
-        prompt: prompt.trim(),
-        points,
-        order_index: nextOrderIndex,
-        is_multi_competency: Boolean(is_multi_competency || (target_competencies && target_competencies.length > 1)),
-        target_competencies: target_competencies || [],
-        rubric_guide: rubric_guide?.trim() || null,
-        difficulty_level: 'STANDARD',
-      })
+      .insert(itemPayload)
       .select()
       .single();
 
@@ -173,24 +172,16 @@ export async function POST(
       const adminSupabase = createAdminClient();
       const { data: adminItem, error: adminItemError } = await adminSupabase
         .from('assessment_items')
-        .insert({
-          assessment_id: assessmentId,
-          competency_id: competencyId,
-          type: standardType,
-          prompt: prompt.trim(),
-          points,
-          order_index: nextOrderIndex,
-          is_multi_competency: Boolean(is_multi_competency || (target_competencies && target_competencies.length > 1)),
-          target_competencies: target_competencies || [],
-          rubric_guide: rubric_guide?.trim() || null,
-          difficulty_level: 'STANDARD',
-        })
+        .insert(itemPayload)
         .select()
         .single();
 
       if (adminItemError || !adminItem) {
         console.error('Error inserting assessment item:', itemError || adminItemError);
-        return NextResponse.json({ error: 'Không thể thêm câu hỏi mới' }, { status: 500 });
+        return NextResponse.json(
+          { error: adminItemError?.message || itemError?.message || 'Không thể thêm câu hỏi mới' },
+          { status: 500 }
+        );
       }
       newItem = adminItem;
     } else {

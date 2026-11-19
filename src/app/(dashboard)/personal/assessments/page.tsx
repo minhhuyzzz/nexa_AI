@@ -16,7 +16,6 @@ import {
   Loader2,
   HelpCircle,
   Tag,
-  Sparkles,
 } from 'lucide-react';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 
@@ -44,9 +43,9 @@ const domainList = [
 ];
 
 const tierFilterOptions = [
-  { id: 'ALL' as const, label: 'Tất cả phân hạng' },
+  { id: 'ALL' as const, label: 'Tất cả' },
   { id: 'FREE' as const, label: 'Miễn phí' },
-  { id: 'PRO' as const, label: 'Cần mở khóa' },
+  { id: 'PRO' as const, label: 'Nâng cấp' },
 ];
 
 export default function LearnerAssessmentsPage() {
@@ -279,15 +278,14 @@ export default function LearnerAssessmentsPage() {
                 setIsTierMenuOpen((prev) => !prev);
                 setIsDomainMenuOpen(false);
               }}
-              className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
+              className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition-colors ${
                 tierFilter !== 'ALL'
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                  : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
               <span>
-                {tierFilterOptions.find((t) => t.id === tierFilter)?.label || 'Tất cả phân hạng'}
+                {tierFilterOptions.find((t) => t.id === tierFilter)?.label || 'Tất cả'}
               </span>
               {tierFilter !== 'ALL' && (
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
@@ -306,10 +304,10 @@ export default function LearnerAssessmentsPage() {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsTierMenuOpen(false)}
                 />
-                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-44 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
+                <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-40 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in-50 duration-100">
                   <div className="px-3 py-1.5 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Phân hạng
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                      Quyền truy cập
                     </span>
                     {tierFilter !== 'ALL' && (
                       <button
@@ -318,7 +316,7 @@ export default function LearnerAssessmentsPage() {
                           setTierFilter('ALL');
                           setIsTierMenuOpen(false);
                         }}
-                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold"
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold cursor-pointer"
                       >
                         Mặc định
                       </button>
@@ -336,28 +334,11 @@ export default function LearnerAssessmentsPage() {
                             setTierFilter(opt.id);
                             setIsTierMenuOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer ${
-                            isSelected ? 'bg-slate-50/70 font-semibold text-slate-900' : 'text-slate-700'
+                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer ${
+                            isSelected ? 'bg-slate-50/80 dark:bg-zinc-800 font-semibold text-slate-900 dark:text-neutral-100' : 'text-slate-700 dark:text-neutral-300'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            {opt.id === 'PRO' && (
-                              <span
-                                title="Cần nâng cấp để mở khóa"
-                                className="w-5 h-5 rounded-md flex items-center justify-center text-slate-400 dark:text-zinc-500"
-                              >
-                                <Lock className="w-3 h-3" />
-                              </span>
-                            )}
-                            {opt.id === 'FREE' && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium font-mono bg-slate-100 text-slate-600 border border-slate-200">
-                                FREE
-                              </span>
-                            )}
-                            <span className={isSelected ? 'font-semibold text-slate-900' : 'text-slate-700'}>
-                              {opt.label}
-                            </span>
-                          </div>
+                          <span>{opt.label}</span>
                           {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 stroke-[2.5]" />}
                         </button>
                       );

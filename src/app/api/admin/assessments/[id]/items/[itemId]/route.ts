@@ -153,15 +153,6 @@ export async function PUT(
     if (prompt) itemUpdatePayload.prompt = prompt.trim();
     if (points !== undefined) itemUpdatePayload.points = points;
     if (competencyId) itemUpdatePayload.competency_id = competencyId;
-    if (target_competencies !== undefined) {
-      itemUpdatePayload.target_competencies = target_competencies;
-    }
-    if (is_multi_competency !== undefined) {
-      itemUpdatePayload.is_multi_competency = is_multi_competency;
-    }
-    if (rubric_guide !== undefined) {
-      itemUpdatePayload.rubric_guide = rubric_guide ? rubric_guide.trim() : null;
-    }
 
     const { data: updatedItem, error: updateErr } = await adminSupabase
       .from('assessment_items')
@@ -173,7 +164,10 @@ export async function PUT(
 
     if (updateErr) {
       console.error('Error updating assessment item:', updateErr);
-      return NextResponse.json({ error: 'Không thể cập nhật câu hỏi' }, { status: 500 });
+      return NextResponse.json(
+        { error: updateErr.message || 'Không thể cập nhật câu hỏi' },
+        { status: 500 }
+      );
     }
 
     // If options are provided, update them

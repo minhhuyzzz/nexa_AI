@@ -1,5 +1,37 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPayOSClient } from '@/lib/payos/payos-client';
+import { CouponService } from './coupon.service';
+
+export const VIETQR_BANK_MAP: Record<string, { shortName: string; fullName: string }> = {
+  '970418': { shortName: 'BIDV', fullName: 'Ngân hàng Đầu tư và Phát triển Việt Nam' },
+  '970415': { shortName: 'VietinBank', fullName: 'Ngân hàng Công thương Việt Nam' },
+  '970436': { shortName: 'Vietcombank', fullName: 'Ngân hàng Ngoại thương Việt Nam' },
+  '970422': { shortName: 'MBBank', fullName: 'Ngân hàng Quân đội' },
+  '970407': { shortName: 'Techcombank', fullName: 'Ngân hàng Kỹ thương Việt Nam' },
+  '970423': { shortName: 'TPBank', fullName: 'Ngân hàng Tiên Phong' },
+  '970432': { shortName: 'VPBank', fullName: 'Ngân hàng Việt Nam Thịnh Vượng' },
+  '970416': { shortName: 'ACB', fullName: 'Ngân hàng Á Châu' },
+  '970405': { shortName: 'Agribank', fullName: 'Ngân hàng Nông nghiệp & PTNT' },
+  '970448': { shortName: 'OCB', fullName: 'Ngân hàng Phương Đông' },
+  '970441': { shortName: 'VIB', fullName: 'Ngân hàng Quốc tế' },
+  '970403': { shortName: 'Sacombank', fullName: 'Ngân hàng Sài Gòn Thương Tín' },
+  '970443': { shortName: 'SHB', fullName: 'Ngân hàng Sài Gòn - Hà Nội' },
+  '970437': { shortName: 'HDBank', fullName: 'Ngân hàng Phát triển TP.HCM' },
+  '970428': { shortName: 'Nam A Bank', fullName: 'Ngân hàng Nam Á' },
+  '970440': { shortName: 'SeABank', fullName: 'Ngân hàng Đông Nam Á' },
+  '970449': { shortName: 'LPBank', fullName: 'Ngân hàng Lộc Phát Việt Nam' },
+  '970426': { shortName: 'MSB', fullName: 'Ngân hàng Hàng Hải' },
+};
+
+export function resolveVietQRBankName(bin?: string | number | null): string {
+  if (!bin) return 'VietQR NAPAS 24/7';
+  const clean = String(bin).trim();
+  const found = VIETQR_BANK_MAP[clean];
+  if (found) {
+    return `${found.shortName} - ${found.fullName}`;
+  }
+  return `Ngân hàng (BIN: ${clean})`;
+}
 
 export interface PaymentIntentResult {
   transactionId: string;
@@ -27,7 +59,9 @@ export class PaymentVerifierService {
   static async createPaymentIntent(
     userId: string,
     planCode: string,
-    organizationId?: string | null
+    organizationId?: string | null,
+    billingCycle: 'monthly' | 'yearly' = 'monthly',
+    couponCode?: string
   ): Promise<PaymentIntentResult> {
     const adminSupabase = createAdminClient();
 
@@ -42,13 +76,38 @@ export class PaymentVerifierService {
       throw new Error(`Gói dịch vụ '${planCode}' không tồn tại hoặc đã ngừng cung cấp`);
     }
 
-    if (plan.price_vnd <= 0) {
+    const baseMonthlyPrice = Number(plan.price_vnd);
+    if (baseMonthlyPrice <= 0) {
       throw new Error('Gói miễn phí không cần thanh toán');
+    }
+
+    // Backend tự tính toán số tiền theo chu kỳ - Tuyệt đối không tin giá do client gửi lên
+    let finalAmount = baseMonthlyPrice;
+    if (billingCycle === 'yearly') {
+      if (plan.code === 'LEARNER_PLUS' || baseMonthlyPrice === 49000) {
+        finalAmount = 468000;
+      } else if (plan.code === 'LEARNER_PRO' || baseMonthlyPrice === 149000) {
+        finalAmount = 1428000;
+      } else {
+        finalAmount = Math.round(baseMonthlyPrice * 12 * 0.8);
+      }
+    }
+
+    // Áp dụng mã giảm giá nếu có (do backend xác thực)
+    let appliedCoupon: string | undefined = undefined;
+    let discountAmount = 0;
+    if (couponCode) {
+      const couponRes = await CouponService.validate(couponCode, finalAmount);
+      if (couponRes.valid) {
+        appliedCoupon = couponRes.code;
+        discountAmount = couponRes.discountAmount;
+        finalAmount = couponRes.finalAmount;
+      }
     }
 
     // 2. Generate unique numeric orderCode for payOS (positive safe integer)
     const orderCode = Number(String(Date.now()).slice(-6) + String(Math.floor(100 + Math.random() * 900)));
-    const idempotencyKey = `idemp_${userId}_${planCode}_${Date.now()}`;
+    const idempotencyKey = `idemp_${userId}_${planCode}_${billingCycle}_${Date.now()}`;
 
     // 3. payOS Gateway - Fail-Closed: Bắt buộc cấu hình cổng thanh toán tự động
     const payOS = getPayOSClient();
@@ -62,15 +121,15 @@ export class PaymentVerifierService {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const payosResponse = await payOS.paymentRequests.create({
         orderCode,
-        amount: Number(plan.price_vnd),
-        description: `NEXA ${orderCode}`.slice(0, 25),
+        amount: finalAmount,
+        description: `${orderCode}`.slice(0, 25),
         returnUrl: `${appUrl}/personal/billing/result?orderCode=${orderCode}&status=success`,
         cancelUrl: `${appUrl}/personal/billing/result?orderCode=${orderCode}&status=cancelled`,
         items: [
           {
-            name: plan.name,
+            name: `${plan.name} (${billingCycle === 'yearly' ? '12 tháng' : '1 tháng'})`,
             quantity: 1,
-            price: Number(plan.price_vnd),
+            price: finalAmount,
           },
         ],
       });
@@ -82,13 +141,13 @@ export class PaymentVerifierService {
           organization_id: organizationId || null,
           plan_id: plan.id,
           plan_code: plan.code,
-          amount: plan.price_vnd,
+          amount: finalAmount,
           currency: 'VND',
           provider: 'PAYOS',
           transaction_reference: String(orderCode),
           idempotency_key: idempotencyKey,
           status: 'PENDING',
-          raw_payload: payosResponse,
+          raw_payload: { ...payosResponse, billingCycle, appliedCoupon, discountAmount },
         })
         .select('id')
         .single();
@@ -101,12 +160,12 @@ export class PaymentVerifierService {
         transactionId: tx.id,
         referenceCode: String(orderCode),
         orderCode,
-        amount: Number(plan.price_vnd),
+        amount: finalAmount,
         currency: 'VND',
         planCode: plan.code,
         planName: plan.name,
         accountNumber: payosResponse.accountNumber,
-        bankName: payosResponse.bin ? `Ngân hàng (BIN: ${payosResponse.bin})` : 'VietQR payOS',
+        bankName: resolveVietQRBankName(payosResponse.bin),
         accountName: payosResponse.accountName,
         qrCodeUrl: payosResponse.qrCode,
         transferContent: payosResponse.description,
@@ -271,7 +330,7 @@ export class PaymentVerifierService {
       qrCodeUrl = typeof payload.qrCode === 'string' ? payload.qrCode : '';
       accountNumber = typeof payload.accountNumber === 'string' ? payload.accountNumber : '';
       accountName = typeof payload.accountName === 'string' ? payload.accountName : '';
-      bankName = payload.bin ? `Ngân hàng (BIN: ${payload.bin})` : 'VietQR payOS';
+      bankName = resolveVietQRBankName(payload.bin as string);
       transferContent = typeof payload.description === 'string' ? payload.description : tx.transaction_reference;
       checkoutUrl = typeof payload.checkoutUrl === 'string' ? payload.checkoutUrl : undefined;
     } else {

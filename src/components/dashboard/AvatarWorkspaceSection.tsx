@@ -240,10 +240,10 @@ export function AvatarWorkspaceSection({
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Nâng cấp NEXA PRO</span>
+              <span>Nâng cấp</span>
             </div>
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white font-mono">
-              PRO
+              MỚI
             </span>
           </Link>
         </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from './superadmin';
 
 export type PlatformAdminPermission =
@@ -74,11 +75,26 @@ export async function requirePlatformAdmin(
   }
 
   // Check profile data including suspension, revocation and admin_role
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('profiles')
     .select('role, is_suspended, suspended_reason, tokens_revoked_at, admin_role')
     .eq('id', user.id)
     .maybeSingle();
+
+  // Dual-client fallback: If user client is restricted by RLS on security fields
+  if (!profile) {
+    try {
+      const adminClient = createAdminClient();
+      const { data: adminProfile } = await adminClient
+        .from('profiles')
+        .select('role, is_suspended, suspended_reason, tokens_revoked_at, admin_role')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (adminProfile) {
+        profile = adminProfile;
+      }
+    } catch {}
+  }
 
   // 1. Suspension guard
   if (profile?.is_suspended === true) {

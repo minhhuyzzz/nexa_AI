@@ -1,12 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { X, MessageSquare, Star, CheckCircle2, Send } from 'lucide-react';
+import { X, MessageSquare, Star, CheckCircle2, Send, Loader2 } from 'lucide-react';
 
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const CATEGORIES = [
+  { id: 'ui', label: 'Giao diện & Trải nghiệm', tag: 'UI/UX' },
+  { id: 'assessment', label: 'Nội dung & Đề thi', tag: 'KHẢO THÍ' },
+  { id: 'speed', label: 'Tốc độ & Hiệu năng', tag: 'HIỆU NĂNG' },
+  { id: 'feature', label: 'Ý tưởng & Đề xuất mới', tag: 'TÍNH NĂNG' },
+];
 
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [rating, setRating] = useState(5);
@@ -14,6 +21,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -22,25 +30,36 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     if (!content.trim()) return;
 
     setIsSubmitting(true);
+    setErrorMsg(null);
+
+    const activeCat = CATEGORIES.find((c) => c.id === category) || CATEGORIES[0];
+    const categoryEnum = category === 'assessment' ? 'CONTENT' : category === 'speed' ? 'BUG' : category === 'feature' ? 'FEATURE_REQUEST' : 'GENERAL';
+    const cleanContent = content.trim();
+
     try {
-      await fetch('/api/feedback', {
+      const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          category: category === 'bug' ? 'BUG' : (category === 'feature' ? 'FEATURE_REQUEST' : 'GENERAL'),
-          subject: `Góp ý [${category.toUpperCase()}]`,
-          content: content.trim(),
+          category: categoryEnum,
+          subject: `[${rating}★] [${activeCat.tag}] ${cleanContent.slice(0, 45)}...`,
+          content: `Đánh giá: ${rating}/5 sao\nDanh mục: ${activeCat.label}\n\nNội dung chi tiết:\n${cleanContent}`,
         }),
       });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể gửi phản hồi lúc này');
+      }
 
       setIsSubmitted(true);
       setTimeout(() => {
         setIsSubmitted(false);
         setContent('');
         onClose();
-      }, 1500);
-    } catch (err) {
-      console.error('Error submitting feedback:', err);
+      }, 1800);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi góp ý');
     } finally {
       setIsSubmitting(false);
     }
@@ -48,38 +67,54 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-zinc-950 rounded-md border border-slate-200 dark:border-zinc-800 shadow-sm max-w-md w-full p-6 text-slate-900 dark:text-zinc-100">
+      <div className="bg-white dark:bg-[#111114] rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 sm:p-7 text-neutral-900 dark:text-neutral-100">
+        {/* Header Modal */}
         <div className="flex items-center justify-between pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-100 dark:border-sky-850">
-              <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900 shadow-xs shrink-0">
+              <MessageSquare className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">Đóng góp ý kiến</h3>
-              <p className="text-[11px] text-slate-500 dark:text-zinc-400">Giúp chúng tôi hoàn thiện nền tảng NEXA tốt hơn</p>
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                Đóng góp ý kiến
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                Cùng xây dựng nền tảng khảo thí số ngày một tốt hơn
+              </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 p-1 rounded-md transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {errorMsg && (
+          <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl text-rose-800 dark:text-rose-300 text-xs">
+            {errorMsg}
+          </div>
+        )}
+
         {isSubmitted ? (
-          <div className="py-10 text-center space-y-2">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto" />
-            <h4 className="text-sm font-bold text-slate-900 dark:text-zinc-100">Cảm ơn bạn đã đóng góp!</h4>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">
-              Ý kiến của bạn đã được ghi nhận và gửi đến ban phát triển.
+          <div className="py-12 text-center space-y-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 className="w-8 h-8" strokeWidth={2} />
+            </div>
+            <h4 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              Cảm ơn ý kiến quý giá của bạn!
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-xs mx-auto leading-relaxed">
+              Ban quản trị nền tảng đã tiếp nhận và sẽ xem xét cải tiến trong các phiên bản cập nhật tới.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            {/* Star Rating */}
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+            {/* 1. Mức độ hài lòng (1 - 5 sao) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                 Mức độ hài lòng của bạn
               </label>
               <div className="flex items-center gap-2">
@@ -88,49 +123,46 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
-                    className="p-1 rounded hover:scale-110 transition-transform"
+                    className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   >
                     <Star
-                      className={`w-5 h-5 ${
+                      className={`w-6 h-6 transition-all ${
                         star <= rating
-                          ? 'text-amber-400 fill-amber-400'
+                          ? 'text-amber-400 fill-amber-400 scale-105'
                           : 'text-slate-200 dark:text-zinc-700'
                       }`}
                     />
                   </button>
                 ))}
-                <span className="text-xs text-slate-500 dark:text-zinc-400 ml-2">
+                <span className="text-xs font-semibold font-mono text-slate-600 dark:text-neutral-400 ml-2">
                   {rating === 5
-                    ? 'Rất hài lòng'
+                    ? 'Rất hài lòng (5/5)'
                     : rating === 4
-                    ? 'Hài lòng'
+                    ? 'Hài lòng (4/5)'
                     : rating === 3
-                    ? 'Bình thường'
-                    : 'Cần cải thiện'}
+                    ? 'Bình thường (3/5)'
+                    : rating === 2
+                    ? 'Cần cải thiện (2/5)'
+                    : 'Chưa hài lòng (1/5)'}
                 </span>
               </div>
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+            {/* 2. Chủ đề góp ý */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                 Chủ đề góp ý
               </label>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {[
-                  { id: 'ui', label: 'Giao diện & Trải nghiệm' },
-                  { id: 'assessment', label: 'Nội dung bài thi' },
-                  { id: 'speed', label: 'Tốc độ phản hồi' },
-                  { id: 'other', label: 'Ý tưởng / Đề xuất mới' },
-                ].map((cat) => (
+              <div className="grid grid-cols-2 gap-2">
+                {CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`px-3 py-2 rounded-lg text-left text-xs transition-colors border ${
+                    className={`px-3 py-2.5 rounded-2xl text-left text-xs transition-all border cursor-pointer ${
                       category === cat.id
-                        ? 'bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300 font-medium'
-                        : 'bg-slate-50 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100/60 dark:hover:bg-zinc-850'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 text-blue-700 dark:text-blue-300 font-bold shadow-2xs'
+                        : 'bg-slate-50 dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850'
                     }`}
                   >
                     {cat.label}
@@ -139,36 +171,46 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               </div>
             </div>
 
-            {/* Content Textarea */}
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
-                Chi tiết ý kiến của bạn
+            {/* 3. Chi tiết nội dung */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-neutral-800 dark:text-zinc-200">
+                Nội dung ý kiến chi tiết
               </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Chia sẻ cảm nhận, lỗi bạn gặp phải hoặc điều bạn muốn cải thiện..."
+                placeholder="Chia sẻ trải nghiệm, lỗi gặp phải hoặc tính năng bạn muốn NEXA bổ sung..."
                 rows={4}
                 required
-                className="w-full text-xs text-slate-900 dark:text-zinc-100 bg-slate-50 dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 p-3 focus:bg-white dark:focus:bg-zinc-900 focus:border-sky-500 focus:outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                className="w-full text-xs text-neutral-900 dark:text-neutral-100 bg-slate-50 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-3.5 focus:bg-white dark:focus:bg-[#111114] focus:border-blue-600 focus:outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-zinc-500 leading-relaxed"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors"
+                className="px-5 py-2.5 rounded-full text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 Hủy bỏ
               </button>
               <button
                 type="submit"
-                disabled={!content.trim()}
-                className="px-4 py-2 rounded-lg text-xs font-medium bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                disabled={!content.trim() || isSubmitting}
+                className="px-6 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer active:scale-[0.98]"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Gửi góp ý</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang gửi...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Gửi góp ý</span>
+                  </>
+                )}
               </button>
             </div>
           </form>

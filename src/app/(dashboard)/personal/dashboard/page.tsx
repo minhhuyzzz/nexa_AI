@@ -62,6 +62,12 @@ interface LeaderboardUser {
   isMe: boolean;
 }
 
+function normalizeDomainCode(code: string | null | undefined): string {
+  if (!code) return '01';
+  const match = String(code).match(/(\d+)/);
+  return match ? match[1].padStart(2, '0') : '01';
+}
+
 export default function LearnerDashboardPage() {
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [isBaselineModalOpen, setIsBaselineModalOpen] = useState(false);
@@ -111,6 +117,11 @@ export default function LearnerDashboardPage() {
       strongest: { code: string; name: string; score: number; level: string } | null;
       weakest: { code: string; name: string; score: number; level: string; isGap: boolean } | null;
     } | null;
+  } | null>(null);
+
+  const [learningPathData, setLearningPathData] = useState<{
+    unlockedFreeDomain: string | null;
+    domainProgress: Record<string, { completed: number; total: number; percent: number }>;
   } | null>(null);
 
   const animatedPoints = useCountUp(stats.points, 900);
@@ -283,16 +294,46 @@ export default function LearnerDashboardPage() {
       }
     }
 
+    async function loadLearningPath() {
+      try {
+        const clientSavedDomain = typeof window !== 'undefined' ? localStorage.getItem('nexa_unlocked_domain') : null;
+        const queryUrl = clientSavedDomain
+          ? `/api/personal/learning-path?clientUnlockedDomain=${clientSavedDomain}`
+          : '/api/personal/learning-path';
+
+        const res = await fetch(queryUrl, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            const normUnlocked = json.unlockedFreeDomain ? normalizeDomainCode(json.unlockedFreeDomain) : (clientSavedDomain ? normalizeDomainCode(clientSavedDomain) : null);
+            setLearningPathData({
+              unlockedFreeDomain: normUnlocked,
+              domainProgress: json.domainProgress || {},
+            });
+            if (normUnlocked && typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('nexa_unlocked_domain', normUnlocked);
+              } catch {}
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load learning path on dashboard:', e);
+      }
+    }
+
     loadStats();
     loadAssessments();
     loadBaselineAssessment();
     loadLeaderboard();
     loadCompetencyProfile();
+    loadLearningPath();
     loadRecommendations();
 
     const handleProfileUpdate = () => {
       loadStats();
       loadCompetencyProfile();
+      loadLearningPath();
       loadAssessments();
       loadBaselineAssessment();
       loadLeaderboard();
@@ -344,14 +385,30 @@ export default function LearnerDashboardPage() {
   const currentRadarData = competencyProfile?.radarData?.length ? competencyProfile.radarData : defaultRadarData;
   const passedDomainsCount = currentRadarData.filter((d) => (d.score ?? 0) >= 70).length;
 
-  // Gợi ý miền cần bồi dưỡng: Chỉ xác định khi đã có kết quả khảo thí (lấy miền có điểm thấp nhất)
+  // Gợi ý miền cần bồi dưỡng: Ưu tiên đồng bộ 1:1 với miền mở khóa trên Trang Lộ trình
   const suggestedWeakestDomain = useMemo(() => {
     if (!competencyProfile?.hasTakenAssessment) return null;
+
+    // 1. Đồng bộ 1:1 với miền đang mở khóa ở trang Lộ trình
+    const targetCode =
+      learningPathData?.unlockedFreeDomain ||
+      (typeof window !== 'undefined' ? localStorage.getItem('nexa_unlocked_domain') : null) ||
+      competencyProfile.insights?.weakest?.code;
+
+    if (targetCode) {
+      const match = String(targetCode).match(/(\d+)/);
+      const targetNum = match ? parseInt(match[1], 10) : 1;
+      const targetDKey = `D${targetNum}`;
+      const found = currentRadarData.find((d) => d.code === targetDKey || d.code === targetCode);
+      if (found) return found;
+    }
+
+    // 2. Fallback: lấy miền có điểm thấp nhất trong các miền đã đánh giá
     const assessed = currentRadarData.filter((d) => d.score !== null);
     if (assessed.length === 0) return null;
     const sorted = [...assessed].sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
     return sorted[0];
-  }, [competencyProfile?.hasTakenAssessment, currentRadarData]);
+  }, [competencyProfile?.hasTakenAssessment, competencyProfile?.insights, currentRadarData, learningPathData?.unlockedFreeDomain]);
 
   const domainIcons: Record<string, any> = {
     D1: Database,
@@ -362,9 +419,11 @@ export default function LearnerDashboardPage() {
   };
 
   const dynamicStepperItems = currentRadarData.map((d, index) => {
-    const isPassed = (d.score ?? 0) >= 70;
-    const isAssessed = d.score !== null;
     const isSuggested = Boolean(suggestedWeakestDomain && d.code === suggestedWeakestDomain.code);
+    const domainNumStr = String(index + 1).padStart(2, '0');
+    const trackProgInfo = learningPathData?.domainProgress?.[domainNumStr] || learningPathData?.domainProgress?.[d.code];
+    const trackPercent = trackProgInfo?.percent ?? 0;
+    const isTrackCompleted = trackPercent >= 100;
 
     return {
       step: index + 1,
@@ -372,7 +431,8 @@ export default function LearnerDashboardPage() {
       name: d.name,
       icon: domainIcons[d.code] || Database,
       isSuggested,
-      done: isPassed,
+      done: isTrackCompleted,
+      trackPercent,
       score: d.score,
     };
   });
@@ -1136,7 +1196,7 @@ export default function LearnerDashboardPage() {
                         {item.name}
                       </div>
 
-                      {/* SEO Microcopy Status Tag — Bỏ chữ 'Chưa đánh giá' */}
+                      {/* Trạng thái tiến độ học tập các trạm của lộ trình — Tuyệt đối không lấy điểm bài thi đầu vào gán vào */}
                       {item.isSuggested ? (
                         <span className="mt-1.5 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200 dark:border-blue-900">
                           Ưu tiên học
@@ -1144,13 +1204,17 @@ export default function LearnerDashboardPage() {
                       ) : item.done ? (
                         <span className="mt-1.5 px-2 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-900 inline-flex items-center gap-1">
                           <Check className="w-3 h-3" />
-                          <span>{item.score}% Đạt chuẩn</span>
+                          <span>Hoàn thành</span>
                         </span>
-                      ) : item.score !== null ? (
-                        <span className="mt-1.5 text-[10px] font-mono text-slate-500 dark:text-neutral-400">
-                          {item.score}% • Cần luyện
+                      ) : item.trackPercent > 0 ? (
+                        <span className="mt-1.5 text-[10px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                          {item.trackPercent}% hoàn thành
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className="mt-1.5 text-[10px] font-mono text-slate-400 dark:text-neutral-500">
+                          Chưa học
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

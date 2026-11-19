@@ -6,6 +6,8 @@ import { PaymentVerifierService } from '@/features/billing/services/payment-veri
 
 const createIntentSchema = z.object({
   planCode: z.string().min(2, 'Mã gói dịch vụ không hợp lệ'),
+  billingCycle: z.enum(['monthly', 'yearly']).optional().default('monthly'),
+  couponCode: z.string().optional(),
   organizationId: z.string().uuid().optional().nullable(),
 });
 
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { planCode, organizationId } = validation.data;
+    const { planCode, billingCycle, couponCode, organizationId } = validation.data;
 
     // ADM-03: Chặn thanh toán tự phục vụ cho gói tổ chức/doanh nghiệp
     const upperPlan = planCode.toUpperCase();
@@ -67,7 +69,9 @@ export async function POST(request: NextRequest) {
     const intent = await PaymentVerifierService.createPaymentIntent(
       user.id,
       planCode,
-      organizationId
+      organizationId,
+      billingCycle,
+      couponCode
     );
 
     return NextResponse.json({

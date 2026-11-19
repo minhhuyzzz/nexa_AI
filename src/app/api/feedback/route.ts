@@ -47,6 +47,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nội dung phản hồi không được để trống' }, { status: 400 });
     }
 
+    const VALID_CATEGORIES = ['GENERAL', 'BUG', 'FEATURE_REQUEST', 'CONTENT', 'BILLING'];
+    const safeCategory = VALID_CATEGORIES.includes(category)
+      ? category
+      : category === 'ASSESSMENT'
+      ? 'CONTENT'
+      : category === 'PERFORMANCE'
+      ? 'BUG'
+      : 'GENERAL';
+
     const adminSupabase = createAdminClient();
     const { data: ticket, error: insertErr } = await adminSupabase
       .from('feedback_tickets')
@@ -55,7 +64,7 @@ export async function POST(request: NextRequest) {
         organization_id: organizationId || null,
         user_email: email || user?.email || 'Khách vãng lai',
         user_name: name || user?.user_metadata?.nickname || 'Người dùng',
-        category,
+        category: safeCategory,
         subject: subject.trim(),
         content: content.trim(),
         status: 'OPEN',
@@ -63,8 +72,9 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (insertErr) {
-      console.warn('Feedback ticket insert warning:', insertErr.message);
+    if (insertErr || !ticket) {
+      console.error('Feedback ticket insert error:', insertErr);
+      return NextResponse.json({ error: 'Không thể lưu phản hồi lúc này' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -79,7 +89,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const auth = await requirePlatformAdmin('MANAGE_SETTINGS');
+    const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
@@ -89,7 +99,7 @@ export async function GET() {
       .from('feedback_tickets')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error) {
       return NextResponse.json({ tickets: [] });
@@ -103,7 +113,7 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await requirePlatformAdmin('MANAGE_SETTINGS');
+    const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }

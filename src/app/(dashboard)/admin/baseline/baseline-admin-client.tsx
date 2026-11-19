@@ -136,7 +136,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isSubmittingNew, setIsSubmittingNew] = useState(false);
   const [newPrompt, setNewPrompt] = useState('');
-  const [newPoints, setNewPoints] = useState(4);
   const [newDomainId, setNewDomainId] = useState(domains[0]?.id || '');
   const [newOptions, setNewOptions] = useState<Option[]>([
     { content: '', is_correct: true, explanation: '' },
@@ -147,7 +146,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
 
   // State Chỉnh sửa câu hỏi hiện có
   const [editPrompt, setEditPrompt] = useState('');
-  const [editPoints, setEditPoints] = useState(4);
   const [editDomainId, setEditDomainId] = useState('');
   const [editOptions, setEditOptions] = useState<Option[]>([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -238,7 +236,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   const handleStartEdit = (item: Item) => {
     setEditingItemId(item.id);
     setEditPrompt(item.prompt);
-    setEditPoints(item.points || 4);
     setEditDomainId(getDomainIdFromItem(item));
     const existingOpts = item.item_options || [];
     if (existingOpts.length === 0) {
@@ -274,10 +271,11 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
       const res = await fetch(`/api/admin/assessments/${assessment.id}/items/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           type: 'MCQ',
           prompt: editPrompt.trim(),
-          points: Number(editPoints) || 4,
+          points: 1,
           competency_id: compId || undefined,
           options: editOptions.map((o) => ({
             id: o.id,
@@ -298,7 +296,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
             return {
               ...item,
               prompt: editPrompt.trim(),
-              points: Number(editPoints) || 4,
+              points: 1,
               competency_id: compId,
               competencies: {
                 domain_id: editDomainId,
@@ -342,10 +340,11 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
       const res = await fetch(`/api/admin/assessments/${assessment.id}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           type: 'MCQ',
           prompt: newPrompt.trim(),
-          points: Number(newPoints) || 4,
+          points: 1,
           competency_id: compId || undefined,
           options: newOptions.map((o) => ({
             content: o.content.trim(),
@@ -363,7 +362,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
         id: data.item?.id || `new-${Date.now()}`,
         prompt: newPrompt.trim(),
         type: 'MCQ',
-        points: Number(newPoints) || 4,
+        points: 1,
         order_index: items.length + 1,
         competency_id: compId,
         competencies: {
@@ -379,7 +378,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
       setItems((prev) => [...prev, createdItem]);
       setIsAddingNew(false);
       setNewPrompt('');
-      setNewPoints(4);
       setNewOptions([
         { content: '', is_correct: true, explanation: '' },
         { content: '', is_correct: false, explanation: '' },
@@ -400,6 +398,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
     try {
       const res = await fetch(`/api/admin/assessments/${assessment.id}/items/${itemId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa câu hỏi');
@@ -425,6 +424,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
     try {
       const res = await fetch(`/api/admin/assessments/${assessment.id}/items`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa toàn bộ câu hỏi');
@@ -508,7 +508,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
         </div>
       </div>
 
-      {/* 2. Tổng quan 5 Miền Năng Lực & Trọng Số Động 20% */}
+      {/* 2. Tổng quan 5 Miền Năng Lực & Thang Đo Độc Lập */}
       <div className="p-4 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
           <div className="flex items-center gap-2">
@@ -519,7 +519,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
           </div>
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
             <Info className="w-3.5 h-3.5" />
-            <span>Chuẩn hóa động: Mỗi miền chiếm 20% tổng điểm bài thi Personal</span>
+            <span>Thang đo độc lập: Mỗi miền tính 0–100% theo số câu thực tế của miền đó, tự động chuẩn hóa kể cả khi phân bổ số câu không đều giữa các miền</span>
           </span>
         </div>
 
@@ -558,7 +558,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                   {dom.title.split('&')[0].trim()}
                 </div>
                 <div className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">
-                  Trọng số: 20%
+                  Thang đo: 100% độc lập
                 </div>
               </button>
             );
@@ -608,7 +608,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-3 space-y-1.5">
               <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                 Nội dung câu hỏi (Prompt) <span className="text-red-500">*</span>
@@ -637,20 +637,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
-                Điểm câu hỏi
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={newPoints}
-                onChange={(e) => setNewPoints(Number(e.target.value) || 1)}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-mono tabular-nums"
-              />
             </div>
           </div>
 
@@ -866,7 +852,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="md:col-span-3 space-y-1.5">
                       <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                         Nội dung câu hỏi <span className="text-red-500">*</span>
@@ -894,20 +880,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                           </option>
                         ))}
                       </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
-                        Điểm câu hỏi
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={editPoints}
-                        onChange={(e) => setEditPoints(Number(e.target.value) || 1)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 font-mono tabular-nums"
-                      />
                     </div>
                   </div>
 
@@ -1022,8 +994,8 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                             {dom.code}: {dom.title}
                           </span>
                         )}
-                        <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono tabular-nums">
-                          {item.points || 4} điểm
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                          Trắc nghiệm chuẩn hóa
                         </span>
                       </div>
                       <h4 className="text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 leading-snug">
@@ -1108,7 +1080,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                 Xóa câu hỏi này khỏi đề thi?
               </h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Câu hỏi sẽ bị xóa vĩnh viễn khỏi bài khảo thí đầu vào. Hệ thống sẽ tự động điều chỉnh lại trọng số 20%/miền.
+                Câu hỏi sẽ bị xóa vĩnh viễn khỏi bài khảo thí đầu vào. Tỷ lệ chuẩn hóa của miền tương ứng sẽ tự động cập nhật theo số câu còn lại.
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">

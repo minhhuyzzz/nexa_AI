@@ -426,13 +426,13 @@ export function MasterCertificateCard({
               </div>
               <div className="space-y-1">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  CHỨNG CHỈ LEVEL 4 ĐANG KHÓA
+                  CHỨNG CHỈ TẠM THỜI KHÓA
                 </div>
                 <h3 className="text-base font-bold text-slate-900">
                   Chứng Nhận Năng Lực Số Toàn Diện
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Chứng chỉ sẽ được mở khóa sắc nét khi bạn hoàn thành cấp độ <strong className="text-slate-800">Level 4: Highly Advanced</strong> (450 điểm).
+                  Hệ thống đang chuẩn hóa quy trình thẩm định phôi chứng chỉ chính thức. Yêu cầu tích lũy tối thiểu <strong className="text-slate-800">10.000 điểm</strong> để mở khóa xét duyệt.
                 </p>
               </div>
             </div>

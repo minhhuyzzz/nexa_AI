@@ -6,7 +6,10 @@ import { AdminTopbar } from '@/components/dashboard/admin/AdminTopbar';
 import { MobileNavProvider } from '@/contexts/MobileNavContext';
 
 export const metadata: Metadata = {
-  title: 'NEXA Platform Admin | Điều hành nền tảng',
+  title: {
+    default: 'NEXA Platform Admin | Điều hành nền tảng',
+    template: '%s | NEXA Admin',
+  },
   robots: {
     index: false,
     follow: false,

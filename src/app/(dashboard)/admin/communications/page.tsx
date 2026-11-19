@@ -51,18 +51,23 @@ export default function AdminCommunicationsPage() {
   const [emailTarget, setEmailTarget] = useState<'ALL' | 'STUDENTS' | 'TEACHERS'>('ALL');
 
   const fetchFeedbacks = async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
     try {
       setLoadingFeedbacks(true);
       setFeedbackError(null);
-      const res = await fetch('/api/feedback');
+      const res = await fetch('/api/feedback', { signal: controller.signal });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Không thể tải danh sách ý kiến đóng góp');
       }
       setFeedbacks(data.tickets || []);
     } catch (err: unknown) {
-      setFeedbackError(err instanceof Error ? err.message : 'Lỗi tải dữ liệu');
+      const isAbort = (err as { name?: string })?.name === 'AbortError';
+      setFeedbackError(isAbort ? 'Quá thời gian kết nối máy chủ' : err instanceof Error ? err.message : 'Lỗi tải dữ liệu');
+      setFeedbacks([]);
     } finally {
+      clearTimeout(timeout);
       setLoadingFeedbacks(false);
     }
   };

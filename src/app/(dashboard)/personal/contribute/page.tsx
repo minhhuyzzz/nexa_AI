@@ -26,7 +26,7 @@ import type { ContributionItem } from '@/types/contributions';
 export default function LearnerContributeOverviewPage() {
   const [contributions, setContributions] = useState<ContributionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'needs_revision'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ContributionItem | null>(null);
 
@@ -62,7 +62,6 @@ export default function LearnerContributeOverviewPage() {
 
   const countPending = contributions.filter((c) => c.status === 'pending').length;
   const countApproved = contributions.filter((c) => c.status === 'approved').length;
-  const countNeedsRevision = contributions.filter((c) => c.status === 'needs_revision').length;
 
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
@@ -114,14 +113,14 @@ export default function LearnerContributeOverviewPage() {
 
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs (Pill tabs hiện đại, loại bỏ 'Cần bổ sung') */}
         <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+            className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activeTab === 'all'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800'
             }`}
           >
             Tất cả ({contributions.length})
@@ -129,38 +128,26 @@ export default function LearnerContributeOverviewPage() {
 
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'pending'
-                ? 'bg-amber-600 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800'
             }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'pending' ? 'bg-white' : 'bg-amber-500'}`} />
-            <span>Chờ duyệt ({countPending})</span>
+            <span>Chờ thẩm định ({countPending})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('approved')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'approved'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'approved' ? 'bg-white' : 'bg-emerald-600'}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'approved' ? 'bg-white' : 'bg-emerald-500'}`} />
             <span>Đã phê duyệt ({countApproved})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('needs_revision')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'needs_revision'
-                ? 'bg-rose-700 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'needs_revision' ? 'bg-white' : 'bg-rose-600'}`} />
-            <span>Cần bổ sung ({countNeedsRevision})</span>
           </button>
         </div>
 

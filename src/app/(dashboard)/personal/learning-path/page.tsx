@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -38,20 +38,6 @@ import {
   CompetencyLevelCode,
   getSubdomainLevels,
 } from '@/features/assessments/data/learning-curriculum';
-
-interface CompetencyProfileData {
-  hasTakenAssessment?: boolean;
-  totalAssessmentsCompleted?: number;
-  latestSubmissionId?: string | null;
-  overallScore: number | null;
-  radarData: DomainScore[];
-  insights?: {
-    weakest?: {
-      code: string;
-      title: string;
-    };
-  };
-}
 
 const DOMAIN_ICONS: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
   Database,
@@ -131,27 +117,35 @@ function LearningPathContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Freemium Locking & Progress State
-  const [unlockedFreeDomain, setUnlockedFreeDomain] = useState<string | null>(null);
+  const [unlockedFreeDomain, setUnlockedFreeDomain] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('nexa_unlocked_domain');
+        return stored ? normalizeDomainCode(stored) : null;
+      } catch {}
+    }
+    return null;
+  });
   const [hasTakenAssessment, setHasTakenAssessment] = useState<boolean>(false);
   const [isProUser, setIsProUser] = useState<boolean>(false);
   const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(new Set());
   const [serverModules, setServerModules] = useState<any[]>([]);
 
-  // Competency Profile State
-  const [competencyProfile, setCompetencyProfile] = useState<CompetencyProfileData | null>(null);
-
-  // Tree Branch SVG Coordinate State
-  const treeContainerRef = useRef<HTMLDivElement | null>(null);
-  const domainRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const stationRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [branchCoords, setBranchCoords] = useState<{
-    startY: number;
-    stations: { id: string; endY: number }[];
-  }>({ startY: 0, stations: [] });
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Instant local sync
+    try {
+      const stored = localStorage.getItem('nexa_unlocked_domain');
+      if (stored) {
+        const norm = normalizeDomainCode(stored);
+        setUnlockedFreeDomain(norm);
+        if (!requestedDomain) {
+          setActiveDomainCode(norm);
+        }
+      }
+    } catch {}
+  }, [requestedDomain]);
 
   // 1. Đồng bộ miền được chọn từ URL (nếu có tham số ?domain=)
   useEffect(() => {
@@ -163,18 +157,57 @@ function LearningPathContent() {
     }
   }, [requestedDomain]);
 
-  // 2. Fetch User Profile & Unlocked Status từ dữ liệu thực tế của tài khoản
+  // 2. Fetch User Profile & Unlocked Status với SWR Instant Cache (<50ms)
   useEffect(() => {
     async function loadUserData() {
+      // Step A: Restore from instant session cache if available
       try {
-        const res = await fetch('/api/personal/learning-path', { cache: 'no-store' });
+        const cachedRaw = sessionStorage.getItem('nexa_lp_cache');
+        if (cachedRaw) {
+          const cachedJson = JSON.parse(cachedRaw);
+          if (cachedJson.hasTakenAssessment !== undefined) {
+            setHasTakenAssessment(Boolean(cachedJson.hasTakenAssessment));
+          }
+          if (cachedJson.unlockedFreeDomain) {
+            const norm = normalizeDomainCode(cachedJson.unlockedFreeDomain);
+            setUnlockedFreeDomain(norm);
+            if (!requestedDomain) setActiveDomainCode(norm);
+          }
+          if (cachedJson.isProUser !== undefined) {
+            setIsProUser(Boolean(cachedJson.isProUser));
+          }
+          if (Array.isArray(cachedJson.modules)) {
+            setServerModules(cachedJson.modules);
+            const serverCompletedIds = cachedJson.modules
+              .filter((m: any) => m.is_completed)
+              .map((m: any) => m.id);
+            if (serverCompletedIds.length > 0) {
+              setCompletedLevelIds((prev) => new Set([...prev, ...serverCompletedIds]));
+            }
+          }
+        }
+      } catch {}
+
+      // Step B: Fetch fresh profile data in background
+      try {
+        const clientSavedDomain = typeof window !== 'undefined' ? localStorage.getItem('nexa_unlocked_domain') : null;
+        const queryUrl = clientSavedDomain
+          ? `/api/personal/learning-path?clientUnlockedDomain=${clientSavedDomain}`
+          : '/api/personal/learning-path';
+
+        const res = await fetch(queryUrl);
         if (res.ok) {
           const json = await res.json();
+          // Save to instant session cache
+          try {
+            sessionStorage.setItem('nexa_lp_cache', JSON.stringify(json));
+          } catch {}
+
           const hasAssessed = Boolean(json.hasTakenAssessment);
           setHasTakenAssessment(hasAssessed);
 
-          if (hasAssessed && json.unlockedFreeDomain) {
-            const norm = normalizeDomainCode(json.unlockedFreeDomain);
+          if (hasAssessed && (json.unlockedFreeDomain || clientSavedDomain)) {
+            const norm = normalizeDomainCode(json.unlockedFreeDomain || clientSavedDomain);
             setUnlockedFreeDomain(norm);
             try {
               localStorage.setItem('nexa_unlocked_domain', norm);
@@ -182,7 +215,7 @@ function LearningPathContent() {
             if (!requestedDomain) {
               setActiveDomainCode(norm);
             }
-          } else {
+          } else if (!hasAssessed) {
             setUnlockedFreeDomain(null);
             try {
               localStorage.removeItem('nexa_unlocked_domain');
@@ -207,41 +240,6 @@ function LearningPathContent() {
         }
       } catch (e) {
         console.error('Failed to load learning path profile:', e);
-      }
-
-      try {
-        const profRes = await fetch('/api/personal/competency-profile', { cache: 'no-store' });
-        if (profRes.ok) {
-          const pJson = await profRes.json();
-          const pData = pJson.profile || pJson;
-          if (pData.hasTakenAssessment !== undefined) {
-            const hasTaken = Boolean(pData.hasTakenAssessment);
-            setHasTakenAssessment(hasTaken);
-            if (hasTaken) {
-              const weakestCode = pData.insights?.weakest?.code;
-              if (weakestCode) {
-                const norm = normalizeDomainCode(weakestCode);
-                setUnlockedFreeDomain((prev) => prev || norm);
-                try {
-                  localStorage.setItem('nexa_unlocked_domain', norm);
-                } catch {}
-                if (!requestedDomain) {
-                  setActiveDomainCode((prev) => (prev === '01' ? norm : prev));
-                }
-              }
-            } else {
-              setUnlockedFreeDomain(null);
-              try {
-                localStorage.removeItem('nexa_unlocked_domain');
-              } catch {}
-            }
-          }
-          if (pData) {
-            setCompetencyProfile(pData);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load competency profile:', e);
       }
     }
 
@@ -293,40 +291,6 @@ function LearningPathContent() {
     setShowGuidanceModal(false);
   };
 
-  // Tính toán tọa độ nhánh cây SVG giữa Domain Anchor và Station Nodes
-  const updateBranchCoordinates = useCallback(() => {
-    if (!treeContainerRef.current) return;
-    const containerRect = treeContainerRef.current.getBoundingClientRect();
-    const activeBtn = domainRefs.current[activeDomainCode];
-    if (!activeBtn) return;
-
-    const activeRect = activeBtn.getBoundingClientRect();
-    const startY = activeRect.top - containerRect.top + activeRect.height / 2;
-
-    const stationCoords: { id: string; endY: number }[] = [];
-    activeTrack.subdomains.forEach((sub) => {
-      const el = stationRefs.current[sub.id];
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        stationCoords.push({
-          id: sub.id,
-          endY: rect.top - containerRect.top + rect.height / 2,
-        });
-      }
-    });
-
-    setBranchCoords({ startY, stations: stationCoords });
-  }, [activeDomainCode, activeTrack]);
-
-  useEffect(() => {
-    updateBranchCoordinates();
-    const timer = setTimeout(updateBranchCoordinates, 120);
-    window.addEventListener('resize', updateBranchCoordinates);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateBranchCoordinates);
-    };
-  }, [updateBranchCoordinates]);
 
   // Handle ESC key to close Side Drawer
   useEffect(() => {
@@ -363,13 +327,10 @@ function LearningPathContent() {
         </div>
       </div>
 
-      {/* 2. Horizontal Skill Tree Canvas (Cây Kỹ Năng Phân Nhánh Ngang) */}
-      <div
-        ref={treeContainerRef}
-        className="relative grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-4 items-start pt-2"
-      >
-        {/* CỘT 1: 5 TRỤ GỐC MIỀN NĂNG LỰC (ROOT COMPETENCY PILLARS) */}
-        <div className="lg:col-span-4 space-y-3 z-20">
+      {/* 2. Cột Trụ Miền Năng Lực & Trạm Bồi Dưỡng */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start pt-2">
+        {/* CỘT 1: 5 TRỤ MIỀN NĂNG LỰC */}
+        <div className="lg:col-span-4 space-y-3">
           <div className="rounded-3xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-2xs overflow-hidden">
             {/* Top Prominent Banner Header with Flowing Silk Ribbon (Dải lụa mềm mại) */}
             <div className="relative p-4 sm:p-5 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 text-white overflow-hidden shadow-xs">
@@ -469,9 +430,6 @@ function LearningPathContent() {
                 return (
                   <button
                     key={track.code}
-                    ref={(el) => {
-                      domainRefs.current[track.code] = el;
-                    }}
                     type="button"
                     onClick={() => setActiveDomainCode(track.code)}
                     className={`relative w-full text-left p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-2 active:scale-[0.99] ${
@@ -480,16 +438,14 @@ function LearningPathContent() {
                         : 'border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-zinc-900/40 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-slate-100/70 dark:hover:bg-zinc-850'
                     }`}
                   >
-                    {/* Visual selection indicator strip */}
+                    {/* Visual selection indicator strip & Branching pointer */}
                     {isSelected && (
-                      <div className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />
-                    )}
-
-                    {/* Anchor Pin nhô ra nối vào nhánh cây SVG */}
-                    {isSelected && (
-                      <div className="hidden lg:flex absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-blue-600 text-white items-center justify-center ring-4 ring-white dark:ring-[#111114] shadow-sm z-30">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      </div>
+                      <>
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />
+                        <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-blue-600 text-white items-center justify-center shadow-md z-20 ring-4 ring-white dark:ring-[#111114]">
+                          <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </div>
+                      </>
                     )}
 
                     <div className="flex items-center justify-between gap-2">
@@ -579,66 +535,8 @@ function LearningPathContent() {
           )}
         </div>
 
-        {/* CỘT GIỮA: CANVAS ĐƯỜNG NHÁNH CÂY SVG (ORGANIC BEZIER SVG BRANCHING CANVAS) */}
-        <div className="hidden lg:block lg:col-span-1 h-full relative self-stretch pointer-events-none">
-          <svg className="w-full h-full absolute inset-0 overflow-visible">
-            {branchCoords.stations.map((station, sIdx) => {
-              const sub = activeTrack.subdomains[sIdx];
-              const subLevels = sub ? getSubdomainLevels(sub, activeTrack.domainNumber, sIdx) : [];
-              const completedInSub = subLevels.filter((lvl) => completedLevelIds.has(lvl.id)).length;
-              const isAllDone = completedInSub === 4;
-
-              const strokeColor = isAllDone
-                ? '#10B981' // emerald-500
-                : '#2563EB'; // Cobalt blue cho toàn bộ các nhánh trong miền đang chọn
-
-              const startX = 0;
-              const startY = branchCoords.startY;
-              const endX = 70;
-              const endY = station.endY;
-
-              const controlX1 = startX + 35;
-              const controlY1 = startY;
-              const controlX2 = startX + 35;
-              const controlY2 = endY;
-
-              const pathD = `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`;
-
-              return (
-                <g key={station.id} className="transition-all duration-300 ease-out">
-                  {/* Subtle Glow backdrop for active branch */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke="#3B82F6"
-                    strokeWidth={5}
-                    strokeOpacity={0.18}
-                    strokeLinecap="round"
-                  />
-                  {/* Primary Branching Bezier Path */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth={2.25}
-                    strokeLinecap="round"
-                  />
-                  {/* Terminal Pin Node on Station */}
-                  <circle
-                    cx={endX}
-                    cy={endY}
-                    r={4}
-                    fill={strokeColor}
-                    className="transition-all duration-300"
-                  />
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-
-        {/* CỘT 3: CỤM NODE TRẠM KỸ NĂNG CON (SUB-STATION NODES) */}
-        <div key={activeTrack.code} className="lg:col-span-7 space-y-4 pt-4 lg:pt-0">
+        {/* CỘT 2: CÁC TRẠM KỸ NĂNG BỒI DƯỠNG */}
+        <div key={activeTrack.code} className="lg:col-span-8 space-y-4 pt-4 lg:pt-0">
           {/* Header Chặng Bồi Dưỡng */}
           <div className="relative p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-blue-50/80 via-slate-50/40 to-white dark:from-blue-950/30 dark:via-zinc-900/40 dark:to-[#111114] border border-blue-200/70 dark:border-blue-900/40 shadow-xs space-y-4 overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
@@ -726,7 +624,7 @@ function LearningPathContent() {
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   {!hasTakenAssessment
                     ? 'Bạn cần hoàn thành bài khảo thí đầu vào để mở khóa miễn phí 1 miền năng lực bồi dưỡng.'
-                    : 'Nâng cấp tài khoản Pro để mở khóa toàn bộ 5 miền và 21 trạm năng lực số.'}
+                    : 'Nâng cấp gói tài khoản để mở khóa toàn bộ 5 miền và các trạm năng lực.'}
                 </p>
               </div>
               <div className="pt-1">
@@ -744,15 +642,15 @@ function LearningPathContent() {
                     href="/personal/billing"
                     className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer shadow-xs inline-flex items-center gap-1.5"
                   >
-                    <span>Nâng cấp tài khoản Pro</span>
+                    <span>Nâng cấp tài khoản</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 )}
               </div>
             </div>
           ) : (
-            /* DANH SÁCH CÁC NODE TRẠM CON (SUB-STATION CARDS WITH STAGGERED UNROLL) */
-            <div className="space-y-4">
+            /* DANH SÁCH CÁC NODE TRẠM CON (SUB-STATION CARDS WITH SKILL TREE CONNECTOR) */
+            <div className="space-y-4 relative lg:pl-6 before:hidden lg:before:block before:absolute before:left-2 before:top-6 before:bottom-6 before:w-0.5 before:bg-gradient-to-b before:from-blue-600 before:via-blue-300 before:to-slate-200 dark:before:via-blue-800 dark:before:to-zinc-800">
               {activeTrack.subdomains.map((sub, sIdx) => {
                 const subLevels = getSubdomainLevels(sub, activeTrack.domainNumber, sIdx);
                 const completedInThisSub = subLevels.filter((lvl) => completedLevelIds.has(lvl.id)).length;
@@ -762,27 +660,21 @@ function LearningPathContent() {
                 return (
                   <div
                     key={sub.id}
-                    ref={(el) => {
-                      stationRefs.current[sub.id] = el;
-                    }}
                     onClick={() => handleOpenSubdomainDrawer(sub, sIdx)}
                     style={{ animationDelay: `${sIdx * 80}ms` }}
-                    className={`p-5 sm:p-6 rounded-3xl border transition-all duration-300 cursor-pointer shadow-2xs group relative overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300 fill-mode-both active:scale-[0.99] ${
+                    className={`p-5 sm:p-6 rounded-3xl border transition-all duration-300 cursor-pointer shadow-2xs group relative overflow-visible animate-in fade-in slide-in-from-left-2 duration-300 fill-mode-both active:scale-[0.99] ${
                       isAllSubCompleted
                         ? 'bg-gradient-to-r from-emerald-50/40 via-emerald-50/10 to-white dark:from-emerald-950/20 dark:via-zinc-900/30 dark:to-[#111114] border-emerald-200/90 dark:border-emerald-900/60 hover:border-emerald-400'
                         : 'bg-gradient-to-r from-blue-50/70 via-blue-50/20 to-white dark:from-blue-950/30 dark:via-zinc-900/30 dark:to-[#111114] border-blue-200/90 dark:border-blue-900/60 shadow-xs ring-1 ring-blue-500/20 hover:border-blue-400 dark:hover:border-blue-700'
                     }`}
                   >
-                    {/* Physical Connector Pin for SVG branch curve */}
-                    <div
-                      className={`hidden lg:block absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ring-4 ring-white dark:ring-[#111114] shadow-xs transition-transform group-hover:scale-125 z-10 ${
-                        isAllSubCompleted ? 'bg-emerald-500' : 'bg-blue-600'
-                      }`}
-                    />
+                    {/* Horizontal Branch connector from trunk to station */}
+                    <div className="hidden lg:block absolute -left-4 top-1/2 -translate-y-1/2 w-4 h-0.5 bg-blue-300 dark:bg-blue-800 rounded-full" />
+                    <div className="hidden lg:block absolute -left-[18px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-[#111114]" />
 
                     {/* Status side indicator bar */}
                     <div
-                      className={`absolute top-0 left-0 bottom-0 w-1.5 ${
+                      className={`absolute top-0 left-0 bottom-0 w-1.5 rounded-l-3xl ${
                         isAllSubCompleted ? 'bg-emerald-500' : 'bg-blue-600'
                       }`}
                     />
@@ -909,7 +801,7 @@ function LearningPathContent() {
           {/* Slide-over Sheet */}
           <div className="fixed inset-y-0 right-0 z-50 max-w-xl w-full bg-white dark:bg-[#111114] border-l border-slate-200/90 dark:border-zinc-800 shadow-2xl flex flex-col animate-in slide-in-from-right-full duration-300 ease-out overflow-hidden">
             {/* Drawer Header */}
-            <div className="p-5 sm:p-6 border-b border-slate-200/80 dark:border-zinc-800 flex items-start justify-between gap-4 shrink-0">
+            <div className="p-5 sm:p-6 bg-slate-50/50 dark:bg-zinc-900/40 flex items-start justify-between gap-4 shrink-0">
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono font-bold text-[10px] uppercase">
@@ -936,7 +828,7 @@ function LearningPathContent() {
             </div>
 
             {/* Level Selector Tabs */}
-            <div className="px-5 sm:px-6 py-2.5 bg-slate-50/70 dark:bg-zinc-900/40 border-b border-slate-200/60 dark:border-zinc-800/60 overflow-x-auto shrink-0">
+            <div className="px-5 sm:px-6 py-2.5 bg-slate-50/70 dark:bg-zinc-900/40 overflow-x-auto shrink-0">
               <div className="flex items-center gap-2 min-w-max">
                 {selectedSubdomain.levels.map((lvl) => {
                   const isTabActive = activeLevelCode === lvl.levelCode;
@@ -1054,7 +946,7 @@ function LearningPathContent() {
                   </div>
 
                   {/* Action CTA */}
-                  <div className="pt-4 border-t border-slate-200/80 dark:border-zinc-800 flex items-center justify-between gap-2.5 sticky bottom-0 bg-white dark:bg-[#111114] py-3">
+                  <div className="pt-4 flex items-center justify-between gap-2.5 sticky bottom-0 bg-white/95 dark:bg-[#111114]/95 backdrop-blur-xs py-3">
                     <Link
                       href={`/personal/learning-path/docs/${selectedSubdomain.subdomain.skillCode}?domain=${activeTrack?.domainNumber || 1}`}
                       className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-slate-700 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-[0.98]"

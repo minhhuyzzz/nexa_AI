@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export async function GET() {
   try {
@@ -44,7 +45,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
 
-    const isPlatformAdmin = profile?.role === 'ADMIN';
+    const isPlatformAdmin = profile?.role === 'ADMIN' || isSuperadminEmail(user.email);
     const planTier = profile?.plan_tier || 'FREE';
 
     interface UserOrgRow {
