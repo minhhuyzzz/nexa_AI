@@ -34,6 +34,7 @@ import {
   Compass,
   Settings,
   Shield,
+  EyeOff,
 } from 'lucide-react';
 import { SecuritySettingsCard } from '@/features/assessments/components/SecuritySettingsCard';
 import {
@@ -96,6 +97,12 @@ export function AdminAssessmentBankClient({
   const [deletingExam, setDeletingExam] = useState<AssessmentItemRecord | null>(null);
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
   const [cloningId, setCloningId] = useState<string | null>(null);
+
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // 3-dots Dropdown State (Fixed floating popover)
   const [dropdownMenu, setDropdownMenu] = useState<{
@@ -492,6 +499,77 @@ export function AdminAssessmentBankClient({
     }
   };
 
+  // Bulk Selection Handlers
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === filteredAssessments.length && filteredAssessments.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredAssessments.map((a) => a.id));
+    }
+  };
+
+  const handleBulkAction = async (action: 'PUBLISH' | 'UNPUBLISH' | 'SET_VIP', is_vip?: boolean) => {
+    if (selectedIds.length === 0) return;
+    setIsBulkProcessing(true);
+    try {
+      const res = await fetch('/api/admin/assessments/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ids: selectedIds, is_vip }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Thao tác hàng loạt thất bại');
+
+      setAssessments((prev) =>
+        prev.map((item) => {
+          if (!selectedIds.includes(item.id)) return item;
+          if (action === 'PUBLISH') return { ...item, is_published: true };
+          if (action === 'UNPUBLISH') return { ...item, is_published: false };
+          if (action === 'SET_VIP') {
+            const vip = Boolean(is_vip);
+            return { ...item, is_vip: vip, access_tier: vip ? 'VIP' : 'FREE' };
+          }
+          return item;
+        })
+      );
+      showToast(data.message || 'Cập nhật thành công!');
+      setSelectedIds([]);
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi thao tác hàng loạt');
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await fetch('/api/admin/assessments/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'DELETE', ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa hàng loạt');
+
+      setAssessments((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
+      showToast(data.message || `Đã xóa thành công ${selectedIds.length} bài khảo thí!`);
+      setSelectedIds([]);
+      setIsBulkDeleteModalOpen(false);
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi xóa hàng loạt');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   // Clone Assessment to new Version (DRAFT)
   const handleCloneAssessment = async (exam: AssessmentItemRecord) => {
     setCloningId(exam.id);
@@ -772,6 +850,16 @@ export function AdminAssessmentBankClient({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 text-xs font-medium">
+                  <th className="py-3 px-3 w-[44px] text-center">
+                    <input
+                      type="checkbox"
+                      checked={filteredAssessments.length > 0 && selectedIds.length === filteredAssessments.length}
+                      onChange={handleToggleSelectAll}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      title="Chọn tất cả bài khảo thí"
+                    />
+                  </th>
+                  <th className="py-3 px-3 w-[50px] text-center font-medium">STT</th>
                   <th className="py-3 px-4 min-w-[260px]">Bài khảo thí</th>
                   <th className="py-3 px-4 min-w-[130px]">Miền năng lực</th>
                   <th className="py-3 px-4 min-w-[120px]">Dạng câu hỏi</th>
@@ -784,45 +872,58 @@ export function AdminAssessmentBankClient({
               </thead>
               <tbody>
                 {filteredAssessments.map((exam, index) => {
-                  const examCode = `NEXA-${(exam.domainCodes?.[0] || 'GEN').toUpperCase()}-${String(index + 1).padStart(4, '0')}`;
-                  const isNearBottom = filteredAssessments.length > 3 && index >= filteredAssessments.length - 2;
+                  const isSelected = selectedIds.includes(exam.id);
                   return (
-                    <tr key={exam.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
+                    <tr
+                      key={exam.id}
+                      className={`transition-colors ${
+                        isSelected
+                          ? 'bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
+                          : 'hover:bg-slate-50/60 dark:hover:bg-zinc-900/50'
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-3.5 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(exam.id)}
+                          className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+
+                      {/* STT */}
+                      <td className="py-3.5 px-3 text-center font-mono tabular-nums text-slate-500 dark:text-zinc-400">
+                        {String(index + 1).padStart(2, '0')}
+                      </td>
+
                       {/* Bài khảo thí */}
                       <td className="py-3.5 px-4 min-w-[260px] max-w-[420px]">
-                        <div className="flex items-center gap-2.5">
-                          <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="group relative min-w-0 flex-1">
-                                <Link
-                                  href={`/admin/content/assessments/${exam.id}`}
-                                  className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block transition-colors leading-snug cursor-pointer line-clamp-1"
-                                  title={exam.title}
-                                >
-                                  {exam.title}
-                                </Link>
+                        <div className="flex items-center gap-2">
+                          <div className="group relative min-w-0 flex-1">
+                            <Link
+                              href={`/admin/content/assessments/${exam.id}`}
+                              className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block transition-colors leading-snug cursor-pointer line-clamp-1"
+                              title={exam.title}
+                            >
+                              {exam.title}
+                            </Link>
 
-                                {/* Tooltip khi rê chuột vào hiện đầy đủ */}
-                                <div className="pointer-events-none absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-max max-w-xs rounded-xl bg-neutral-900 dark:bg-zinc-800 text-white dark:text-zinc-100 px-3 py-2 text-xs shadow-xl border border-neutral-700 dark:border-zinc-700 animate-in fade-in duration-150 whitespace-normal leading-relaxed">
-                                  <p className="font-semibold">{exam.title}</p>
-                                  {exam.description && (
-                                    <p className="text-[10px] text-neutral-400 mt-1 line-clamp-2">{exam.description}</p>
-                                  )}
-                                  <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-neutral-900 dark:border-t-zinc-800" />
-                                </div>
-                              </div>
-
-                              {Boolean(exam.id === 'a0000000-0000-0000-0000-000000000001' || exam.title?.toLowerCase().includes('đầu vào')) && (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
-                                  Đầu Vào
-                                </span>
+                            {/* Tooltip khi rê chuột vào hiện đầy đủ */}
+                            <div className="pointer-events-none absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-max max-w-xs rounded-xl bg-neutral-900 dark:bg-zinc-800 text-white dark:text-zinc-100 px-3 py-2 text-xs shadow-xl border border-neutral-700 dark:border-zinc-700 animate-in fade-in duration-150 whitespace-normal leading-relaxed">
+                              <p className="font-semibold">{exam.title}</p>
+                              {exam.description && (
+                                <p className="text-[10px] text-neutral-400 mt-1 line-clamp-2">{exam.description}</p>
                               )}
-                            </div>
-                            <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                              Mã: {examCode}
+                              <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-neutral-900 dark:border-t-zinc-800" />
                             </div>
                           </div>
+
+                          {Boolean(exam.id === 'a0000000-0000-0000-0000-000000000001' || exam.title?.toLowerCase().includes('đầu vào')) && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                              Đầu Vào
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -1187,6 +1288,162 @@ export function AdminAssessmentBankClient({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/95 dark:bg-[#111114]/95 text-white rounded-2xl shadow-2xl border border-neutral-700/80 dark:border-zinc-800 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 pr-3 border-r border-neutral-700 dark:border-zinc-800 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-xs font-semibold tabular-nums whitespace-nowrap">
+              Đã chọn {selectedIds.length} bài
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Phát hành hàng loạt */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('PUBLISH')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Phát hành các bài khảo thí đã chọn"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Phát hành</span>
+            </button>
+
+            {/* Chuyển về Nội bộ */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('UNPUBLISH')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Chuyển về trạng thái Nội bộ"
+            >
+              <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+              <span>Nội bộ</span>
+            </button>
+
+            {/* Đổi sang Miễn phí */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('SET_VIP', false)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Đặt phân hạng Miễn phí"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Miễn phí</span>
+            </button>
+
+            {/* Đổi sang Nâng cấp */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('SET_VIP', true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Đặt phân hạng Nâng cấp"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Nâng cấp</span>
+            </button>
+
+            {/* Xóa các bài đã chọn */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer shadow-xs ml-1"
+              title="Xóa các bài khảo thí đã chọn"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa ({selectedIds.length})</span>
+            </button>
+          </div>
+
+          {/* Nút hủy chọn */}
+          <button
+            type="button"
+            onClick={() => setSelectedIds([])}
+            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer shrink-0"
+            title="Bỏ chọn tất cả"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Modal: Xác nhận xóa hàng loạt */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 p-6">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Xác nhận xóa {selectedIds.length} bài khảo thí
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  Bạn có chắc chắn muốn xóa {selectedIds.length} bài khảo thí đã chọn không? Hành động này sẽ loại bỏ các bài khảo thí này khỏi ngân hàng đề thi chuẩn.
+                </p>
+              </div>
+            </div>
+
+            {/* Danh sách các bài khảo thí sẽ bị xóa */}
+            <div className="max-h-40 overflow-y-auto rounded-xl bg-slate-50 dark:bg-zinc-900/60 p-3 mb-3 border border-slate-200/80 dark:border-zinc-800/80 space-y-1.5">
+              {assessments
+                .filter((exam) => selectedIds.includes(exam.id))
+                .slice(0, 5)
+                .map((exam) => (
+                  <div key={exam.id} className="text-xs text-neutral-800 dark:text-zinc-200 flex items-center justify-between">
+                    <span className="truncate pr-2">• {exam.title}</span>
+                    <span className="text-[10px] text-slate-500 font-mono shrink-0">{exam.questionCount} câu</span>
+                  </div>
+                ))}
+              {selectedIds.length > 5 && (
+                <p className="text-[11px] text-slate-500 italic pt-1">
+                  ... và {selectedIds.length - 5} bài khảo thí khác
+                </p>
+              )}
+            </div>
+
+            <p className="text-[11px] text-slate-400 dark:text-neutral-500 italic mb-4">
+              Lưu ý: Nếu bài thi đã có lịch sử nộp bài của thí sinh, hệ thống sẽ tự động chuyển sang lưu trữ an toàn để bảo toàn kết quả thi.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={handleConfirmBulkDelete}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xác nhận xóa ({selectedIds.length})</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1706,6 +1963,162 @@ export function AdminAssessmentBankClient({
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-neutral-900/95 dark:bg-[#111114]/95 text-white rounded-2xl shadow-2xl border border-neutral-700/80 dark:border-zinc-800 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 pr-3 border-r border-neutral-700 dark:border-zinc-800 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-xs font-semibold tabular-nums whitespace-nowrap">
+              Đã chọn {selectedIds.length} bài
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Phát hành hàng loạt */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('PUBLISH')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Phát hành các bài khảo thí đã chọn"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Phát hành</span>
+            </button>
+
+            {/* Chuyển về Nội bộ */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('UNPUBLISH')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Chuyển về trạng thái Nội bộ"
+            >
+              <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+              <span>Nội bộ</span>
+            </button>
+
+            {/* Đổi sang Miễn phí */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('SET_VIP', false)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Đặt phân hạng Miễn phí"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Miễn phí</span>
+            </button>
+
+            {/* Đổi sang Nâng cấp */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => handleBulkAction('SET_VIP', true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              title="Đặt phân hạng Nâng cấp"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Nâng cấp</span>
+            </button>
+
+            {/* Xóa các bài đã chọn */}
+            <button
+              type="button"
+              disabled={isBulkProcessing}
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer shadow-xs ml-1"
+              title="Xóa các bài khảo thí đã chọn"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa ({selectedIds.length})</span>
+            </button>
+          </div>
+
+          {/* Nút hủy chọn */}
+          <button
+            type="button"
+            onClick={() => setSelectedIds([])}
+            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer shrink-0"
+            title="Bỏ chọn tất cả"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Modal: Xác nhận xóa hàng loạt */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 p-6">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Xác nhận xóa {selectedIds.length} bài khảo thí
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  Bạn có chắc chắn muốn xóa {selectedIds.length} bài khảo thí đã chọn không? Hành động này sẽ loại bỏ các bài khảo thí này khỏi ngân hàng đề thi chuẩn.
+                </p>
+              </div>
+            </div>
+
+            {/* Danh sách các bài khảo thí sẽ bị xóa */}
+            <div className="max-h-40 overflow-y-auto rounded-xl bg-slate-50 dark:bg-zinc-900/60 p-3 mb-3 border border-slate-200/80 dark:border-zinc-800/80 space-y-1.5">
+              {assessments
+                .filter((exam) => selectedIds.includes(exam.id))
+                .slice(0, 5)
+                .map((exam) => (
+                  <div key={exam.id} className="text-xs text-neutral-800 dark:text-zinc-200 flex items-center justify-between">
+                    <span className="truncate pr-2">• {exam.title}</span>
+                    <span className="text-[10px] text-slate-500 font-mono shrink-0">{exam.questionCount} câu</span>
+                  </div>
+                ))}
+              {selectedIds.length > 5 && (
+                <p className="text-[11px] text-slate-500 italic pt-1">
+                  ... và {selectedIds.length - 5} bài khảo thí khác
+                </p>
+              )}
+            </div>
+
+            <p className="text-[11px] text-slate-400 dark:text-neutral-500 italic mb-4">
+              Lưu ý: Nếu bài thi đã có lịch sử nộp bài của thí sinh, hệ thống sẽ tự động chuyển sang lưu trữ an toàn để bảo toàn kết quả thi.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={handleConfirmBulkDelete}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xác nhận xóa ({selectedIds.length})</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
