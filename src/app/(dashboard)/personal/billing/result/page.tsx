@@ -36,6 +36,14 @@ function BillingResultContent() {
       return;
     }
 
+    if (orderCode === 'TRIAL' || (urlStatus === 'success' && !orderCode)) {
+      setTxStatus('SUCCESS');
+      setLoading(false);
+      setPlanCode('Gói Tiêu Chuẩn (STANDARD)');
+      setAmount(0);
+      return;
+    }
+
     if (!orderCode) {
       setTxStatus('UNKNOWN');
       setLoading(false);
@@ -139,7 +147,7 @@ function BillingResultContent() {
 
                   <div className="p-2.5 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800/80 flex items-center gap-2 text-xs">
                     <Zap className="w-4 h-4 text-amber-500 shrink-0" strokeWidth={1.75} />
-                    <span className="font-semibold text-neutral-800 dark:text-zinc-200">Lộ trình AI 5 miền chuyên sâu</span>
+                    <span className="font-semibold text-neutral-800 dark:text-zinc-200">Lộ trình AI các miền chuyên sâu</span>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800/80 flex items-center gap-2 text-xs">
@@ -178,7 +186,9 @@ function BillingResultContent() {
                 )}
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500 dark:text-neutral-400">Cổng thanh toán:</span>
-                  <span className="font-medium text-slate-700 dark:text-zinc-300">payOS (VietQR NAPAS 24/7)</span>
+                  <span className="font-medium text-slate-700 dark:text-zinc-300">
+                    {orderCode === 'TRIAL' || amount === 0 ? 'Kích hoạt dùng thử 30 ngày (0đ)' : 'payOS (VietQR NAPAS 24/7)'}
+                  </span>
                 </div>
               </div>
 

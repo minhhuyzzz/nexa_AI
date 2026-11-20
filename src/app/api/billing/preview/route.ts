@@ -1,20 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 
 // Bảng cấu hình tính năng & quyền lợi chuẩn hóa
 const PLAN_FEATURES: Record<string, string[]> = {
+  BASIC: [
+    'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
+    '10 AI credits / tháng',
+    'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
+    'Lưu trữ hồ sơ năng lực số cá nhân',
+  ],
   LEARNER_FREE: [
     'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
     '10 AI credits / tháng',
     'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
     'Lưu trữ hồ sơ năng lực số cá nhân',
   ],
-  LEARNER_PLUS: [
-    'Mở trọn vẹn 5 miền & 21 trạm bồi dưỡng',
+  STANDARD: [
+    'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
     'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
     '100 AI credits / tháng',
-    'Chứng chỉ số có mã QR tra cứu Kiosk',
+    'Chứng chỉ số',
     'Lộ trình học tập cá nhân hóa',
+  ],
+  LEARNER_PLUS: [
+    'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
+    'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
+    '100 AI credits / tháng',
+    'Chứng chỉ số',
+    'Lộ trình học tập cá nhân hóa',
+  ],
+  ADVANCED: [
+    'Toàn bộ quyền lợi gói Tiêu Chuẩn',
+    'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+    '500 AI credits / tháng',
+    'Mở phòng thi trực tiếp mã PIN thời gian thực',
+    'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu',
   ],
   LEARNER_PRO: [
     'Toàn bộ quyền lợi gói Tiêu Chuẩn',
@@ -26,9 +47,14 @@ const PLAN_FEATURES: Record<string, string[]> = {
 };
 
 const PLAN_DISPLAY_NAMES: Record<string, string> = {
-  LEARNER_FREE: 'Gói Khởi Động',
+  BASIC: 'Gói Cơ Bản',
+  LEARNER_FREE: 'Gói Cơ Bản',
+  STANDARD: 'Gói Tiêu Chuẩn',
   LEARNER_PLUS: 'Gói Tiêu Chuẩn',
+  ADVANCED: 'Gói Nâng Cao',
   LEARNER_PRO: 'Gói Nâng Cao',
+  ENTERPRISE: 'Gói Tổ Chức',
+  ORG_CAMPUS: 'Gói Tổ Chức',
 };
 
 export async function GET(request: NextRequest) {
@@ -76,6 +102,42 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Kiểm tra chính sách dùng thử 0đ tháng đầu tiên cho Gói Tiêu Chuẩn
+    let isTrialEligible = false;
+    let trialDiscount = 0;
+    const isStandardPlan = plan.code === 'STANDARD' || plan.code === 'LEARNER_PLUS' || baseMonthlyPrice === 49000;
+
+    if (isStandardPlan && cycle === 'monthly') {
+      try {
+        const userSupabase = await createClient();
+        const { data: { user } } = await userSupabase.auth.getUser();
+        if (user) {
+          const { data: trialHistory } = await supabase
+            .from('user_trial_history')
+            .select('id')
+            .eq('user_id', user.id)
+            .in('plan_code', ['STANDARD', 'LEARNER_PLUS'])
+            .maybeSingle();
+
+          if (!trialHistory) {
+            isTrialEligible = true;
+            trialDiscount = baseMonthlyPrice;
+            amount = 0;
+          }
+        } else {
+          // Khách vãng lai xem trước cũng hiển thị ưu đãi 0đ tháng đầu
+          isTrialEligible = true;
+          trialDiscount = baseMonthlyPrice;
+          amount = 0;
+        }
+      } catch (_) {
+        // Fallback: nếu lỗi kiểm tra, vẫn hiển thị ưu đãi
+        isTrialEligible = true;
+        trialDiscount = baseMonthlyPrice;
+        amount = 0;
+      }
+    }
+
     const features = PLAN_FEATURES[plan.code] || (Array.isArray(plan.features) ? plan.features : []);
     const planDisplayName = PLAN_DISPLAY_NAMES[plan.code] || plan.name;
 
@@ -88,6 +150,10 @@ export async function GET(request: NextRequest) {
         description: plan.description,
         baseMonthlyPrice,
         amount,
+        originalAmount: baseMonthlyPrice,
+        trialDiscount,
+        trialDays: plan.trial_days || 30,
+        isTrialEligible,
         monthlyEquivalent,
         currency: 'VND',
         billingCycle: cycle,

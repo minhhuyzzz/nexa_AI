@@ -169,111 +169,94 @@ export class QuotaEnforcementService {
    */
 
   static async getUserPlanDetails(
-
     supabase: SupabaseClient,
-
     userId: string
-
   ): Promise<{
-
     planCode: string;
-
     planName: string;
-
     tier: PlanTier;
-
     credits: number;
-
     billingCycle: string;
-
     expiresAt: string | null;
-
+    isTrial?: boolean;
+    autoRenew?: boolean;
+    subscriptionStatus?: string;
   }> {
-
     const { data: profile } = await supabase
-
       .from('profiles')
-
       .select('plan_tier, credits')
-
       .eq('id', userId)
-
       .maybeSingle();
-
-
 
     const rawCode = profile?.plan_tier || 'LEARNER_FREE';
-
     const credits = profile?.credits ?? 0;
 
-
-
     const { data: plan } = await supabase
-
       .from('service_plans')
-
       .select('name, billing_cycle')
-
       .eq('code', rawCode)
-
       .maybeSingle();
 
-
-
-    const { data: latestTx } = await supabase
-
-      .from('payment_transactions')
-
-      .select('verified_at, created_at')
-
-      .eq('user_id', userId)
-
-      .eq('status', 'SUCCESS')
-
-      .order('verified_at', { ascending: false })
-
-      .limit(1)
-
-      .maybeSingle();
-
-
-
+    let isTrial = false;
+    let autoRenew = true;
+    let subscriptionStatus: string | null = null;
     let expiresAt: string | null = null;
 
-    if (latestTx?.verified_at) {
+    try {
+      if (typeof supabase.from === 'function') {
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('plan_code, status, is_trial, auto_renew, expires_at')
+          .eq('user_id', userId)
+          .in('status', ['ACTIVE', 'TRIALING'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      const verifiedDate = new Date(latestTx.verified_at);
-
-      const days = plan?.billing_cycle === 'YEARLY' ? 365 : 30;
-
-      verifiedDate.setDate(verifiedDate.getDate() + days);
-
-      expiresAt = verifiedDate.toISOString();
-
+        if (sub) {
+          isTrial = Boolean(sub.is_trial);
+          autoRenew = Boolean(sub.auto_renew);
+          subscriptionStatus = sub.status;
+          if (sub.expires_at) {
+            expiresAt = sub.expires_at;
+          }
+        }
+      }
+    } catch {
+      // Fallback
     }
 
+    if (!expiresAt) {
+      const { data: latestTx } = await supabase
+        .from('payment_transactions')
+        .select('verified_at, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'SUCCESS')
+        .order('verified_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
+      if (latestTx?.verified_at) {
+        const verifiedDate = new Date(latestTx.verified_at);
+        const days = plan?.billing_cycle === 'YEARLY' ? 365 : 30;
+        verifiedDate.setDate(verifiedDate.getDate() + days);
+        expiresAt = verifiedDate.toISOString();
+      }
+    }
 
     const tier = await this.getUserPlanTier(supabase, userId);
 
-
-
     return {
-
       planCode: rawCode,
-
-      planName: plan?.name || (tier === 'PRO' ? 'Gói Nâng Cao' : 'Gói Khởi Động'),
-
+      planName: plan?.name || (tier === 'PRO' ? 'Gói Nâng Cao' : 'Gói Cơ Bản'),
       tier,
-
       credits,
-
       billingCycle: plan?.billing_cycle || 'MONTHLY',
-
       expiresAt,
-
+      isTrial,
+      autoRenew,
+      subscriptionStatus: subscriptionStatus || undefined,
     };
-
   }
 
 

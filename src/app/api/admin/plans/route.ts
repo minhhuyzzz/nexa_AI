@@ -25,9 +25,14 @@ export async function GET() {
 
     const adminSupabase = createAdminClient();
 
+    // Khóa chặt chỉ trả về đúng 4 gói chuẩn hóa của toàn hệ sinh thái NEXA
+    const CANONICAL_PLAN_CODES = ['BASIC', 'STANDARD', 'ADVANCED', 'ENTERPRISE'];
+
     const { data: plans, error } = await adminSupabase
       .from('service_plans')
       .select('*')
+      .in('code', CANONICAL_PLAN_CODES)
+      .eq('is_active', true)
       .order('sort_order', { ascending: true });
 
     if (error) {
@@ -104,10 +109,20 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (body.name !== undefined) updateData.name = body.name;
+    if (body.badge !== undefined) updateData.badge = body.badge;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.priceVnd !== undefined) updateData.price_vnd = body.priceVnd;
+    if (body.annualPriceVnd !== undefined) updateData.annual_price_vnd = body.annualPriceVnd;
+    if (body.yearlyMonthlyEquivalent !== undefined) updateData.yearly_monthly_equivalent = body.yearlyMonthlyEquivalent;
+    if (body.trialDays !== undefined) updateData.trial_days = body.trialDays;
     if (body.creditsIncluded !== undefined) updateData.credits_included = body.creditsIncluded;
     if (body.maxMembers !== undefined) updateData.max_members = body.maxMembers;
+    if (body.maxClasses !== undefined) updateData.max_classes = body.maxClasses;
+    if (body.maxClassMembers !== undefined) updateData.max_class_members = body.maxClassMembers;
+    if (body.maxLiveParticipants !== undefined) updateData.max_live_participants = body.maxLiveParticipants;
+    if (body.unlockAdvancedExams !== undefined) updateData.unlock_advanced_exams = body.unlockAdvancedExams;
+    if (body.sha256Certificate !== undefined) updateData.sha256_certificate = body.sha256Certificate;
+    if (body.exportCsvExcel !== undefined) updateData.export_csv_excel = body.exportCsvExcel;
     if (body.features !== undefined) updateData.features = body.features;
     if (body.isActive !== undefined) updateData.is_active = body.isActive;
 

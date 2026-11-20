@@ -8,8 +8,6 @@ import {
   Sparkles,
   ArrowRight,
   HelpCircle,
-  Users,
-  GraduationCap,
   Building2,
   FileSpreadsheet,
   Layers,
@@ -31,6 +29,7 @@ interface Plan {
   id: string;
   name: string;
   badge?: string;
+  trialTag?: string;
   info: string;
   price: {
     monthly: number;
@@ -38,8 +37,7 @@ interface Plan {
   };
   customPriceText?: string;
   isPopular?: boolean;
-  learnerFeatures: FeatureItem[];
-  evaluatorFeatures: FeatureItem[];
+  features: FeatureItem[];
   btn: {
     text: string;
     href: string;
@@ -56,7 +54,7 @@ const plans: Plan[] = [
       monthly: 0,
       yearly: 0,
     },
-    learnerFeatures: [
+    features: [
       {
         text: 'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
         tooltip: 'Làm bài kiểm tra nhận thức và tư duy số cơ bản, chấm tức thì trong 0.01 giây.',
@@ -69,15 +67,13 @@ const plans: Plan[] = [
         text: '10 AI credits phân tích năng lực mỗi tháng',
         tooltip: 'AI chẩn đoán điểm mạnh, kỹ năng còn hạn chế trên biểu đồ năng lực.',
       },
-    ],
-    evaluatorFeatures: [
       {
         text: 'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
         tooltip: 'Học viên tham gia qua liên kết mời, mã nhóm hoặc quét mã QR.',
       },
       {
-        text: 'Bàn chấm điểm thủ công cơ bản',
-        tooltip: 'Chấm điểm bằng tay theo barem sư phạm, không tốn chi phí AI.',
+        text: 'Mở phòng thi trực tiếp mã PIN tối đa 30 thí sinh',
+        tooltip: 'Tổ chức phòng thi trực tiếp cơ bản không tốn chi phí.',
       },
     ],
     btn: {
@@ -89,42 +85,45 @@ const plans: Plan[] = [
     id: 'standard',
     name: 'Gói Tiêu Chuẩn',
     badge: 'PHỔ BIẾN NHẤT',
+    trialTag: 'TẶNG 30 NGÀY DÙNG THỬ',
     info: 'Mở khóa trọn vẹn các miền bồi dưỡng và cấp chứng chỉ số.',
     price: {
       monthly: 49000,
       yearly: 468000,
     },
     isPopular: true,
-    learnerFeatures: [
+    features: [
       {
         text: 'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
         tooltip: 'Học tập toàn diện không giới hạn các nội dung và bài thi bồi dưỡng.',
       },
       {
-        text: '100 AI credits chẩn đoán & lộ trình học tập',
-        tooltip: 'AI phân tích chi tiết tư duy làm bài, chỉ rõ khoảng trống và cá nhân hóa lộ trình.',
+        text: 'Lộ trình học tập cá nhân hóa được hỗ trợ bởi AI',
+        tooltip: 'Gợi ý bài học và tài liệu bổ trợ tập trung đúng miền kỹ năng còn yếu.',
       },
       {
-        text: 'Chứng chỉ số',
+        text: 'Cấp chứng chỉ số chính thức có mã QR xác thực',
         tooltip: 'Chứng chỉ số chuẩn nét cao bảo toàn mã tra cứu xác thực vĩnh viễn.',
       },
       {
-        text: 'Lộ trình học tập cá nhân hóa',
-        tooltip: 'Gợi ý bài học và tài liệu bổ trợ tập trung đúng miền kỹ năng còn yếu.',
+        text: '100 AI credits chẩn đoán & lộ trình học tập mỗi tháng',
+        tooltip: 'AI phân tích chi tiết tư duy làm bài, chỉ rõ khoảng trống và cá nhân hóa lộ trình.',
       },
-    ],
-    evaluatorFeatures: [
       {
         text: 'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
         tooltip: 'Quản lý linh hoạt danh sách học viên và bài tập giao theo nhóm.',
       },
       {
-        text: 'Phân tích kết quả học tập tự động',
+        text: 'Mở phòng thi trực tiếp mã PIN tối đa 100 thí sinh',
+        tooltip: 'Tổ chức thi tập trung với mã PIN bảo mật.',
+      },
+      {
+        text: 'Phân tích kết quả học tập và tiến độ tự động',
         tooltip: 'Xem biểu đồ tiến độ học tập của từng học viên trong lớp.',
       },
     ],
     btn: {
-      text: 'Dùng thử ngay',
+      text: 'Dùng thử 30 ngày (0đ)',
       href: '/register?plan=standard',
     },
   },
@@ -137,36 +136,34 @@ const plans: Plan[] = [
       monthly: 149000,
       yearly: 1428000,
     },
-    learnerFeatures: [
+    features: [
       {
         text: 'Toàn bộ quyền lợi của Gói Tiêu Chuẩn',
         tooltip: 'Đầy đủ mọi tính năng học tập và bồi dưỡng nâng cao.',
+      },
+      {
+        text: 'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+        tooltip: 'Thoải mái tạo nhóm lớp cho toàn bộ các khóa đào tạo mà không lo đầy sĩ số.',
+      },
+      {
+        text: 'Mở phòng thi trực tiếp mã PIN thời gian thực (500 thí sinh)',
+        tooltip: 'Tổ chức thi tập trung với giám sát thời gian thực và tự động khóa đề khi hết giờ.',
       },
       {
         text: '500 AI credits chuyên sâu mỗi tháng',
         tooltip: 'Giải thích chi tiết đáp án từng câu hỏi bằng AI và gợi ý học tập tức thì.',
       },
       {
-        text: 'Ưu tiên xếp hạng và vinh danh',
-        tooltip: 'Hiển thị huy hiệu nâng cao trên bảng xếp hạng người học xuất sắc.',
-      },
-    ],
-    evaluatorFeatures: [
-      {
-        text: 'Không giới hạn nhóm lớp (500 học viên/nhóm)',
-        tooltip: 'Thoải mái tạo nhóm lớp cho toàn bộ các khóa đào tạo mà không lo đầy sĩ số.',
-      },
-      {
-        text: 'Mở phòng thi trực tiếp mã PIN thời gian thực',
-        tooltip: 'Tổ chức thi tập trung với giám sát thời gian thực và tự động khóa đề khi hết giờ.',
-      },
-      {
-        text: 'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu',
+        text: 'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu 26 biến số',
         tooltip: 'Tải về đầy đủ điểm số chi tiết từng tiêu chí phục vụ báo cáo và nghiên cứu.',
       },
       {
-        text: 'Bàn chấm Split-view & AI hỗ trợ gợi ý',
+        text: 'Bàn chấm Split-view & AI hỗ trợ gợi ý đánh giá',
         tooltip: 'Màn hình chia đôi: Xem bài làm bên trái, chấm tiêu chí rubric bên phải.',
+      },
+      {
+        text: 'Ưu tiên xếp hạng và vinh danh hồ sơ năng lực số',
+        tooltip: 'Hiển thị huy hiệu nâng cao trên bảng xếp hạng người học xuất sắc.',
       },
     ],
     btn: {
@@ -184,39 +181,33 @@ const plans: Plan[] = [
       yearly: 0,
     },
     customPriceText: 'Liên hệ B2B',
-    learnerFeatures: [
+    features: [
       {
-        text: 'Toàn bộ sinh viên được mở khóa theo đợt thi (Campaign)',
-        tooltip: 'Sinh viên làm bài đánh giá theo chiến dịch của trường, mở khóa toàn bộ đề thi chỉ định.',
-      },
-      {
-        text: 'Ngân hàng đề thi và học liệu riêng của trường',
-        tooltip: 'Luyện tập theo đúng chuẩn đầu ra của ngành nghề đào tạo tại trường.',
-      },
-    ],
-    evaluatorFeatures: [
-      {
-        text: 'Khảo thí diện rộng theo đợt (Campaigns)',
+        text: 'Khảo thí diện rộng theo đợt tập trung (Campaigns)',
         tooltip: 'Vận hành các kỳ khảo sát đồng loạt hàng nghìn thí sinh với mã định danh.',
       },
       {
-        text: 'Báo cáo độ trưởng thành số cấp đơn vị',
+        text: 'Toàn bộ sinh viên và giảng viên được mở khóa theo đợt thi',
+        tooltip: 'Sinh viên làm bài đánh giá theo chiến dịch của trường, mở khóa toàn bộ đề thi chỉ định.',
+      },
+      {
+        text: 'Báo cáo độ trưởng thành số cấp đơn vị / phòng ban / khoa viện',
         tooltip: 'Báo cáo số liệu tổng thể phục vụ công tác kiểm định chất lượng đào tạo.',
       },
       {
-        text: 'Bàn chấm hội đồng tập trung & chấm chéo',
+        text: 'Bàn chấm hội đồng tập trung & chấm chéo bảo mật',
         tooltip: 'Phân quyền giảng viên chấm thi độc lập và hội đồng phúc khảo.',
       },
       {
-        text: 'Chứng chỉ số gắn Logo thương hiệu riêng',
+        text: 'Chứng chỉ số gắn Logo thương hiệu riêng của trường/doanh nghiệp',
         tooltip: 'Chứng chỉ mang nhận diện chính thức và con dấu số của trường/doanh nghiệp.',
       },
       {
-        text: 'Tích hợp đăng nhập một lần (SSO) và LMS',
+        text: 'Tích hợp đăng nhập một lần (SSO) và LMS (Canvas, Moodle...)',
         tooltip: 'Liên thông tài khoản nội bộ và hệ thống Canvas, Moodle của đơn vị.',
       },
       {
-        text: 'Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA',
+        text: 'Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA 99.9%',
         tooltip: 'Đảm bảo thủ tục tài chính hành chính đầy đủ và hỗ trợ kỹ thuật 24/7.',
       },
     ],
@@ -388,79 +379,42 @@ export default function PricingPage() {
                     )}
                   </div>
 
-                  {/* Feature Group 1: CHO NGƯỜI HỌC */}
-                  <div className="mb-6 space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 pb-1">
-                      <GraduationCap className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Cho Người Học</span>
+                  {/* DANH SÁCH TÍNH NĂNG HỢP NHẤT (MỘT DANH TÍNH CÁ NHÂN) */}
+                  <div className="space-y-3 flex-1 pt-2">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                      Tính năng bao gồm:
                     </div>
 
-                    {plan.learnerFeatures.map((feat, idx) => (
-                      <div key={idx} className="group/item relative flex items-start gap-2 text-xs text-slate-700">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" strokeWidth={2} />
+                    {plan.features.map((feat, idx) => (
+                      <div key={idx} className="group/item relative flex items-start gap-2 text-xs text-slate-700 dark:text-zinc-300">
+                        <CheckCircle2
+                          className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                            plan.isPopular ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'
+                          }`}
+                          strokeWidth={2}
+                        />
                         <span className="leading-relaxed flex-1">{feat.text}</span>
 
                         {feat.tooltip && (
                           <div className="relative">
                             <button
                               type="button"
-                              onMouseEnter={() => setActiveTooltip(`${plan.id}-lea-${idx}`)}
+                              onMouseEnter={() => setActiveTooltip(`${plan.id}-feat-${idx}`)}
                               onMouseLeave={() => setActiveTooltip(null)}
                               onClick={() =>
                                 setActiveTooltip(
-                                  activeTooltip === `${plan.id}-lea-${idx}` ? null : `${plan.id}-lea-${idx}`
+                                  activeTooltip === `${plan.id}-feat-${idx}` ? null : `${plan.id}-feat-${idx}`
                                 )
                               }
-                              className="text-slate-400 hover:text-slate-600 p-0.5"
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
                               title={feat.tooltip}
                               aria-label={feat.tooltip}
                             >
                               <HelpCircle className="w-3 h-3" />
                             </button>
 
-                            {activeTooltip === `${plan.id}-lea-${idx}` && (
-                              <div className="absolute right-0 bottom-full mb-1 w-48 p-2 rounded-md bg-slate-900 border border-slate-700 text-white text-[11px] leading-tight z-30 shadow-sm pointer-events-none animate-in fade-in-50">
-                                {feat.tooltip}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Feature Group 2: CHO NGƯỜI ĐÁNH GIÁ */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 pb-1">
-                      <Users className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Cho Người Đánh Giá</span>
-                    </div>
-
-                    {plan.evaluatorFeatures.map((feat, idx) => (
-                      <div key={idx} className="group/item relative flex items-start gap-2 text-xs text-slate-700">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} />
-                        <span className="leading-relaxed flex-1">{feat.text}</span>
-
-                        {feat.tooltip && (
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onMouseEnter={() => setActiveTooltip(`${plan.id}-eva-${idx}`)}
-                              onMouseLeave={() => setActiveTooltip(null)}
-                              onClick={() =>
-                                setActiveTooltip(
-                                  activeTooltip === `${plan.id}-eva-${idx}` ? null : `${plan.id}-eva-${idx}`
-                                )
-                              }
-                              className="text-slate-400 hover:text-slate-600 p-0.5"
-                              title={feat.tooltip}
-                              aria-label={feat.tooltip}
-                            >
-                              <HelpCircle className="w-3 h-3" />
-                            </button>
-
-                            {activeTooltip === `${plan.id}-eva-${idx}` && (
-                              <div className="absolute right-0 bottom-full mb-1 w-48 p-2 rounded-md bg-slate-900 border border-slate-700 text-white text-[11px] leading-tight z-30 shadow-sm pointer-events-none animate-in fade-in-50">
+                            {activeTooltip === `${plan.id}-feat-${idx}` && (
+                              <div className="absolute right-0 bottom-full mb-1 w-52 p-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-[11px] leading-tight z-30 shadow-md pointer-events-none animate-in fade-in-50">
                                 {feat.tooltip}
                               </div>
                             )}
@@ -547,10 +501,10 @@ export default function PricingPage() {
                   <td className="py-3.5 px-3 font-bold text-neutral-900 dark:text-neutral-100">Liên hệ tư vấn B2B</td>
                 </tr>
 
-                {/* Section Header: Learner */}
+                {/* Section Header: Competency & Learning */}
                 <tr className="bg-slate-100/70 dark:bg-zinc-800/50">
                   <td colSpan={5} className="py-2.5 px-4 font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider text-[11px] rounded-lg">
-                    1. Quyền lợi Bồi dưỡng &amp; Khảo thí Cá nhân
+                    1. Bồi dưỡng &amp; Khảo thí Năng lực số
                   </td>
                 </tr>
                 <tr>
@@ -590,10 +544,10 @@ export default function PricingPage() {
                   <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-bold">Chứng chỉ số</td>
                 </tr>
 
-                {/* Section Header: Evaluator */}
+                {/* Section Header: Classroom & Live Room */}
                 <tr className="bg-slate-100/70 dark:bg-zinc-800/50">
                   <td colSpan={5} className="py-2.5 px-4 font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider text-[11px] rounded-lg">
-                    2. Quyền lợi Người Đánh Giá &amp; Giảng Viên
+                    2. Quản lý Nhóm lớp &amp; Tổ chức Khảo nghiệm
                   </td>
                 </tr>
                 <tr>

@@ -88,6 +88,22 @@ export async function GET() {
           : null;
       const orgRel = firstOrg?.organizations || null;
 
+      // Chuẩn hóa về 4 gói dịch vụ cốt lõi
+      const rawTier = (p.plan_tier || '').toUpperCase();
+      let normalizedTier = 'BASIC';
+      let planDisplayName = 'Gói Cơ Bản';
+
+      if (rawTier === 'BUSINESS' || rawTier === 'ENTERPRISE' || rawTier === 'ORG_CAMPUS' || !!orgRel) {
+        normalizedTier = 'ENTERPRISE';
+        planDisplayName = 'Gói Tổ Chức';
+      } else if (rawTier === 'ADVANCED' || rawTier === 'PRO' || rawTier === 'LEARNER_PRO') {
+        normalizedTier = 'ADVANCED';
+        planDisplayName = 'Gói Nâng Cao';
+      } else if (rawTier === 'STANDARD' || rawTier === 'PLUS' || rawTier === 'LEARNER_PLUS') {
+        normalizedTier = 'STANDARD';
+        planDisplayName = 'Gói Tiêu Chuẩn';
+      }
+
       return {
         id: p.id,
         nickname: p.nickname || p.email?.split('@')[0] || 'Người dùng',
@@ -95,11 +111,8 @@ export async function GET() {
         email: p.email,
         role: p.role || 'LEARNER',
         adminRole: p.admin_role || (p.role === 'ADMIN' ? 'SUPER_ADMIN' : 'LEARNER'),
-        planTier: (p.plan_tier === 'BUSINESS' || p.plan_tier === 'ENTERPRISE' || !!orgRel)
-          ? 'BUSINESS'
-          : p.plan_tier === 'PRO'
-          ? 'PRO'
-          : 'FREE',
+        planTier: normalizedTier,
+        planDisplayName,
         points: p.points || 0,
         isSuspended: Boolean(p.is_suspended),
         suspendedReason: p.suspended_reason || null,
@@ -125,7 +138,7 @@ interface PatchBody {
   action?: 'UPDATE' | 'SUSPEND' | 'UNSUSPEND' | 'REVOKE_SESSION';
   role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
   adminRole?: 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR' | 'LEARNER';
-  planTier?: 'FREE' | 'PRO' | 'BUSINESS';
+  planTier?: 'BASIC' | 'STANDARD' | 'ADVANCED' | 'ENTERPRISE' | 'FREE' | 'PRO' | 'BUSINESS';
   organizationId?: string;
   reason?: string;
 }
@@ -274,12 +287,16 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const updates: {
-      updated_at: string;
-      role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
-      admin_role?: string;
-      plan_tier?: 'FREE' | 'PRO' | 'BUSINESS';
-    } = { updated_at: new Date().toISOString() };
+    let normalizedTier: string | undefined = undefined;
+    if (planTier) {
+      const pUpper = planTier.toUpperCase();
+      if (pUpper === 'BASIC' || pUpper === 'FREE') normalizedTier = 'BASIC';
+      else if (pUpper === 'STANDARD' || pUpper === 'PLUS') normalizedTier = 'STANDARD';
+      else if (pUpper === 'ADVANCED' || pUpper === 'PRO') normalizedTier = 'ADVANCED';
+      else if (pUpper === 'ENTERPRISE' || pUpper === 'BUSINESS') normalizedTier = 'ENTERPRISE';
+    }
+
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
 
     if (role && ['LEARNER', 'EVALUATOR', 'ADMIN'].includes(role)) {
       updates.role = role;
@@ -287,8 +304,9 @@ export async function PATCH(request: NextRequest) {
     if (adminRole) {
       updates.admin_role = adminRole;
     }
-    if (planTier && ['FREE', 'PRO', 'BUSINESS'].includes(planTier)) {
-      updates.plan_tier = planTier;
+    if (normalizedTier) {
+      // Lưu tương thích ngược với DB
+      updates.plan_tier = normalizedTier;
     }
 
     if (Object.keys(updates).length > 1) {
@@ -299,6 +317,58 @@ export async function PATCH(request: NextRequest) {
 
       if (updateErr) {
         return NextResponse.json({ error: updateErr.message }, { status: 400 });
+      }
+    }
+
+    // Nếu Admin thay đổi Gói: Tạo/cập nhật subscription 30 ngày và cấp bù AI credits
+    if (normalizedTier) {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      // Cấp bù AI credits tương ứng với gói mới
+      const tierCreditsMap: Record<string, number> = {
+        BASIC: 10,
+        STANDARD: 100,
+        ADVANCED: 500,
+        ENTERPRISE: 10000,
+      };
+      const creditsToGrant = tierCreditsMap[normalizedTier] || 10;
+
+      // Upsert subscriptions
+      try {
+        await adminSupabase.from('subscriptions').upsert(
+          {
+            user_id: userId,
+            plan_code: normalizedTier,
+            status: 'ACTIVE',
+            starts_at: now.toISOString(),
+            expires_at: expiresAt.toISOString(),
+            auto_renew: true,
+            updated_at: now.toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+      } catch (subErr) {
+        console.warn('Could not upsert subscription record:', subErr);
+      }
+
+      // Ghi nhận cấp credits vào ai_credit_ledgers nếu có
+      try {
+        await adminSupabase.from('ai_credit_ledgers').insert({
+          user_id: userId,
+          amount: creditsToGrant,
+          action: 'ADMIN_GRANT',
+          reason: `Admin gán gói dịch vụ ${normalizedTier}`,
+          created_at: now.toISOString(),
+        });
+      } catch (ledgerErr) {
+        // Fallback update points in profiles
+        try {
+          await adminSupabase.rpc('increment_user_points', {
+            p_user_id: userId,
+            p_points: creditsToGrant,
+          });
+        } catch (_) {}
       }
     }
 

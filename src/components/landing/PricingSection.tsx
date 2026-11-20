@@ -64,7 +64,7 @@ const PLANS: PlanDetail[] = [
       'Chứng chỉ số',
       'Lộ trình học tập cá nhân hóa',
     ],
-    ctaText: 'Dùng thử ngay',
+    ctaText: 'Dùng thử 30 ngày (0đ)',
     ctaHref: '/register?plan=standard',
   },
   {

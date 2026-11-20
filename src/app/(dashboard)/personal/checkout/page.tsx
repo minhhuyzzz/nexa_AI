@@ -18,6 +18,7 @@ import {
   Download,
   Tag,
   X,
+  Sparkles,
 } from 'lucide-react';
 
 interface PlanPreviewData {
@@ -34,6 +35,10 @@ interface PlanPreviewData {
   discountPercent: number;
   creditsIncluded: number;
   features: string[];
+  isTrialEligible?: boolean;
+  trialDays?: number;
+  trialDiscount?: number;
+  badge?: string | null;
 }
 
 interface CheckoutTransaction {
@@ -302,6 +307,25 @@ function CheckoutClientContent() {
     setTxError(null);
 
     try {
+      // Đơn hàng dùng thử 0đ hoặc được miễn phí hoàn toàn
+      if (payableAmount === 0 || planPreview.isTrialEligible) {
+        const res = await fetch('/api/billing/confirm-trial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            planCode: planPreview.code,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Không thể kích hoạt dùng thử');
+        }
+
+        router.push(`/personal/billing/result?orderCode=${data.subscription?.id || 'TRIAL'}&status=success`);
+        return;
+      }
+
       const res = await fetch('/api/billing/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -489,6 +513,19 @@ function CheckoutClientContent() {
                   </span>
                 </div>
 
+                {/* Dòng ưu đãi dùng thử tháng đầu tiên nếu đủ điều kiện */}
+                {planPreview.isTrialEligible && (
+                  <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Ưu đãi dùng thử tháng đầu ({planPreview.trialDays || 30} ngày):</span>
+                    </span>
+                    <span className="font-mono font-bold">
+                      -{(planPreview.trialDiscount || 49000).toLocaleString('vi-VN')} đ
+                    </span>
+                  </div>
+                )}
+
                 {/* Dòng giảm giá nếu có coupon */}
                 {appliedCoupon && (
                   <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-medium">
@@ -575,7 +612,12 @@ function CheckoutClientContent() {
                   {isCreatingIntent ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Đang khởi tạo mã thanh toán...</span>
+                      <span>{payableAmount === 0 ? 'Đang kích hoạt gói dùng thử...' : 'Đang khởi tạo mã thanh toán...'}</span>
+                    </>
+                  ) : payableAmount === 0 ? (
+                    <>
+                      <span>Xác nhận dùng thử 30 ngày (0đ)</span>
+                      <ArrowRight className="w-4 h-4" />
                     </>
                   ) : (
                     <>

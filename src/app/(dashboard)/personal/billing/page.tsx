@@ -32,9 +32,12 @@ interface PlanDetails {
   credits: number;
   billingCycle: string;
   expiresAt: string | null;
+  isTrial?: boolean;
+  autoRenew?: boolean;
+  subscriptionStatus?: string;
 }
 
-// Bảng cấu hình chuẩn hóa định danh và tính năng súc tích cho 3 gói Cá nhân
+// Bảng cấu hình chuẩn hóa định danh và tính năng súc tích cho 4 gói dịch vụ
 const PLAN_CONFIG: Record<
   string,
   {
@@ -50,6 +53,72 @@ const PLAN_CONFIG: Record<
     features: string[];
   }
 > = {
+  BASIC: {
+    name: 'Gói Cơ Bản',
+    badge: 'TRẢI NGHIỆM',
+    desc: 'Khảo sát năng lực số cơ bản và lưu trữ hồ sơ cá nhân.',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    yearlyMonthlyEquivalent: 0,
+    creditsMonthly: 10,
+    features: [
+      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
+      '10 AI credits / tháng',
+      'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
+      'Lưu trữ hồ sơ năng lực số cá nhân',
+    ],
+  },
+  STANDARD: {
+    name: 'Gói Tiêu Chuẩn',
+    badge: 'PHỔ BIẾN NHẤT',
+    desc: 'Mở khóa trọn vẹn các miền bồi dưỡng và cấp chứng chỉ số.',
+    isPopular: true,
+    trialTag: 'TẶNG 30 NGÀY DÙNG THỬ',
+    monthlyPrice: 49000,
+    yearlyPrice: 468000,
+    yearlyMonthlyEquivalent: 39000,
+    creditsMonthly: 100,
+    features: [
+      'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
+      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
+      '100 AI credits / tháng',
+      'Chứng chỉ số',
+      'Lộ trình học tập cá nhân hóa',
+    ],
+  },
+  ADVANCED: {
+    name: 'Gói Nâng Cao',
+    badge: 'TOÀN DIỆN',
+    desc: 'Dành cho cá nhân bồi dưỡng chuyên sâu và tổ chức thi trực tiếp.',
+    monthlyPrice: 149000,
+    yearlyPrice: 1428000,
+    yearlyMonthlyEquivalent: 119000,
+    creditsMonthly: 500,
+    features: [
+      'Toàn bộ quyền lợi gói Tiêu Chuẩn',
+      'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+      '500 AI credits / tháng',
+      'Mở phòng thi trực tiếp mã PIN thời gian thực',
+      'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu',
+    ],
+  },
+  ENTERPRISE: {
+    name: 'Gói Tổ Chức',
+    badge: 'TRƯỜNG HỌC & DOANH NGHIỆP',
+    desc: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung & cấp chứng nhận đồng thương hiệu.',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    yearlyMonthlyEquivalent: 0,
+    creditsMonthly: 10000,
+    features: [
+      'Khảo thí diện rộng theo đợt (Campaigns)',
+      'Báo cáo độ trưởng thành số cấp đơn vị',
+      'Bàn chấm hội đồng tập trung & chấm chéo',
+      'Chứng chỉ số gắn Logo thương hiệu riêng',
+      'Tích hợp SSO & LMS (Canvas, Moodle...)',
+      'Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA',
+    ],
+  },
   LEARNER_FREE: {
     name: 'Gói Cơ Bản',
     badge: 'TRẢI NGHIỆM',
@@ -68,7 +137,7 @@ const PLAN_CONFIG: Record<
   LEARNER_PLUS: {
     name: 'Gói Tiêu Chuẩn',
     badge: 'PHỔ BIẾN NHẤT',
-    desc: 'Mở khóa trọn vẹn 5 miền bồi dưỡng và cấp chứng chỉ số.',
+    desc: 'Mở khóa trọn vẹn các miền bồi dưỡng và cấp chứng chỉ số.',
     isPopular: true,
     trialTag: 'TẶNG 30 NGÀY DÙNG THỬ',
     monthlyPrice: 49000,
@@ -76,7 +145,7 @@ const PLAN_CONFIG: Record<
     yearlyMonthlyEquivalent: 39000,
     creditsMonthly: 100,
     features: [
-      'Mở trọn vẹn 5 miền & 21 trạm bồi dưỡng',
+      'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
       'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
       '100 AI credits / tháng',
       'Chứng chỉ số',
@@ -125,6 +194,8 @@ export default function LearnerBillingPage() {
   const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
   const [transactions, setTransactions] = useState<PaymentHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [isCancellingAutoRenew, setIsCancellingAutoRenew] = useState(false);
+  const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -176,23 +247,58 @@ export default function LearnerBillingPage() {
     router.push(`/personal/checkout?plan=${planCode}&cycle=${frequency}`);
   };
 
+  const handleCancelAutoRenew = async () => {
+    if (
+      !confirm(
+        'Bạn có chắc chắn muốn hủy nhắc gia hạn tự động cho chu kỳ sau? Bạn vẫn được sử dụng trọn vẹn quyền lợi đến hết thời hạn hiện tại, sau đó tài khoản sẽ tự động chuyển về Gói Cơ Bản.'
+      )
+    ) {
+      return;
+    }
+    setIsCancellingAutoRenew(true);
+    setCancelSuccessMsg(null);
+    try {
+      const res = await fetch('/api/billing/cancel-auto-renew', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Không thể hủy nhắc gia hạn');
+      }
+      setCancelSuccessMsg(
+        'Đã tắt nhắc gia hạn thành công. Tài khoản sẽ tự động chuyển về Gói Cơ Bản sau khi kết thúc chu kỳ hiện tại.'
+      );
+      fetchData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Lỗi khi xử lý hủy nhắc gia hạn');
+    } finally {
+      setIsCancellingAutoRenew(false);
+    }
+  };
+
   // Danh sách các gói hiển thị: ưu tiên từ DB, nếu DB chưa nạp đủ thì dùng bộ mã chuẩn
   const displayPlans = plans.length > 0
     ? plans
     : [
-        { id: '1', code: 'LEARNER_FREE', name: 'Gói Cơ Bản', description: '', price_vnd: 0, credits_included: 10, features: [] },
-        { id: '2', code: 'LEARNER_PLUS', name: 'Gói Tiêu Chuẩn', description: '', price_vnd: 49000, credits_included: 100, features: [] },
-        { id: '3', code: 'LEARNER_PRO', name: 'Gói Nâng Cao', description: '', price_vnd: 149000, credits_included: 500, features: [] },
+        { id: '1', code: 'BASIC', name: 'Gói Cơ Bản', description: '', price_vnd: 0, credits_included: 10, features: [] },
+        { id: '2', code: 'STANDARD', name: 'Gói Tiêu Chuẩn', description: '', price_vnd: 49000, credits_included: 100, features: [] },
+        { id: '3', code: 'ADVANCED', name: 'Gói Nâng Cao', description: '', price_vnd: 149000, credits_included: 500, features: [] },
       ];
 
   // Helper tìm tên gói hiện tại thân thiện
   const getCurrentPlanDisplayName = () => {
     if (planDetails?.planName) return planDetails.planName;
-    if (currentPlanCode === 'LEARNER_FREE' || currentPlanCode === 'FREE') return 'Gói Cơ Bản';
-    if (currentPlanCode === 'LEARNER_PLUS' || currentPlanCode === 'PLUS') return 'Gói Tiêu Chuẩn';
-    if (currentPlanCode === 'LEARNER_PRO' || currentPlanCode === 'PRO') return 'Gói Nâng Cao';
+    const normalized = (currentPlanCode || '').toUpperCase();
+    if (normalized === 'BASIC' || normalized === 'LEARNER_FREE' || normalized === 'FREE') return 'Gói Cơ Bản';
+    if (normalized === 'STANDARD' || normalized === 'LEARNER_PLUS' || normalized === 'PLUS') return 'Gói Tiêu Chuẩn';
+    if (normalized === 'ADVANCED' || normalized === 'LEARNER_PRO' || normalized === 'PRO') return 'Gói Nâng Cao';
+    if (normalized === 'ENTERPRISE' || normalized === 'ORG_CAMPUS' || normalized === 'BUSINESS') return 'Gói Tổ Chức';
     return currentPlanCode;
   };
+
+  const trialDaysRemaining = planDetails?.expiresAt
+    ? Math.max(0, Math.ceil((new Date(planDetails.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
@@ -208,7 +314,7 @@ export default function LearnerBillingPage() {
           Biểu Phí &amp; Gói Dịch Vụ Cá Nhân
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1 max-w-2xl leading-relaxed">
-          Tùy chọn gói dịch vụ phù hợp để mở khóa toàn diện 5 miền năng lực số, nhận chứng chỉ số có mã QR và nâng cấp AI credits cho lộ trình cá nhân.
+          Tùy chọn gói dịch vụ phù hợp để mở khóa toàn diện các miền năng lực số, nhận chứng chỉ số có mã QR và nâng cấp AI credits cho lộ trình cá nhân.
         </p>
       </div>
 
@@ -217,6 +323,47 @@ export default function LearnerBillingPage() {
         <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-medium flex items-center gap-2.5">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" strokeWidth={1.75} />
           <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Trialing Notice Banner */}
+      {planDetails?.isTrial && (
+        <div className="p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div className="text-blue-900 dark:text-blue-100 leading-relaxed">
+              <strong>Bạn đang sử dụng 30 ngày dùng thử miễn phí Gói Tiêu Chuẩn</strong>
+              {trialDaysRemaining !== null && ` (Còn ${trialDaysRemaining} ngày)`}.
+              {planDetails.autoRenew ? (
+                <span className="block sm:inline sm:ml-1 text-blue-700 dark:text-blue-300">
+                  Chu kỳ tiếp theo dự kiến bắt đầu từ{' '}
+                  {planDetails.expiresAt && new Date(planDetails.expiresAt).toLocaleDateString('vi-VN')}{' '}
+                  (49.000 đ/tháng).
+                </span>
+              ) : (
+                <span className="block sm:inline sm:ml-1 text-slate-600 dark:text-neutral-400">
+                  Đã tắt nhắc gia hạn; tài khoản sẽ tự động chuyển về Gói Cơ Bản khi hết hạn.
+                </span>
+              )}
+            </div>
+          </div>
+
+          {planDetails.autoRenew && (
+            <button
+              type="button"
+              onClick={handleCancelAutoRenew}
+              disabled={isCancellingAutoRenew}
+              className="shrink-0 px-3 py-1.5 rounded-full border border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-medium transition cursor-pointer text-[11px]"
+            >
+              {isCancellingAutoRenew ? 'Đang xử lý...' : 'Hủy gia hạn chu kỳ sau'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {cancelSuccessMsg && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium">
+          {cancelSuccessMsg}
         </div>
       )}
 
@@ -231,7 +378,7 @@ export default function LearnerBillingPage() {
               {getCurrentPlanDisplayName()}
             </h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              Đang hoạt động
+              {planDetails?.isTrial ? 'Dùng thử 30 ngày' : 'Đang hoạt động'}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-neutral-400 mt-1">
@@ -252,7 +399,7 @@ export default function LearnerBillingPage() {
           </div>
         </div>
 
-        {currentPlanCode !== 'LEARNER_PRO' && currentPlanCode !== 'PRO' && (
+        {currentPlanCode !== 'LEARNER_PRO' && currentPlanCode !== 'PRO' && currentPlanCode !== 'ADVANCED' && (
           <div className="shrink-0">
             <button
               type="button"
@@ -338,9 +485,12 @@ export default function LearnerBillingPage() {
 
             const isCurrent =
               currentPlanCode === p.code ||
-              (currentPlanCode === 'FREE' && p.code === 'LEARNER_FREE') ||
-              (currentPlanCode === 'PLUS' && p.code === 'LEARNER_PLUS') ||
-              (currentPlanCode === 'PRO' && p.code === 'LEARNER_PRO');
+              (currentPlanCode === 'FREE' && (p.code === 'BASIC' || p.code === 'LEARNER_FREE')) ||
+              (currentPlanCode === 'BASIC' && (p.code === 'LEARNER_FREE' || p.code === 'BASIC')) ||
+              (currentPlanCode === 'PLUS' && (p.code === 'STANDARD' || p.code === 'LEARNER_PLUS')) ||
+              (currentPlanCode === 'STANDARD' && (p.code === 'LEARNER_PLUS' || p.code === 'STANDARD')) ||
+              (currentPlanCode === 'PRO' && (p.code === 'ADVANCED' || p.code === 'LEARNER_PRO')) ||
+              (currentPlanCode === 'ADVANCED' && (p.code === 'LEARNER_PRO' || p.code === 'ADVANCED'));
 
             const isFree = config.monthlyPrice === 0;
             const isLoadingThis = loadingPlanCode === p.code;
@@ -490,7 +640,7 @@ export default function LearnerBillingPage() {
                         </>
                       ) : (
                         <>
-                          <span>{isFree ? 'Chuyển sang gói này' : isPopular ? 'Dùng thử ngay' : 'Nâng cấp ngay'}</span>
+                          <span>{isFree ? 'Chuyển sang gói này' : isPopular ? 'Dùng thử 30 ngày (0đ)' : 'Nâng cấp ngay'}</span>
                           <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                         </>
                       )}

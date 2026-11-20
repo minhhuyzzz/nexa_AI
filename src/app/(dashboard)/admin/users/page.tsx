@@ -34,7 +34,8 @@ interface UserRecord {
   email: string;
   role: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
   adminRole?: string;
-  planTier: 'FREE' | 'PRO' | 'BUSINESS';
+  planTier: string;
+  planDisplayName?: string;
   points: number;
   isSuspended: boolean;
   suspendedReason?: string | null;
@@ -74,7 +75,7 @@ function UsersContent() {
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<'LEARNER' | 'EVALUATOR' | 'ADMIN'>('LEARNER');
   const [newAdminRole, setNewAdminRole] = useState<string>('LEARNER');
-  const [newTier, setNewTier] = useState<'FREE' | 'PRO' | 'BUSINESS'>('FREE');
+  const [newTier, setNewTier] = useState<string>('BASIC');
   const [saving, setSaving] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
   const [editError, setEditError] = useState('');
@@ -289,9 +290,10 @@ function UsersContent() {
       (roleFilter === 'LEARNER' && u.role === 'LEARNER');
     const matchTier =
       tierFilter === 'ALL' ||
-      (tierFilter === 'BUSINESS' && u.planTier === 'BUSINESS') ||
-      (tierFilter === 'PRO' && u.planTier === 'PRO') ||
-      (tierFilter === 'FREE' && u.planTier === 'FREE');
+      (tierFilter === 'ENTERPRISE' && (u.planTier === 'ENTERPRISE' || u.planTier === 'BUSINESS')) ||
+      (tierFilter === 'ADVANCED' && (u.planTier === 'ADVANCED' || u.planTier === 'PRO')) ||
+      (tierFilter === 'STANDARD' && (u.planTier === 'STANDARD' || u.planTier === 'PLUS')) ||
+      (tierFilter === 'BASIC' && (u.planTier === 'BASIC' || u.planTier === 'FREE'));
     const matchStatus =
       statusFilter === 'ALL' ||
       (statusFilter === 'ACTIVE' && !u.isSuspended) ||
@@ -407,12 +409,13 @@ function UsersContent() {
           <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-hidden focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
             <option value="ALL">Gói: Tất cả</option>
-            <option value="FREE">Free</option>
-            <option value="PRO">Pro</option>
-            <option value="BUSINESS">Business</option>
+            <option value="BASIC">Gói Cơ Bản (0đ)</option>
+            <option value="STANDARD">Gói Tiêu Chuẩn (49k)</option>
+            <option value="ADVANCED">Gói Nâng Cao (149k)</option>
+            <option value="ENTERPRISE">Gói Tổ Chức (B2B)</option>
           </select>
 
           <select
@@ -540,16 +543,28 @@ function UsersContent() {
                         </div>
                       </td>
 
-                      {/* Gói dịch vụ: Free, Pro, Business */}
+                      {/* Gói dịch vụ: 4 Gói chuẩn hóa */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                          u.planTier === 'BUSINESS'
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800'
-                            : u.planTier === 'PRO'
-                            ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
-                        }`}>
-                          {u.planTier === 'BUSINESS' ? 'Business' : u.planTier === 'PRO' ? 'Pro' : 'Free'}
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide inline-flex items-center gap-1 ${
+                            u.planTier === 'ENTERPRISE' || u.planTier === 'BUSINESS'
+                              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-800'
+                              : u.planTier === 'ADVANCED' || u.planTier === 'PRO'
+                              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800'
+                              : u.planTier === 'STANDARD' || u.planTier === 'PLUS'
+                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 ring-1 ring-blue-200 dark:ring-blue-800'
+                              : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'
+                          }`}
+                        >
+                          {u.planDisplayName || (
+                            u.planTier === 'ENTERPRISE' || u.planTier === 'BUSINESS'
+                              ? 'Gói Tổ Chức'
+                              : u.planTier === 'ADVANCED' || u.planTier === 'PRO'
+                              ? 'Gói Nâng Cao'
+                              : u.planTier === 'STANDARD' || u.planTier === 'PLUS'
+                              ? 'Gói Tiêu Chuẩn'
+                              : 'Gói Cơ Bản'
+                          )}
                         </span>
                       </td>
 
@@ -679,17 +694,18 @@ function UsersContent() {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                  Gói dịch vụ
+                <label className="block font-bold text-xs text-slate-700 dark:text-zinc-300 mb-1">
+                  Gói dịch vụ (Tự động cấp bù AI credits &amp; 30 ngày thời hạn)
                 </label>
                 <select
                   value={newTier}
-                  onChange={(e) => setNewTier(e.target.value as any)}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+                  onChange={(e) => setNewTier(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="FREE">Gói Miễn phí</option>
-                  <option value="PRO">Gói Chuyên sâu</option>
-                  <option value="BUSINESS">Gói Doanh nghiệp (Business)</option>
+                  <option value="BASIC">Gói Cơ Bản (10 AI credits / tháng - 0đ)</option>
+                  <option value="STANDARD">Gói Tiêu Chuẩn (100 AI credits / tháng - 49.000đ)</option>
+                  <option value="ADVANCED">Gói Nâng Cao (500 AI credits / tháng - 149.000đ)</option>
+                  <option value="ENTERPRISE">Gói Tổ Chức (10.000 AI credits - B2B)</option>
                 </select>
               </div>
 

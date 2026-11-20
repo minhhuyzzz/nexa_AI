@@ -3155,54 +3155,176 @@ export type Database = {
       }
       service_plans: {
         Row: {
+          annual_price_vnd: number
+          badge: string | null
           billing_cycle: string
           code: string
           created_at: string
           credits_included: number
           description: string | null
+          export_csv_excel: boolean
           features: Json
           id: string
           is_active: boolean
+          max_classes: number
+          max_class_members: number
+          max_live_participants: number
           max_members: number
           name: string
           price_vnd: number
           role_target: string
+          sha256_certificate: boolean
           sort_order: number
+          trial_days: number
+          unlock_advanced_exams: boolean
           updated_at: string
+          yearly_monthly_equivalent: number
         }
         Insert: {
+          annual_price_vnd?: number
+          badge?: string | null
           billing_cycle?: string
           code: string
           created_at?: string
           credits_included?: number
           description?: string | null
+          export_csv_excel?: boolean
           features?: Json
           id?: string
           is_active?: boolean
+          max_classes?: number
+          max_class_members?: number
+          max_live_participants?: number
           max_members?: number
           name: string
           price_vnd?: number
           role_target?: string
+          sha256_certificate?: boolean
           sort_order?: number
+          trial_days?: number
+          unlock_advanced_exams?: boolean
           updated_at?: string
+          yearly_monthly_equivalent?: number
         }
         Update: {
+          annual_price_vnd?: number
+          badge?: string | null
           billing_cycle?: string
           code?: string
           created_at?: string
           credits_included?: number
           description?: string | null
+          export_csv_excel?: boolean
           features?: Json
           id?: string
           is_active?: boolean
+          max_classes?: number
+          max_class_members?: number
+          max_live_participants?: number
           max_members?: number
           name?: string
           price_vnd?: number
           role_target?: string
+          sha256_certificate?: boolean
           sort_order?: number
+          trial_days?: number
+          unlock_advanced_exams?: boolean
           updated_at?: string
+          yearly_monthly_equivalent?: number
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          auto_renew: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          plan_code: string
+          plan_id: string | null
+          starts_at: string
+          status: string
+          trial_ended_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan_code: string
+          plan_id?: string | null
+          starts_at?: string
+          status?: string
+          trial_ended_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan_code?: string
+          plan_id?: string | null
+          starts_at?: string
+          status?: string
+          trial_ended_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "service_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_trial_history: {
+        Row: {
+          created_at: string
+          id: string
+          plan_code: string
+          trial_expires_at: string
+          trial_started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_code: string
+          trial_expires_at?: string
+          trial_started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_code?: string
+          trial_expires_at?: string
+          trial_started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_trial_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       submission_answers: {
         Row: {
