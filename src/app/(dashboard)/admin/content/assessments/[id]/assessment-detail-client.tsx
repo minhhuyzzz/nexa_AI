@@ -158,7 +158,7 @@ export function AdminAssessmentDetailClient({
       });
       if (!res.ok) throw new Error('Lỗi cập nhật');
       setAssessment((prev) => ({ ...prev, is_published: nextPublished }));
-      showToast(nextPublished ? 'Đã công khai bài thi' : 'Đã chuyển về bản nháp (ẩn)');
+      showToast(nextPublished ? 'Đã công khai bài thi' : 'Đã chuyển về nội bộ');
     } catch {
       showToast('Không thể cập nhật trạng thái phát hành.');
     }
@@ -799,7 +799,7 @@ export function AdminAssessmentDetailClient({
                     assessment.is_published ? 'bg-emerald-600' : 'bg-slate-400'
                   }`}
                 />
-                <span>{assessment.is_published ? 'ĐANG PHÁT HÀNH' : 'BẢN NHÁP (ẨN)'}</span>
+                <span>{assessment.is_published ? 'ĐANG PHÁT HÀNH' : 'NỘI BỘ'}</span>
               </button>
             </div>
 

@@ -23,7 +23,7 @@ export default async function AdminNewAssessmentPage() {
   const { data: newAsm, error } = await supabase
     .from('assessments')
     .insert({
-      title: 'Đề Khảo Thí Chuẩn Mới (Bản nháp)',
+      title: 'Đề Khảo Thí Chuẩn Mới (Nội bộ)',
       description: 'Bài khảo thí chuẩn hóa đo lường 5 miền năng lực số toàn diện.',
       duration_minutes: 45,
       passing_score: 70,

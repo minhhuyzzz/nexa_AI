@@ -207,7 +207,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
             {assessment.is_published ? (
               <span className="text-emerald-600 dark:text-emerald-400">Đã phát hành</span>
             ) : (
-              <span className="text-slate-500 dark:text-neutral-400">Bản nháp</span>
+              <span className="text-slate-500 dark:text-neutral-400">Nội bộ</span>
             )}
           </div>
         </div>

@@ -464,7 +464,7 @@ export function AdminAssessmentBankClient({
       showToast(
         nextPublished
           ? `Đã phát hành bài thi "${exam.title}" lên kho khảo thí!`
-          : `Đã chuyển bài thi "${exam.title}" về trạng thái Bản nháp`
+          : `Đã chuyển bài thi "${exam.title}" về trạng thái Nội bộ`
       );
     } catch (err) {
       showToast('Không thể cập nhật trạng thái phát hành.');
@@ -524,7 +524,7 @@ export function AdminAssessmentBankClient({
       };
 
       setAssessments((prev) => [clonedRecord, ...prev]);
-      showToast('Đã nhân bản đề thi sang phiên bản mới (Bản nháp)!');
+      showToast('Đã nhân bản đề thi sang phiên bản mới (Nội bộ)!');
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi nhân bản bài khảo thí');
     } finally {
@@ -737,7 +737,7 @@ export function AdminAssessmentBankClient({
           >
             <option value="ALL">Trạng thái: Tất cả</option>
             <option value="PUBLISHED">Đang phát hành</option>
-            <option value="DRAFT">Bản nháp</option>
+            <option value="DRAFT">Nội bộ</option>
           </select>
 
           <select
@@ -776,7 +776,7 @@ export function AdminAssessmentBankClient({
                   <th className="py-3 px-4 min-w-[130px]">Miền năng lực</th>
                   <th className="py-3 px-4 min-w-[120px]">Dạng câu hỏi</th>
                   <th className="py-3 px-4 text-center min-w-[65px]">Số câu</th>
-                  <th className="py-3 px-4 min-w-[150px]">Thời gian &amp; ngưỡng đạt</th>
+                  <th className="py-3 px-4 min-w-[150px]">Thời gian và ngưỡng đạt</th>
                   <th className="py-3 px-4 text-center min-w-[85px]">Phân hạng</th>
                   <th className="py-3 px-4 min-w-[130px]">Trạng thái</th>
                   <th className="py-3 px-4 text-right min-w-[90px]">Thao tác</th>
@@ -885,7 +885,7 @@ export function AdminAssessmentBankClient({
                         <button
                           type="button"
                           onClick={() => handleTogglePublish(exam)}
-                          title={exam.is_published ? 'Đang phát hành (Bấm để chuyển về Bản nháp)' : 'Bản nháp (Bấm để kích hoạt phát hành)'}
+                          title={exam.is_published ? 'Đang phát hành (Bấm để chuyển về Nội bộ)' : 'Nội bộ (Bấm để kích hoạt phát hành)'}
                           className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors"
                         >
                           <span
@@ -894,7 +894,7 @@ export function AdminAssessmentBankClient({
                             }`}
                           />
                           <span className={exam.is_published ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-600 dark:text-zinc-400 font-medium'}>
-                            {exam.is_published ? 'Đang phát hành' : 'Bản nháp'}
+                            {exam.is_published ? 'Đang phát hành' : 'Nội bộ'}
                           </span>
                         </button>
                       </td>
@@ -995,7 +995,7 @@ export function AdminAssessmentBankClient({
             {dropdownMenu.exam.is_published ? (
               <>
                 <Ban className="w-3.5 h-3.5 text-amber-600" />
-                <span>Chuyển về Bản nháp</span>
+                <span>Chuyển về Nội bộ</span>
               </>
             ) : (
               <>
@@ -1625,7 +1625,7 @@ export function AdminAssessmentBankClient({
                               : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900'
                           }`}
                         >
-                          Bản nháp
+                          Nội bộ
                         </button>
                         <button
                           type="button"
