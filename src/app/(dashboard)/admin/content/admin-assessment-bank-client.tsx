@@ -726,7 +726,7 @@ export function AdminAssessmentBankClient({
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-32">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-2">
@@ -850,7 +850,7 @@ export function AdminAssessmentBankClient({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 text-xs font-medium">
-                  <th className="py-3 px-3 w-[44px] text-center">
+                  <th className="py-3 px-2 w-[38px] text-center">
                     <input
                       type="checkbox"
                       checked={filteredAssessments.length > 0 && selectedIds.length === filteredAssessments.length}
@@ -859,15 +859,15 @@ export function AdminAssessmentBankClient({
                       title="Chọn tất cả bài khảo thí"
                     />
                   </th>
-                  <th className="py-3 px-3 w-[50px] text-center font-medium">STT</th>
-                  <th className="py-3 px-4 min-w-[260px]">Bài khảo thí</th>
-                  <th className="py-3 px-4 min-w-[130px]">Miền năng lực</th>
-                  <th className="py-3 px-4 min-w-[120px]">Dạng câu hỏi</th>
-                  <th className="py-3 px-4 text-center min-w-[65px]">Số câu</th>
-                  <th className="py-3 px-4 min-w-[150px]">Thời gian và ngưỡng đạt</th>
-                  <th className="py-3 px-4 text-center min-w-[85px]">Phân hạng</th>
-                  <th className="py-3 px-4 min-w-[130px]">Trạng thái</th>
-                  <th className="py-3 px-4 text-right min-w-[90px]">Thao tác</th>
+                  <th className="py-3 px-2 w-[42px] text-center font-medium">STT</th>
+                  <th className="py-3 px-3 max-w-[200px] xl:max-w-[240px]">Bài khảo thí</th>
+                  <th className="py-3 px-3 whitespace-nowrap">Miền năng lực</th>
+                  <th className="py-3 px-3 whitespace-nowrap">Dạng câu hỏi</th>
+                  <th className="py-3 px-2 text-center whitespace-nowrap">Số câu</th>
+                  <th className="py-3 px-3 whitespace-nowrap">Thời gian và ngưỡng đạt</th>
+                  <th className="py-3 px-2 text-center whitespace-nowrap">Phân hạng</th>
+                  <th className="py-3 px-3 whitespace-nowrap">Trạng thái</th>
+                  <th className="py-3 px-3 text-right whitespace-nowrap min-w-[85px]">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -883,7 +883,7 @@ export function AdminAssessmentBankClient({
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="py-3.5 px-3 text-center">
+                      <td className="py-3.5 px-2 text-center">
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -893,17 +893,17 @@ export function AdminAssessmentBankClient({
                       </td>
 
                       {/* STT */}
-                      <td className="py-3.5 px-3 text-center font-mono tabular-nums text-slate-500 dark:text-zinc-400">
+                      <td className="py-3.5 px-2 text-center font-mono tabular-nums text-slate-500 dark:text-zinc-400">
                         {String(index + 1).padStart(2, '0')}
                       </td>
 
                       {/* Bài khảo thí */}
-                      <td className="py-3.5 px-4 min-w-[260px] max-w-[420px]">
-                        <div className="flex items-center gap-2">
+                      <td className="py-3.5 px-3 max-w-[200px] xl:max-w-[240px]">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <div className="group relative min-w-0 flex-1">
                             <Link
                               href={`/admin/content/assessments/${exam.id}`}
-                              className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block transition-colors leading-snug cursor-pointer line-clamp-1"
+                              className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400 block transition-colors leading-snug cursor-pointer truncate"
                               title={exam.title}
                             >
                               {exam.title}
@@ -920,7 +920,7 @@ export function AdminAssessmentBankClient({
                           </div>
 
                           {Boolean(exam.id === 'a0000000-0000-0000-0000-000000000001' || exam.title?.toLowerCase().includes('đầu vào')) && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
                               Đầu Vào
                             </span>
                           )}
@@ -928,28 +928,28 @@ export function AdminAssessmentBankClient({
                       </td>
 
                       {/* Miền năng lực */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium">
                           {exam.domainName}
                         </span>
                       </td>
 
                       {/* Dạng câu hỏi */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <span className="text-slate-600 dark:text-zinc-400">
-                          {exam.typeLabel || 'Trắc nghiệm (MCQ)'}
+                          {exam.typeLabel || 'Trắc nghiệm'}
                         </span>
                       </td>
 
                       {/* Số câu */}
-                      <td className="py-3.5 px-4 text-center font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                      <td className="py-3.5 px-2 text-center font-bold tabular-nums text-neutral-900 dark:text-neutral-100 whitespace-nowrap">
                         {exam.questionCount}
                       </td>
 
-                      {/* Thời gian & ngưỡng đạt */}
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-zinc-400 whitespace-nowrap">
+                      {/* Thời gian và ngưỡng đạt */}
+                      <td className="py-3.5 px-3 text-slate-600 dark:text-zinc-400 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>{exam.duration_minutes} phút</span>
                           <span>|</span>
                           <span>≥ {exam.passing_score}%</span>
@@ -957,7 +957,7 @@ export function AdminAssessmentBankClient({
                       </td>
 
                       {/* Phân hạng */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <td className="py-3.5 px-2 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleToggleVip(exam)}
@@ -982,7 +982,7 @@ export function AdminAssessmentBankClient({
                       </td>
 
                       {/* Trạng thái phát hành */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleTogglePublish(exam)}
@@ -1001,7 +1001,7 @@ export function AdminAssessmentBankClient({
                       </td>
 
                       {/* Thao tác */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-right whitespace-nowrap min-w-[85px]">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
