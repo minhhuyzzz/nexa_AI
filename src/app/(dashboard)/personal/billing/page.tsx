@@ -62,10 +62,12 @@ const PLAN_CONFIG: Record<
     yearlyMonthlyEquivalent: 0,
     creditsMonthly: 10,
     features: [
-      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
-      '10 AI credits / tháng',
-      'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
+      'Khảo sát các miền năng lực số chuẩn hóa',
       'Lưu trữ hồ sơ năng lực số cá nhân',
+      'Cấp chứng chỉ số khi hoàn thành bài thi',
+      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (30 thí sinh)',
+      '10 AI credits / tháng',
     ],
   },
   STANDARD: {
@@ -79,11 +81,13 @@ const PLAN_CONFIG: Record<
     yearlyMonthlyEquivalent: 39000,
     creditsMonthly: 100,
     features: [
-      'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
-      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
-      '100 AI credits / tháng',
-      'Chứng chỉ số',
+      'Toàn bộ quyền lợi gói Cơ Bản',
+      'Tặng 30 ngày dùng thử 0đ tháng đầu tiên',
+      'Mở trọn vẹn các miền năng lực số và học liệu bồi dưỡng',
       'Lộ trình học tập cá nhân hóa',
+      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (100 thí sinh)',
+      '100 AI credits / tháng',
     ],
   },
   ADVANCED: {
@@ -97,26 +101,24 @@ const PLAN_CONFIG: Record<
     features: [
       'Toàn bộ quyền lợi gói Tiêu Chuẩn',
       'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (500 thí sinh)',
       '500 AI credits / tháng',
-      'Mở phòng thi trực tiếp mã PIN thời gian thực',
-      'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu',
+      'Xuất bảng điểm Excel, CSV và dữ liệu nghiên cứu',
     ],
   },
   ENTERPRISE: {
     name: 'Gói Tổ Chức',
-    badge: 'TRƯỜNG HỌC & DOANH NGHIỆP',
-    desc: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung & cấp chứng nhận đồng thương hiệu.',
+    badge: 'TRƯỜNG HỌC VÀ DOANH NGHIỆP',
+    desc: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung và chứng nhận đơn vị.',
     monthlyPrice: 0,
     yearlyPrice: 0,
     yearlyMonthlyEquivalent: 0,
     creditsMonthly: 10000,
     features: [
-      'Khảo thí diện rộng theo đợt (Campaigns)',
-      'Báo cáo độ trưởng thành số cấp đơn vị',
-      'Bàn chấm hội đồng tập trung & chấm chéo',
-      'Chứng chỉ số gắn Logo thương hiệu riêng',
-      'Tích hợp SSO & LMS (Canvas, Moodle...)',
-      'Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA',
+      'Khảo thí diện rộng theo đợt cho đơn vị (Campaigns)',
+      'Báo cáo và thống kê năng lực số cấp tổ chức',
+      'Cấp chứng chỉ số gắn tên và logo đơn vị',
+      'Hợp đồng dịch vụ, hóa đơn VAT và cam kết hỗ trợ',
     ],
   },
   LEARNER_FREE: {
@@ -128,10 +130,12 @@ const PLAN_CONFIG: Record<
     yearlyMonthlyEquivalent: 0,
     creditsMonthly: 10,
     features: [
-      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
-      '10 AI credits / tháng',
-      'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
+      'Khảo sát các miền năng lực số chuẩn hóa',
       'Lưu trữ hồ sơ năng lực số cá nhân',
+      'Cấp chứng chỉ số khi hoàn thành bài thi',
+      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (30 thí sinh)',
+      '10 AI credits / tháng',
     ],
   },
   LEARNER_PLUS: {
@@ -145,11 +149,13 @@ const PLAN_CONFIG: Record<
     yearlyMonthlyEquivalent: 39000,
     creditsMonthly: 100,
     features: [
-      'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
-      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
-      '100 AI credits / tháng',
-      'Chứng chỉ số',
+      'Toàn bộ quyền lợi gói Cơ Bản',
+      'Tặng 30 ngày dùng thử 0đ tháng đầu tiên',
+      'Mở trọn vẹn các miền năng lực số và học liệu bồi dưỡng',
       'Lộ trình học tập cá nhân hóa',
+      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (100 thí sinh)',
+      '100 AI credits / tháng',
     ],
   },
   LEARNER_PRO: {
@@ -163,9 +169,9 @@ const PLAN_CONFIG: Record<
     features: [
       'Toàn bộ quyền lợi gói Tiêu Chuẩn',
       'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (500 thí sinh)',
       '500 AI credits / tháng',
-      'Mở phòng thi trực tiếp mã PIN thời gian thực',
-      'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu',
+      'Xuất bảng điểm Excel, CSV và dữ liệu nghiên cứu',
     ],
   },
 };
@@ -307,11 +313,11 @@ export default function LearnerBillingPage() {
         <div className="flex items-center gap-2 mb-1">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
           <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
-            TÀI KHOẢN &amp; HẠN MỨC
+            TÀI KHOẢN VÀ HẠN MỨC
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-          Biểu Phí &amp; Gói Dịch Vụ Cá Nhân
+          Biểu Phí và Gói Dịch Vụ Cá Nhân
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1 max-w-2xl leading-relaxed">
           Tùy chọn gói dịch vụ phù hợp để mở khóa toàn diện các miền năng lực số, nhận chứng chỉ số có mã QR và nâng cấp AI credits cho lộ trình cá nhân.
@@ -653,11 +659,11 @@ export default function LearnerBillingPage() {
         </div>
       )}
 
-      {/* 5. Lịch sử giao dịch & Hóa đơn */}
+      {/* 5. Lịch sử giao dịch và Hóa đơn */}
       <div className="space-y-3 pt-2">
         <div>
           <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-            Lịch sử giao dịch &amp; Hóa đơn
+            Lịch sử giao dịch và Hóa đơn
           </h2>
           <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
             Theo dõi chi tiết các lượt đăng ký, nâng cấp và gia hạn dịch vụ của tài khoản.
@@ -742,13 +748,13 @@ export default function LearnerBillingPage() {
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-mono font-bold tracking-wider uppercase border border-white/15">
               <Building2 className="w-3.5 h-3.5 text-blue-300" />
-              <span>DÀNH CHO TỔ CHỨC &amp; TRƯỜNG HỌC</span>
+              <span>DÀNH CHO TỔ CHỨC VÀ TRƯỜNG HỌC</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
               Bạn đang đại diện cho Trường học hoặc Doanh nghiệp?
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              NEXA cung cấp giải pháp khảo thí năng lực số diện rộng cho toàn trường, hội đồng chấm tập trung, tích hợp đăng nhập SSO/LMS và cấp chứng chỉ số đồng thương hiệu.
+              NEXA cung cấp giải pháp khảo thí năng lực số diện rộng cho toàn trường, báo cáo độ trưởng thành số cấp đơn vị và chứng chỉ số gắn nhận diện riêng của tổ chức.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
@@ -758,7 +764,7 @@ export default function LearnerBillingPage() {
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-200">
                 <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>Bàn chấm hội đồng tập trung &amp; chấm chéo</span>
+                <span>Hợp đồng dịch vụ và hóa đơn VAT</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-200">
                 <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />

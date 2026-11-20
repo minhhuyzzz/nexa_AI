@@ -16,6 +16,121 @@ const planSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+const CANONICAL_PLAN_CODES = ['BASIC', 'STANDARD', 'ADVANCED', 'ENTERPRISE'];
+
+const CANONICAL_PLANS_SEED = [
+  {
+    code: 'BASIC',
+    role_target: 'LEARNER',
+    name: 'Gói Cơ Bản',
+    badge: 'TRẢI NGHIỆM',
+    description: 'Khảo sát năng lực số cơ bản và lưu trữ hồ sơ cá nhân.',
+    price_vnd: 0,
+    annual_price_vnd: 0,
+    yearly_monthly_equivalent: 0,
+    trial_days: 0,
+    credits_included: 10,
+    max_classes: 2,
+    max_class_members: 30,
+    max_live_participants: 30,
+    unlock_advanced_exams: false,
+    sha256_certificate: true,
+    export_csv_excel: false,
+    features: [
+      'Khảo sát các miền năng lực số chuẩn hóa',
+      'Lưu trữ hồ sơ năng lực số cá nhân',
+      'Cấp chứng chỉ số khi hoàn thành bài thi',
+      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (30 thí sinh)',
+      '10 AI credits / tháng',
+    ],
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    code: 'STANDARD',
+    role_target: 'LEARNER',
+    name: 'Gói Tiêu Chuẩn',
+    badge: 'PHỔ BIẾN NHẤT',
+    description: 'Mở khóa trọn vẹn các miền bồi dưỡng và cấp chứng chỉ số.',
+    price_vnd: 49000,
+    annual_price_vnd: 468000,
+    yearly_monthly_equivalent: 39000,
+    trial_days: 30,
+    credits_included: 100,
+    max_classes: 10,
+    max_class_members: 100,
+    max_live_participants: 100,
+    unlock_advanced_exams: true,
+    sha256_certificate: true,
+    export_csv_excel: false,
+    features: [
+      'Toàn bộ quyền lợi gói Cơ Bản',
+      'Tặng 30 ngày dùng thử 0đ tháng đầu tiên',
+      'Mở trọn vẹn các miền năng lực số và học liệu bồi dưỡng',
+      'Lộ trình học tập cá nhân hóa',
+      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (100 thí sinh)',
+      '100 AI credits / tháng',
+    ],
+    is_active: true,
+    sort_order: 2,
+  },
+  {
+    code: 'ADVANCED',
+    role_target: 'LEARNER',
+    name: 'Gói Nâng Cao',
+    badge: 'TOÀN DIỆN',
+    description: 'Dành cho cá nhân bồi dưỡng chuyên sâu và tổ chức thi trực tiếp.',
+    price_vnd: 149000,
+    annual_price_vnd: 1428000,
+    yearly_monthly_equivalent: 119000,
+    trial_days: 0,
+    credits_included: 500,
+    max_classes: 9999,
+    max_class_members: 500,
+    max_live_participants: 500,
+    unlock_advanced_exams: true,
+    sha256_certificate: true,
+    export_csv_excel: true,
+    features: [
+      'Toàn bộ quyền lợi gói Tiêu Chuẩn',
+      'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (500 thí sinh)',
+      '500 AI credits / tháng',
+      'Xuất bảng điểm Excel, CSV và dữ liệu nghiên cứu',
+    ],
+    is_active: true,
+    sort_order: 3,
+  },
+  {
+    code: 'ENTERPRISE',
+    role_target: 'ORGANIZATION',
+    name: 'Gói Tổ Chức',
+    badge: 'TRƯỜNG HỌC VÀ DOANH NGHIỆP',
+    description: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung và chứng nhận đơn vị.',
+    price_vnd: 0,
+    annual_price_vnd: 0,
+    yearly_monthly_equivalent: 0,
+    trial_days: 0,
+    credits_included: 10000,
+    max_classes: 99999,
+    max_class_members: 50000,
+    max_live_participants: 50000,
+    unlock_advanced_exams: true,
+    sha256_certificate: true,
+    export_csv_excel: true,
+    features: [
+      'Khảo thí diện rộng theo đợt cho đơn vị (Campaigns)',
+      'Báo cáo và thống kê năng lực số cấp tổ chức',
+      'Cấp chứng chỉ số gắn tên và logo đơn vị',
+      'Hợp đồng dịch vụ, hóa đơn VAT và cam kết hỗ trợ',
+    ],
+    is_active: true,
+    sort_order: 4,
+  },
+];
+
 export async function GET() {
   try {
     const auth = await requirePlatformAdmin();
@@ -26,8 +141,6 @@ export async function GET() {
     const adminSupabase = createAdminClient();
 
     // Khóa chặt chỉ trả về đúng 4 gói chuẩn hóa của toàn hệ sinh thái NEXA
-    const CANONICAL_PLAN_CODES = ['BASIC', 'STANDARD', 'ADVANCED', 'ENTERPRISE'];
-
     const { data: plans, error } = await adminSupabase
       .from('service_plans')
       .select('*')
@@ -39,7 +152,15 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, plans: plans || [] });
+    // Nếu CSDL chưa có đủ 4 gói canonical, tự động khởi tạo và trả về dữ liệu chuẩn
+    if (!plans || plans.length === 0) {
+      for (const seed of CANONICAL_PLANS_SEED) {
+        await adminSupabase.from('service_plans').upsert(seed, { onConflict: 'code' });
+      }
+      return NextResponse.json({ success: true, plans: CANONICAL_PLANS_SEED });
+    }
+
+    return NextResponse.json({ success: true, plans });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });

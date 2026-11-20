@@ -61,19 +61,17 @@ function UsersContent() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Filters (Chuẩn Ảnh 2)
+  // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SUSPENDED'>('ALL');
-  const [roleFilter, setRoleFilter] = useState('ALL');
   const [tierFilter, setTierFilter] = useState('ALL');
-  const [workspaceFilter, setWorkspaceFilter] = useState('ALL');
 
   // Action Menu dropdown
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   // Edit Role & Plan Modal State
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
-  const [newRole, setNewRole] = useState<'LEARNER' | 'EVALUATOR' | 'ADMIN'>('LEARNER');
+  const [newRole, setNewRole] = useState<'LEARNER' | 'ADMIN'>('LEARNER');
   const [newAdminRole, setNewAdminRole] = useState<string>('LEARNER');
   const [newTier, setNewTier] = useState<string>('BASIC');
   const [saving, setSaving] = useState(false);
@@ -110,7 +108,7 @@ function UsersContent() {
 
   const handleOpenEdit = (user: UserRecord) => {
     setEditingUser(user);
-    setNewRole(user.role);
+    setNewRole(user.role === 'ADMIN' ? 'ADMIN' : 'LEARNER');
     setNewAdminRole(user.adminRole || (user.role === 'ADMIN' ? 'SUPER_ADMIN' : 'LEARNER'));
     setNewTier(user.planTier);
     setActionMsg('');
@@ -283,11 +281,6 @@ function UsersContent() {
       u.email.toLowerCase().includes(search.toLowerCase()) ||
       u.fullName.toLowerCase().includes(search.toLowerCase()) ||
       u.id.toLowerCase().includes(search.toLowerCase());
-    const matchRole =
-      roleFilter === 'ALL' ||
-      (roleFilter === 'ADMIN' && u.role === 'ADMIN') ||
-      (roleFilter === 'EVALUATOR' && u.role === 'EVALUATOR') ||
-      (roleFilter === 'LEARNER' && u.role === 'LEARNER');
     const matchTier =
       tierFilter === 'ALL' ||
       (tierFilter === 'ENTERPRISE' && (u.planTier === 'ENTERPRISE' || u.planTier === 'BUSINESS')) ||
@@ -299,25 +292,21 @@ function UsersContent() {
       (statusFilter === 'ACTIVE' && !u.isSuspended) ||
       (statusFilter === 'SUSPENDED' && u.isSuspended);
 
-    return matchQuery && matchRole && matchTier && matchStatus;
+    return matchQuery && matchTier && matchStatus;
   });
 
   const totalUsersCount = users.length;
-  const learnersCount = users.filter((u) => u.role === 'LEARNER').length;
-  const evaluatorsCount = users.filter((u) => u.role === 'EVALUATOR').length;
+  const activeCount = users.filter((u) => !u.isSuspended).length;
   const suspendedCount = users.filter((u) => u.isSuspended).length;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header (Chuẩn Ảnh 2) */}
+      {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản lý người dùng &amp; tài khoản
+            Quản lý người dùng và tài khoản
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Quản trị tài khoản hệ thống, chuyên gia, học viên và quyền truy cập nền tảng.
-          </p>
         </div>
       </div>
 
@@ -343,35 +332,26 @@ function UsersContent() {
         </div>
       )}
 
-      {/* 2. Top 4 KPI Metrics (Chuẩn Ảnh 2) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. Top 3 KPI Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <AdminKpiCard
           label="Tổng người dùng"
           value={totalUsersCount.toLocaleString('vi-VN')}
-          timeframe="Tài khoản trên toàn hệ thống"
           icon={Users}
         />
         <AdminKpiCard
-          label="Học viên"
-          value={learnersCount.toLocaleString('vi-VN')}
-          timeframe="Người dùng cá nhân & thành viên"
-          icon={GraduationCap}
-        />
-        <AdminKpiCard
-          label="Khảo thí viên"
-          value={evaluatorsCount.toLocaleString('vi-VN')}
-          timeframe="Cán bộ khảo thí & đánh giá"
-          icon={Award}
+          label="Đang hoạt động"
+          value={activeCount.toLocaleString('vi-VN')}
+          icon={UserCheck}
         />
         <AdminKpiCard
           label="Tài khoản bị khóa"
           value={suspendedCount.toLocaleString('vi-VN')}
-          timeframe={suspendedCount > 0 ? 'Tài khoản đang bị tạm ngưng' : 'Không có tài khoản bị khóa'}
           icon={Lock}
         />
       </div>
 
-      {/* 3. Toolbar Filters (Chuẩn Ảnh 2) */}
+      {/* 3. Toolbar Filters */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         <div className="flex-1 relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -396,34 +376,15 @@ function UsersContent() {
           </select>
 
           <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
-          >
-            <option value="ALL">Vai trò: Tất cả</option>
-            <option value="ADMIN">Quản trị hệ thống</option>
-            <option value="EVALUATOR">Khảo thí viên</option>
-            <option value="LEARNER">Học viên</option>
-          </select>
-
-          <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-hidden focus:ring-2 focus:ring-blue-600 shadow-xs"
-          >
-            <option value="ALL">Gói: Tất cả</option>
-            <option value="BASIC">Gói Cơ Bản (0đ)</option>
-            <option value="STANDARD">Gói Tiêu Chuẩn (49k)</option>
-            <option value="ADVANCED">Gói Nâng Cao (149k)</option>
-            <option value="ENTERPRISE">Gói Tổ Chức (B2B)</option>
-          </select>
-
-          <select
-            value={workspaceFilter}
-            onChange={(e) => setWorkspaceFilter(e.target.value)}
             className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
-            <option value="ALL">Workspace: Tất cả</option>
+            <option value="ALL">Gói: Tất cả</option>
+            <option value="BASIC">Gói Cơ Bản</option>
+            <option value="STANDARD">Gói Tiêu Chuẩn</option>
+            <option value="ADVANCED">Gói Nâng Cao</option>
+            <option value="ENTERPRISE">Gói Tổ Chức</option>
           </select>
 
           <button
@@ -530,16 +491,17 @@ function UsersContent() {
                       {/* Vai trò */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300">
-                          {u.role === 'ADMIN' && <Shield className="w-3.5 h-3.5 text-blue-600" />}
-                          {u.role === 'EVALUATOR' && <Award className="w-3.5 h-3.5 text-blue-600" />}
-                          {u.role === 'LEARNER' && <GraduationCap className="w-3.5 h-3.5 text-slate-400" />}
-                          <span>
-                            {u.role === 'ADMIN'
-                              ? 'Quản trị hệ thống'
-                              : u.role === 'EVALUATOR'
-                              ? 'Khảo thí viên'
-                              : 'Học viên'}
-                          </span>
+                          {u.role === 'ADMIN' ? (
+                            <>
+                              <Shield className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Quản trị hệ thống</span>
+                            </>
+                          ) : (
+                            <>
+                              <Users className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Người dùng</span>
+                            </>
+                          )}
                         </div>
                       </td>
 
@@ -618,7 +580,7 @@ function UsersContent() {
                               className="w-full px-3 py-1.5 text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2"
                             >
                               <Shield className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Phân quyền &amp; Gói</span>
+                              <span>Phân quyền và Gói</span>
                             </button>
                             <button
                               onClick={() => handleToggleSuspend(u)}
@@ -661,7 +623,7 @@ function UsersContent() {
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3">
               <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                Phân quyền &amp; Gói: {editingUser.email}
+                Phân quyền và Gói: {editingUser.email}
               </h3>
               <button
                 onClick={() => setEditingUser(null)}
@@ -687,25 +649,24 @@ function UsersContent() {
                   onChange={(e) => setNewRole(e.target.value as any)}
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                 >
-                  <option value="LEARNER">Học viên (LEARNER)</option>
-                  <option value="EVALUATOR">Khảo thí viên (EVALUATOR)</option>
+                  <option value="LEARNER">Người dùng</option>
                   <option value="ADMIN">Quản trị viên (ADMIN)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-bold text-xs text-slate-700 dark:text-zinc-300 mb-1">
-                  Gói dịch vụ (Tự động cấp bù AI credits &amp; 30 ngày thời hạn)
+                  Gói dịch vụ (Tự động cấp bù AI credits và 30 ngày thời hạn)
                 </label>
                 <select
                   value={newTier}
                   onChange={(e) => setNewTier(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="BASIC">Gói Cơ Bản (10 AI credits / tháng - 0đ)</option>
-                  <option value="STANDARD">Gói Tiêu Chuẩn (100 AI credits / tháng - 49.000đ)</option>
-                  <option value="ADVANCED">Gói Nâng Cao (500 AI credits / tháng - 149.000đ)</option>
-                  <option value="ENTERPRISE">Gói Tổ Chức (10.000 AI credits - B2B)</option>
+                  <option value="BASIC">Gói Cơ Bản</option>
+                  <option value="STANDARD">Gói Tiêu Chuẩn</option>
+                  <option value="ADVANCED">Gói Nâng Cao</option>
+                  <option value="ENTERPRISE">Gói Tổ Chức</option>
                 </select>
               </div>
 

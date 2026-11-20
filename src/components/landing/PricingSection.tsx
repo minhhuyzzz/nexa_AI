@@ -39,10 +39,12 @@ const PLANS: PlanDetail[] = [
     yearlyPrice: 0,
     yearlyMonthlyEquivalent: 0,
     features: [
-      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
-      '10 AI credits / tháng',
-      'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
+      'Khảo sát các miền năng lực số chuẩn hóa',
       'Lưu trữ hồ sơ năng lực số cá nhân',
+      'Cấp chứng chỉ số khi hoàn thành bài thi',
+      'Tối đa 2 nhóm lớp (30 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (30 thí sinh)',
+      '10 AI credits / tháng',
     ],
     ctaText: 'Bắt đầu miễn phí',
     ctaHref: '/register',
@@ -58,11 +60,13 @@ const PLANS: PlanDetail[] = [
     yearlyMonthlyEquivalent: 39000,
     isPopular: true,
     features: [
-      'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
-      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
-      '100 AI credits / tháng',
-      'Chứng chỉ số',
+      'Toàn bộ quyền lợi gói Cơ Bản',
+      'Tặng 30 ngày dùng thử 0đ tháng đầu tiên',
+      'Mở trọn vẹn các miền năng lực số và học liệu bồi dưỡng',
       'Lộ trình học tập cá nhân hóa',
+      'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (100 thí sinh)',
+      '100 AI credits / tháng',
     ],
     ctaText: 'Dùng thử 30 ngày (0đ)',
     ctaHref: '/register?plan=standard',
@@ -78,9 +82,9 @@ const PLANS: PlanDetail[] = [
     features: [
       'Toàn bộ quyền lợi gói Tiêu Chuẩn',
       'Không giới hạn nhóm lớp (500 học viên/nhóm)',
+      'Mở phòng thi trực tiếp mã PIN (500 thí sinh)',
       '500 AI credits / tháng',
-      'Mở phòng thi trực tiếp mã PIN thời gian thực',
-      'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu',
+      'Xuất bảng điểm Excel, CSV và dữ liệu nghiên cứu',
     ],
     ctaText: 'Nâng cấp ngay',
     ctaHref: '/register?plan=advanced',
@@ -88,19 +92,17 @@ const PLANS: PlanDetail[] = [
   {
     id: 'b2b',
     name: 'Gói Tổ Chức',
-    badge: 'TRƯỜNG HỌC & DOANH NGHIỆP',
-    desc: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung & cấp chứng nhận đồng thương hiệu.',
+    badge: 'TRƯỜNG HỌC VÀ DOANH NGHIỆP',
+    desc: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung và chứng nhận đơn vị.',
     monthlyPrice: 0,
     yearlyPrice: 0,
     yearlyMonthlyEquivalent: 0,
     isB2B: true,
     features: [
-      'Khảo thí diện rộng theo đợt (Campaigns)',
-      'Báo cáo độ trưởng thành số cấp đơn vị',
-      'Bàn chấm hội đồng tập trung & chấm chéo',
-      'Chứng chỉ số gắn Logo thương hiệu riêng',
-      'Tích hợp SSO & LMS (Canvas, Moodle...)',
-      'Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA',
+      'Khảo thí diện rộng theo đợt cho đơn vị (Campaigns)',
+      'Báo cáo và thống kê năng lực số cấp tổ chức',
+      'Cấp chứng chỉ số gắn tên và logo đơn vị',
+      'Hợp đồng dịch vụ, hóa đơn VAT và cam kết hỗ trợ',
     ],
     ctaText: 'Liên hệ tư vấn B2B',
     ctaHref: '#business-inquiry',
@@ -130,7 +132,7 @@ export function PricingSection() {
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white dark:bg-zinc-900 ring-1 ring-slate-200 dark:ring-zinc-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-3 sm:mb-4 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-            <span>Biểu phí minh bạch • Bồi dưỡng cá nhân & Quy mô tổ chức</span>
+            <span>Biểu phí minh bạch • Bồi dưỡng cá nhân và Quy mô tổ chức</span>
           </div>
 
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">

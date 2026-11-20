@@ -228,11 +228,8 @@ export default function AdminPlansPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản lý gói dịch vụ &amp; định mức hợp đồng
+            Quản lý gói dịch vụ và định mức hợp đồng
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Cấu hình sản phẩm B2C, quyền lợi và định mức tổ chức B2B kết nối trực tiếp CSDL.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
@@ -295,20 +292,15 @@ export default function AdminPlansPage() {
         </div>
       )}
 
-      {/* 3. TAB 1: GÓI CÁ NHÂN & NỀN TẢNG (4 GÓI CHUẨN HÓA) */}
+      {/* 3. TAB 1: GÓI CÁ NHÂN VÀ NỀN TẢNG (4 GÓI CHUẨN HÓA) */}
       {activeTab === 'b2c' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                  Danh mục 4 Gói Dịch Vụ Chuẩn Hóa
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Được đồng bộ trực tiếp từ bảng CSDL <code className="font-mono text-blue-600 dark:text-blue-400">service_plans</code>. Admin có thể tùy biến giá, AI credits, hạn mức và số ngày dùng thử.
-              </p>
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                Danh mục 4 Gói Dịch Vụ Chuẩn Hóa
+              </h2>
             </div>
             <button
               type="button"
@@ -483,20 +475,15 @@ export default function AdminPlansPage() {
         </div>
       )}
 
-      {/* 4. TAB 2: HỢP ĐỒNG & TỔ CHỨC B2B (DỮ LIỆU THẬT TỪ CSDL) */}
+      {/* 4. TAB 2: HỢP ĐỒNG VÀ TỔ CHỨC B2B (DỮ LIỆU THẬT TỪ CSDL) */}
       {activeTab === 'b2b' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                  Danh sách Tổ chức &amp; Hợp đồng B2B thực tế
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Các tổ chức trường học và doanh nghiệp đang hoạt động trên nền tảng với hạn mức được cấp riêng.
-              </p>
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                Danh sách Tổ chức và Hợp đồng B2B thực tế
+              </h2>
             </div>
 
             <div className="flex items-center gap-3">

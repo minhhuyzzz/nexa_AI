@@ -350,7 +350,7 @@ export default function AdminOrganizationsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lỗi cập nhật hạn mức');
-      setActionToast('Đã cập nhật hạn mức (Seats & AI Credits) thành công!');
+      setActionToast('Đã cập nhật hạn mức (Seats và AI Credits) thành công!');
       setTimeout(() => setActionToast(null), 3000);
       setIsEditingLimits(false);
       await fetchOrganizations();
@@ -437,9 +437,13 @@ export default function AdminOrganizationsPage() {
   ).length;
   const suspendedCount = organizations.filter((o) => o.status === 'SUSPENDED').length;
 
-  const activePct = totalOrgsCount > 0 ? ((activeCount / totalOrgsCount) * 100).toFixed(1).replace('.', ',') : '0,0';
-  const pendingPct = totalOrgsCount > 0 ? ((pendingCount / totalOrgsCount) * 100).toFixed(1).replace('.', ',') : '0,0';
-  const suspendedPct = totalOrgsCount > 0 ? ((suspendedCount / totalOrgsCount) * 100).toFixed(1).replace('.', ',') : '0,0';
+  const activeNum = totalOrgsCount > 0 ? (activeCount / totalOrgsCount) * 100 : 0;
+  const pendingNum = totalOrgsCount > 0 ? (pendingCount / totalOrgsCount) * 100 : 0;
+  const suspendedNum = totalOrgsCount > 0 ? (suspendedCount / totalOrgsCount) * 100 : 0;
+
+  const activePct = activeNum.toFixed(1).replace('.', ',');
+  const pendingPct = pendingNum.toFixed(1).replace('.', ',');
+  const suspendedPct = suspendedNum.toFixed(1).replace('.', ',');
 
   // Filter organizations
   const filteredOrgs = organizations.filter((org) => {
@@ -466,11 +470,8 @@ export default function AdminOrganizationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Yêu cầu &amp; quản trị tổ chức B2B
+            Yêu cầu và quản trị tổ chức B2B
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Xử lý hồ sơ Business, hợp đồng dịch vụ và gia hạn tenant.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
@@ -553,7 +554,7 @@ export default function AdminOrganizationsPage() {
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Tổ chức &amp; gói</span>
+            <span>Tổ chức và gói</span>
           </button>
           <button
             onClick={() => setActiveTab('renewals')}
@@ -1107,16 +1108,64 @@ export default function AdminOrganizationsPage() {
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                 Trạng thái vận hành tổ chức
               </h3>
-              <p className="text-[11px] text-slate-400">
-                Tổng số {totalOrgsCount} tổ chức B2B (Gói Business).
-              </p>
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Donut circle */}
-              <div className="w-24 h-24 rounded-full flex flex-col items-center justify-center shrink-0">
-                <span className="text-base font-bold text-neutral-900 dark:text-white tabular-nums">{totalOrgsCount}</span>
-                <span className="text-[10px] text-slate-400">tổ chức</span>
+              {/* Donut circle SVG */}
+              <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
+                  {/* Background track */}
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r="34"
+                    fill="none"
+                    strokeWidth="9"
+                    className="stroke-slate-100 dark:stroke-zinc-800"
+                  />
+                  {totalOrgsCount > 0 && activeNum > 0 && (
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="34"
+                      fill="none"
+                      strokeWidth="9"
+                      strokeDasharray={`${(activeNum / 100) * 213.6} 213.6`}
+                      strokeDashoffset="0"
+                      className="stroke-emerald-500 transition-all duration-500"
+                    />
+                  )}
+                  {totalOrgsCount > 0 && pendingNum > 0 && (
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="34"
+                      fill="none"
+                      strokeWidth="9"
+                      strokeDasharray={`${(pendingNum / 100) * 213.6} 213.6`}
+                      strokeDashoffset={`-${(activeNum / 100) * 213.6}`}
+                      className="stroke-amber-500 transition-all duration-500"
+                    />
+                  )}
+                  {totalOrgsCount > 0 && suspendedNum > 0 && (
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="34"
+                      fill="none"
+                      strokeWidth="9"
+                      strokeDasharray={`${(suspendedNum / 100) * 213.6} 213.6`}
+                      strokeDashoffset={`-${((activeNum + pendingNum) / 100) * 213.6}`}
+                      className="stroke-rose-500 transition-all duration-500"
+                    />
+                  )}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-base font-bold text-neutral-900 dark:text-white tabular-nums">
+                    {totalOrgsCount}
+                  </span>
+                  <span className="text-[10px] text-slate-400">tổ chức</span>
+                </div>
               </div>
 
               {/* Legend breakdown: B2B Operational Status */}
@@ -1275,7 +1324,7 @@ export default function AdminOrganizationsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 font-semibold text-neutral-900 dark:text-neutral-100">
                     <Layers className="w-4 h-4 text-blue-600" />
-                    <span>Thiết lập hạn mức (Seats & AI Credits)</span>
+                    <span>Thiết lập hạn mức (Seats và AI Credits)</span>
                   </div>
                   {!isEditingLimits ? (
                     <button
@@ -1466,7 +1515,7 @@ export default function AdminOrganizationsPage() {
                   <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 space-y-2">
                     <div className="font-bold flex items-center gap-1.5 text-[13px]">
                       <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                      Đã tạo tổ chức &amp; phát hành lời mời Owner!
+                      Đã tạo tổ chức và phát hành lời mời Owner!
                     </div>
                     <p className="text-[11px] leading-relaxed">
                       Tài khoản <strong>{newOrgOwnerEmail}</strong> chưa có trên NEXA. Hệ thống đã tạo lời mời với Gói Business (7 ngày hiệu lực).
@@ -1489,7 +1538,7 @@ export default function AdminOrganizationsPage() {
                 {createdResult.inviteUrl && (
                   <div className="space-y-1.5 pt-1">
                     <label className="block text-[11px] font-semibold text-neutral-700 dark:text-zinc-300">
-                      Liên kết kích hoạt &amp; tạo tài khoản (Dự phòng):
+                      Liên kết kích hoạt và tạo tài khoản (Dự phòng):
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -1692,7 +1741,7 @@ export default function AdminOrganizationsPage() {
                     disabled={creatingOrg}
                     className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs disabled:opacity-50"
                   >
-                    {creatingOrg ? 'Đang tạo...' : 'Tạo tổ chức & Mời'}
+                    {creatingOrg ? 'Đang tạo...' : 'Tạo tổ chức và mời'}
                   </button>
                 </div>
               </form>

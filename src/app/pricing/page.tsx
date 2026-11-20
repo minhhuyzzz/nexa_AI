@@ -56,12 +56,16 @@ const plans: Plan[] = [
     },
     features: [
       {
-        text: 'Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng',
+        text: 'Khảo sát các miền năng lực số chuẩn hóa',
         tooltip: 'Làm bài kiểm tra nhận thức và tư duy số cơ bản, chấm tức thì trong 0.01 giây.',
       },
       {
         text: 'Lưu trữ hồ sơ năng lực số cá nhân',
         tooltip: 'Theo dõi tiến bộ điểm số theo thời gian thực trên hồ sơ cá nhân.',
+      },
+      {
+        text: 'Cấp chứng chỉ số khi hoàn thành bài thi',
+        tooltip: 'Xem và lưu chứng chỉ số khi hoàn thành bài khảo sát đạt chuẩn.',
       },
       {
         text: '10 AI credits phân tích năng lực mỗi tháng',
@@ -94,7 +98,15 @@ const plans: Plan[] = [
     isPopular: true,
     features: [
       {
-        text: 'Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng',
+        text: 'Toàn bộ quyền lợi của Gói Cơ Bản',
+        tooltip: 'Thừa hưởng đầy đủ các tính năng của Gói Cơ Bản.',
+      },
+      {
+        text: 'Tặng 30 ngày dùng thử 0đ tháng đầu tiên',
+        tooltip: 'Trải nghiệm miễn phí trọn vẹn quyền lợi gói trong tháng đầu.',
+      },
+      {
+        text: 'Mở trọn vẹn các miền năng lực số và học liệu bồi dưỡng',
         tooltip: 'Học tập toàn diện không giới hạn các nội dung và bài thi bồi dưỡng.',
       },
       {
@@ -102,11 +114,7 @@ const plans: Plan[] = [
         tooltip: 'Gợi ý bài học và tài liệu bổ trợ tập trung đúng miền kỹ năng còn yếu.',
       },
       {
-        text: 'Cấp chứng chỉ số chính thức có mã QR xác thực',
-        tooltip: 'Chứng chỉ số chuẩn nét cao bảo toàn mã tra cứu xác thực vĩnh viễn.',
-      },
-      {
-        text: '100 AI credits chẩn đoán & lộ trình học tập mỗi tháng',
+        text: '100 AI credits chẩn đoán và lộ trình học tập mỗi tháng',
         tooltip: 'AI phân tích chi tiết tư duy làm bài, chỉ rõ khoảng trống và cá nhân hóa lộ trình.',
       },
       {
@@ -116,10 +124,6 @@ const plans: Plan[] = [
       {
         text: 'Mở phòng thi trực tiếp mã PIN tối đa 100 thí sinh',
         tooltip: 'Tổ chức thi tập trung với mã PIN bảo mật.',
-      },
-      {
-        text: 'Phân tích kết quả học tập và tiến độ tự động',
-        tooltip: 'Xem biểu đồ tiến độ học tập của từng học viên trong lớp.',
       },
     ],
     btn: {
@@ -154,16 +158,8 @@ const plans: Plan[] = [
         tooltip: 'Giải thích chi tiết đáp án từng câu hỏi bằng AI và gợi ý học tập tức thì.',
       },
       {
-        text: 'Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu 26 biến số',
+        text: 'Xuất bảng điểm Excel, CSV và dữ liệu nghiên cứu',
         tooltip: 'Tải về đầy đủ điểm số chi tiết từng tiêu chí phục vụ báo cáo và nghiên cứu.',
-      },
-      {
-        text: 'Bàn chấm Split-view & AI hỗ trợ gợi ý đánh giá',
-        tooltip: 'Màn hình chia đôi: Xem bài làm bên trái, chấm tiêu chí rubric bên phải.',
-      },
-      {
-        text: 'Ưu tiên xếp hạng và vinh danh hồ sơ năng lực số',
-        tooltip: 'Hiển thị huy hiệu nâng cao trên bảng xếp hạng người học xuất sắc.',
       },
     ],
     btn: {
@@ -174,8 +170,8 @@ const plans: Plan[] = [
   {
     id: 'b2b',
     name: 'Gói Tổ Chức',
-    badge: 'TRƯỜNG HỌC & DOANH NGHIỆP',
-    info: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung & cấp chứng nhận đồng thương hiệu.',
+    badge: 'TRƯỜNG HỌC VÀ DOANH NGHIỆP',
+    info: 'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung và chứng nhận đơn vị.',
     price: {
       monthly: 0,
       yearly: 0,
@@ -191,24 +187,16 @@ const plans: Plan[] = [
         tooltip: 'Sinh viên làm bài đánh giá theo chiến dịch của trường, mở khóa toàn bộ đề thi chỉ định.',
       },
       {
-        text: 'Báo cáo độ trưởng thành số cấp đơn vị / phòng ban / khoa viện',
+        text: 'Báo cáo và thống kê năng lực số cấp tổ chức',
         tooltip: 'Báo cáo số liệu tổng thể phục vụ công tác kiểm định chất lượng đào tạo.',
       },
       {
-        text: 'Bàn chấm hội đồng tập trung & chấm chéo bảo mật',
-        tooltip: 'Phân quyền giảng viên chấm thi độc lập và hội đồng phúc khảo.',
+        text: 'Chứng chỉ số gắn Logo thương hiệu riêng của trường hoặc doanh nghiệp',
+        tooltip: 'Chứng chỉ mang nhận diện chính thức và con dấu số của trường hoặc doanh nghiệp.',
       },
       {
-        text: 'Chứng chỉ số gắn Logo thương hiệu riêng của trường/doanh nghiệp',
-        tooltip: 'Chứng chỉ mang nhận diện chính thức và con dấu số của trường/doanh nghiệp.',
-      },
-      {
-        text: 'Tích hợp đăng nhập một lần (SSO) và LMS (Canvas, Moodle...)',
-        tooltip: 'Liên thông tài khoản nội bộ và hệ thống Canvas, Moodle của đơn vị.',
-      },
-      {
-        text: 'Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA 99.9%',
-        tooltip: 'Đảm bảo thủ tục tài chính hành chính đầy đủ và hỗ trợ kỹ thuật 24/7.',
+        text: 'Hợp đồng dịch vụ, hóa đơn VAT và cam kết hỗ trợ',
+        tooltip: 'Đảm bảo thủ tục tài chính hành chính đầy đủ và hỗ trợ kỹ thuật trực tiếp.',
       },
     ],
     btn: {
@@ -257,7 +245,7 @@ export default function PricingPage() {
         {/* Title Header */}
         <div className="text-center max-w-3xl mx-auto mb-10">
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900">
-            Bảng Giá Dịch Vụ Khảo Thí &amp; Bồi Dưỡng
+            Bảng Giá Dịch Vụ Khảo Thí và Bồi Dưỡng
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
             Chọn gói dịch vụ phù hợp với mục tiêu nâng cao năng lực cá nhân hoặc nhu cầu tổ chức thi tập trung của nhà trường.
@@ -471,7 +459,7 @@ export default function PricingPage() {
               <thead>
                 <tr className="bg-slate-50 dark:bg-zinc-800/70 rounded-xl">
                   <th className="py-3.5 px-4 font-bold text-neutral-700 dark:text-neutral-300 w-1/4 rounded-l-xl">
-                    Tiêu chí &amp; Quyền lợi
+                    Tiêu chí và Quyền lợi
                   </th>
                   <th className="py-3.5 px-3 font-bold text-neutral-700 dark:text-neutral-300">
                     Gói Cơ Bản
@@ -504,16 +492,16 @@ export default function PricingPage() {
                 {/* Section Header: Competency & Learning */}
                 <tr className="bg-slate-100/70 dark:bg-zinc-800/50">
                   <td colSpan={5} className="py-2.5 px-4 font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider text-[11px] rounded-lg">
-                    1. Bồi dưỡng &amp; Khảo thí Năng lực số
+                    1. Bồi dưỡng và Khảo thí Năng lực số
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Khảo thí &amp; Miền bồi dưỡng</td>
-                  <td className="py-3 px-3 text-slate-600 dark:text-neutral-400">Khảo thí chuẩn hóa &amp; mở 1 miền</td>
+                  <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Khảo thí và Miền bồi dưỡng</td>
+                  <td className="py-3 px-3 text-slate-600 dark:text-neutral-400">Khảo thí chuẩn hóa</td>
                   <td className="py-3 px-3 text-blue-600 dark:text-blue-400 font-semibold bg-blue-50/50 dark:bg-blue-950/30">
                     Mở trọn vẹn các miền năng lực số
                   </td>
-                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-medium">Toàn bộ quyền lợi &amp; chuyên đề nâng cao</td>
+                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-medium">Toàn bộ quyền lợi và chuyên đề nâng cao</td>
                   <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-semibold">Khảo thí diện rộng toàn đơn vị</td>
                 </tr>
                 <tr className="bg-slate-50/30 dark:bg-zinc-800/10">
@@ -522,7 +510,7 @@ export default function PricingPage() {
                   <td className="py-3 px-3 text-blue-600 dark:text-blue-400 font-semibold bg-blue-50/50 dark:bg-blue-950/30">
                     Lộ trình học tập cá nhân hóa
                   </td>
-                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-medium">Lộ trình thích ứng &amp; giải thích chi tiết AI</td>
+                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-medium">Lộ trình thích ứng và gợi ý học tập AI</td>
                   <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-semibold">Báo cáo độ trưởng thành số cấp trường</td>
                 </tr>
                 <tr>
@@ -536,18 +524,18 @@ export default function PricingPage() {
                 </tr>
                 <tr className="bg-slate-50/30 dark:bg-zinc-800/10">
                   <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Chứng chỉ số</td>
-                  <td className="py-3 px-3 text-slate-600 dark:text-neutral-400">Chứng nhận hoàn thành</td>
+                  <td className="py-3 px-3 text-slate-600 dark:text-neutral-400">Chứng chỉ số</td>
                   <td className="py-3 px-3 text-blue-600 dark:text-blue-400 font-bold bg-blue-50/50 dark:bg-blue-950/30">
                     Chứng chỉ số
                   </td>
                   <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-bold">Chứng chỉ số</td>
-                  <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-bold">Chứng chỉ số</td>
+                  <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-bold">Chứng chỉ số gắn Logo đơn vị</td>
                 </tr>
 
                 {/* Section Header: Classroom & Live Room */}
                 <tr className="bg-slate-100/70 dark:bg-zinc-800/50">
                   <td colSpan={5} className="py-2.5 px-4 font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider text-[11px] rounded-lg">
-                    2. Quản lý Nhóm lớp &amp; Tổ chức Khảo nghiệm
+                    2. Quản lý Nhóm lớp và Tổ chức Khảo nghiệm
                   </td>
                 </tr>
                 <tr>
@@ -572,25 +560,25 @@ export default function PricingPage() {
                   <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Bàn chấm Rubric</td>
                   <td className="py-3 px-3 text-slate-600 dark:text-neutral-400">Bàn chấm thủ công cơ bản</td>
                   <td className="py-3 px-3 text-blue-600 dark:text-blue-400 font-semibold bg-blue-50/50 dark:bg-blue-950/30">
-                    Bàn chấm Rubric &amp; tự động
+                    Bàn chấm Rubric và tự động
                   </td>
-                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-bold">Rubric chuyên sâu &amp; thẩm định sản phẩm số</td>
-                  <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-bold">Hội đồng chấm tập trung &amp; chấm chéo</td>
+                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-bold">Rubric chuyên sâu</td>
+                  <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-bold">Hội đồng chấm tập trung</td>
                 </tr>
                 <tr className="bg-slate-50/30 dark:bg-zinc-800/10">
-                  <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Xuất bảng điểm &amp; dữ liệu</td>
+                  <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Xuất bảng điểm và dữ liệu</td>
                   <td className="py-3 px-3 text-slate-400 dark:text-neutral-500">Điểm số cơ bản</td>
                   <td className="py-3 px-3 text-blue-600 dark:text-blue-400 font-semibold bg-blue-50/50 dark:bg-blue-950/30">
                     Xuất bảng điểm Excel, CSV
                   </td>
-                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-bold">Xuất Excel, CSV &amp; dữ liệu nghiên cứu</td>
+                  <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-bold">Xuất Excel, CSV và dữ liệu nghiên cứu</td>
                   <td className="py-3 px-3 text-neutral-900 dark:text-neutral-100 font-bold">Báo cáo kiểm định toàn trường (BI)</td>
                 </tr>
 
                 {/* Section Header: Organization */}
                 <tr className="bg-slate-100/70 dark:bg-zinc-800/50">
                   <td colSpan={5} className="py-2.5 px-4 font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider text-[11px] rounded-lg">
-                    3. Đặc quyền Cấp Tổ Chức (Trường học &amp; Doanh nghiệp)
+                    3. Đặc quyền Cấp Tổ Chức (Trường học và Doanh nghiệp)
                   </td>
                 </tr>
                 <tr>
@@ -600,19 +588,12 @@ export default function PricingPage() {
                   <td className="py-3 px-3 text-slate-400 dark:text-neutral-500">Không</td>
                   <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold">Toàn quyền khởi tạo theo đợt</td>
                 </tr>
-                <tr className="bg-slate-50/30 dark:bg-zinc-800/10">
-                  <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Tích hợp đăng nhập một lần (SSO) &amp; LMS</td>
-                  <td className="py-3 px-3 text-slate-400 dark:text-neutral-500">Không</td>
-                  <td className="py-3 px-3 text-slate-400 dark:text-neutral-500 bg-blue-50/50 dark:bg-blue-950/30">Không</td>
-                  <td className="py-3 px-3 text-slate-400 dark:text-neutral-500">Không</td>
-                  <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold">Hỗ trợ trọn gói (Canvas, Moodle)</td>
-                </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-neutral-800 dark:text-neutral-200">Hỗ trợ kỹ thuật chuyên trách</td>
                   <td className="py-3 px-3 text-slate-600 dark:text-neutral-400">Cộng đồng</td>
                   <td className="py-3 px-3 text-slate-700 dark:text-neutral-300 bg-blue-50/50 dark:bg-blue-950/30">Hỗ trợ trực tuyến</td>
                   <td className="py-3 px-3 text-neutral-800 dark:text-neutral-200 font-medium">Hỗ trợ ưu tiên</td>
-                  <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold">Chuyên trách 24/7 theo kỳ thi</td>
+                  <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold">Chuyên trách theo kỳ thi</td>
                 </tr>
               </tbody>
             </table>

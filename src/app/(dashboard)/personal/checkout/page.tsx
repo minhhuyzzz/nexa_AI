@@ -398,7 +398,7 @@ function CheckoutClientContent() {
           className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>Quay lại Biểu phí &amp; Gói dịch vụ</span>
+          <span>Quay lại Biểu phí và Gói dịch vụ</span>
         </Link>
 
         {/* 2-Step Interactive Breadcrumb Pill */}
@@ -621,7 +621,7 @@ function CheckoutClientContent() {
                     </>
                   ) : (
                     <>
-                      <span>Xác nhận &amp; Tạo mã thanh toán</span>
+                      <span>Xác nhận và Tạo mã thanh toán</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

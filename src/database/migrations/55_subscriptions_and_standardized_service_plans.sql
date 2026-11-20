@@ -58,29 +58,29 @@ VALUES
     (
         'BASIC', 'LEARNER', 'Gói Cơ Bản', 'TRẢI NGHIỆM', 
         'Khảo sát năng lực số cơ bản và lưu trữ hồ sơ cá nhân.', 
-        0, 0, 0, 0, 10, 2, 30, 30, FALSE, FALSE, FALSE,
-        '["Tối đa 2 nhóm lớp (30 học viên/nhóm)", "10 AI credits / tháng", "Khảo thí chuẩn hóa & mở 1 miền bồi dưỡng", "Lưu trữ hồ sơ năng lực số cá nhân"]'::jsonb, 
+        0, 0, 0, 0, 10, 2, 30, 30, FALSE, TRUE, FALSE,
+        '["Khảo sát các miền năng lực số chuẩn hóa", "Lưu trữ hồ sơ năng lực số cá nhân", "Cấp chứng chỉ số khi hoàn thành bài thi", "Tối đa 2 nhóm lớp (30 học viên/nhóm)", "Mở phòng thi trực tiếp mã PIN (30 thí sinh)", "10 AI credits / tháng"]'::jsonb, 
         TRUE, 1
     ),
     (
         'STANDARD', 'LEARNER', 'Gói Tiêu Chuẩn', 'PHỔ BIẾN NHẤT', 
         'Mở khóa trọn vẹn các miền bồi dưỡng và cấp chứng chỉ số.', 
         49000, 468000, 39000, 30, 100, 10, 100, 100, TRUE, TRUE, FALSE,
-        '["Mở trọn vẹn các miền năng lực số & trạm bồi dưỡng", "Tối đa 10 nhóm lớp (100 học viên/nhóm)", "100 AI credits / tháng", "Chứng chỉ số", "Lộ trình học tập cá nhân hóa"]'::jsonb, 
+        '["Toàn bộ quyền lợi gói Cơ Bản", "Tặng 30 ngày dùng thử 0đ tháng đầu tiên", "Mở trọn vẹn các miền năng lực số và học liệu bồi dưỡng", "Lộ trình học tập cá nhân hóa", "Tối đa 10 nhóm lớp (100 học viên/nhóm)", "Mở phòng thi trực tiếp mã PIN (100 thí sinh)", "100 AI credits / tháng"]'::jsonb, 
         TRUE, 2
     ),
     (
         'ADVANCED', 'LEARNER', 'Gói Nâng Cao', 'TOÀN DIỆN', 
         'Dành cho cá nhân bồi dưỡng chuyên sâu và tổ chức thi trực tiếp.', 
         149000, 1428000, 119000, 0, 500, 9999, 500, 500, TRUE, TRUE, TRUE,
-        '["Toàn bộ quyền lợi gói Tiêu Chuẩn", "Không giới hạn nhóm lớp (500 học viên/nhóm)", "500 AI credits / tháng", "Mở phòng thi trực tiếp mã PIN thời gian thực", "Xuất bảng điểm Excel, CSV & dữ liệu nghiên cứu"]'::jsonb, 
+        '["Toàn bộ quyền lợi gói Tiêu Chuẩn", "Không giới hạn nhóm lớp (500 học viên/nhóm)", "Mở phòng thi trực tiếp mã PIN (500 thí sinh)", "500 AI credits / tháng", "Xuất bảng điểm Excel, CSV và dữ liệu nghiên cứu"]'::jsonb, 
         TRUE, 3
     ),
     (
-        'ENTERPRISE', 'ORGANIZATION', 'Gói Tổ Chức', 'TRƯỜNG HỌC & DOANH NGHIỆP', 
-        'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung & cấp chứng nhận đồng thương hiệu.', 
+        'ENTERPRISE', 'ORGANIZATION', 'Gói Tổ Chức', 'TRƯỜNG HỌC VÀ DOANH NGHIỆP', 
+        'Khảo thí diện rộng toàn trường, hội đồng chấm tập trung và chứng nhận đơn vị.', 
         0, 0, 0, 0, 10000, 99999, 50000, 50000, TRUE, TRUE, TRUE,
-        '["Khảo thí diện rộng theo đợt (Campaigns)", "Báo cáo độ trưởng thành số cấp đơn vị", "Bàn chấm hội đồng tập trung & chấm chéo", "Chứng chỉ số gắn Logo thương hiệu riêng", "Tích hợp SSO & LMS (Canvas, Moodle...)", "Hợp đồng pháp lý, hóa đơn VAT & cam kết SLA"]'::jsonb, 
+        '["Khảo thí diện rộng theo đợt cho đơn vị (Campaigns)", "Báo cáo và thống kê năng lực số cấp tổ chức", "Cấp chứng chỉ số gắn tên và logo đơn vị", "Hợp đồng dịch vụ, hóa đơn VAT và cam kết hỗ trợ"]'::jsonb, 
         TRUE, 4
     ),
     -- Backward compatibility aliases
