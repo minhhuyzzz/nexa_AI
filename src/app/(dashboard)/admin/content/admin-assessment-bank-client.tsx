@@ -212,10 +212,21 @@ export function AdminAssessmentBankClient({
 
   // Filtered Assessments
   const filteredAssessments = assessments.filter((a) => {
+    const searchLower = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.domainName.toLowerCase().includes(searchQuery.toLowerCase());
+      !searchLower ||
+      a.title.toLowerCase().includes(searchLower) ||
+      a.description?.toLowerCase().includes(searchLower) ||
+      a.domainName.toLowerCase().includes(searchLower) ||
+      (a.domainCodes &&
+        a.domainCodes.some((code) => {
+          const num = parseInt(code.replace(/\D/g, ''), 10);
+          return (
+            `d${num}`.includes(searchLower) ||
+            `miền ${code}`.includes(searchLower) ||
+            `miền ${num}`.includes(searchLower)
+          );
+        }));
 
     const matchesTier =
       tierFilter === 'ALL' ? true : tierFilter === 'VIP' ? a.is_vip : !a.is_vip;
@@ -230,22 +241,15 @@ export function AdminAssessmentBankClient({
     const matchesDomain =
       selectedDomainCodes.length === 0
         ? true
-        : (a.domainCodes &&
-            a.domainCodes.some((code) =>
-              selectedDomainCodes.some(
-                (sel) =>
-                  sel.toLowerCase() === code.toLowerCase() ||
-                  sel.padStart(2, '0') === code.padStart(2, '0')
-              )
-            )) ||
-          selectedDomainCodes.some((code) => {
-            const dom = domains.find((d) => d.code === code);
-            return (
-              dom &&
-              (a.domainName.toLowerCase().includes(dom.title.toLowerCase()) ||
-                dom.title.toLowerCase().includes(a.domainName.toLowerCase()))
-            );
-          });
+        : a.domainCodes &&
+          a.domainCodes.some((code) =>
+            selectedDomainCodes.some(
+              (sel) =>
+                sel.toLowerCase() === code.toLowerCase() ||
+                sel.padStart(2, '0') === code.padStart(2, '0') ||
+                parseInt(sel, 10) === parseInt(code, 10)
+            )
+          );
 
     return matchesSearch && matchesTier && matchesStatus && matchesDomain;
   });
@@ -254,8 +258,11 @@ export function AdminAssessmentBankClient({
     selectedDomainCodes.length === 0
       ? 'Miền năng lực: Tất cả'
       : selectedDomainCodes.length === 1
-      ? (domains.find((d) => d.code === selectedDomainCodes[0])?.title.replace('&', 'và') || `Miền ${selectedDomainCodes[0]}`)
-      : `Miền năng lực: ${selectedDomainCodes.length} miền`;
+      ? `Miền năng lực: D${parseInt(selectedDomainCodes[0], 10) || selectedDomainCodes[0]}`
+      : `Miền năng lực: ${selectedDomainCodes
+          .map((c) => `D${parseInt(c, 10) || c}`)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+          .join(', ')}`;
 
   // Open Create Modal
   const handleOpenCreateModal = () => {
@@ -277,13 +284,24 @@ export function AdminAssessmentBankClient({
     setEditingAssessment(exam);
     setFormTitle(exam.title);
     setFormDescription(exam.description || '');
-    const target = exam.target_domain || (exam.domainCodes.length === 1 ? exam.domainCodes[0] : 'ALL');
+    let target = exam.target_domain;
+    if (!target) {
+      if (exam.domainCodes && exam.domainCodes.length > 0 && exam.domainCodes.length < 5) {
+        target = exam.domainCodes.join(',');
+      } else {
+        target = 'ALL';
+      }
+    }
     if (target === 'ALL') {
       setFormTargetDomain('ALL');
       setFormSelectedDomains(['01', '02', '03', '04', '05']);
     } else {
       setFormTargetDomain('CUSTOM');
-      setFormSelectedDomains(target.split(',').map((c) => c.trim().padStart(2, '0')).filter(Boolean));
+      const parsed = target
+        .split(',')
+        .map((c) => c.trim().padStart(2, '0'))
+        .filter(Boolean);
+      setFormSelectedDomains(parsed.length > 0 ? parsed : ['01']);
     }
     setFormDuration(exam.duration_minutes);
     setFormPassingScore(exam.passing_score);
@@ -302,13 +320,24 @@ export function AdminAssessmentBankClient({
     setSettingsPassingScore(exam.passing_score);
     setSettingsIsVip(exam.is_vip);
     setSettingsIsPublished(exam.is_published);
-    const target = exam.target_domain || (exam.domainCodes.length === 1 ? exam.domainCodes[0] : 'ALL');
+    let target = exam.target_domain;
+    if (!target) {
+      if (exam.domainCodes && exam.domainCodes.length > 0 && exam.domainCodes.length < 5) {
+        target = exam.domainCodes.join(',');
+      } else {
+        target = 'ALL';
+      }
+    }
     if (target === 'ALL') {
       setSettingsTargetDomain('ALL');
       setSettingsSelectedDomains(['01', '02', '03', '04', '05']);
     } else {
       setSettingsTargetDomain('CUSTOM');
-      setSettingsSelectedDomains(target.split(',').map((c) => c.trim().padStart(2, '0')).filter(Boolean));
+      const parsed = target
+        .split(',')
+        .map((c) => c.trim().padStart(2, '0'))
+        .filter(Boolean);
+      setSettingsSelectedDomains(parsed.length > 0 ? parsed : ['01']);
     }
     setSettingsSecurity(
       exam.security_settings
@@ -334,16 +363,25 @@ export function AdminAssessmentBankClient({
         finalTargetDomain = 'ALL';
         finalCodes = ['01', '02', '03', '04', '05'];
       } else {
-        finalTargetDomain = settingsSelectedDomains.join(',');
-        finalCodes = settingsSelectedDomains;
+        const sorted = [...settingsSelectedDomains].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        finalTargetDomain = sorted.join(',');
+        finalCodes = sorted;
       }
     }
 
+    const dNumbers = Array.from(
+      new Set(
+        finalCodes
+          .map((c) => parseInt(c.replace(/\D/g, ''), 10))
+          .filter((n) => !isNaN(n) && n >= 1 && n <= 5)
+      )
+    ).sort((a, b) => a - b);
+
     const finalName =
-      finalTargetDomain === 'ALL' || finalCodes.length > 1
-        ? 'Đa Miền Năng Lực'
-        : finalCodes.length === 1
-        ? `Miền ${finalCodes[0]}`
+      finalTargetDomain === 'ALL' || dNumbers.length === 5
+        ? 'Đa miền'
+        : dNumbers.length > 0
+        ? dNumbers.map((n) => `D${n}`).join(', ')
         : 'Chưa phân miền';
 
     setIsSavingSettings(true);
@@ -414,16 +452,25 @@ export function AdminAssessmentBankClient({
         finalTargetDomain = 'ALL';
         finalCodes = ['01', '02', '03', '04', '05'];
       } else {
-        finalTargetDomain = formSelectedDomains.join(',');
-        finalCodes = formSelectedDomains;
+        const sorted = [...formSelectedDomains].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        finalTargetDomain = sorted.join(',');
+        finalCodes = sorted;
       }
     }
 
+    const dNumbers = Array.from(
+      new Set(
+        finalCodes
+          .map((c) => parseInt(c.replace(/\D/g, ''), 10))
+          .filter((n) => !isNaN(n) && n >= 1 && n <= 5)
+      )
+    ).sort((a, b) => a - b);
+
     const finalName =
-      finalTargetDomain === 'ALL' || finalCodes.length > 1
-        ? 'Đa Miền Năng Lực'
-        : finalCodes.length === 1
-        ? `Miền ${finalCodes[0]}`
+      finalTargetDomain === 'ALL' || dNumbers.length === 5
+        ? 'Đa miền'
+        : dNumbers.length > 0
+        ? dNumbers.map((n) => `D${n}`).join(', ')
         : 'Chưa phân miền';
 
     setIsSaving(true);
@@ -955,7 +1002,9 @@ export function AdminAssessmentBankClient({
                 <div className="max-h-60 overflow-y-auto space-y-0.5">
                   {domains.map((d) => {
                     const isChecked = selectedDomainCodes.includes(d.code);
-                    const cleanTitle = d.title.replace('&', 'và');
+                    const num = parseInt(d.code.replace(/\D/g, ''), 10);
+                    const rawTitle = d.title.replace('&', 'và');
+                    const cleanTitle = !isNaN(num) && num > 0 && !rawTitle.startsWith(`D${num}`) ? `D${num}: ${rawTitle}` : rawTitle;
                     return (
                       <label
                         key={d.id}
@@ -1122,7 +1171,23 @@ export function AdminAssessmentBankClient({
 
                       {/* Miền năng lực */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
-                        <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium">
+                        <span
+                          className="text-xs text-slate-700 dark:text-zinc-300 font-medium cursor-help"
+                          title={
+                            exam.domainCodes && exam.domainCodes.length > 0
+                              ? exam.domainCodes
+                                  .map((c) => {
+                                    const d = domains.find(
+                                      (item) => item.code === c || item.code === c.padStart(2, '0')
+                                    );
+                                    const num = parseInt(c.replace(/\D/g, ''), 10);
+                                    const prefix = !isNaN(num) ? `D${num}` : c;
+                                    return d ? `${prefix}: ${d.title.replace('&', 'và')}` : `Miền ${c}`;
+                                  })
+                                  .join('\n')
+                              : 'Chưa phân miền'
+                          }
+                        >
                           {exam.domainName}
                         </span>
                       </td>
@@ -1433,6 +1498,9 @@ export function AdminAssessmentBankClient({
                     <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {domains.map((d) => {
                         const isChecked = formSelectedDomains.includes(d.code);
+                        const num = parseInt(d.code.replace(/\D/g, ''), 10);
+                        const rawTitle = d.title.replace('&', 'và');
+                        const cleanTitle = !isNaN(num) && num > 0 && !rawTitle.startsWith(`D${num}`) ? `D${num}: ${rawTitle}` : rawTitle;
                         return (
                           <label
                             key={d.id}
@@ -1454,7 +1522,7 @@ export function AdminAssessmentBankClient({
                               }}
                               className="w-3.5 h-3.5 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
                             />
-                            <span className="truncate">{d.title.replace('&', 'và')}</span>
+                            <span className="truncate">{cleanTitle}</span>
                           </label>
                         );
                       })}
@@ -1933,6 +2001,9 @@ export function AdminAssessmentBankClient({
                         <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                           {domains.map((d) => {
                             const isChecked = settingsSelectedDomains.includes(d.code);
+                            const num = parseInt(d.code.replace(/\D/g, ''), 10);
+                            const rawTitle = d.title.replace('&', 'và');
+                            const cleanTitle = !isNaN(num) && num > 0 && !rawTitle.startsWith(`D${num}`) ? `D${num}: ${rawTitle}` : rawTitle;
                             return (
                               <label
                                 key={d.id}
@@ -1954,7 +2025,7 @@ export function AdminAssessmentBankClient({
                                   }}
                                   className="w-3.5 h-3.5 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                 />
-                                <span className="truncate">{d.title.replace('&', 'và')}</span>
+                                <span className="truncate">{cleanTitle}</span>
                               </label>
                             );
                           })}

@@ -112,21 +112,32 @@ export async function GET() {
       };
 
       const targetDomain = (a as any).target_domain || (domainCodes.length === 1 ? domainCodes[0] : 'ALL');
-      const resolvedDomainCodes =
-        targetDomain !== 'ALL'
-          ? [targetDomain]
-          : domainCodes.length > 0
-          ? domainCodes
-          : ['01', '02', '03', '04', '05'];
+      let configuredCodes: string[] = [];
+      if (targetDomain === 'ALL') {
+        configuredCodes = ['01', '02', '03', '04', '05'];
+      } else if (targetDomain) {
+        configuredCodes = targetDomain
+          .split(',')
+          .map((s: string) => s.trim().padStart(2, '0'))
+          .filter(Boolean);
+      }
 
-      const domainName =
-        targetDomain !== 'ALL' && DOMAIN_NAME_MAP[targetDomain]
-          ? DOMAIN_NAME_MAP[targetDomain]
-          : resolvedDomainCodes.length > 1
-          ? 'Đa Miền Năng Lực Số'
-          : resolvedDomainCodes[0] && DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
-          ? DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
-          : 'Đa Miền Năng Lực Số';
+      const resolvedDomainCodes = configuredCodes.length > 0 ? configuredCodes : domainCodes;
+
+      let domainName = 'Chưa phân miền';
+      if (targetDomain === 'ALL' || resolvedDomainCodes.length === 5) {
+        domainName = 'Đa miền';
+      } else if (resolvedDomainCodes.length > 0) {
+        const dNumbers = Array.from(
+          new Set(
+            resolvedDomainCodes
+              .map((c: string) => parseInt(c.replace(/\D/g, ''), 10))
+              .filter((n: number) => !isNaN(n) && n >= 1 && n <= 5)
+          )
+        ).sort((a: number, b: number) => a - b);
+
+        domainName = dNumbers.length > 0 ? dNumbers.map((n: number) => `D${n}`).join(', ') : 'Chưa phân miền';
+      }
 
       return {
         id: a.id,

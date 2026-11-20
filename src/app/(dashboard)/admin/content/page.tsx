@@ -206,10 +206,18 @@ export default async function AdminContentPage() {
     const effectiveDomainCodes = configuredCodes.length > 0 ? configuredCodes : itemDomainCodes;
 
     let domainName = 'Chưa phân miền';
-    if (targetDomain === 'ALL' || effectiveDomainCodes.length > 1) {
-      domainName = 'Đa Miền Năng Lực';
-    } else if (effectiveDomainCodes.length === 1) {
-      domainName = `Miền ${effectiveDomainCodes[0]}`;
+    if (targetDomain === 'ALL' || effectiveDomainCodes.length === 5) {
+      domainName = 'Đa miền';
+    } else if (effectiveDomainCodes.length > 0) {
+      const dNumbers = Array.from(
+        new Set(
+          effectiveDomainCodes
+            .map((c) => parseInt(c.replace(/\D/g, ''), 10))
+            .filter((n) => !isNaN(n) && n >= 1 && n <= 5)
+        )
+      ).sort((a, b) => a - b);
+
+      domainName = dNumbers.length > 0 ? dNumbers.map((n) => `D${n}`).join(', ') : 'Chưa phân miền';
     }
 
     return {
