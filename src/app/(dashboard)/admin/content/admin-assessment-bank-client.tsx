@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -35,6 +35,7 @@ import {
   Settings,
   Shield,
   EyeOff,
+  ChevronDown,
 } from 'lucide-react';
 import { SecuritySettingsCard } from '@/features/assessments/components/SecuritySettingsCard';
 import {
@@ -89,6 +90,20 @@ export function AdminAssessmentBankClient({
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState<'ALL' | 'FREE' | 'VIP'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'DRAFT'>('ALL');
+  const [selectedDomainCodes, setSelectedDomainCodes] = useState<string[]>([]);
+  const [isDomainDropdownOpen, setIsDomainDropdownOpen] = useState(false);
+  const domainDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Đóng domain dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (domainDropdownRef.current && !domainDropdownRef.current.contains(e.target as Node)) {
+        setIsDomainDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -208,8 +223,35 @@ export function AdminAssessmentBankClient({
         ? a.is_published
         : !a.is_published;
 
-    return matchesSearch && matchesTier && matchesStatus;
+    const matchesDomain =
+      selectedDomainCodes.length === 0
+        ? true
+        : (a.domainCodes &&
+            a.domainCodes.some((code) =>
+              selectedDomainCodes.some(
+                (sel) =>
+                  sel.toLowerCase() === code.toLowerCase() ||
+                  sel.padStart(2, '0') === code.padStart(2, '0')
+              )
+            )) ||
+          selectedDomainCodes.some((code) => {
+            const dom = domains.find((d) => d.code === code);
+            return (
+              dom &&
+              (a.domainName.toLowerCase().includes(dom.title.toLowerCase()) ||
+                dom.title.toLowerCase().includes(a.domainName.toLowerCase()))
+            );
+          });
+
+    return matchesSearch && matchesTier && matchesStatus && matchesDomain;
   });
+
+  const domainButtonLabel =
+    selectedDomainCodes.length === 0
+      ? 'Miền năng lực: Tất cả'
+      : selectedDomainCodes.length === 1
+      ? (domains.find((d) => d.code === selectedDomainCodes[0])?.title.replace('&', 'và') || `Miền ${selectedDomainCodes[0]}`)
+      : `Miền năng lực: ${selectedDomainCodes.length} miền`;
 
   // Open Create Modal
   const handleOpenCreateModal = () => {
@@ -801,12 +843,96 @@ export function AdminAssessmentBankClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs">
-            <option>Miền năng lực: Tất cả</option>
-            {domains.map((d) => (
-              <option key={d.id} value={d.code}>{d.title}</option>
-            ))}
-          </select>
+          {/* Custom Dropdown: Miền năng lực */}
+          <div className="relative" ref={domainDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsDomainDropdownOpen((prev) => !prev)}
+              className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <span>{domainButtonLabel}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                  isDomainDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isDomainDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1.5 z-50 w-72 p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl animate-in fade-in zoom-in-95 space-y-1">
+                {/* Tùy chọn 1: Tất cả miền năng lực (Radio) */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedDomainCodes([])}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                    selectedDomainCodes.length === 0
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="radio"
+                      name="domain_filter_choice"
+                      checked={selectedDomainCodes.length === 0}
+                      onChange={() => setSelectedDomainCodes([])}
+                      className="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span>Miền năng lực: Tất cả</span>
+                  </div>
+                </button>
+
+                <div className="my-1 border-t border-slate-100 dark:border-zinc-800/80" />
+
+                {/* Danh sách các miền năng lực cụ thể (Tích chọn tùy thích) */}
+                <div className="max-h-60 overflow-y-auto space-y-0.5">
+                  {domains.map((d) => {
+                    const isChecked = selectedDomainCodes.includes(d.code);
+                    const cleanTitle = d.title.replace('&', 'và');
+                    return (
+                      <label
+                        key={d.id}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                          isChecked
+                            ? 'bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-medium'
+                            : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800/60'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            setSelectedDomainCodes((prev) =>
+                              prev.includes(d.code)
+                                ? prev.filter((c) => c !== d.code)
+                                : [...prev, d.code]
+                            );
+                          }}
+                          className="w-3.5 h-3.5 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="flex-1 truncate">{cleanTitle}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {selectedDomainCodes.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between px-2">
+                    <span className="text-[11px] text-slate-400">
+                      Đã chọn {selectedDomainCodes.length} miền
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDomainCodes([])}
+                      className="text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer"
+                    >
+                      Đặt lại
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <select
             value={statusFilter}
