@@ -96,29 +96,48 @@ export async function GET(req?: Request): Promise<NextResponse> {
       ];
 
       const DOMAIN_NAME_MAP: Record<string, string> = {
-        '01': 'Miền 01: Thông tin & Dữ liệu số',
-        '02': 'Miền 02: Giao tiếp & Cộng tác số',
-        '03': 'Miền 03: Sáng tạo Nội dung số & AI',
-        '04': 'Miền 04: An toàn & Bảo mật số',
-        '05': 'Miền 05: Giải quyết Vấn đề số',
+        '01': 'D1: Thông tin và Dữ liệu số',
+        '02': 'D2: Giao tiếp và Cộng tác số',
+        '03': 'D3: Sáng tạo Nội dung số và AI',
+        '04': 'D4: An toàn và Sức khỏe số',
+        '05': 'D5: Giải quyết Vấn đề số',
       };
 
-      const targetDomain = (a as any).target_domain || (domainCodes.length === 1 ? domainCodes[0] : 'ALL');
+      const targetDomain = (a as any).target_domain || '';
+      let configuredCodes: string[] = [];
+      if (targetDomain === 'ALL') {
+        configuredCodes = ['01', '02', '03', '04', '05'];
+      } else if (targetDomain) {
+        configuredCodes = targetDomain
+          .split(',')
+          .map((s: string) => s.trim().padStart(2, '0'))
+          .filter(Boolean);
+      }
+
+      // Prioritize explicit configured target_domain, fallback to items
       const resolvedDomainCodes =
-        targetDomain !== 'ALL'
-          ? [targetDomain]
+        configuredCodes.length > 0
+          ? configuredCodes
           : domainCodes.length > 0
           ? domainCodes
           : ['01', '02', '03', '04', '05'];
 
-      const domainName =
-        targetDomain !== 'ALL' && DOMAIN_NAME_MAP[targetDomain]
-          ? DOMAIN_NAME_MAP[targetDomain]
-          : resolvedDomainCodes.length > 1
-          ? 'Đa Miền Năng Lực Số'
-          : resolvedDomainCodes[0] && DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
-          ? DOMAIN_NAME_MAP[resolvedDomainCodes[0]]
-          : 'Đa Miền Năng Lực Số';
+      let domainName = 'Chưa phân miền';
+      if (targetDomain === 'ALL' || resolvedDomainCodes.length === 5) {
+        domainName = 'Đa miền';
+      } else if (resolvedDomainCodes.length === 1 && DOMAIN_NAME_MAP[resolvedDomainCodes[0]]) {
+        domainName = DOMAIN_NAME_MAP[resolvedDomainCodes[0]];
+      } else if (resolvedDomainCodes.length > 0) {
+        const dNumbers = Array.from(
+          new Set(
+            resolvedDomainCodes
+              .map((c: string) => parseInt(c.replace(/\D/g, ''), 10))
+              .filter((n: number) => !isNaN(n) && n >= 1 && n <= 5)
+          )
+        ).sort((a: number, b: number) => a - b);
+
+        domainName = dNumbers.length > 0 ? dNumbers.map((n: number) => `D${n}`).join(', ') : 'Chưa phân miền';
+      }
 
       const rawDesc = a.description || '';
       const cleanDesc = rawDesc.replace(/21\s*kỹ\s*năng(\s*số)?(\s*cốt\s*lõi)?/gi, '5 miền năng lực số');

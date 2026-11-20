@@ -35,11 +35,11 @@ interface AssessmentItem {
 }
 
 const domainList = [
-  { code: '01', label: 'Miền 01: Thông tin & Dữ liệu' },
-  { code: '02', label: 'Miền 02: Giao tiếp & Cộng tác' },
-  { code: '03', label: 'Miền 03: Sáng tạo Nội dung & AI' },
-  { code: '04', label: 'Miền 04: An toàn & Bảo mật' },
-  { code: '05', label: 'Miền 05: Giải quyết Vấn đề' },
+  { code: '01', label: 'D1: Thông tin và Dữ liệu số' },
+  { code: '02', label: 'D2: Giao tiếp và Cộng tác số' },
+  { code: '03', label: 'D3: Sáng tạo Nội dung số và AI' },
+  { code: '04', label: 'D4: An toàn và Sức khỏe số' },
+  { code: '05', label: 'D5: Giải quyết Vấn đề số' },
 ];
 
 const tierFilterOptions = [
@@ -115,18 +115,31 @@ export default function LearnerAssessmentsPage() {
   };
 
   const getDropdownButtonLabel = () => {
-    if (selectedDomains.length === 0) return 'Tất cả 5 miền';
+    if (selectedDomains.length === 0 || selectedDomains.length === domainList.length) return 'Tất cả 5 miền';
     if (selectedDomains.length === 1) {
-      const found = domainList.find((d) => d.code === selectedDomains[0]);
-      return found ? found.label : '1 miền đã chọn';
+      return `D${parseInt(selectedDomains[0], 10) || selectedDomains[0]}`;
     }
-    return `${selectedDomains.length} miền đã chọn`;
+    return selectedDomains
+      .map((c) => `D${parseInt(c, 10) || c}`)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .join(', ');
   };
 
   const filteredTests = assessments.filter((test) => {
+    const searchLower = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.domainName.toLowerCase().includes(searchQuery.toLowerCase());
+      !searchLower ||
+      test.title.toLowerCase().includes(searchLower) ||
+      test.domainName.toLowerCase().includes(searchLower) ||
+      (test.domainCodes &&
+        test.domainCodes.some((code) => {
+          const num = parseInt(code.replace(/\D/g, ''), 10);
+          return (
+            `d${num}`.includes(searchLower) ||
+            `miền ${code}`.includes(searchLower) ||
+            `miền ${num}`.includes(searchLower)
+          );
+        }));
 
     const matchesDomain =
       selectedDomains.length === 0 ||

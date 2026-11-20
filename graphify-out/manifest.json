@@ -330,16 +330,16 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/content/admin-assessment-bank-client.tsx": {
-    "mtime": 1795194679.4470444,
-    "seen": 1795195799.9227986,
-    "ast_hash": "aa8e2da4600f357b99619a0d4ed05ea3",
+    "mtime": 1795199177.3826609,
+    "seen": 1795199559.2425044,
+    "ast_hash": "7b224a33b2076501b38226b8a01629c4",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/content/assessments/[id]/assessment-detail-client.tsx": {
-    "mtime": 1794070854.367522,
-    "seen": 1794532981.6182234,
-    "ast_hash": "84ca13cbc6b7805cbb1be708e3849077",
-    "semantic_hash": "84ca13cbc6b7805cbb1be708e3849077"
+    "mtime": 1795195998.7632346,
+    "seen": 1795199559.2425082,
+    "ast_hash": "f1881c89b92652704b4b59b8a80c46b8",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/content/assessments/[id]/page.tsx": {
     "mtime": 1794059723.4076707,
@@ -348,15 +348,15 @@
     "semantic_hash": "a3317c0341adb39599cadba4463e25aa"
   },
   "src/app/(dashboard)/admin/content/assessments/new/page.tsx": {
-    "mtime": 1794228954.4721458,
-    "seen": 1794532981.618232,
-    "ast_hash": "738a769099fb0f9959567cfe01cfab4c",
-    "semantic_hash": "738a769099fb0f9959567cfe01cfab4c"
+    "mtime": 1795195972.0028057,
+    "seen": 1795199559.2427087,
+    "ast_hash": "c7c24d1e9b72dcfa899862bab76a118d",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/content/page.tsx": {
-    "mtime": 1795194540.6860516,
-    "seen": 1795195799.9233243,
-    "ast_hash": "3c4982554c4b91196e6946dd48c16790",
+    "mtime": 1795198943.7451813,
+    "seen": 1795199559.2427104,
+    "ast_hash": "7c64eb3c0e89b04bd2311257a1970ab2",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/contributions/page.tsx": {
@@ -714,9 +714,9 @@
     "semantic_hash": ""
   },
   "src/app/api/admin/assessments/route.ts": {
-    "mtime": 1795194547.9360259,
-    "seen": 1795195799.9351072,
-    "ast_hash": "952265eab539a562ecf48c549a225fa1",
+    "mtime": 1795198953.5692065,
+    "seen": 1795199559.253563,
+    "ast_hash": "fdf16358fd697822427f076b8c0fd03f",
     "semantic_hash": ""
   },
   "src/app/api/admin/audit-logs/route.ts": {
@@ -6564,10 +6564,10 @@
     "semantic_hash": "b505753da9a65c7c9bf402818b77cbbe"
   },
   "src/app/(dashboard)/admin/content/assessments/[id]/preview/admin-preview-client.tsx": {
-    "mtime": 1794297665.0695486,
-    "seen": 1794532981.6182277,
-    "ast_hash": "c32211bfba5c5fc0d597c640fe2dc1dc",
-    "semantic_hash": "c32211bfba5c5fc0d597c640fe2dc1dc"
+    "mtime": 1795196011.2263439,
+    "seen": 1795199559.242597,
+    "ast_hash": "bf3392939e41898f405e13ab4957dc06",
+    "semantic_hash": ""
   },
   "src/app/(dashboard)/admin/content/assessments/[id]/preview/page.tsx": {
     "mtime": 1794043440.2945406,
@@ -7509,6 +7509,12 @@
     "mtime": 1795191202.1268942,
     "seen": 1795191662.2596173,
     "ast_hash": "fb084f2ed48054ad89e0db5ea8684da3",
+    "semantic_hash": ""
+  },
+  "src/app/api/admin/assessments/bulk/route.ts": {
+    "mtime": 1795196845.4275382,
+    "seen": 1795199559.2535603,
+    "ast_hash": "8356a8fe78e764387744ffd4aa5ccd99",
     "semantic_hash": ""
   },
   ".agents/skills/stageshow/package-lock.json": {

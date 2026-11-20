@@ -44,11 +44,11 @@ interface AssessmentMeta {
 }
 
 const DOMAIN_CATALOG = [
-  { domainIndex: 1, code: '01', title: 'Thông tin & Dữ liệu số' },
-  { domainIndex: 2, code: '02', title: 'Giao tiếp & Cộng tác số' },
-  { domainIndex: 3, code: '03', title: 'Sáng tạo Nội dung số & AI' },
-  { domainIndex: 4, code: '04', title: 'An toàn & Bảo mật số' },
-  { domainIndex: 5, code: '05', title: 'Giải quyết Vấn đề số' },
+  { domainIndex: 1, code: '01', title: 'D1: Thông tin và Dữ liệu số' },
+  { domainIndex: 2, code: '02', title: 'D2: Giao tiếp và Cộng tác số' },
+  { domainIndex: 3, code: '03', title: 'D3: Sáng tạo Nội dung số và AI' },
+  { domainIndex: 4, code: '04', title: 'D4: An toàn và Sức khỏe số' },
+  { domainIndex: 5, code: '05', title: 'D5: Giải quyết Vấn đề số' },
 ];
 
 export default function AssessmentBriefingPage() {
@@ -136,18 +136,22 @@ export default function AssessmentBriefingPage() {
 
       let breakdown: Array<{ domainIndex: number; title: string; questionCount: number }> = [];
 
-      // If targeted to a single domain
+      // If targeted to specific domains
       const targetDomain = (asm as any).target_domain;
       if (targetDomain && targetDomain !== 'ALL') {
-        const found = DOMAIN_CATALOG.find((d) => d.code === targetDomain);
-        if (found) {
-          breakdown = [
-            {
-              domainIndex: found.domainIndex,
-              title: found.title,
-              questionCount,
-            },
-          ];
+        const codes = targetDomain
+          .split(',')
+          .map((c: string) => c.trim().padStart(2, '0'))
+          .filter(Boolean);
+        const selected = DOMAIN_CATALOG.filter((d) => codes.includes(d.code));
+        if (selected.length > 0) {
+          breakdown = selected.map((d) => ({
+            domainIndex: d.domainIndex,
+            title: d.title,
+            questionCount:
+              countByDomainIndex.get(d.domainIndex) ||
+              (codes.length === 1 ? questionCount : Math.round(questionCount / codes.length)),
+          }));
         }
       }
 

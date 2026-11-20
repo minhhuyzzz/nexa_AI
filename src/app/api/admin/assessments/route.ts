@@ -103,14 +103,6 @@ export async function GET() {
         ),
       ];
 
-      const DOMAIN_NAME_MAP: Record<string, string> = {
-        '01': 'Miền 01: Thông tin & Dữ liệu số',
-        '02': 'Miền 02: Giao tiếp & Cộng tác số',
-        '03': 'Miền 03: Sáng tạo Nội dung số & AI',
-        '04': 'Miền 04: An toàn & Bảo mật số',
-        '05': 'Miền 05: Giải quyết Vấn đề số',
-      };
-
       const targetDomain = (a as any).target_domain || (domainCodes.length === 1 ? domainCodes[0] : 'ALL');
       let configuredCodes: string[] = [];
       if (targetDomain === 'ALL') {
