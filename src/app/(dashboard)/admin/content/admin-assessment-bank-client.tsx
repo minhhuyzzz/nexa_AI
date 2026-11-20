@@ -1369,21 +1369,21 @@ export function AdminAssessmentBankClient({
 
             <form onSubmit={handleSaveAssessment} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">
-                  Tiêu Đề Bài Khảo Thí *
+                <label className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1">
+                  Tiêu đề bài khảo thí <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="Ví dụ: Đánh giá Năng lực Tìm kiếm &amp; Xác thực Dữ liệu số"
+                  placeholder="Ví dụ: Đánh giá Năng lực Tìm kiếm và Xác thực Dữ liệu số"
                   className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 focus:outline-hidden focus:border-sky-600 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">Mô Tả Mục Tiêu Khảo Hạch</label>
+                <label className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1">Mô tả mục tiêu khảo hạch</label>
                 <textarea
                   rows={2}
                   value={formDescription}
@@ -1395,7 +1395,7 @@ export function AdminAssessmentBankClient({
 
               <div>
                 <label className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
-                  Miền Năng Lực Số (Khảo thí trọng tâm) <span className="text-rose-500">*</span>
+                  Miền năng lực số <span className="text-rose-500">*</span>
                 </label>
                 <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1410,7 +1410,7 @@ export function AdminAssessmentBankClient({
                         }}
                         className="text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
-                      <span>Đa Miền Năng Lực Số (Toàn diện 5 miền)</span>
+                      <span>Đa miền năng lực số</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800 dark:text-zinc-200">
                       <input
@@ -1425,7 +1425,7 @@ export function AdminAssessmentBankClient({
                         }}
                         className="text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
-                      <span>Tùy chọn miền cụ thể (chọn 1 hoặc kết hợp nhiều miền)</span>
+                      <span>Tùy chọn</span>
                     </label>
                   </div>
 
@@ -1895,7 +1895,7 @@ export function AdminAssessmentBankClient({
 
                   <div>
                     <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1.5">
-                      Miền Năng Lực Số (Khảo thí trọng tâm)
+                      Miền năng lực số
                     </label>
                     <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1910,7 +1910,7 @@ export function AdminAssessmentBankClient({
                             }}
                             className="text-blue-600 focus:ring-blue-500 cursor-pointer"
                           />
-                          <span>Đa Miền Năng Lực Số (Toàn diện 5 miền)</span>
+                          <span>Đa miền năng lực số</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800 dark:text-zinc-200">
                           <input
@@ -1925,7 +1925,7 @@ export function AdminAssessmentBankClient({
                             }}
                             className="text-blue-600 focus:ring-blue-500 cursor-pointer"
                           />
-                          <span>Tùy chọn miền cụ thể (chọn 1 hoặc kết hợp nhiều miền)</span>
+                          <span>Tùy chọn</span>
                         </label>
                       </div>
 
