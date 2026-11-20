@@ -67,6 +67,7 @@ export interface AssessmentItemRecord {
   typeLabel: string;
   domainName: string;
   domainCodes: string[];
+  target_domain?: string;
   security_settings?: AssessmentSecuritySettings | null;
 }
 
@@ -171,12 +172,15 @@ export function AdminAssessmentBankClient({
   const [settingsIsPublished, setSettingsIsPublished] = useState(true);
   const [settingsSecurity, setSettingsSecurity] = useState<AssessmentSecuritySettings>(DEFAULT_SECURITY_SETTINGS);
   const [settingsTab, setSettingsTab] = useState<'GENERAL' | 'SECURITY'>('GENERAL');
+  const [settingsTargetDomain, setSettingsTargetDomain] = useState<'ALL' | 'CUSTOM'>('ALL');
+  const [settingsSelectedDomains, setSettingsSelectedDomains] = useState<string[]>([]);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Form State for Create / Edit Assessment
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formTargetDomain, setFormTargetDomain] = useState('ALL');
+  const [formTargetDomain, setFormTargetDomain] = useState<'ALL' | 'CUSTOM'>('ALL');
+  const [formSelectedDomains, setFormSelectedDomains] = useState<string[]>([]);
   const [formDuration, setFormDuration] = useState(45);
   const [formPassingScore, setFormPassingScore] = useState(70);
   const [formReward, setFormReward] = useState(50);
@@ -259,6 +263,7 @@ export function AdminAssessmentBankClient({
     setFormTitle('');
     setFormDescription('Bài khảo thí chuẩn hóa đo lường 5 miền năng lực số toàn diện.');
     setFormTargetDomain('ALL');
+    setFormSelectedDomains(['01', '02', '03', '04', '05']);
     setFormDuration(45);
     setFormPassingScore(70);
     setFormReward(50);
@@ -272,7 +277,14 @@ export function AdminAssessmentBankClient({
     setEditingAssessment(exam);
     setFormTitle(exam.title);
     setFormDescription(exam.description || '');
-    setFormTargetDomain((exam as any).target_domain || 'ALL');
+    const target = exam.target_domain || (exam.domainCodes.length === 1 ? exam.domainCodes[0] : 'ALL');
+    if (target === 'ALL') {
+      setFormTargetDomain('ALL');
+      setFormSelectedDomains(['01', '02', '03', '04', '05']);
+    } else {
+      setFormTargetDomain('CUSTOM');
+      setFormSelectedDomains(target.split(',').map((c) => c.trim().padStart(2, '0')).filter(Boolean));
+    }
     setFormDuration(exam.duration_minutes);
     setFormPassingScore(exam.passing_score);
     setFormReward(exam.point_reward);
@@ -290,6 +302,14 @@ export function AdminAssessmentBankClient({
     setSettingsPassingScore(exam.passing_score);
     setSettingsIsVip(exam.is_vip);
     setSettingsIsPublished(exam.is_published);
+    const target = exam.target_domain || (exam.domainCodes.length === 1 ? exam.domainCodes[0] : 'ALL');
+    if (target === 'ALL') {
+      setSettingsTargetDomain('ALL');
+      setSettingsSelectedDomains(['01', '02', '03', '04', '05']);
+    } else {
+      setSettingsTargetDomain('CUSTOM');
+      setSettingsSelectedDomains(target.split(',').map((c) => c.trim().padStart(2, '0')).filter(Boolean));
+    }
     setSettingsSecurity(
       exam.security_settings
         ? { ...DEFAULT_SECURITY_SETTINGS, ...exam.security_settings }
@@ -307,6 +327,25 @@ export function AdminAssessmentBankClient({
       return;
     }
 
+    let finalTargetDomain = 'ALL';
+    let finalCodes = ['01', '02', '03', '04', '05'];
+    if (settingsTargetDomain === 'CUSTOM') {
+      if (settingsSelectedDomains.length === 0 || settingsSelectedDomains.length === 5) {
+        finalTargetDomain = 'ALL';
+        finalCodes = ['01', '02', '03', '04', '05'];
+      } else {
+        finalTargetDomain = settingsSelectedDomains.join(',');
+        finalCodes = settingsSelectedDomains;
+      }
+    }
+
+    const finalName =
+      finalTargetDomain === 'ALL' || finalCodes.length > 1
+        ? 'Đa Miền Năng Lực'
+        : finalCodes.length === 1
+        ? `Miền ${finalCodes[0]}`
+        : 'Chưa phân miền';
+
     setIsSavingSettings(true);
     try {
       const res = await fetch(`/api/admin/assessments/${settingsExam.id}`, {
@@ -320,6 +359,7 @@ export function AdminAssessmentBankClient({
           is_vip: settingsIsVip,
           access_tier: settingsIsVip ? 'VIP' : 'FREE',
           is_published: settingsIsPublished,
+          target_domain: finalTargetDomain,
           security_settings: settingsSecurity,
         }),
       });
@@ -341,6 +381,9 @@ export function AdminAssessmentBankClient({
                 is_vip: settingsIsVip,
                 access_tier: settingsIsVip ? 'VIP' : 'FREE',
                 is_published: settingsIsPublished,
+                target_domain: finalTargetDomain,
+                domainCodes: finalCodes,
+                domainName: finalName,
                 security_settings: settingsSecurity,
               }
             : item
@@ -364,6 +407,25 @@ export function AdminAssessmentBankClient({
       return;
     }
 
+    let finalTargetDomain = 'ALL';
+    let finalCodes = ['01', '02', '03', '04', '05'];
+    if (formTargetDomain === 'CUSTOM') {
+      if (formSelectedDomains.length === 0 || formSelectedDomains.length === 5) {
+        finalTargetDomain = 'ALL';
+        finalCodes = ['01', '02', '03', '04', '05'];
+      } else {
+        finalTargetDomain = formSelectedDomains.join(',');
+        finalCodes = formSelectedDomains;
+      }
+    }
+
+    const finalName =
+      finalTargetDomain === 'ALL' || finalCodes.length > 1
+        ? 'Đa Miền Năng Lực'
+        : finalCodes.length === 1
+        ? `Miền ${finalCodes[0]}`
+        : 'Chưa phân miền';
+
     setIsSaving(true);
     try {
       if (editingAssessment) {
@@ -380,6 +442,7 @@ export function AdminAssessmentBankClient({
             is_vip: formIsVip,
             access_tier: formIsVip ? 'VIP' : 'FREE',
             is_published: formIsPublished,
+            target_domain: finalTargetDomain,
           }),
         });
 
@@ -401,6 +464,9 @@ export function AdminAssessmentBankClient({
                   is_vip: formIsVip,
                   access_tier: formIsVip ? 'VIP' : 'FREE',
                   is_published: formIsPublished,
+                  target_domain: finalTargetDomain,
+                  domainCodes: finalCodes,
+                  domainName: finalName,
                 }
               : item
           )
@@ -417,7 +483,7 @@ export function AdminAssessmentBankClient({
             duration_minutes: Number(formDuration) || 45,
             passing_score: Number(formPassingScore) || 70,
             point_reward: Number(formReward) || 50,
-            target_domain: formTargetDomain,
+            target_domain: finalTargetDomain,
             is_vip: formIsVip,
             access_tier: formIsVip ? 'VIP' : 'FREE',
             is_published: formIsPublished,
@@ -442,8 +508,9 @@ export function AdminAssessmentBankClient({
           questionCount: 0,
           types: [],
           typeLabel: 'Chưa có câu hỏi',
-          domainName: 'Chưa phân miền',
-          domainCodes: [],
+          domainName: finalName,
+          domainCodes: finalCodes,
+          target_domain: finalTargetDomain,
         };
 
         setAssessments((prev) => [newRecord, ...prev]);
@@ -1327,24 +1394,73 @@ export function AdminAssessmentBankClient({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1">
-                  Miền Năng Lực Số (Khảo thí trọng tâm) *
+                <label className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
+                  Miền Năng Lực Số (Khảo thí trọng tâm) <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={formTargetDomain}
-                  onChange={(e) => setFormTargetDomain(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 focus:outline-hidden focus:border-blue-600 text-xs cursor-pointer font-medium"
-                >
-                  <option value="ALL">Đa Miền Năng Lực Số (Đánh giá toàn diện 5 miền)</option>
-                  <option value="01">Miền 01: Thông tin &amp; Dữ liệu số</option>
-                  <option value="02">Miền 02: Giao tiếp &amp; Cộng tác số</option>
-                  <option value="03">Miền 03: Sáng tạo Nội dung số &amp; AI</option>
-                  <option value="04">Miền 04: An toàn &amp; Bảo mật số</option>
-                  <option value="05">Miền 05: Giải quyết Vấn đề số</option>
-                </select>
-                <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
-                  Đề thi được phân loại theo chuẩn 5 miền năng lực số để người học dễ dàng lọc và đánh giá đúng trọng tâm.
-                </p>
+                <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800 dark:text-zinc-200">
+                      <input
+                        type="radio"
+                        name="create_domain_type"
+                        checked={formTargetDomain === 'ALL'}
+                        onChange={() => {
+                          setFormTargetDomain('ALL');
+                          setFormSelectedDomains(['01', '02', '03', '04', '05']);
+                        }}
+                        className="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span>Đa Miền Năng Lực Số (Toàn diện 5 miền)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800 dark:text-zinc-200">
+                      <input
+                        type="radio"
+                        name="create_domain_type"
+                        checked={formTargetDomain !== 'ALL'}
+                        onChange={() => {
+                          setFormTargetDomain('CUSTOM');
+                          if (formSelectedDomains.length === 5) {
+                            setFormSelectedDomains(['01']);
+                          }
+                        }}
+                        className="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span>Tùy chọn miền cụ thể (chọn 1 hoặc kết hợp nhiều miền)</span>
+                    </label>
+                  </div>
+
+                  {formTargetDomain !== 'ALL' && (
+                    <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {domains.map((d) => {
+                        const isChecked = formSelectedDomains.includes(d.code);
+                        return (
+                          <label
+                            key={d.id}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                              isChecked
+                                ? 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium'
+                                : 'bg-white dark:bg-zinc-800/60 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setFormSelectedDomains((prev) =>
+                                  prev.includes(d.code)
+                                    ? prev.filter((c) => c !== d.code)
+                                    : [...prev, d.code]
+                                );
+                              }}
+                              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span className="truncate">{d.title.replace('&', 'và')}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-3">
@@ -1775,6 +1891,76 @@ export function AdminAssessmentBankClient({
                       placeholder="Mô tả tóm tắt chuẩn đầu ra năng lực của bài thi..."
                       className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1.5">
+                      Miền Năng Lực Số (Khảo thí trọng tâm)
+                    </label>
+                    <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800 dark:text-zinc-200">
+                          <input
+                            type="radio"
+                            name="settings_domain_choice"
+                            checked={settingsTargetDomain === 'ALL'}
+                            onChange={() => {
+                              setSettingsTargetDomain('ALL');
+                              setSettingsSelectedDomains(['01', '02', '03', '04', '05']);
+                            }}
+                            className="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span>Đa Miền Năng Lực Số (Toàn diện 5 miền)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800 dark:text-zinc-200">
+                          <input
+                            type="radio"
+                            name="settings_domain_choice"
+                            checked={settingsTargetDomain !== 'ALL'}
+                            onChange={() => {
+                              setSettingsTargetDomain('CUSTOM');
+                              if (settingsSelectedDomains.length === 5) {
+                                setSettingsSelectedDomains(['01']);
+                              }
+                            }}
+                            className="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span>Tùy chọn miền cụ thể (chọn 1 hoặc kết hợp nhiều miền)</span>
+                        </label>
+                      </div>
+
+                      {settingsTargetDomain !== 'ALL' && (
+                        <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {domains.map((d) => {
+                            const isChecked = settingsSelectedDomains.includes(d.code);
+                            return (
+                              <label
+                                key={d.id}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                                  isChecked
+                                    ? 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium'
+                                    : 'bg-white dark:bg-zinc-800/60 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    setSettingsSelectedDomains((prev) =>
+                                      prev.includes(d.code)
+                                        ? prev.filter((c) => c !== d.code)
+                                        : [...prev, d.code]
+                                    );
+                                  }}
+                                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                />
+                                <span className="truncate">{d.title.replace('&', 'và')}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">

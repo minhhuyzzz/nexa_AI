@@ -27,6 +27,7 @@ export default async function AdminContentPage() {
       is_vip,
       access_tier,
       visibility,
+      target_domain,
       organization_id,
       security_settings,
       created_at,
@@ -63,6 +64,7 @@ export default async function AdminContentPage() {
         is_vip,
         access_tier,
         visibility,
+        target_domain,
         organization_id,
         security_settings,
         created_at,
@@ -173,7 +175,8 @@ export default async function AdminContentPage() {
       typeLabels.push('Thực hành');
     }
 
-    const domainCodes = [
+    // 1. Domain codes from items
+    const itemDomainCodes = [
       ...new Set(
         items
           .map((i: any) => {
@@ -187,12 +190,27 @@ export default async function AdminContentPage() {
       ),
     ] as string[];
 
-    const domainName =
-      domainCodes.length === 0
-        ? 'Chưa phân miền'
-        : domainCodes.length > 1
-        ? 'Đa Miền Năng Lực'
-        : `Miền ${domainCodes[0]}`;
+    // 2. Target domain configured on the assessment
+    const targetDomain = a.target_domain || '';
+    let configuredCodes: string[] = [];
+    if (targetDomain === 'ALL') {
+      configuredCodes = ['01', '02', '03', '04', '05'];
+    } else if (targetDomain) {
+      configuredCodes = targetDomain
+        .split(',')
+        .map((s: string) => s.trim().padStart(2, '0'))
+        .filter(Boolean);
+    }
+
+    // Effective domain codes: prioritize explicit configured codes, fall back to items
+    const effectiveDomainCodes = configuredCodes.length > 0 ? configuredCodes : itemDomainCodes;
+
+    let domainName = 'Chưa phân miền';
+    if (targetDomain === 'ALL' || effectiveDomainCodes.length > 1) {
+      domainName = 'Đa Miền Năng Lực';
+    } else if (effectiveDomainCodes.length === 1) {
+      domainName = `Miền ${effectiveDomainCodes[0]}`;
+    }
 
     return {
       id: a.id,
@@ -209,7 +227,8 @@ export default async function AdminContentPage() {
       types: rawTypes as string[],
       typeLabel: typeLabels.length > 0 ? typeLabels.join(', ') : 'Chưa có câu hỏi',
       domainName,
-      domainCodes,
+      domainCodes: effectiveDomainCodes,
+      target_domain: targetDomain,
       security_settings: a.security_settings || null,
     };
   });
