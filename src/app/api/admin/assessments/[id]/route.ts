@@ -256,16 +256,31 @@ export async function PUT(
       };
     }
 
-    const { data: updated, error } = await supabase
+    let updated = null;
+    const { data: userUpdated, error } = await supabase
       .from('assessments')
       .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Error updating assessment:', error);
-      return NextResponse.json({ error: 'Không thể cập nhật bài khảo thí' }, { status: 500 });
+    if (error || !userUpdated) {
+      console.warn('[ADMIN_UPDATE_ASSESSMENT_FALLBACK] User client update failed or RLS blocked, trying adminClient:', error?.message);
+      const adminClient = createAdminClient();
+      const { data: adminUpdated, error: adminErr } = await adminClient
+        .from('assessments')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (adminErr || !adminUpdated) {
+        console.error('Error updating assessment via adminClient:', adminErr);
+        return NextResponse.json({ error: 'Không thể cập nhật bài khảo thí' }, { status: 500 });
+      }
+      updated = adminUpdated;
+    } else {
+      updated = userUpdated;
     }
 
     await recordAdminAudit({
@@ -294,23 +309,49 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
 
-    // Check if there are active submissions
-    const { count: submissionCount } = await supabase
+    // 1. Fetch current assessment to verify existence and retrieve existing settings
+    const { data: existingAssessment } = await adminSupabase
+      .from('assessments')
+      .select('id, title, security_settings')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!existingAssessment) {
+      return NextResponse.json({ error: 'Không tìm thấy bài khảo thí để xóa' }, { status: 404 });
+    }
+
+    // 2. Check if there are active submissions
+    const { count: submissionCount } = await adminSupabase
       .from('assessment_submissions')
       .select('*', { count: 'exact', head: true })
       .eq('assessment_id', id);
 
     if (submissionCount && submissionCount > 0) {
-      // Soft unpublish to protect submission history integrity
-      const { error } = await supabase
+      // Soft-delete / Archive: update is_published: false and persist is_archived in security_settings
+      const currentSecurity =
+        existingAssessment.security_settings && typeof existingAssessment.security_settings === 'object'
+          ? existingAssessment.security_settings
+          : {};
+
+      const { error: archiveError } = await adminSupabase
         .from('assessments')
-        .update({ is_published: false, updated_at: new Date().toISOString() })
+        .update({
+          is_published: false,
+          security_settings: {
+            ...currentSecurity,
+            is_archived: true,
+            archived_at: new Date().toISOString(),
+            archived_by: auth.user!.id,
+          },
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id);
 
-      if (error) {
-        return NextResponse.json({ error: 'Không thể ẩn bài khảo thí' }, { status: 500 });
+      if (archiveError) {
+        console.error('Error archiving assessment:', archiveError);
+        return NextResponse.json({ error: 'Không thể lưu trữ bài khảo thí' }, { status: 500 });
       }
 
       await recordAdminAudit({
@@ -318,24 +359,25 @@ export async function DELETE(
         action: 'UPDATE',
         targetType: 'ASSESSMENT',
         targetId: id,
-        newValues: { is_published: false, reason: 'Soft deleted due to existing submissions' },
+        newValues: { is_published: false, is_archived: true, reason: 'Archived due to existing submissions' },
       });
 
       return NextResponse.json({
-        message: 'Bài thi đã có thí sinh nộp bài nên được chuyển sang trạng thái Ẩn thay vì xóa cứng',
+        success: true,
+        message: 'Đã xóa và lưu trữ bài khảo thí (bảo toàn lịch sử thi của thí sinh)',
         softDeleted: true,
       });
     }
 
-    // Otherwise, clean delete
-    const { error } = await supabase
+    // 3. Clean hard delete when no submissions exist
+    const { error: deleteError } = await adminSupabase
       .from('assessments')
       .delete()
       .eq('id', id);
 
-    if (error) {
-      console.error('Error deleting assessment:', error);
-      return NextResponse.json({ error: 'Không thể xóa bài khảo thí' }, { status: 500 });
+    if (deleteError) {
+      console.error('Error deleting assessment:', deleteError);
+      return NextResponse.json({ error: 'Không thể xóa bài khảo thí: ' + deleteError.message }, { status: 500 });
     }
 
     await recordAdminAudit({
@@ -346,7 +388,7 @@ export async function DELETE(
       newValues: { softDeleted: false },
     });
 
-    return NextResponse.json({ success: true, message: 'Đã xóa bài khảo thí thành công' });
+    return NextResponse.json({ success: true, message: 'Đã xóa vĩnh viễn bài khảo thí thành công' });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });

@@ -93,7 +93,8 @@ export function AdminAssessmentBankClient({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingAssessment, setEditingAssessment] = useState<AssessmentItemRecord | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingExam, setDeletingExam] = useState<AssessmentItemRecord | null>(null);
+  const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
   const [cloningId, setCloningId] = useState<string | null>(null);
 
   // 3-dots Dropdown State (Fixed floating popover)
@@ -435,8 +436,8 @@ export function AdminAssessmentBankClient({
       );
       showToast(
         nextVip
-          ? `Đã chuyển bài "${exam.title}" sang chế độ VIP (Khóa chuyên sâu)`
-          : `Đã mở miễn phí bài "${exam.title}" cho mọi người học`
+          ? `Đã chuyển bài "${exam.title}" sang phân hạng Nâng cấp`
+          : `Đã mở Miễn phí bài "${exam.title}" cho mọi người học`
       );
     } catch (err) {
       showToast('Không thể cập nhật hạng bài thi.');
@@ -463,7 +464,7 @@ export function AdminAssessmentBankClient({
       showToast(
         nextPublished
           ? `Đã phát hành bài thi "${exam.title}" lên kho khảo thí!`
-          : `Đã chuyển bài thi "${exam.title}" về trạng thái Bản nháp (Ẩn khỏi học viên)`
+          : `Đã chuyển bài thi "${exam.title}" về trạng thái Bản nháp`
       );
     } catch (err) {
       showToast('Không thể cập nhật trạng thái phát hành.');
@@ -472,6 +473,7 @@ export function AdminAssessmentBankClient({
 
   // Delete Assessment
   const handleDeleteAssessment = async (id: string) => {
+    setIsDeletingAssessment(true);
     try {
       const res = await fetch(`/api/admin/assessments/${id}`, {
         method: 'DELETE',
@@ -480,19 +482,13 @@ export function AdminAssessmentBankClient({
 
       if (!res.ok) throw new Error(data.error || 'Lỗi khi xóa bài thi');
 
-      if (data.softDeleted) {
-        setAssessments((prev) =>
-          prev.map((item) => (item.id === id ? { ...item, is_published: false } : item))
-        );
-        showToast('Bài thi đã có học viên làm bài nên được chuyển sang trạng thái Ẩn');
-      } else {
-        setAssessments((prev) => prev.filter((item) => item.id !== id));
-        showToast('Đã xóa bài thi thành công!');
-      }
+      setAssessments((prev) => prev.filter((item) => item.id !== id));
+      showToast(data.message || 'Đã xóa bài khảo thí thành công!');
+      setDeletingExam(null);
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi xóa bài thi');
     } finally {
-      setDeletingId(null);
+      setIsDeletingAssessment(false);
     }
   };
 
@@ -741,7 +737,7 @@ export function AdminAssessmentBankClient({
           >
             <option value="ALL">Trạng thái: Tất cả</option>
             <option value="PUBLISHED">Đang phát hành</option>
-            <option value="DRAFT">Bản nháp / Sắp phát hành</option>
+            <option value="DRAFT">Bản nháp</option>
           </select>
 
           <select
@@ -750,8 +746,8 @@ export function AdminAssessmentBankClient({
             className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
           >
             <option value="ALL">Phân hạng: Tất cả</option>
-            <option value="VIP">Có khóa</option>
             <option value="FREE">Miễn phí</option>
+            <option value="VIP">Nâng cấp</option>
           </select>
         </div>
       </div>
@@ -864,7 +860,7 @@ export function AdminAssessmentBankClient({
                         <button
                           type="button"
                           onClick={() => handleToggleVip(exam)}
-                          title={exam.is_vip ? 'Cần nâng cấp để mở khóa (Bấm để chuyển sang Miễn phí)' : 'Miễn phí (Bấm để đặt khóa)'}
+                          title={exam.is_vip ? 'Phân hạng Nâng cấp (Bấm để chuyển sang Miễn phí)' : 'Phân hạng Miễn phí (Bấm để chuyển sang Nâng cấp)'}
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer ${
                             exam.is_vip
                               ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
@@ -874,7 +870,7 @@ export function AdminAssessmentBankClient({
                           {exam.is_vip ? (
                             <>
                               <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                              <span>Có khóa</span>
+                              <span>Nâng cấp</span>
                             </>
                           ) : (
                             <>
@@ -889,15 +885,16 @@ export function AdminAssessmentBankClient({
                         <button
                           type="button"
                           onClick={() => handleTogglePublish(exam)}
+                          title={exam.is_published ? 'Đang phát hành (Bấm để chuyển về Bản nháp)' : 'Bản nháp (Bấm để kích hoạt phát hành)'}
                           className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors"
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              exam.is_published ? 'bg-emerald-500' : 'bg-blue-500'
+                              exam.is_published ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-zinc-500'
                             }`}
                           />
-                          <span className={exam.is_published ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-blue-700 dark:text-blue-400 font-semibold'}>
-                            {exam.is_published ? 'Đang phát hành' : 'Sắp phát hành'}
+                          <span className={exam.is_published ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-600 dark:text-zinc-400 font-medium'}>
+                            {exam.is_published ? 'Đang phát hành' : 'Bản nháp'}
                           </span>
                         </button>
                       </td>
@@ -998,7 +995,7 @@ export function AdminAssessmentBankClient({
             {dropdownMenu.exam.is_published ? (
               <>
                 <Ban className="w-3.5 h-3.5 text-amber-600" />
-                <span>Tạm ngưng</span>
+                <span>Chuyển về Bản nháp</span>
               </>
             ) : (
               <>
@@ -1041,9 +1038,9 @@ export function AdminAssessmentBankClient({
             <button
               type="button"
               onClick={() => {
-                const targetId = dropdownMenu.exam.id;
+                const targetExam = dropdownMenu.exam;
                 setDropdownMenu(null);
-                handleDeleteAssessment(targetId);
+                setDeletingExam(targetExam);
               }}
               className="w-full px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 transition-colors cursor-pointer"
             >
@@ -1125,15 +1122,15 @@ export function AdminAssessmentBankClient({
 
               <div className="grid grid-cols-2 gap-4 pt-3">
                 <div>
-                  <span className="block font-semibold text-slate-800 mb-1.5">Phân Hạng Truy Cập</span>
+                  <span className="block font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">Phân Hạng Truy Cập</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setFormIsVip(false)}
-                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold text-center transition-colors cursor-pointer ${
+                      className={`flex-1 py-1.5 px-3 rounded-lg border text-xs font-semibold text-center transition-colors cursor-pointer ${
                         !formIsVip
-                          ? 'bg-sky-50 border-sky-300 text-sky-800'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+                          : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
                       }`}
                     >
                       Miễn phí
@@ -1141,18 +1138,18 @@ export function AdminAssessmentBankClient({
                     <button
                       type="button"
                       onClick={() => setFormIsVip(true)}
-                      className={`flex-1 py-1.5 px-3 rounded border text-xs font-semibold text-center transition-colors cursor-pointer ${
+                      className={`flex-1 py-1.5 px-3 rounded-lg border text-xs font-semibold text-center transition-colors cursor-pointer ${
                         formIsVip
-                          ? 'bg-amber-50 border-amber-300 text-amber-800'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+                          : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
                       }`}
                     >
-                      Có khóa (Cần nâng cấp)
+                      Nâng cấp
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-1">
                     {formIsVip
-                      ? 'Yêu cầu người học phải nâng cấp gói để mở khóa làm bài này'
+                      ? 'Yêu cầu người học phải nâng cấp gói tài khoản để mở khóa làm bài này'
                       : 'Mọi người học tài khoản miễn phí đều có thể truy cập làm bài'}
                   </p>
                 </div>
@@ -1401,36 +1398,65 @@ export function AdminAssessmentBankClient({
       )}
 
       {/* Confirmation Modal: Delete Assessment */}
-      {deletingId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-sm p-6 space-y-4 shadow-sm animate-in fade-in zoom-in-95">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-rose-50 text-rose-600 shrink-0">
+      {deletingExam && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md p-6 space-y-4 shadow-xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0 border border-rose-100 dark:border-rose-900/40">
                 <Trash2 className="w-5 h-5" strokeWidth={1.75} />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Xóa Bài Khảo Thí?</h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Nếu bài thi đã có thí sinh nộp bài, hệ thống sẽ tự động chuyển sang chế độ Ẩn để bảo
-                  toàn lịch sử điểm số.
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Xác nhận xóa bài khảo thí
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  Bạn có chắc chắn muốn xóa bài khảo thí này khỏi ngân hàng đề thi chuẩn không? Hành động này không thể hoàn tác.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            {/* Thông tin bài thi bị xóa */}
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 space-y-1">
+              <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2">
+                {deletingExam.title}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-neutral-400 flex items-center gap-2">
+                <span>{deletingExam.domainName}</span>
+                <span>•</span>
+                <span>{deletingExam.questionCount} câu hỏi</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 dark:text-neutral-500 italic">
+              Lưu ý: Nếu bài thi đã có lịch sử nộp bài của thí sinh, hệ thống sẽ tự động lưu trữ an toàn để bảo toàn kết quả thi.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={() => setDeletingId(null)}
-                className="px-3.5 py-1.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                disabled={isDeletingAssessment}
+                onClick={() => setDeletingExam(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="button"
-                onClick={() => handleDeleteAssessment(deletingId)}
-                className="px-3.5 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 text-xs font-semibold"
+                disabled={isDeletingAssessment}
+                onClick={() => handleDeleteAssessment(deletingExam.id)}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
               >
-                Xác Nhận Xóa
+                {isDeletingAssessment ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xác nhận xóa</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1580,7 +1606,7 @@ export function AdminAssessmentBankClient({
                               : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900'
                           }`}
                         >
-                          Có khóa
+                          Nâng cấp
                         </button>
                       </div>
                     </div>
@@ -1599,7 +1625,7 @@ export function AdminAssessmentBankClient({
                               : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900'
                           }`}
                         >
-                          Bản nháp (Ẩn)
+                          Bản nháp
                         </button>
                         <button
                           type="button"

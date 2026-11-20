@@ -69,10 +69,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Không thể tải danh sách bài khảo thí' }, { status: 500 });
     }
 
-    // Exclude any assessments created in Personal or Org workspaces
+    // Exclude any assessments created in Personal or Org workspaces or archived
     const systemOnly = (assessments || []).filter((a: any) => {
       if (a.organization_id) return false;
       if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+      if (a.security_settings?.is_archived === true) return false;
       return true;
     });
 

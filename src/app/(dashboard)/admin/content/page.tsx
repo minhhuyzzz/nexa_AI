@@ -94,6 +94,7 @@ export default async function AdminContentPage() {
   const filteredCanonical = (rawAssessments || []).filter((a: any) => {
     if (a.organization_id) return false;
     if (a.visibility === 'PERSONAL' || a.visibility === 'ORGANIZATION') return false;
+    if (a.security_settings?.is_archived === true) return false;
     if (
       a.id === 'a0000000-0000-0000-0000-000000000001' ||
       a.slug === 'baseline' ||
