@@ -143,6 +143,7 @@ function EvaluatorGradingContent() {
   const [evaluatorFeedback, setEvaluatorFeedback] = useState('');
   const [savingGrade, setSavingGrade] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
 
   // AI Evaluation state
   const [aiLoading, setAiLoading] = useState(false);
@@ -224,6 +225,7 @@ function EvaluatorGradingContent() {
 
     setActiveAiEval(activeItem.aiEvaluation || null);
     setSaveSuccessMsg(null);
+    setSaveErrorMsg(null);
     setAiError(null);
 
     // Initialise scores from existing AI eval or current rubric
@@ -332,6 +334,7 @@ function EvaluatorGradingContent() {
 
     setSavingGrade(true);
     setSaveSuccessMsg(null);
+    setSaveErrorMsg(null);
 
     try {
       const scoresArray = Object.values(criterionScores);
@@ -347,21 +350,17 @@ function EvaluatorGradingContent() {
       });
 
       if (res.ok) {
+        setSaveErrorMsg(null);
         setSaveSuccessMsg('Đã lưu và công bố kết quả thẩm định thành công!');
         await fetchSubmissions();
       } else {
-        // Prototype simulation success
-        setSubmissions((prev) =>
-          prev.map((s) => (s.id === activeSubmission.id ? { ...s, status: 'EVALUATED' } : s))
-        );
-        setSaveSuccessMsg('Đã lưu và công bố kết quả thẩm định thành công!');
+        const errorData = await res.json().catch(() => null);
+        setSaveSuccessMsg(null);
+        setSaveErrorMsg(errorData?.error || 'Có lỗi xảy ra khi lưu kết quả thẩm định');
       }
-    } catch {
-      // Prototype simulation success
-      setSubmissions((prev) =>
-        prev.map((s) => (s.id === activeSubmission.id ? { ...s, status: 'EVALUATED' } : s))
-      );
-      setSaveSuccessMsg('Đã lưu và công bố kết quả thẩm định thành công!');
+    } catch (err) {
+      setSaveSuccessMsg(null);
+      setSaveErrorMsg(err instanceof Error ? err.message : 'Lỗi kết nối khi gửi kết quả thẩm định');
     } finally {
       setSavingGrade(false);
     }
@@ -424,7 +423,17 @@ function EvaluatorGradingContent() {
       </div>
 
       {/* Filter and Candidate Selector Row */}
-      {submissions.length === 0 && !loading ? (
+      {loading && submissions.length === 0 ? (
+        <div className="p-16 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800">
+          <RefreshCw className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-3 animate-spin" strokeWidth={1.75} />
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+            Đang tải danh sách bài thi cần thẩm định...
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
+            Hệ thống đang truy vấn các bài nộp tự luận và thực hành từ cơ sở dữ liệu.
+          </p>
+        </div>
+      ) : submissions.length === 0 && !loading ? (
         <div className="p-16 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800">
           <CheckSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
           <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
@@ -1007,8 +1016,13 @@ function EvaluatorGradingContent() {
 
                     {/* Save and Publish Button */}
                     <div className="pt-3 flex items-center justify-between">
-                      {saveSuccessMsg ? (
-                        <div className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
+                      {saveErrorMsg ? (
+                        <div className="text-xs text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4" strokeWidth={1.75} />
+                          {saveErrorMsg}
+                        </div>
+                      ) : saveSuccessMsg ? (
+                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
                           {saveSuccessMsg}
                         </div>

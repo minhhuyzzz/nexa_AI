@@ -91,15 +91,10 @@ describe('Milestone 1 Challenger Empirical Verification Suite', () => {
       'MANAGE_ASSESSMENTS',
     ];
 
-    it('TC-CHALLENGE-01: EVALUATOR must match ASSESSOR in every single action without exception', () => {
+    it('TC-CHALLENGE-01: EVALUATOR is removed from ACTION_ROLE_MAP; ASSESSOR is canonical role', () => {
       allActions.forEach((action) => {
         const roles = ACTION_ROLE_MAP[action];
-        const hasAssessor = roles.includes('ASSESSOR');
-        const hasEvaluator = roles.includes('EVALUATOR');
-        expect(
-          hasEvaluator,
-          `Action ${action} does not match between ASSESSOR (${hasAssessor}) and EVALUATOR (${hasEvaluator})`
-        ).toBe(hasAssessor);
+        expect(roles).not.toContain('EVALUATOR');
       });
     });
 
@@ -115,10 +110,10 @@ describe('Milestone 1 Challenger Empirical Verification Suite', () => {
       expect(ACTION_ROLE_MAP.MANAGE_MEMBERS).toEqual(['ORG_OWNER', 'ORG_ADMIN']);
     });
 
-    it('TC-CHALLENGE-05: VIEW_WORKSPACE includes 4 management roles (excluding MEMBER)', () => {
-      const expected: OrgRole[] = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
+    it('TC-CHALLENGE-05: VIEW_WORKSPACE includes 3 management roles (excluding MEMBER)', () => {
+      const expected: OrgRole[] = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'];
       expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toEqual(expect.arrayContaining(expected));
-      expect(ACTION_ROLE_MAP.VIEW_WORKSPACE.length).toBe(4);
+      expect(ACTION_ROLE_MAP.VIEW_WORKSPACE.length).toBe(3);
       expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).not.toContain('MEMBER');
     });
 

@@ -188,6 +188,62 @@ export type Database = {
           },
         ]
       }
+      ai_question_explanations: {
+        Row: {
+          access_context: Json | null
+          created_at: string
+          credit_cost: number | null
+          explanation_text: string
+          expires_at: string | null
+          id: string
+          item_id: string | null
+          model_used: string
+          question_id: string
+          question_version: number
+          request_id: string | null
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          access_context?: Json | null
+          created_at?: string
+          credit_cost?: number | null
+          explanation_text: string
+          expires_at?: string | null
+          id?: string
+          item_id?: string | null
+          model_used: string
+          question_id: string
+          question_version?: number
+          request_id?: string | null
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          access_context?: Json | null
+          created_at?: string
+          credit_cost?: number | null
+          explanation_text?: string
+          expires_at?: string | null
+          id?: string
+          item_id?: string | null
+          model_used?: string
+          question_id?: string
+          question_version?: number
+          request_id?: string | null
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_question_explanations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_events: {
         Row: {
           completion_tokens: number | null

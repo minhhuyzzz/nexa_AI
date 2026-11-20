@@ -126,7 +126,7 @@ export async function getEffectiveUser(supabase: SupabaseClient): Promise<Effect
     } else if (!activeWsCookie && organizations.length > 0) {
       const primaryOrg = organizations[0];
       if (
-        ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(primaryOrg.org_role) ||
+        ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(normalizeOrgRole(primaryOrg.org_role)) ||
         profile?.role === 'EVALUATOR'
       ) {
         active_workspace = {

@@ -65,7 +65,7 @@ async function checkOrgManager(user: { id: string; email?: string }, resolvedOrg
     .eq('status', 'ACTIVE')
     .single();
 
-  // Allowed manager roles: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR']
+  // Allowed manager roles: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR']
   const norm = normalizeOrgRole(member?.org_role);
   return Boolean(norm === 'ORG_OWNER' || norm === 'ORG_ADMIN' || norm === 'ASSESSOR');
 }

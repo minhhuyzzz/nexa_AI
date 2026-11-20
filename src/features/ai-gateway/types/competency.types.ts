@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TokenUsageSchema, TokenUsage } from './grading.types';
 
 // ==============================================================================
 // INPUT TYPES FOR COMPETENCY ANALYSIS (APPS 2, 3, 4, 5)
@@ -103,10 +104,12 @@ export const CompetencyAnalysisOutputSchema = z.object({
   pedagogicalFeedback: z.string(),
   learningPathway: z.array(PathwayStepSchema).length(4),
   recommendedCourses: z.array(RecommendedCourseSchema).default([]),
+  tokenUsage: TokenUsageSchema.optional(),
 });
 
 export type RadarDataItem = z.infer<typeof RadarDataItemSchema>;
 export type SkillGap = z.infer<typeof SkillGapSchema>;
 export type PathwayStep = z.infer<typeof PathwayStepSchema>;
 export type RecommendedCourse = z.infer<typeof RecommendedCourseSchema>;
+export type { TokenUsage };
 export type CompetencyAnalysisOutput = z.infer<typeof CompetencyAnalysisOutputSchema>;

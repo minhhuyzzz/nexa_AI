@@ -119,6 +119,8 @@ UC-Gxx: Guest; UC-Pxx: Personal User; UC-Oxx: Organization Admin; UC-Axx: System
 
 Một tài khoản có thể đồng thời là Personal User và Organization Admin. Vai trò được kiểm tra bằng quyền thực tế ở API/database, không chỉ qua điều hướng. System Admin không phải một “người dùng tổ chức có mọi quyền” và không thay thế tác nghiệp đánh giá của khách hàng.
 
+Trong Organization Workspace, hệ thống chuẩn hóa 4 vai trò tác nghiệp chính thức: `ORG_OWNER` (Chủ sở hữu), `ORG_ADMIN` (Quản trị viên tổ chức), `ASSESSOR` (Khảo thí viên — vai trò chấm bài duy nhất trong tổ chức, thực hiện chấm điểm tự luận/thực hành và duyệt gợi ý AI Rubric theo đúng lớp/chiến dịch được phân công), và `MEMBER` (Thành viên/Người học). Tuyệt đối không sử dụng vai trò `EVALUATOR` trong phạm vi Organization (vai trò `EVALUATOR` cấp tài khoản `profiles.role` chỉ áp dụng cho Giảng viên lớp cá nhân tại Personal Workspace).
+
 # 4. Mô hình nghiệp vụ tổng thể
 
 ## 4.1. Chuỗi giá trị B2C – Personal

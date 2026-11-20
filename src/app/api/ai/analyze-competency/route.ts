@@ -671,10 +671,8 @@ export async function POST(request: Request) {
       throw aiError;
     }
 
-    // Settle credits
-    await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
-
-    // 11. Store analysis in public.competency_analyses
+    // 11. Store analysis in public.competency_analyses BEFORE settling credits (P0-01)
+    // Prevents orphan billing / phantom states if database insertion fails
     const { data: savedRecord, error: saveError } = await supabase
       .from('competency_analyses')
       .insert({
@@ -692,9 +690,18 @@ export async function POST(request: Request) {
       .select('id')
       .single();
 
-    if (saveError) {
+    if (saveError || !savedRecord) {
       console.error('Error saving competency analysis:', saveError);
+      // Fail-closed: release reserved credits back to user
+      await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'RELEASE');
+      return NextResponse.json(
+        { error: 'Không thể lưu kết quả phân tích năng lực vào cơ sở dữ liệu. Lượt credits đã được hoàn trả an toàn.' },
+        { status: 500 }
+      );
     }
+
+    // Settle credits ONLY after record is confirmed persisted in database
+    await QuotaEnforcementService.settleOrReleaseCredits(supabase, reservation, 'SETTLE', 1);
 
     const remainingCredits = reservation.remainingCredits ?? profile.credits ?? 0;
 

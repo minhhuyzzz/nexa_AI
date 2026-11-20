@@ -1,5 +1,7 @@
-import { RubricGradingInput, RubricGradingOutput } from '../types/grading.types';
+import { RubricGradingInput, RubricGradingOutput, TokenUsage } from '../types/grading.types';
 import { CompetencyAnalysisInput, CompetencyAnalysisOutput } from '../types/competency.types';
+
+export type { TokenUsage };
 
 export interface AIProviderAdapter {
   readonly providerName: string;

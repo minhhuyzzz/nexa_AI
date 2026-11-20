@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 import { QuotaEnforcementService } from '@/features/billing/services/quota-enforcement.service';
 
 export async function GET(req: Request): Promise<NextResponse>;
@@ -204,8 +205,8 @@ export async function POST(request: Request) {
         .eq('organization_id', organizationId)
         .maybeSingle();
 
-      const authorizedRoles = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'];
-      if (!membership || membership.status !== 'ACTIVE' || !authorizedRoles.includes(membership.org_role)) {
+      const authorizedRoles = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'];
+      if (!membership || membership.status !== 'ACTIVE' || !authorizedRoles.includes(normalizeOrgRole(membership.org_role))) {
         return NextResponse.json(
           { error: 'Bạn không có quyền tạo đề thi trong không gian tổ chức này' },
           { status: 403 }

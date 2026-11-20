@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
 
         if (
           orgMember &&
-          ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(orgMember.org_role)
+          ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(normalizeOrgRole(orgMember.org_role))
         ) {
           hasAuthority = true;
         }

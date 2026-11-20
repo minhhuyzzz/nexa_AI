@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { checkRateLimit, getClientIp } from '@/lib/security/rate-limiter';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 const acceptSchema = z.object({
   token: z.string().min(10, 'Mã lời mời không hợp lệ'),
@@ -216,7 +217,7 @@ export async function POST(request: NextRequest) {
         {
           user_id: targetUserId,
           organization_id: invitation.organization_id,
-          org_role: invitation.org_role,
+          org_role: normalizeOrgRole(invitation.org_role),
           status: 'ACTIVE',
         },
         { onConflict: 'user_id, organization_id' }

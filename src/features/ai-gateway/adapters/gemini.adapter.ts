@@ -20,9 +20,13 @@ export class GeminiAdapter implements AIProviderAdapter {
 
   private ai: GoogleGenAI;
 
-  constructor(customModel?: string) {
+  constructor(customModel?: string, customApiKey?: string) {
     const config = AIConfigService.getConfig();
-    const apiKey = config.apiKey || process.env.GEMINI_API_KEY;
+    const apiKey =
+      customApiKey ||
+      config.apiKey ||
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('Chưa thiết lập khóa API. Vui lòng cấu hình GEMINI_API_KEY tại trang Quản trị AI Gateway.');
     }
@@ -149,6 +153,19 @@ YÊU CẦU ĐỊNH DẠNG JSON ĐẦU RA:
     try {
       const parsedJson = JSON.parse(responseText);
       const validated = RubricGradingOutputSchema.parse(parsedJson);
+
+      // Trích xuất cấu trúc token thực tế từ response usageMetadata
+      const usage = response.usageMetadata;
+      const promptTokens = usage?.promptTokenCount ?? Math.max(1, Math.round((userPrompt.length + systemInstruction.length) / 4));
+      const completionTokens = usage?.candidatesTokenCount ?? Math.max(1, Math.round(responseText.length / 4));
+      const totalTokens = usage?.totalTokenCount ?? (promptTokens + completionTokens);
+
+      validated.tokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens,
+      };
+
       return validated;
     } catch (parseError) {
       console.error('Failed to validate AI output with schema:', responseText, parseError);
@@ -326,6 +343,19 @@ HÃY PHÂN TÍCH VÀ XUẤT RA JSON CHUẨN XÁC:
       }
 
       const validated = CompetencyAnalysisOutputSchema.parse(parsedJson);
+
+      // Trích xuất cấu trúc token thực tế từ response usageMetadata
+      const usage = response.usageMetadata;
+      const promptTokens = usage?.promptTokenCount ?? Math.max(1, Math.round((userPrompt.length + systemInstruction.length) / 4));
+      const completionTokens = usage?.candidatesTokenCount ?? Math.max(1, Math.round(responseText.length / 4));
+      const totalTokens = usage?.totalTokenCount ?? (promptTokens + completionTokens);
+
+      validated.tokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens,
+      };
+
       return validated;
     } catch (parseError) {
       console.error('Failed to validate Competency Analysis AI output:', responseText, parseError);

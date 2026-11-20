@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 
 const updateMemberSchema = z.object({
   targetUserId: z.string().uuid('ID người dùng không hợp lệ'),
   orgRole: z
-    .enum(['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])
+    .preprocess((val) => (val === 'EVALUATOR' ? 'ASSESSOR' : val), z.enum(['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'MEMBER']))
     .optional(),
   status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
 });
@@ -207,7 +208,7 @@ export async function PATCH(
 
     // 5. Update user_organizations
     const updatePayload: Record<string, any> = {};
-    if (orgRole) updatePayload.org_role = orgRole;
+    if (orgRole) updatePayload.org_role = normalizeOrgRole(orgRole);
     if (status) updatePayload.status = status;
 
     const { data: updated, error: updateError } = await adminSupabase

@@ -803,7 +803,7 @@ export class QuotaEnforcementService {
   ): Promise<{ isOrg: boolean; organizationId: string | null; learnerId: string | null }> {
     const { data: sub } = await supabase
       .from('assessment_submissions')
-      .select('id, user_id, assessment_id, class_assignment_id')
+      .select('id, user_id, assessment_id, class_assignment_id, campaign_id')
       .eq('id', submissionId)
       .maybeSingle();
 
@@ -825,7 +825,20 @@ export class QuotaEnforcementService {
       }
     }
 
-    // 2. Kiểm tra qua đề thi (assessments)
+    // 2. Kiểm tra qua chiến dịch khảo thí tổ chức (campaign_id)
+    if (sub.campaign_id) {
+      const { data: campaign } = await supabase
+        .from('assessment_campaigns')
+        .select('organization_id')
+        .eq('id', sub.campaign_id)
+        .maybeSingle();
+
+      if (campaign?.organization_id) {
+        return { isOrg: true, organizationId: campaign.organization_id, learnerId: sub.user_id };
+      }
+    }
+
+    // 3. Kiểm tra qua đề thi (assessments)
     if (sub.assessment_id) {
       const { data: asm } = await supabase
         .from('assessments')

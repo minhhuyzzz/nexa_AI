@@ -2,13 +2,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 export const dynamic = 'force-dynamic';
 
 const memberRowSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   orgRole: z
-    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])
+    .preprocess((val) => (val === 'EVALUATOR' ? 'ASSESSOR' : val), z.enum(['ORG_ADMIN', 'ASSESSOR', 'MEMBER']))
     .default('MEMBER'),
   fullName: z.string().trim().max(100).optional(),
   studentId: z.string().trim().max(50).optional(),
@@ -169,7 +170,7 @@ export async function POST(
       return {
         organization_id: orgId,
         email: c.email,
-        org_role: c.orgRole,
+        org_role: normalizeOrgRole(c.orgRole),
         token,
         status: 'PENDING',
         invited_by: user.id,

@@ -130,6 +130,91 @@ export async function GET(request: NextRequest | Request) {
       : '';
     const monthlyBudgetUsd = currentConfig.costBudgetMonthlyUsd ?? 200;
 
+    // Fetch calibration logs summary
+    let calibrationSummary = {
+      totalLogs: 0,
+      meanScoreDelta: 0,
+      exactMatchCount: 0,
+      highAgreementCount: 0,
+      divergentCount: 0,
+      recentLogs: [] as any[],
+    };
+
+    try {
+      const calibTable = adminSupabase.from('ai_calibration_logs');
+      if (typeof calibTable?.select === 'function') {
+        const { data: calibLogs } = await calibTable
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (calibLogs && calibLogs.length > 0) {
+          let sumDelta = 0;
+          let exactMatches = 0;
+          let highAgreements = 0;
+          let divergences = 0;
+
+          calibLogs.forEach((log: any) => {
+            const delta = Math.abs(Number(log.score_delta) || 0);
+            sumDelta += delta;
+            if (delta === 0) exactMatches++;
+            else if (delta <= 10) highAgreements++;
+            else divergences++;
+          });
+
+          calibrationSummary = {
+            totalLogs: calibLogs.length,
+            meanScoreDelta: Math.round((sumDelta / calibLogs.length) * 100) / 100,
+            exactMatchCount: exactMatches,
+            highAgreementCount: highAgreements,
+            divergentCount: divergences,
+            recentLogs: calibLogs.slice(0, 20),
+          };
+        }
+      }
+    } catch {
+      // Non-fatal if ai_calibration_logs table is empty or query fails
+    }
+
+    // Fetch ai_task_policies and credit usage statistics
+    let taskPolicies: any[] = [];
+    let creditUsageSummary = {
+      totalReservations: 0,
+      totalSettled: 0,
+      totalReleased: 0,
+      totalFlagged: 0,
+    };
+
+    try {
+      const taskTable = adminSupabase.from('ai_task_policies');
+      if (typeof taskTable?.select === 'function') {
+        const { data: policies } = await taskTable.select('*').order('task_type', { ascending: true });
+        if (policies) taskPolicies = policies;
+      }
+    } catch {
+      // Non-fatal
+    }
+
+    try {
+      const resTable = adminSupabase.from('ai_credit_reservations');
+      if (typeof resTable?.select === 'function') {
+        const { data: reservations } = await resTable
+          .select('status, credits')
+          .limit(500);
+
+        if (reservations) {
+          creditUsageSummary.totalReservations = reservations.length;
+          reservations.forEach((r: any) => {
+            if (r.status === 'SETTLED') creditUsageSummary.totalSettled += Number(r.credits || 0);
+            else if (r.status === 'RELEASED') creditUsageSummary.totalReleased += Number(r.credits || 0);
+            else if (r.status === 'FLAGGED_MANUAL_REVIEW') creditUsageSummary.totalFlagged += 1;
+          });
+        }
+      }
+    } catch {
+      // Non-fatal
+    }
+
     return NextResponse.json({
       success: true,
       period,
@@ -169,6 +254,9 @@ export async function GET(request: NextRequest | Request) {
         models: modelCounts,
         features: featureCounts,
       },
+      calibrationSummary,
+      taskPolicies,
+      creditUsageSummary,
       recentEvents: allEvents.slice(0, 50).map((ev: any) => ({
         ...ev,
         flow: ev.organization_id ? 'org' : 'personal',
@@ -180,7 +268,7 @@ export async function GET(request: NextRequest | Request) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handleUpdateAiConfig(request: NextRequest) {
   try {
     const auth = await requirePlatformAdmin('OPERATE_AI');
     if (!auth.isAuthorized) {
@@ -254,6 +342,9 @@ export async function POST(request: NextRequest) {
     // Persist configuration in database via AIConfigService.saveConfigAsync (AI-02)
     const updated = await AIConfigService.saveConfigAsync(patchPayload, adminUser.id, adminSupabase);
 
+    // Call clearCache to ensure cache is immediately cleared across instances
+    AIConfigService.clearCache();
+
     // Record audit log
     await recordAdminAudit({
       adminId: adminUser.id,
@@ -295,4 +386,12 @@ export async function POST(request: NextRequest) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  return handleUpdateAiConfig(request);
+}
+
+export async function PUT(request: NextRequest) {
+  return handleUpdateAiConfig(request);
 }

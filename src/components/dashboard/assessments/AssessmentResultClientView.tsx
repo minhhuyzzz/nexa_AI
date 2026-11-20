@@ -19,7 +19,7 @@ import {
   AlertCircle,
   Award,
 } from 'lucide-react';
-import { AIGradingCard, type AIEvaluationView } from '@/components/assessment/AIGradingCard';
+import type { AIEvaluationView } from '@/components/assessment/AIGradingCard';
 
 export interface ResultAnswerItem {
   id: string;
@@ -90,7 +90,7 @@ export function AssessmentResultClientView({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F8FAFC] dark:bg-[#000000] text-neutral-900 dark:text-neutral-100 flex flex-col select-auto animate-in fade-in duration-200">
       {/* 1. Immersive Fullscreen Top Navigation Bar */}
-      <header className="h-14 sm:h-16 shrink-0 bg-white/90 dark:bg-[#111114]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800 px-4 sm:px-8 flex items-center justify-between gap-4 sticky top-0 z-30">
+      <header className="h-14 sm:h-16 shrink-0 bg-white/90 dark:bg-[#111114]/90 backdrop-blur-md shadow-xs px-4 sm:px-8 flex items-center justify-between gap-4 sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <Link
             href="/personal/assessments"
@@ -426,18 +426,6 @@ export function AssessmentResultClientView({
                     <p className="text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
                       {ans.textResponse}
                     </p>
-                  </div>
-                )}
-
-                {/* On-Demand AI Rubric Grading Card if practical */}
-                {ans.textResponse && (
-                  <div className="mt-3">
-                    <AIGradingCard
-                      submissionId={submissionId}
-                      itemId={ans.itemId}
-                      hasTextResponse={Boolean(ans.textResponse)}
-                      initialEvaluation={evalMap[ans.itemId] || null}
-                    />
                   </div>
                 )}
               </div>

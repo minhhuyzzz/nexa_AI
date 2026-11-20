@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUser } from '@/lib/auth/getEffectiveUser';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const createClassSchema = z.object({
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
           .eq('status', 'ACTIVE')
           .single();
 
-        if (!member || !['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(member.org_role)) {
+        if (!member || !['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(normalizeOrgRole(member.org_role))) {
           return NextResponse.json(
             { error: 'Bạn không có quyền tạo nhóm lớp trong tổ chức này' },
             { status: 403 }

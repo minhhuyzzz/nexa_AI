@@ -3,13 +3,14 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 import { sendOrgInvitationEmail } from '@/lib/email/email-service';
 
 const inviteSchema = z.object({
   organizationId: z.string().uuid('ID tổ chức không hợp lệ'),
   email: z.string().email('Email không đúng định dạng'),
   orgRole: z
-    .enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])
+    .preprocess((val) => (val === 'EVALUATOR' ? 'ASSESSOR' : val), z.enum(['ORG_ADMIN', 'ASSESSOR', 'MEMBER']))
     .default('MEMBER'),
 });
 
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
       .insert({
         organization_id: organizationId,
         email: email.toLowerCase(),
-        org_role: orgRole,
+        org_role: normalizeOrgRole(orgRole),
         token,
         status: 'PENDING',
         invited_by: user.id,
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
         .insert({
           organization_id: organizationId,
           email: email.toLowerCase(),
-          org_role: orgRole,
+          org_role: normalizeOrgRole(orgRole),
           token,
           status: 'PENDING',
           invited_by: user.id,

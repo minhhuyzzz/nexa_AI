@@ -9,6 +9,7 @@ import {
   normalizeOrgRole,
   getOrgRoleLabel,
   STANDARD_ROLE_LABELS,
+  type StandardOrgRole,
   type OrgRole,
   type OrgPermissionAction,
   type OrgAuthContext,
@@ -139,34 +140,40 @@ describe('NEXA Organization RBAC & Security E2E Suite (Remediated)', () => {
   // TIER 1: Feature Coverage & Role Partitioning (F1 to F16)
   // ==========================================================================
   describe('Tier 1: Feature Coverage & Role Partitioning', () => {
-    describe('F1: EVALUATOR Role Parity with ASSESSOR', () => {
-      it('TC-F1-01: EVALUATOR has identical VIEW_WORKSPACE access as ASSESSOR in genuine ACTION_ROLE_MAP', () => {
+    describe('F1: Standardized ASSESSOR Role in ACTION_ROLE_MAP (EVALUATOR Removed)', () => {
+      it('TC-F1-01: ASSESSOR is canonical for VIEW_WORKSPACE; EVALUATOR is removed from ACTION_ROLE_MAP', () => {
         expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toContain('ASSESSOR');
-        expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toContain('EVALUATOR');
+        expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).not.toContain('EVALUATOR');
       });
 
-      it('TC-F1-02: EVALUATOR has VIEW_GRADING and GRADE_SUBMISSION permissions in genuine ACTION_ROLE_MAP', () => {
-        expect(ACTION_ROLE_MAP.VIEW_GRADING).toContain('EVALUATOR');
-        expect(ACTION_ROLE_MAP.GRADE_SUBMISSION).toContain('EVALUATOR');
+      it('TC-F1-02: ASSESSOR has VIEW_GRADING and GRADE_SUBMISSION permissions; EVALUATOR is removed', () => {
+        expect(ACTION_ROLE_MAP.VIEW_GRADING).toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.GRADE_SUBMISSION).toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.VIEW_GRADING).not.toContain('EVALUATOR');
+        expect(ACTION_ROLE_MAP.GRADE_SUBMISSION).not.toContain('EVALUATOR');
       });
 
-      it('TC-F1-03: EVALUATOR has VIEW_ANALYTICS and MANAGE_ASSESSMENTS permissions in genuine ACTION_ROLE_MAP', () => {
-        expect(ACTION_ROLE_MAP.VIEW_ANALYTICS).toContain('EVALUATOR');
-        expect(ACTION_ROLE_MAP.MANAGE_ASSESSMENTS).toContain('EVALUATOR');
+      it('TC-F1-03: ASSESSOR has VIEW_ANALYTICS and MANAGE_ASSESSMENTS permissions; EVALUATOR is removed', () => {
+        expect(ACTION_ROLE_MAP.VIEW_ANALYTICS).toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.MANAGE_ASSESSMENTS).toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.VIEW_ANALYTICS).not.toContain('EVALUATOR');
+        expect(ACTION_ROLE_MAP.MANAGE_ASSESSMENTS).not.toContain('EVALUATOR');
       });
 
-      it('TC-F1-04: EVALUATOR has MANAGE_CAMPAIGNS and MANAGE_CLASSES permissions in genuine ACTION_ROLE_MAP', () => {
-        expect(ACTION_ROLE_MAP.MANAGE_CAMPAIGNS).toContain('EVALUATOR');
-        expect(ACTION_ROLE_MAP.MANAGE_CLASSES).toContain('EVALUATOR');
+      it('TC-F1-04: ASSESSOR has MANAGE_CAMPAIGNS and MANAGE_CLASSES permissions; EVALUATOR is removed', () => {
+        expect(ACTION_ROLE_MAP.MANAGE_CAMPAIGNS).toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.MANAGE_CLASSES).toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.MANAGE_CAMPAIGNS).not.toContain('EVALUATOR');
+        expect(ACTION_ROLE_MAP.MANAGE_CLASSES).not.toContain('EVALUATOR');
       });
 
-      it('TC-F1-05: EVALUATOR is restricted from MANAGE_MEMBERS, MANAGE_SETTINGS, and VIEW_AI_QUOTA', () => {
-        expect(ACTION_ROLE_MAP.MANAGE_MEMBERS).not.toContain('EVALUATOR');
-        expect(ACTION_ROLE_MAP.MANAGE_SETTINGS).not.toContain('EVALUATOR');
-        expect(ACTION_ROLE_MAP.VIEW_AI_QUOTA).not.toContain('EVALUATOR');
+      it('TC-F1-05: ASSESSOR is restricted from MANAGE_MEMBERS, MANAGE_SETTINGS, and VIEW_AI_QUOTA', () => {
+        expect(ACTION_ROLE_MAP.MANAGE_MEMBERS).not.toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.MANAGE_SETTINGS).not.toContain('ASSESSOR');
+        expect(ACTION_ROLE_MAP.VIEW_AI_QUOTA).not.toContain('ASSESSOR');
       });
 
-      it('TC-F1-06: Strict Parity Loop — Across ALL 10 actions, EVALUATOR exactly mirrors ASSESSOR', () => {
+      it('TC-F1-06: Strict Role Standardization — Across ALL 10 actions, EVALUATOR is completely absent from ACTION_ROLE_MAP', () => {
         const allActions: OrgPermissionAction[] = [
           'VIEW_WORKSPACE',
           'MANAGE_MEMBERS',
@@ -182,12 +189,7 @@ describe('NEXA Organization RBAC & Security E2E Suite (Remediated)', () => {
 
         allActions.forEach((action) => {
           const roles = ACTION_ROLE_MAP[action];
-          const hasAssessor = roles.includes('ASSESSOR');
-          const hasEvaluator = roles.includes('EVALUATOR');
-          expect(
-            hasEvaluator,
-            `Parity discrepancy in action: ${action}`
-          ).toBe(hasAssessor);
+          expect(roles).not.toContain('EVALUATOR');
         });
       });
     });
@@ -714,7 +716,7 @@ describe('NEXA Organization RBAC & Security E2E Suite (Remediated)', () => {
         );
         const source = fs.readFileSync(routePath, 'utf-8');
 
-        expect(source).toContain(".enum(['ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'])");
+        expect(source).toContain(".enum(['ORG_ADMIN', 'ASSESSOR', 'MEMBER'])");
         expect(source).not.toContain(".enum(['ORG_OWNER'");
       });
 
@@ -855,7 +857,7 @@ describe('NEXA Organization RBAC & Security E2E Suite (Remediated)', () => {
   // TIER 3: Cross-Feature Combinations & Privilege Escalation Security Matrix
   // ==========================================================================
   describe('Tier 3: Pairwise & Privilege Escalation Security Matrix', () => {
-    const roles: OrgRole[] = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR', 'MEMBER'];
+    const roles: StandardOrgRole[] = ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'MEMBER'];
 
     it('TC-T3-01: Authoritative Action Entitlement Matrix holds without discrepancy', () => {
       roles.forEach((role) => {
@@ -874,7 +876,7 @@ describe('NEXA Organization RBAC & Security E2E Suite (Remediated)', () => {
           expect(canViewQuota).toBe(false);
           expect(canManageMembers).toBe(true);
           expect(canViewWorkspace).toBe(true);
-        } else if (role === 'ASSESSOR' || role === 'EVALUATOR') {
+        } else if (role === 'ASSESSOR') {
           expect(canManageSettings).toBe(false);
           expect(canViewQuota).toBe(false);
           expect(canManageMembers).toBe(false);
@@ -1247,7 +1249,7 @@ describe('NEXA Organization RBAC & Security E2E Suite (Remediated)', () => {
         const content = fs.readFileSync(routePath, 'utf8');
 
         expect(content).toContain("'ASSESSOR'");
-        expect(content).toMatch(/\['ORG_OWNER',\s*'ORG_ADMIN',\s*'ASSESSOR',\s*'EVALUATOR'\]/);
+        expect(content).toMatch(/\['ORG_OWNER',\s*'ORG_ADMIN',\s*'ASSESSOR'\]/);
       });
     });
   });

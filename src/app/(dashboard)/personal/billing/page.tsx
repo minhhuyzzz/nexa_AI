@@ -68,7 +68,7 @@ const PLAN_CONFIG: Record<
   LEARNER_PLUS: {
     name: 'Gói Tiêu Chuẩn',
     badge: 'PHỔ BIẾN NHẤT',
-    desc: 'Mở khóa trọn vẹn 5 miền bồi dưỡng và cấp chứng chỉ số có mã QR.',
+    desc: 'Mở khóa trọn vẹn 5 miền bồi dưỡng và cấp chứng chỉ số.',
     isPopular: true,
     trialTag: 'TẶNG 30 NGÀY DÙNG THỬ',
     monthlyPrice: 49000,
@@ -79,7 +79,7 @@ const PLAN_CONFIG: Record<
       'Mở trọn vẹn 5 miền & 21 trạm bồi dưỡng',
       'Tối đa 10 nhóm lớp (100 học viên/nhóm)',
       '100 AI credits / tháng',
-      'Chứng chỉ số có mã QR tra cứu Kiosk',
+      'Chứng chỉ số',
       'Lộ trình học tập cá nhân hóa',
     ],
   },
@@ -322,7 +322,7 @@ export default function LearnerBillingPage() {
           <Loader2 className="w-7 h-7 animate-spin text-blue-600 dark:text-blue-400" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch pt-6 overflow-visible">
           {displayPlans.map((p) => {
             const config = PLAN_CONFIG[p.code] || {
               name: p.name,
@@ -351,13 +351,13 @@ export default function LearnerBillingPage() {
                 key={p.id || p.code}
                 className={`relative rounded-3xl bg-white dark:bg-[#111114] border flex flex-col justify-between transition-all duration-200 ${
                   isPopular
-                    ? 'border-2 border-blue-600 dark:border-blue-500 shadow-xl ring-1 ring-blue-600/20 lg:-translate-y-2'
+                    ? 'border-2 border-blue-600 dark:border-blue-500 shadow-xl ring-1 ring-blue-600/20'
                     : 'border-slate-200/90 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 shadow-xs'
                 }`}
               >
                 {/* Popular Highlight Tag on top */}
                 {isPopular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-max px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap z-10 select-none">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-max px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5 whitespace-nowrap z-20 select-none">
                     <Sparkles className="w-3.5 h-3.5 fill-current text-blue-200 shrink-0" />
                     <span>{config.trialTag || 'KHUYÊN DÙNG NHẤT'}</span>
                   </div>
@@ -477,7 +477,7 @@ export default function LearnerBillingPage() {
                       type="button"
                       onClick={() => handleOpenUpgrade(p.code)}
                       disabled={Boolean(loadingPlanCode)}
-                      className={`w-full py-3 px-5 rounded-full text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.98] ${
+                      className={`w-full py-3 px-5 rounded-full text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.98] whitespace-nowrap ${
                         isPopular
                           ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                           : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-neutral-800 dark:text-neutral-200'
@@ -490,8 +490,8 @@ export default function LearnerBillingPage() {
                         </>
                       ) : (
                         <>
-                          <span>{isFree ? 'Chuyển sang gói này' : isPopular ? 'Dùng thử / Nâng cấp ngay' : 'Nâng cấp ngay'}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <span>{isFree ? 'Chuyển sang gói này' : isPopular ? 'Dùng thử ngay' : 'Nâng cấp ngay'}</span>
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                         </>
                       )}
                     </button>

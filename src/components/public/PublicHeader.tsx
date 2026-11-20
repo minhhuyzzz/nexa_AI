@@ -293,6 +293,8 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
 
           <Link
             href="/faq"
+            target="_blank"
+            rel="noopener noreferrer"
             className={`transition-colors py-1 ${
               currentPath === '/faq'
                 ? 'text-blue-600 font-bold'
@@ -373,6 +375,8 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
             </Link>
             <Link
               href="/faq"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setIsMobileOpen(false)}
               className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 currentPath === '/faq' ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'

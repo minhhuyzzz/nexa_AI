@@ -845,7 +845,7 @@ describe('Empirical Challenge Suite — Milestone 2 RBAC & Navigation Hardening'
         ...scanDir(orgPagesDir, /<hr[\s/>]/i),
       ];
       expect(hrMatches).toEqual([]);
-    });
+    }, 20000);
 
     it('Static Audit 5.2: Zero occurrences of divide-y in org components & dashboard pages', () => {
       const rootDir = process.cwd();

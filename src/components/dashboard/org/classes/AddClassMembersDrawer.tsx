@@ -12,6 +12,7 @@ import {
   Copy,
   Link as LinkIcon,
 } from 'lucide-react';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 interface CandidateMember {
   userId: string;
@@ -114,7 +115,7 @@ export function AddClassMembersDrawer({
         : roleFilter === 'MEMBER'
         ? !c.orgRole || c.orgRole === 'MEMBER'
         : roleFilter === 'ASSESSOR'
-        ? c.orgRole === 'ASSESSOR' || c.orgRole === 'EVALUATOR'
+        ? normalizeOrgRole(c.orgRole) === 'ASSESSOR'
         : roleFilter === 'ADMIN'
         ? c.orgRole === 'ORG_ADMIN' || c.orgRole === 'ORG_OWNER'
         : true;

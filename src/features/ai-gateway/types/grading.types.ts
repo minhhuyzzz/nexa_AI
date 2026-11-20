@@ -30,6 +30,12 @@ export const CriterionScoreSchema = z.object({
   evidenceQuote: z.string(),
 });
 
+export const TokenUsageSchema = z.object({
+  promptTokens: z.number().int().min(0),
+  completionTokens: z.number().int().min(0),
+  totalTokens: z.number().int().min(0),
+});
+
 export const RubricGradingOutputSchema = z.object({
   totalScore: z.number().min(0),
   maxScore: z.number().min(0),
@@ -40,12 +46,14 @@ export const RubricGradingOutputSchema = z.object({
   weaknesses: z.string(),
   feedback: z.string(),
   criterionScores: z.array(CriterionScoreSchema),
+  tokenUsage: TokenUsageSchema.optional(),
 });
 
 export type RubricDef = z.infer<typeof RubricDefSchema>;
 export type RubricCriterionDef = z.infer<typeof RubricCriterionDefSchema>;
 export type RubricLevelDef = z.infer<typeof RubricLevelDefSchema>;
 export type CriterionScore = z.infer<typeof CriterionScoreSchema>;
+export type TokenUsage = z.infer<typeof TokenUsageSchema>;
 export type RubricGradingOutput = z.infer<typeof RubricGradingOutputSchema>;
 
 export interface RubricGradingInput {

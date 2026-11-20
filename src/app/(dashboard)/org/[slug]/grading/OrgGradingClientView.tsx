@@ -311,24 +311,50 @@ export function OrgGradingClientView({
         throw new Error('AI không thể tính điểm cho bài thi này. Vui lòng chấm điểm thủ công.');
       }
 
-      // Distribute AI suggestion into open items proportionally
+      // P1-01 Fix: Hiển thị điểm đề xuất AI độc lập cho từng item_id theo Rubric thay vì cào bằng tỷ lệ
       if (openAnswers.length > 0) {
-        const availableOpenMax = openAnswers.reduce((sum, a) => {
-          const rawItem = Array.isArray(a.assessment_items) ? a.assessment_items[0] : a.assessment_items;
-          return sum + (Number(rawItem?.points) || 20);
-        }, 0);
-
-        const openSuggested = Math.max(0, totalScore - mcqAutoPoints);
-        const ratio = availableOpenMax > 0 ? openSuggested / availableOpenMax : 1;
-
         const newScores: Record<string, number> = {};
+        const criterionScores = data.evaluation?.criterionScores;
+
         openAnswers.forEach((ans) => {
           const rawItem = Array.isArray(ans.assessment_items) ? ans.assessment_items[0] : ans.assessment_items;
           const maxPts = Number(rawItem?.points) || 20;
-          newScores[ans.item_id] = Math.min(maxPts, Math.round(maxPts * ratio));
+
+          // Nếu có điểm từ tiêu chí rubric tương ứng với item này
+          if (Array.isArray(criterionScores) && criterionScores.length > 0) {
+            const matchedCriterion = criterionScores.find((c: any) => c.criterionId === ans.item_id || c.itemId === ans.item_id);
+            if (matchedCriterion && typeof matchedCriterion.score === 'number') {
+              newScores[ans.item_id] = Math.min(maxPts, Math.max(0, matchedCriterion.score));
+            } else if (openAnswers.length === 1 && typeof data.evaluation?.totalScore === 'number') {
+              // Nếu bài thi chỉ có 1 câu tự luận thì điểm câu đó chính là điểm AI chấm cho câu tự luận
+              newScores[ans.item_id] = Math.min(maxPts, Math.max(0, data.evaluation.totalScore));
+            } else {
+              // Phân bổ hợp lý hoặc giữ điểm đề xuất
+              const openSuggested = Math.max(0, totalScore - mcqAutoPoints);
+              const availableOpenMax = openAnswers.reduce((sum, a) => {
+                const itm = Array.isArray(a.assessment_items) ? a.assessment_items[0] : a.assessment_items;
+                return sum + (Number(itm?.points) || 20);
+              }, 0);
+              const ratio = availableOpenMax > 0 ? openSuggested / availableOpenMax : 1;
+              newScores[ans.item_id] = Math.min(maxPts, Math.round(maxPts * ratio));
+            }
+          } else if (openAnswers.length === 1 && typeof totalScore === 'number') {
+            newScores[ans.item_id] = Math.min(maxPts, Math.max(0, totalScore - mcqAutoPoints));
+          } else {
+            const openSuggested = Math.max(0, totalScore - mcqAutoPoints);
+            const availableOpenMax = openAnswers.reduce((sum, a) => {
+              const itm = Array.isArray(a.assessment_items) ? a.assessment_items[0] : a.assessment_items;
+              return sum + (Number(itm?.points) || 20);
+            }, 0);
+            const ratio = availableOpenMax > 0 ? openSuggested / availableOpenMax : 1;
+            newScores[ans.item_id] = Math.min(maxPts, Math.round(maxPts * ratio));
+          }
         });
         setOpenItemScores(newScores);
       }
+
+      const rawConf = Number(data.evaluation?.confidenceScore ?? data.confidenceScore ?? 85);
+      const normalizedConfidence = rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf);
 
       setAiSuggestion({
         suggestedScore: totalScore,
@@ -336,8 +362,8 @@ export function OrgGradingClientView({
           data.evaluation?.evidenceQuote ||
           data.evidenceQuote ||
           'Minh chứng bài làm được ghi nhận và phân tích phù hợp tiêu chí năng lực số.',
-        confidence: Number(data.evaluation?.confidenceScore ?? data.confidenceScore ?? 85),
-        confidenceFlag: data.evaluation?.confidenceFlag || (Number(data.evaluation?.confidenceScore ?? 85) >= 80 ? 'GREEN' : 'AMBER'),
+        confidence: normalizedConfidence,
+        confidenceFlag: data.evaluation?.confidenceFlag || (normalizedConfidence >= 80 ? 'GREEN' : 'AMBER'),
         feedback: data.evaluation?.feedback || 'Bài làm đáp ứng đúng yêu cầu nhiệm vụ số.',
       });
     } catch (err) {
@@ -1144,7 +1170,10 @@ export function OrgGradingClientView({
                   {/* Locked MCQ points indicator if test is hybrid */}
                   {autoMcqAnswers.length > 0 && (
                     <div className="pt-1 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                      <span>✓ Đã bao gồm trắc nghiệm:</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        <span>Đã bao gồm trắc nghiệm:</span>
+                      </span>
                       <span className="font-bold">+{mcqAutoPoints} điểm</span>
                     </div>
                   )}
@@ -1179,6 +1208,12 @@ export function OrgGradingClientView({
 
                   {aiSuggestion && (
                     <div className="text-xs bg-white dark:bg-[#111114] p-3 rounded-xl border border-blue-200 dark:border-blue-900 space-y-2 shadow-2xs">
+                      {/* HITL Notice Banner */}
+                      <div className="px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[10px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+                        <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>BẢN GỢI Ý CHẤM TỪ AI (DRAFT - CHƯA PHÊ DUYỆT)</span>
+                      </div>
+
                       <div className="flex items-center justify-between font-bold text-neutral-900 dark:text-neutral-100 flex-wrap gap-1">
                         <span className="text-blue-600 dark:text-blue-400">
                           Điểm AI đề xuất: {aiSuggestion.suggestedScore} / 100đ

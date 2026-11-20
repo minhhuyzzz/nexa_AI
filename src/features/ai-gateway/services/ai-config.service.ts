@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -28,28 +26,48 @@ export interface AIGatewaySettings {
   updatedAt: string;
 }
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'src/features/ai-gateway/config.json');
 const SETTINGS_KEY = 'ai_gateway_settings';
+export const AI_CONFIG_CACHE_TTL_MS = 60 * 1000; // 60-second TTL
 
-let inMemoryCache: AIGatewaySettings | null = null;
+interface CacheEntry {
+  config: AIGatewaySettings;
+  cachedAt: number;
+}
+
+let inMemoryCache: CacheEntry | null = null;
+
+function getFallbackApiKey(): string {
+  return (
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    ''
+  );
+}
 
 export class AIConfigService {
+  /**
+   * Cấu hình mặc định khi cơ sở dữ liệu chưa có cấu hình.
+   * Tự động fallback sang process.env.GOOGLE_GENERATIVE_AI_API_KEY hoặc GEMINI_API_KEY.
+   */
   public static getDefaultConfig(): AIGatewaySettings {
+    const fallbackApiKey = getFallbackApiKey();
+    const defaultModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+
     return {
       provider: 'GOOGLE_GEMINI',
-      apiKey: process.env.GEMINI_API_KEY || '',
-      defaultModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+      apiKey: fallbackApiKey,
+      defaultModel,
       costBudgetMonthlyUsd: 200,
       flows: {
         rubricGrading: {
           enabled: true,
-          model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+          model: defaultModel,
           name: 'Chấm Rubric & Đánh giá Minh chứng',
           description: 'Thẩm định câu trả lời tự luận và tệp minh chứng thực hành theo chuẩn Rubric 100%.',
         },
         competencyAnalysis: {
           enabled: true,
-          model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+          model: defaultModel,
           name: 'Phân tích Năng lực & Đề xuất Lộ trình',
           description: 'Phân tích điểm mạnh, điểm yếu và tự động sinh lộ trình 4 bước bù đắp khoảng trống.',
         },
@@ -59,10 +77,16 @@ export class AIConfigService {
   }
 
   /**
-   * Đọc cấu hình AI Gateway không đồng bộ từ bảng platform_settings trong DB (AI-02)
-   * Đảm bảo tính bền vững khi chạy trên môi trường serverless / multi-instance.
+   * Đọc cấu hình AI Gateway không đồng bộ từ bảng platform_settings trong DB (key: 'ai_gateway_settings').
+   * Cache in-memory với TTL 60 giây để tránh flood database đồng thời cho phép cập nhật trực tiếp từ Admin UI.
+   * Fallback an toàn về process.env.GOOGLE_GENERATIVE_AI_API_KEY nếu platform_settings chưa có bản ghi hoặc chưa cấu hình API key.
    */
   public static async getConfigAsync(supabaseClient?: SupabaseClient): Promise<AIGatewaySettings> {
+    const now = Date.now();
+    if (inMemoryCache && now - inMemoryCache.cachedAt < AI_CONFIG_CACHE_TTL_MS) {
+      return inMemoryCache.config;
+    }
+
     try {
       const client = supabaseClient || createAdminClient();
       const { data, error } = await client
@@ -72,49 +96,76 @@ export class AIConfigService {
         .maybeSingle();
 
       if (!error && data?.value) {
-        const parsed = data.value as AIGatewaySettings;
-        if (!parsed.apiKey && process.env.GEMINI_API_KEY) {
-          parsed.apiKey = process.env.GEMINI_API_KEY;
+        const raw = data.value as Partial<AIGatewaySettings>;
+        const defaults = this.getDefaultConfig();
+        const fallbackApiKey = getFallbackApiKey();
+
+        const config: AIGatewaySettings = {
+          ...defaults,
+          ...raw,
+          // Đảm bảo luôn có API key an toàn từ DB hoặc fallback biến môi trường
+          apiKey: (raw.apiKey && raw.apiKey.trim()) ? raw.apiKey.trim() : fallbackApiKey,
+          defaultModel: raw.defaultModel || defaults.defaultModel,
+          flows: {
+            rubricGrading: {
+              ...defaults.flows.rubricGrading,
+              ...(raw.flows?.rubricGrading || {}),
+            },
+            competencyAnalysis: {
+              ...defaults.flows.competencyAnalysis,
+              ...(raw.flows?.competencyAnalysis || {}),
+            },
+          },
+          updatedAt: raw.updatedAt || new Date().toISOString(),
+        };
+
+        if (config.apiKey) {
+          process.env.GEMINI_API_KEY = config.apiKey;
+          process.env.GOOGLE_GENERATIVE_AI_API_KEY = config.apiKey;
         }
-        inMemoryCache = parsed;
-        return parsed;
+        if (config.defaultModel) {
+          process.env.GEMINI_MODEL = config.defaultModel;
+        }
+
+        inMemoryCache = {
+          config,
+          cachedAt: now,
+        };
+        return config;
       }
     } catch (err) {
-      console.warn('Cannot fetch AI config from database, falling back to local/default:', err);
+      console.warn('Cannot fetch AI config from database platform_settings, falling back to defaults/env:', err);
     }
 
-    return this.getConfig();
+    // Fallback to default config with env var
+    const fallback = this.getDefaultConfig();
+    inMemoryCache = {
+      config: fallback,
+      cachedAt: now,
+    };
+    return fallback;
   }
 
   /**
-   * Đọc cấu hình đồng bộ (từ in-memory cache, file local hoặc defaults)
+   * Đọc cấu hình đồng bộ (từ in-memory cache nếu còn hạn hoặc fallback defaults).
    */
   public static getConfig(): AIGatewaySettings {
-    if (inMemoryCache) {
-      return inMemoryCache;
+    const now = Date.now();
+    if (inMemoryCache && now - inMemoryCache.cachedAt < AI_CONFIG_CACHE_TTL_MS) {
+      return inMemoryCache.config;
     }
 
-    try {
-      if (fs.existsSync(CONFIG_FILE_PATH)) {
-        const raw = fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
-        const parsed = JSON.parse(raw);
-        if (!parsed.apiKey && process.env.GEMINI_API_KEY) {
-          parsed.apiKey = process.env.GEMINI_API_KEY;
-        }
-        inMemoryCache = parsed;
-        return parsed;
-      }
-    } catch (err) {
-      console.error('Error reading AI config file, using defaults:', err);
-    }
-
-    const defaultConfig = this.getDefaultConfig();
-    inMemoryCache = defaultConfig;
-    return defaultConfig;
+    const fallback = this.getDefaultConfig();
+    inMemoryCache = {
+      config: fallback,
+      cachedAt: now,
+    };
+    return fallback;
   }
 
   /**
-   * Lưu cấu hình AI Gateway bền vững vào database (AI-02)
+   * Lưu cấu hình AI Gateway bền vững vào database (bảng platform_settings, key: 'ai_gateway_settings').
+   * Cập nhật ngay lập tức in-memory cache với TTL 60s và đồng bộ process.env.
    */
   public static async saveConfigAsync(
     newConfig: Partial<AIGatewaySettings>,
@@ -146,16 +197,15 @@ export class AIConfigService {
       throw new Error('Lỗi lưu cấu hình vào cơ sở dữ liệu: ' + error.message);
     }
 
-    // Đồng bộ vào cache & file dự phòng
-    inMemoryCache = updated;
-    try {
-      fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(updated, null, 2), 'utf-8');
-    } catch {
-      // Bỏ qua lỗi file khi deploy trên container read-only
-    }
+    // Cập nhật ngay cache in-memory
+    inMemoryCache = {
+      config: updated,
+      cachedAt: Date.now(),
+    };
 
     if (updated.apiKey) {
       process.env.GEMINI_API_KEY = updated.apiKey;
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY = updated.apiKey;
     }
     if (updated.defaultModel) {
       process.env.GEMINI_MODEL = updated.defaultModel;
@@ -165,7 +215,7 @@ export class AIConfigService {
   }
 
   /**
-   * Lưu cấu hình đồng bộ cục bộ (tương thích ngược cho các unit tests)
+   * Lưu cấu hình đồng bộ cục bộ (dành cho unit tests / local cache update).
    */
   public static saveConfig(newConfig: Partial<AIGatewaySettings>): AIGatewaySettings {
     const current = this.getConfig();
@@ -179,19 +229,43 @@ export class AIConfigService {
       updatedAt: new Date().toISOString(),
     };
 
-    inMemoryCache = updated;
-    try {
-      fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(updated, null, 2), 'utf-8');
-      if (updated.apiKey) {
-        process.env.GEMINI_API_KEY = updated.apiKey;
-      }
-      if (updated.defaultModel) {
-        process.env.GEMINI_MODEL = updated.defaultModel;
-      }
-    } catch (err) {
-      console.error('Error saving AI config file:', err);
+    inMemoryCache = {
+      config: updated,
+      cachedAt: Date.now(),
+    };
+
+    if (updated.apiKey) {
+      process.env.GEMINI_API_KEY = updated.apiKey;
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY = updated.apiKey;
+    }
+    if (updated.defaultModel) {
+      process.env.GEMINI_MODEL = updated.defaultModel;
     }
 
     return updated;
+  }
+
+  /**
+   * Xóa cache in-memory (dùng cho testing hoặc cưỡng chế tải lại ngay từ database).
+   */
+  public static clearCache(): void {
+    inMemoryCache = null;
+  }
+
+  /**
+   * Kiểm tra xem cache in-memory có đang hợp lệ (chưa hết hạn TTL 60s) hay không.
+   */
+  public static isCacheValid(): boolean {
+    if (!inMemoryCache) return false;
+    return Date.now() - inMemoryCache.cachedAt < AI_CONFIG_CACHE_TTL_MS;
+  }
+
+  /**
+   * Trả về thời gian sống còn lại của cache tính bằng mili-giây (0 nếu đã hết hạn hoặc chưa có).
+   */
+  public static getRemainingCacheTtlMs(): number {
+    if (!inMemoryCache) return 0;
+    const remaining = AI_CONFIG_CACHE_TTL_MS - (Date.now() - inMemoryCache.cachedAt);
+    return Math.max(0, remaining);
   }
 }

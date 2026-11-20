@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface AIUsageLogEntry {
+  requestId?: string | null;
   userId?: string | null;
   organizationId?: string | null;
   feature:
@@ -9,6 +10,7 @@ export interface AIUsageLogEntry {
     | 'AUTHORING_ASSIST'
     | 'SIMILAR_QUESTION'
     | 'EXPLAIN_OPTIONS'
+    | 'EXPLAIN_QUESTION'
     | 'GENERATE_BY_DOMAIN'
     | 'HEALTH_CHECK'
     | 'OTHER';
@@ -57,6 +59,7 @@ export class AIUsageLoggerService {
       );
 
       await supabase.from('ai_usage_events').insert({
+        request_id: entry.requestId || null,
         user_id: entry.userId || null,
         organization_id: entry.organizationId || null,
         feature: entry.feature,

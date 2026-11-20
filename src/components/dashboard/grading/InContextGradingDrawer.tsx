@@ -407,7 +407,7 @@ export function InContextGradingDrawer({
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                     <span className="font-bold text-sky-950">
-                      Độ tin cậy: {Math.round(aiResult.confidenceScore * 100)}%
+                      Độ tin cậy: {Math.round(aiResult.confidenceScore <= 1 ? aiResult.confidenceScore * 100 : aiResult.confidenceScore)}%
                     </span>
                   </div>
                   <span className="text-[10px] text-sky-800 font-mono">AI Rubric v3.0</span>

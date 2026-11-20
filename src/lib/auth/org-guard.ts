@@ -49,16 +49,16 @@ export interface OrgAuthContext {
 }
 
 export const ACTION_ROLE_MAP: Record<OrgPermissionAction, OrgRole[]> = {
-  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  VIEW_WORKSPACE: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
   MANAGE_MEMBERS: ['ORG_OWNER', 'ORG_ADMIN'],
-  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
-  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
-  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  VIEW_GRADING: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  GRADE_SUBMISSION: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  VIEW_ANALYTICS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
   VIEW_AI_QUOTA: ['ORG_OWNER'],
-  MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
-  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  MANAGE_CAMPAIGNS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
+  MANAGE_CLASSES: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
   MANAGE_SETTINGS: ['ORG_OWNER'],
-  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'],
+  MANAGE_ASSESSMENTS: ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'],
 };
 
 /**
@@ -166,7 +166,7 @@ export async function requireOrgPagePermission(
   if (!context.isSuperadmin && !allowedRoles.includes(context.role)) {
     // Authenticated active member lacks permission for this specific page:
     // MEMBER is redirected to their dedicated results hub (/org/${slug}/my-results)
-    // Other operational roles (ORG_ADMIN, ASSESSOR, EVALUATOR) fallback to the organization root (/org/${slug})
+    // Other operational roles (ORG_ADMIN, ASSESSOR) fallback to the organization root (/org/${slug})
     if (context.role === 'MEMBER') {
       redirect('/personal/groups?notice=org_restricted');
     }

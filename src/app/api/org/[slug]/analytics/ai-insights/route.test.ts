@@ -1,11 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST } from './route';
 
 vi.mock('@/lib/auth/org-guard', () => ({
   getOrgAuthContext: vi.fn(),
 }));
 
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      or: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      then: vi.fn((resolve) => resolve({ data: [] })),
+    })),
+  })),
+}));
+
 import { getOrgAuthContext } from '@/lib/auth/org-guard';
+import { POST } from './route';
 
 describe('/api/org/[slug]/analytics/ai-insights Route Handler', () => {
   beforeEach(() => {

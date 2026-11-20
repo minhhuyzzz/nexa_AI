@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createClientJs } from '@supabase/supabase-js';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { normalizeOrgRole } from '@/lib/auth/org-roles';
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Địa chỉ email không hợp lệ'),
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
 
       if (activeOrgs.length > 0) {
         const isOrgLeader = activeOrgs.some((o) =>
-          ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(o.role)
+          ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(normalizeOrgRole(o.role))
         );
         if (isOrgLeader || role === 'EVALUATOR') {
           const primaryOrg = activeOrgs[0];

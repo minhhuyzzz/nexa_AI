@@ -22,6 +22,7 @@
    - `Organization-owned`: Lớp học, thành viên tổ chức, đợt khảo thí, bài nộp đợt thi, điểm số tổ chức.
    - **System Admin KHÔNG mặc định có quyền làm bài thay, sửa điểm bài thi, can thiệp lớp học hay chấm bài thay tổ chức.**
 4. **Không xóa cứng (No hard-delete):** Nội dung đánh giá, học phần, lộ trình phải dùng cơ chế lưu trữ (`ARCHIVED`) hoặc ngưng phát hành (`DEPRECATED`) để bảo vệ tính toàn vẹn của dữ liệu lịch sử và tiến độ người học.
+5. **Chuẩn hóa vai trò chấm bài Organization là `ASSESSOR`:** Trong không gian Organization, vai trò chấm bài duy nhất là `ASSESSOR` (Khảo thí viên), phụ trách xem bài nộp, chấm rubric và duyệt gợi ý AI theo đúng phân công lớp/chiến dịch. Loại bỏ hoàn toàn vai trò `EVALUATOR` khỏi Organization. Vai trò `EVALUATOR` chỉ tồn tại ở cấp tài khoản cá nhân (`profiles.role = 'EVALUATOR'`) dành cho Giảng viên quản lý lớp học cá nhân (`evaluator_classes`) tại Personal Workspace.
 
 ---
 
@@ -78,7 +79,7 @@
 | UC-O07 | Tạo và phát hành đợt đánh giá | Chọn tên đợt tự đặt, đề, lớp/nhóm, thời gian và xác nhận phát hành. |
 | UC-O08 | Quản lý đợt đánh giá | Xem danh sách, điều chỉnh theo trạng thái, kết thúc hoặc lưu trữ đợt. |
 | UC-O09 | Theo dõi tình trạng hoàn thành bài đánh giá | Theo dõi Chưa làm và Đã làm (đã nộp) theo danh sách người được giao. |
-| UC-O10 | Chấm bài tự luận và thực hành | Xem bài, minh chứng, chấm rubric và nhập nhận xét (Bàn chấm bài). |
+| UC-O10 | Chấm bài tự luận và thực hành | Xem bài, minh chứng, chấm rubric, nhận gợi ý AI và nhập nhận xét (Bàn chấm bài) — do ORG_OWNER, ORG_ADMIN hoặc ASSESSOR được phân công thực hiện. |
 | UC-O11 | Duyệt và công bố kết quả đánh giá | Xác nhận kết quả chính thức, sau đó công bố cho người học theo chính sách. |
 | UC-O12 | Xem báo cáo năng lực tổ chức | Xem thống kê kết quả hợp lệ theo 5 miền năng lực trong phạm vi tổ chức. |
 | UC-O13 | So sánh kết quả đánh giá | So sánh các lớp/nhóm và đợt đánh giá có cơ sở đối chiếu phù hợp. |

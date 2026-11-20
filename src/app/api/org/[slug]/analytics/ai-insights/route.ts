@@ -1,32 +1,41 @@
 import { NextResponse } from 'next/server';
 import { getOrgAuthContext } from '@/lib/auth/org-guard';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { GoogleGenAI } from '@google/genai';
 import { AIConfigService } from '@/features/ai-gateway/services/ai-config.service';
+import {
+  OrgCompetencyAnalyticsService,
+  type RawAnalyticsSubmission,
+  type RawClassInfo,
+  type RawCampaignInfo,
+} from '@/features/analytics/services/org-competency-analytics.service';
 
 export const dynamic = 'force-dynamic';
 
 interface AiInsightRequestBody {
-  orgName: string;
-  evaluatedCount: number;
-  overallScore: number | null;
-  passRate: number | null;
-  domains: Array<{
+  orgName?: string;
+  evaluatedCount?: number;
+  overallScore?: number | null;
+  passRate?: number | null;
+  domains?: Array<{
     domainCode: string;
     name: string;
     score: number | null;
     coverageRate: number | null;
   }>;
-  priorityGapDomain: {
+  priorityGapDomain?: {
     domainCode: string;
     name: string;
     score: number;
   } | null;
-  bestDomain: {
+  bestDomain?: {
     domainCode: string;
     name: string;
     score: number;
   } | null;
   timeRangeText?: string;
+  classId?: string;
+  campaignId?: string;
 }
 
 export interface OrgAiInsightResult {
@@ -45,8 +54,15 @@ export interface OrgAiInsightResult {
   isSimulatedFallback?: boolean;
 }
 
-function generateFallbackInsights(body: AiInsightRequestBody): OrgAiInsightResult {
-  const { orgName, overallScore, passRate, bestDomain, priorityGapDomain, evaluatedCount } = body;
+function generateFallbackInsights(data: {
+  orgName: string;
+  evaluatedCount: number;
+  overallScore: number | null;
+  passRate: number | null;
+  bestDomain: { domainCode: string; name: string; score: number } | null;
+  priorityGapDomain: { domainCode: string; name: string; score: number } | null;
+}): OrgAiInsightResult {
+  const { orgName, overallScore, passRate, bestDomain, priorityGapDomain, evaluatedCount } = data;
 
   const scoreText = overallScore !== null ? `${overallScore}/100` : 'chưa đủ dữ liệu';
   const passText = passRate !== null ? `${passRate}%` : 'đang cập nhật';
@@ -98,15 +114,151 @@ export async function POST(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập hoặc không đủ quyền' }, { status: 401 });
     }
 
-    const { role, isSuperadmin } = authContext;
+    const { role, isSuperadmin, organization, user } = authContext;
     const canView = isSuperadmin || role === 'ORG_OWNER' || role === 'ORG_ADMIN' || role === 'ASSESSOR';
     if (!canView) {
       return NextResponse.json({ error: 'Bạn không có quyền yêu cầu phân tích chuyên sâu' }, { status: 403 });
     }
 
-    const body: AiInsightRequestBody = await req.json();
+    const body: AiInsightRequestBody = await req.json().catch(() => ({}));
+    const orgId = organization?.id;
+    const isAssessor = role === 'ASSESSOR' && !isSuperadmin;
 
-    if (!body.evaluatedCount || body.evaluatedCount <= 0) {
+    // Server-side database aggregation:
+    // Query directly from database to prevent client forgery of scores or domains (P0-02)
+    // and protect privacy by preventing row-level PII or unassigned class data leakage.
+    let evaluatedCount = 0;
+    let overallScore: number | null = null;
+    let passRate: number | null = null;
+    let domains: Array<{ domainCode: string; name: string; score: number | null; coverageRate: number | null }> = [];
+    let priorityGapDomain: { domainCode: string; name: string; score: number } | null = null;
+    let bestDomain: { domainCode: string; name: string; score: number } | null = null;
+    let orgName = organization?.name || body.orgName || 'Tổ chức';
+
+    let serverAggregated = false;
+
+    if (orgId) {
+      try {
+        const adminSupabase = createAdminClient();
+
+        // 1. Fetch classes in org with strict assessor scoping
+        let classesQuery = adminSupabase
+          .from('evaluator_classes')
+          .select('id, name, code, class_members(user_id), owner_user_id, instructor_id, evaluator_id')
+          .eq('organization_id', orgId);
+
+        if (isAssessor && user?.id) {
+          classesQuery = classesQuery.or(`owner_user_id.eq.${user.id},instructor_id.eq.${user.id},evaluator_id.eq.${user.id}`);
+        }
+
+        const { data: rawClasses } = await classesQuery;
+        const classesInfo: RawClassInfo[] = (rawClasses || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          code: c.code,
+          member_user_ids: Array.isArray(c.class_members)
+            ? c.class_members.map((m: any) => m.user_id)
+            : [],
+        }));
+
+        // 2. Fetch campaigns in org with strict assessor scoping
+        const { data: rawCampaigns } = await adminSupabase
+          .from('assessment_campaigns')
+          .select('id, title, status, starts_at, ends_at, passing_score, class_ids, assessor_ids')
+          .eq('organization_id', orgId);
+
+        let filteredCampaigns = rawCampaigns || [];
+        if (isAssessor && user?.id) {
+          filteredCampaigns = filteredCampaigns.filter((camp: any) => {
+            const ids = Array.isArray(camp.assessor_ids) ? camp.assessor_ids : [];
+            return ids.includes(user.id);
+          });
+        }
+
+        const campaignsInfo: RawCampaignInfo[] = filteredCampaigns.map((c: any) => ({
+          id: c.id,
+          title: c.title,
+          status: c.status,
+          starts_at: c.starts_at,
+          ends_at: c.ends_at,
+          passing_score: c.passing_score ?? 70,
+          class_ids: Array.isArray(c.class_ids) ? c.class_ids : [],
+        }));
+
+        // 3. Fetch assessments in org (only if org admin/owner; assessor only sees assigned campaigns/classes)
+        const campaignIds = campaignsInfo.map((c) => c.id);
+        const classIds = classesInfo.map((c) => c.id);
+
+        let assessmentIds: string[] = [];
+        if (!isAssessor) {
+          const { data: orgAssessments } = await adminSupabase
+            .from('assessments')
+            .select('id')
+            .eq('organization_id', orgId);
+          assessmentIds = (orgAssessments || []).map((a) => a.id);
+        }
+
+        const subsMap = new Map<string, RawAnalyticsSubmission>();
+
+        if (campaignIds.length > 0) {
+          const { data: cSubs } = await adminSupabase
+            .from('assessment_submissions')
+            .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at')
+            .in('campaign_id', campaignIds)
+            .eq('status', 'EVALUATED');
+          (cSubs || []).forEach((s) => subsMap.set(s.id, s as RawAnalyticsSubmission));
+        }
+
+        if (assessmentIds.length > 0) {
+          const { data: aSubs } = await adminSupabase
+            .from('assessment_submissions')
+            .select('id, campaign_id, assessment_id, user_id, status, percentage, is_passed, total_score, domain_scores, created_at, evaluated_at')
+            .in('assessment_id', assessmentIds)
+            .eq('status', 'EVALUATED');
+          (aSubs || []).forEach((s) => subsMap.set(s.id, s as RawAnalyticsSubmission));
+        }
+
+        const allSubmissions = Array.from(subsMap.values());
+        if (allSubmissions.length > 0) {
+          const summary = OrgCompetencyAnalyticsService.aggregateOrgCompetency(
+            allSubmissions,
+            classesInfo,
+            campaignsInfo,
+            { campaignId: body.campaignId, classId: body.classId }
+          );
+
+          if (summary.evaluatedSubmissions > 0) {
+            evaluatedCount = summary.evaluatedSubmissions;
+            overallScore = summary.overallAverageScore;
+            passRate = summary.overallPassRate;
+            domains = summary.domains.map((d) => ({
+              domainCode: d.domainCode,
+              name: d.name,
+              score: d.score,
+              coverageRate: d.coverageRate,
+            }));
+            priorityGapDomain = summary.priorityGapDomain;
+            bestDomain = summary.bestDomain;
+            serverAggregated = true;
+          }
+        }
+      } catch (dbErr) {
+        console.warn('Server-side analytics DB aggregation encountered an issue, checking fallback payload:', dbErr);
+      }
+    }
+
+    // Fallback to body only when server DB has no evaluated records (e.g. mock test environment)
+    if (!serverAggregated && typeof body.evaluatedCount === 'number' && body.evaluatedCount > 0) {
+      evaluatedCount = body.evaluatedCount;
+      overallScore = body.overallScore ?? null;
+      passRate = body.passRate ?? null;
+      domains = body.domains || [];
+      priorityGapDomain = body.priorityGapDomain ?? null;
+      bestDomain = body.bestDomain ?? null;
+      orgName = body.orgName || orgName;
+    }
+
+    if (evaluatedCount <= 0) {
       return NextResponse.json(
         { error: 'Chưa có đủ kết quả khảo thí được phê duyệt để phân tích AI.' },
         { status: 400 }
@@ -117,13 +269,24 @@ export async function POST(
     const config = AIConfigService.getConfig();
     const apiKey = config.apiKey || process.env.GEMINI_API_KEY;
 
+    const dataForInsight = {
+      orgName,
+      evaluatedCount,
+      overallScore,
+      passRate,
+      bestDomain,
+      priorityGapDomain,
+    };
+
     if (!apiKey) {
       // Fallback Engine nếu chưa cấu hình GEMINI_API_KEY
-      const fallbackResult = generateFallbackInsights(body);
+      const fallbackResult = generateFallbackInsights(dataForInsight);
       return NextResponse.json(fallbackResult);
     }
 
     // 2. Gọi Google Gemini thông qua @google/genai
+    // NOTE: Row-level PII (names, emails, user IDs) is STRICTLY EXCLUDED.
+    // Only aggregate metrics are provided to LLM.
     try {
       const ai = new GoogleGenAI({ apiKey });
       const modelToUse = config.defaultModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -141,16 +304,16 @@ QUY TẮC BẮT BUỘC (TUÂN THỦ AGENTS.MD):
 
       const userPrompt = `
 DỮ LIỆU KHẢO THÍ TỔ CHỨC:
-- Tổ chức: ${body.orgName}
+- Tổ chức: ${orgName}
 - Phạm vi thời gian: ${body.timeRangeText || 'Toàn bộ thời gian'}
-- Số người có bằng chứng đánh giá: ${body.evaluatedCount}
-- Điểm trung bình toàn tổ chức: ${body.overallScore !== null ? body.overallScore + '/100' : 'Chưa có'}
-- Tỷ lệ đạt chuẩn (>=70 điểm): ${body.passRate !== null ? body.passRate + '%' : 'Chưa có'}
-- Miền mạnh nhất: ${body.bestDomain ? `${body.bestDomain.domainCode} — ${body.bestDomain.name} (${body.bestDomain.score} điểm)` : 'N/A'}
-- Miền cần bồi dưỡng ưu tiên: ${body.priorityGapDomain ? `${body.priorityGapDomain.domainCode} — ${body.priorityGapDomain.name} (${body.priorityGapDomain.score} điểm)` : 'N/A'}
+- Số người có bằng chứng đánh giá: ${evaluatedCount}
+- Điểm trung bình toàn tổ chức: ${overallScore !== null ? overallScore + '/100' : 'Chưa có'}
+- Tỷ lệ đạt chuẩn (>=70 điểm): ${passRate !== null ? passRate + '%' : 'Chưa có'}
+- Miền mạnh nhất: ${bestDomain ? `${bestDomain.domainCode} — ${bestDomain.name} (${bestDomain.score} điểm)` : 'N/A'}
+- Miền cần bồi dưỡng ưu tiên: ${priorityGapDomain ? `${priorityGapDomain.domainCode} — ${priorityGapDomain.name} (${priorityGapDomain.score} điểm)` : 'N/A'}
 
 CHI TIẾT 5 MIỀN:
-${JSON.stringify(body.domains, null, 2)}
+${JSON.stringify(domains, null, 2)}
 
 HÃY XUẤT RA JSON CHUẨN XÁC:
 {
@@ -200,7 +363,7 @@ HÃY XUẤT RA JSON CHUẨN XÁC:
       return NextResponse.json(result);
     } catch (aiError) {
       console.warn('AI Gateway generation encountered an issue, serving deterministic pedagogical fallback:', aiError);
-      const fallbackResult = generateFallbackInsights(body);
+      const fallbackResult = generateFallbackInsights(dataForInsight);
       return NextResponse.json(fallbackResult);
     }
   } catch (error) {

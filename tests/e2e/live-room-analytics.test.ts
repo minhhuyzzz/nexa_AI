@@ -209,7 +209,7 @@ describe('NEXA Live Room & Analytics Comprehensive E2E Suite', () => {
         expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toContain('ORG_OWNER');
         expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toContain('ORG_ADMIN');
         expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toContain('ASSESSOR');
-        expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).toContain('EVALUATOR');
+        expect(ACTION_ROLE_MAP.VIEW_WORKSPACE).not.toContain('EVALUATOR');
       });
     });
 
