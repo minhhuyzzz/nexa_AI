@@ -178,7 +178,7 @@ export async function GET(request: NextRequest | Request) {
 
     // Fetch ai_task_policies and credit usage statistics
     let taskPolicies: any[] = [];
-    let creditUsageSummary = {
+    const creditUsageSummary = {
       totalReservations: 0,
       totalSettled: 0,
       totalReleased: 0,

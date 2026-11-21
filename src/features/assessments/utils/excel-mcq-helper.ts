@@ -218,8 +218,7 @@ function extractCellString(value: ExcelJS.CellValue): string {
  */
 export async function parseMCQExcelBuffer(buffer: Buffer | ArrayBuffer): Promise<ParseExcelResult> {
   const workbook = new ExcelJS.Workbook();
-  // @ts-ignore - buffer type compatibility
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.load(buffer as any);
 
   // Lấy sheet đầu tiên hoặc sheet tên 'Cau_Hoi_Trac_Nghiem'
   const worksheet = workbook.getWorksheet('Cau_Hoi_Trac_Nghiem') || workbook.worksheets[0];

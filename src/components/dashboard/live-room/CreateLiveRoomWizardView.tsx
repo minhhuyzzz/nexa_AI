@@ -68,7 +68,7 @@ export function CreateLiveRoomWizardView({
   // Filters
   const [assessmentSearch, setAssessmentSearch] = useState('');
   const [domainFilter, setDomainFilter] = useState('ALL');
-  const [activeTab, setActiveTab] = useState<'ALL' | 'MY' | 'CANONICAL'>('MY');
+  const [activeTab, setActiveTab] = useState<'ALL' | 'MY' | 'CANONICAL'>('ALL');
 
   // Quick Room Configurations
   const [roomTitle, setRoomTitle] = useState('');
@@ -102,10 +102,12 @@ export function CreateLiveRoomWizardView({
       setLoadingAssessments(true);
       try {
         const promises: Promise<any>[] = [
-          isOrg
-            ? fetch(`/api/assessments${orgId ? `?orgId=${orgId}` : ''}`).then((r) => (r.ok ? r.json() : null))
+          fetch(`/api/assessments${isOrg && orgId ? `?orgId=${orgId}` : ''}`).then((r) =>
+            r.ok ? r.json() : null
+          ),
+          !isOrg
+            ? fetch('/api/personal/assessments').then((r) => (r.ok ? r.json() : null))
             : Promise.resolve(null),
-          fetch('/api/personal/assessments').then((r) => (r.ok ? r.json() : null)),
         ];
 
         const [sysData, personalData] = await Promise.all(promises);
@@ -113,19 +115,21 @@ export function CreateLiveRoomWizardView({
 
         const list: Assessment[] = [];
 
-        // 1. Process Personal & Org Authored Assessments (Đề nội bộ / Đề của tôi)
-        if (personalData && Array.isArray(personalData.assessments)) {
+        // 1. Process Personal Authored Assessments (Chỉ nạp khi ở ngữ cảnh Cá nhân)
+        if (!isOrg && personalData && Array.isArray(personalData.assessments)) {
           personalData.assessments.forEach((pa: any) => {
             list.push({
               id: pa.id,
               title: pa.title,
               domain: 'Đề tự biên soạn',
-              domainName: pa.organization_id ? 'Đề nội bộ tổ chức' : 'Đề của tôi',
+              domainName: 'Đề của tôi',
               description: pa.description || 'Bài đánh giá năng lực nội bộ.',
               duration_minutes: pa.duration_minutes || 45,
               passing_score: pa.passing_score || 70,
-              questionCount: Array.isArray(pa.assessment_items) ? pa.assessment_items.length : (pa.questionCount || 20),
-              typeLabel: 'Trắc nghiệm & Tự luận',
+              questionCount: Array.isArray(pa.assessment_items)
+                ? pa.assessment_items.length
+                : pa.questionCount || 20,
+              typeLabel: 'Trắc nghiệm và Tự luận',
               types: ['MCQ'],
               origin: 'MY_ASSESSMENT',
               accessTier: 'PERSONAL',
@@ -133,16 +137,22 @@ export function CreateLiveRoomWizardView({
           });
         }
 
-        // 2. Process System & Organization Bank Assessments (Chỉ dành cho chế độ Tổ chức)
-        if (isOrg && sysData && Array.isArray(sysData.assessments)) {
+        // 2. Process System & Organization Bank Assessments
+        if (sysData && Array.isArray(sysData.assessments)) {
           sysData.assessments.forEach((sa: any) => {
             if (!list.some((item) => item.id === sa.id)) {
-              const isOrgTest = Boolean(sa.isOrgBank || sa.organizationId || sa.organization_id);
+              const isOrgTest = Boolean(
+                isOrg && (sa.isOrgBank || sa.organizationId === orgId || sa.organization_id === orgId)
+              );
               list.push({
                 id: sa.id,
                 title: sa.title,
-                domain: isOrgTest ? 'Kho đề tổ chức' : (sa.domain || sa.domainName || 'Đa Miền Năng Lực Số'),
-                domainName: isOrgTest ? 'Kho đề tổ chức' : (sa.domainName || sa.domain || 'Đa Miền Năng Lực Số'),
+                domain: isOrgTest
+                  ? 'Kho đề tổ chức'
+                  : sa.domain || sa.domainName || 'Đa Miền Năng Lực Số',
+                domainName: isOrgTest
+                  ? 'Kho đề tổ chức'
+                  : sa.domainName || sa.domain || 'Đa Miền Năng Lực Số',
                 description: sa.description || 'Đánh giá năng lực số chuẩn hóa.',
                 duration_minutes: sa.duration_minutes || 45,
                 passing_score: sa.passing_score || 70,
@@ -166,18 +176,19 @@ export function CreateLiveRoomWizardView({
             );
             if (singleRes && singleRes.assessment) {
               const sa = singleRes.assessment;
+              const isOrgTest = Boolean(sa.organization_id === orgId || sa.organizationId === orgId);
               const fetchedItem: Assessment = {
                 id: sa.id,
                 title: sa.title,
-                domain: 'Bài đánh giá',
-                domainName: 'Đánh giá tổ chức',
+                domain: isOrgTest ? 'Kho đề tổ chức' : (sa.domain || 'Bài đánh giá'),
+                domainName: isOrgTest ? 'Kho đề tổ chức' : 'Đánh giá chuẩn hóa',
                 description: sa.description || '',
                 duration_minutes: sa.duration_minutes || 45,
                 passing_score: sa.passing_score || 70,
                 questionCount: sa.assessment_items?.length || 20,
-                typeLabel: 'Đánh giá',
+                typeLabel: 'Trắc nghiệm',
                 types: ['MCQ'],
-                origin: 'MY_ASSESSMENT',
+                origin: isOrgTest ? 'MY_ASSESSMENT' : 'SYSTEM',
               };
               list.unshift(fetchedItem);
             }
