@@ -6540,10 +6540,10 @@
     "semantic_hash": "74262616d8ccd08493d92cf57fcce53b"
   },
   "src/app/loading.tsx": {
-    "mtime": 1794041329.7295685,
-    "seen": 1794532981.618752,
-    "ast_hash": "78a81bca9382010a0a86ef1d4c060a33",
-    "semantic_hash": "78a81bca9382010a0a86ef1d4c060a33"
+    "mtime": 1795241087.0456724,
+    "seen": 1795241280.9544604,
+    "ast_hash": "1816031bf57dddcd40d2a0a871b594fe",
+    "semantic_hash": ""
   },
   "src/components/ui/Skeleton.tsx": {
     "mtime": 1794186242.5640948,

@@ -1,17 +1,17 @@
 # Graph Report - nexa  (2026-11-21)
 
 ## Corpus Check
-- 1168 files · ~2,016,372 words
+- 1168 files · ~2,016,353 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 144 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
 ## Summary
-- 10168 nodes · 20432 edges · 507 communities (487 shown, 20 thin omitted)
+- 10168 nodes · 20432 edges · 504 communities (486 shown, 18 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 650 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `426bfafc`
+- Built from commit: `d612e723`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -359,7 +359,7 @@
 - run_migration.js
 - AssessmentSecuritySettings
 - admin/analytics/page.tsx
-- faq/page.tsx
+- PolicyNavHeader.tsx
 - Statement of Intent: Cài đặt nền tảng NEXA AI (Platform Settings)
 - 33. CATEGORY-SPECIFIC BIAS
 - 13. COLOR & MATERIAL RULES
@@ -441,7 +441,6 @@
 - Training Data Bias
 - skill.sh
 - 2. Các thay đổi kỹ thuật (Implementation)
-- InteractiveRubricSandbox.tsx
 - 33. DEFAULT SECTION PACKS
 - ai-gateway/page.tsx
 - 12. THE BLOCK LIBRARY (Contract - Implementations Land Here Iteratively)
@@ -474,7 +473,6 @@
 - References
 - Research
 - personal-dashboard-p0.test.ts
-- admin/settings/page.tsx
 - join-codes/route.ts
 - workspace-rbac-authoring.test.ts
 - Region map
@@ -545,19 +543,19 @@
 - 2-file cycle: `.agents/skills/stageshow/teaching/composition.tsx -> .agents/skills/stageshow/teaching/contrasts.tsx -> .agents/skills/stageshow/teaching/composition.tsx`
 - 2-file cycle: `.agents/skills/stageshow/teaching/contrasts.tsx -> .agents/skills/stageshow/teaching/relationships.tsx -> .agents/skills/stageshow/teaching/contrasts.tsx`
 
-## Communities (507 total, 20 thin omitted)
+## Communities (504 total, 18 thin omitted)
 
 ### Community 0 - "createClient"
-Cohesion: 0.05
-Nodes (59): 6.1. Phân hệ Xác thực & Onboarding (`(auth)`), AcceptInviteContent(), init(), AcceptInvitePage(), AccountSuspendedPage(), fetchSuspensionInfo(), ForgotPasswordPage(), LoginForm() (+51 more)
+Cohesion: 0.04
+Nodes (62): 6.1. Phân hệ Xác thực & Onboarding (`(auth)`), AcceptInviteContent(), init(), AcceptInvitePage(), AccountSuspendedPage(), fetchSuspensionInfo(), ForgotPasswordPage(), LoginForm() (+54 more)
 
 ### Community 1 - "next"
 Cohesion: 0.05
 Nodes (16): nextConfig, next, dynamic, escapeCsvCell(), GET(), GET(), dynamic, GET() (+8 more)
 
 ### Community 2 - "app/page.tsx"
-Cohesion: 0.04
-Nodes (50): Frequency, LearnerBillingPage(), PaymentHistoryItem, PLAN_CONFIG, PlanDetails, ServicePlan, LivePinPage(), LivePinRedirectContent() (+42 more)
+Cohesion: 0.07
+Nodes (36): Frequency, LearnerBillingPage(), PaymentHistoryItem, PLAN_CONFIG, PlanDetails, ServicePlan, HomePage(), structuredData (+28 more)
 
 ### Community 3 - ".agents/skills/impeccable/scripts/live-browser.js"
 Cohesion: 0.03
@@ -628,8 +626,8 @@ Cohesion: 0.09
 Nodes (26): dynamic, GroupData, LearnerGroupDetailPage(), TabType, ClassAssignmentsTab(), ClassHeader(), ClassHeaderProps, ClassFileItem (+18 more)
 
 ### Community 20 - "admin/organizations/page.tsx"
-Cohesion: 0.10
-Nodes (24): 4.3. Quản lý vòng đời Tenant & Chống mất mát dữ liệu, AdminOrganizationsPage(), OrganizationItem, renderAdminSkeletonRows(), RenewalItem, BillingResultContent(), BillingResultPage(), ActivateBusinessModal() (+16 more)
+Cohesion: 0.12
+Nodes (21): 4.3. Quản lý vòng đời Tenant & Chống mất mát dữ liệu, AdminOrganizationsPage(), OrganizationItem, renderAdminSkeletonRows(), RenewalItem, BillingResultContent(), BillingResultPage(), ActivateBusinessModal() (+13 more)
 
 ### Community 21 - "personal-phase5-account-and-subscriptions.test.ts"
 Cohesion: 0.09
@@ -641,7 +639,7 @@ Nodes (22): 1.1. Bảng Điểm ngắt Chuẩn (Breakpoint Matrix), 1.2. Nguyên
 
 ### Community 23 - "take/[id]/page.tsx"
 Cohesion: 0.05
-Nodes (56): dynamic, metadata, OrgAssessmentPreviewPage(), AssessmentBriefingPage(), AssessmentMeta, DOMAIN_CATALOG, LeaderboardUser, LearnerDashboardPage() (+48 more)
+Nodes (50): dynamic, metadata, OrgAssessmentPreviewPage(), AssessmentBriefingPage(), AssessmentMeta, DOMAIN_CATALOG, LeaderboardUser, LearnerDashboardPage() (+42 more)
 
 ### Community 24 - "film-checks.mjs"
 Cohesion: 0.12
@@ -692,8 +690,8 @@ Cohesion: 0.06
 Nodes (41): IMessage(), initial, S, SUGGEST, suggestions(), ArrowUp(), initial, Messages() (+33 more)
 
 ### Community 36 - "OrgMembersClientView.tsx"
-Cohesion: 0.10
-Nodes (26): OrgMembersClientView(), Props, dynamic, BulkMemberImportModal(), BulkMemberImportModalProps, ParsedMember, ApprovalQueueViewProps, InviteMemberDrawerProps (+18 more)
+Cohesion: 0.08
+Nodes (29): OrgMembersClientView(), Props, dynamic, BulkMemberImportModal(), BulkMemberImportModalProps, ParsedMember, ApprovalQueueViewProps, InviteMemberDrawerProps (+21 more)
 
 ### Community 37 - "film.mjs"
 Cohesion: 0.05
@@ -1120,8 +1118,8 @@ Cohesion: 0.19
 Nodes (17): createLiveBrowserSessionState(), clearHandled(), clearScrollY(), clearSession(), isHandled(), loadSession(), markHandled(), nextCheckpointRevision() (+9 more)
 
 ### Community 143 - "Skeleton"
-Cohesion: 0.15
-Nodes (26): AdminDashboardLoading(), AdminDefaultLoading(), AdminOrganizationsLoading(), AdminUsersLoading(), OrgAnalyticsLoading(), OrgCampaignsLoading(), OrgClassAnalyticsLoading(), OrgClassesLoading() (+18 more)
+Cohesion: 0.16
+Nodes (25): AdminDashboardLoading(), AdminDefaultLoading(), AdminOrganizationsLoading(), AdminUsersLoading(), OrgAnalyticsLoading(), OrgCampaignsLoading(), OrgClassAnalyticsLoading(), OrgClassesLoading() (+17 more)
 
 ### Community 144 - "normalizeOrgRole"
 Cohesion: 0.05
@@ -1280,8 +1278,8 @@ Cohesion: 0.24
 Nodes (11): clock, Host, installVirtualClock(), boot(), errorText(), params, showFailure(), Clock (+3 more)
 
 ### Community 183 - "OrgSidebar.tsx"
-Cohesion: 0.09
-Nodes (39): AuthLayout(), AdminLayout(), metadata, dynamic, metadata, OrgLayout(), metadata, PersonalLayout() (+31 more)
+Cohesion: 0.08
+Nodes (43): AuthLayout(), AdminLayout(), metadata, dynamic, metadata, OrgLayout(), metadata, PersonalLayout() (+35 more)
 
 ### Community 184 - ".github/skills/impeccable/reference/animate.md"
 Cohesion: 0.12
@@ -1915,9 +1913,9 @@ Nodes (13): AssessmentItemRecord, Props, AssessmentData, AssignAssessmentModal()
 Cohesion: 0.29
 Nodes (6): AdminAnalyticsContent(), AdminAnalyticsPage(), AnalyticsData, AssessmentQuality, DomainStat, OrganizationOption
 
-### Community 345 - "faq/page.tsx"
-Cohesion: 0.33
-Nodes (4): CATEGORIES, CategoryFilter, FAQ_DATA, FaqItem
+### Community 345 - "PolicyNavHeader.tsx"
+Cohesion: 0.40
+Nodes (6): FaqLayout(), metadata, metadata, PoliciesLayout(), PolicyFooter(), PolicyNavHeader()
 
 ### Community 346 - "Statement of Intent: Cài đặt nền tảng NEXA AI (Platform Settings)"
 Cohesion: 0.18
@@ -2177,7 +2175,7 @@ Nodes (4): compat, __dirname, eslintConfig, __filename
 
 ### Community 411 - "ref_react"
 Cohesion: 0.02
-Nodes (45): FeedbackTicket, ACTION_LABELS, AdminAuditLog, AdminComplianceContent(), AdminCompliancePage(), AuditStats, B2BOrganizationItem, ServicePlan (+37 more)
+Nodes (66): FeedbackTicket, ACTION_LABELS, AdminAuditLog, AdminComplianceContent(), AdminCompliancePage(), AuditStats, B2BOrganizationItem, ServicePlan (+58 more)
 
 ### Community 412 - "Danh Sách Công Việc Triển Khai (Todo List) — Nâng Cấp Platform Admin & Khắc Phục Lỗ Hổng Bảo Mật"
 Cohesion: 0.33
@@ -2238,10 +2236,6 @@ Nodes (4): print_help(), skill.sh script, skill_main(), SKILLS
 ### Community 428 - "2. Các thay đổi kỹ thuật (Implementation)"
 Cohesion: 0.25
 Nodes (7): 1. Bối cảnh & Vấn đề giải quyết, 2.1. Đồng bộ thời lượng phòng thi chuẩn xác, 2.2. Supabase Realtime Presence (Sảnh chờ Zero-DB Polling), 2.3. Random Jitter khi Hết giờ Nộp bài Tự động, 2. Các thay đổi kỹ thuật (Implementation), 3. Kết quả Kiểm thử & Xác minh, Ý định Kiến trúc: Tối ưu Chịu tải Phòng Live & Đồng bộ Thời lượng Ca thi
-
-### Community 429 - "InteractiveRubricSandbox.tsx"
-Cohesion: 0.40
-Nodes (3): CriterionLevel, RUBRIC_CRITERIA, RubricCriterion
 
 ### Community 430 - "33. DEFAULT SECTION PACKS"
 Cohesion: 0.50
@@ -2472,8 +2466,8 @@ Cohesion: 0.29
 Nodes (5): EditGoalModalProps, PACE_OPTIONS, PRESET_GOALS, TRACK_OPTIONS, UserLearningGoal
 
 ### Community 503 - "checkout/page.tsx"
-Cohesion: 0.16
-Nodes (12): qrcode@^1.5.4, qrcode, CheckoutClientContent(), CheckoutPage(), CheckoutTransaction, PlanPreviewData, resolveBankInfo(), VIETQR_BANK_MAP (+4 more)
+Cohesion: 0.24
+Nodes (8): qrcode@^1.5.4, qrcode, CheckoutClientContent(), CheckoutPage(), CheckoutTransaction, PlanPreviewData, resolveBankInfo(), VIETQR_BANK_MAP
 
 ### Community 507 - "12. THE BLOCK LIBRARY (Contract - Implementations Land Here Iteratively)"
 Cohesion: 0.40
@@ -2498,19 +2492,19 @@ Nodes (4): 7. DIAL DEFINITIONS (Technical Reference), DESIGN_VARIANCE (Level 1-1
 ## Knowledge Gaps
 - **2 isolated node(s):** `SKILLS`, `RFC-4180`
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 5114 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `createClient`, `app/layout.tsx`, `app/page.tsx`, `[skillCode]/page.tsx`, `round2-acceptance.test.ts`, `ref_node_fs`, `submissions/page.tsx`, `createAdminClient`, `classes/types.ts`, `live-room-analytics.test.ts`, `org-guard.ts`, `feedback/route.ts`, `normalizeOrgRole`, `OrgClassDetailView.tsx`, `admin/organizations/page.tsx`, `personal-phase5-account-and-subscriptions.test.ts`, `take/[id]/page.tsx`, `ref_react`, `OrgAnalyticsDashboard.tsx`, `authoring/page.tsx`, `CreateLiveRoomWizardView.tsx`, `package.json`, `[moduleId]/page.tsx`, `createClient`, `competency.types.ts`, `next`, `item-bank/[id]/page.tsx`, `personal/grading/page.tsx`, `AuthoringEditorTwoPane`, `OrgSidebar.tsx`, `csv-helper.ts`, `learning-path/page.tsx`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `personal/grading/page.tsx`, `[id]/result/page.tsx`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `requireOrgPagePermission`, `join-codes/route.ts`, `AdminUIComponents.tsx`, `AssessmentSecuritySettings`, `admin/analytics/page.tsx`, `faq/page.tsx`, `live-room.ts`, `checkout/page.tsx`, `admin-preview-client.tsx`, `contributions/route.ts`, `personal/live-room/page.tsx`, `personal/assessments/page.tsx`, `excel-mcq-helper.ts`, `baseline-admin-client.tsx`?**
+- **Why does `next` connect `next` to `createClient`, `app/layout.tsx`, `app/page.tsx`, `[skillCode]/page.tsx`, `round2-acceptance.test.ts`, `ref_node_fs`, `submissions/page.tsx`, `createAdminClient`, `classes/types.ts`, `live-room-analytics.test.ts`, `org-guard.ts`, `feedback/route.ts`, `normalizeOrgRole`, `OrgClassDetailView.tsx`, `admin/organizations/page.tsx`, `personal-phase5-account-and-subscriptions.test.ts`, `take/[id]/page.tsx`, `ref_react`, `OrgAnalyticsDashboard.tsx`, `authoring/page.tsx`, `CreateLiveRoomWizardView.tsx`, `package.json`, `[moduleId]/page.tsx`, `createClient`, `competency.types.ts`, `next`, `item-bank/[id]/page.tsx`, `personal/grading/page.tsx`, `AuthoringEditorTwoPane`, `OrgSidebar.tsx`, `csv-helper.ts`, `learning-path/page.tsx`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `personal/grading/page.tsx`, `[id]/result/page.tsx`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `requireOrgPagePermission`, `join-codes/route.ts`, `AdminUIComponents.tsx`, `AssessmentSecuritySettings`, `admin/analytics/page.tsx`, `PolicyNavHeader.tsx`, `live-room.ts`, `checkout/page.tsx`, `admin-preview-client.tsx`, `contributions/route.ts`, `personal/live-room/page.tsx`, `personal/assessments/page.tsx`, `excel-mcq-helper.ts`, `baseline-admin-client.tsx`?**
   _High betweenness centrality (0.153) - this node is a cross-community bridge._
 - **Are the 30 inferred relationships involving `createAdminClient()` (e.g. with `organizations/export/route.test.ts` and `organizations/route.test.ts`) actually correct?**
   _`createAdminClient()` has 30 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `SKILLS`, `RFC-4180` to the rest of the system?**
   _2 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `createClient` be split into smaller, more focused modules?**
-  _Cohesion score 0.04544319600499376 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.043239533287577216 - nodes in this community are weakly interconnected._
 - **Why does `warn()` connect `stage.tsx` to `Roll`, `Observability Checklist`, `Process`, `Stage`?**
   _High betweenness centrality (0.066) - this node is a cross-community bridge._
 - **Are the 18 inferred relationships involving `createClient()` (e.g. with `[joinCode]/route.test.ts` and `leaderboard/route.test.ts`) actually correct?**
