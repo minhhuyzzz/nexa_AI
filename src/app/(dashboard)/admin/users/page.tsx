@@ -335,8 +335,8 @@ function UsersContent() {
         </div>
       )}
 
-      {/* 2. Top 3 KPI Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* 2. Top 3 KPI Metrics (Compact 3-on-1 row for mobile) */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <AdminKpiCard
           label="Tổng người dùng"
           value={totalUsersCount.toLocaleString('vi-VN')}

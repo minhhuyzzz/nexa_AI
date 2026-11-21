@@ -42,17 +42,17 @@ export function AdminKpiCard({
   const isNegative = changeType === 'negative';
 
   return (
-    <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all">
-      <div className="flex items-center justify-between gap-2">
-        <div className="p-2 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 border border-slate-100 dark:border-zinc-800 shrink-0">
-          <Icon className="w-4 h-4" strokeWidth={1.75} />
+    <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-3 sm:p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all min-w-0">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+        <div className="p-1.5 sm:p-2 rounded-lg bg-slate-50 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 border border-slate-100 dark:border-zinc-800 shrink-0">
+          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.75} />
         </div>
 
         {badge ? (
           badge
         ) : change ? (
           <span
-            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums shrink-0 ${
+            className={`inline-flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold tabular-nums shrink-0 ${
               isPositive
                 ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
                 : isNegative
@@ -60,21 +60,21 @@ export function AdminKpiCard({
                 : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'
             }`}
           >
-            {isPositive && <ArrowUpRight className="w-3 h-3" />}
-            {isNegative && <ArrowDownRight className="w-3 h-3" />}
-            {change}
+            {isPositive && <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+            {isNegative && <ArrowDownRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+            <span className="truncate max-w-[70px] sm:max-w-none">{change}</span>
           </span>
         ) : null}
       </div>
 
-      <div className="mt-3">
+      <div className="mt-2 sm:mt-3 min-w-0">
         <span
-          className="text-xs font-medium text-slate-600 dark:text-zinc-400 block line-clamp-1"
+          className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-zinc-400 block truncate"
           title={label}
         >
           {label}
         </span>
-        <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white tabular-nums font-mono mt-1">
+        <div className="text-lg sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white tabular-nums font-mono mt-0.5 sm:mt-1 truncate">
           {value}
         </div>
         {timeframe && (
