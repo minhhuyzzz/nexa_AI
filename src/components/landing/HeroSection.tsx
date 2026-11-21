@@ -9,7 +9,7 @@ export function HeroSection() {
       className="relative overflow-hidden bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 min-h-[calc(100vh-4rem)] lg:min-h-screen flex items-center transition-colors"
     >
       {/* Main Hero Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 pt-12 pb-16 sm:pt-20 sm:pb-24 lg:pt-24 lg:pb-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 pt-24 pb-16 sm:pt-28 sm:pb-24 lg:pt-32 lg:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 items-center">
           {/* Left Column: Heading, Subtitle, Actions, Features */}
           <div className="lg:col-span-6 xl:col-span-6 text-left">
@@ -47,10 +47,9 @@ export function HeroSection() {
 
               <Link
                 href="#features"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-full text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-200 sm:bg-slate-50 sm:dark:bg-zinc-900 sm:hover:bg-slate-100 sm:dark:hover:bg-zinc-800 font-semibold text-xs sm:text-base ring-0 sm:ring-1 ring-slate-200/80 dark:ring-zinc-800 transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-none sm:shadow-2xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-full text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-200 sm:bg-slate-50 sm:dark:bg-zinc-900 sm:hover:bg-slate-100 sm:dark:hover:bg-zinc-800 font-semibold text-xs sm:text-base ring-0 sm:ring-1 ring-slate-200/80 dark:ring-zinc-800 transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-none sm:shadow-2xs"
               >
-                <span>Khám phá tính năng</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-70" strokeWidth={2} />
+                Khám phá
               </Link>
             </div>
 

@@ -315,10 +315,9 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
           </Link>
           <Link
             href="/register"
-            className="text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-3.5 sm:px-4 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            className="text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-3.5 sm:px-4 py-1.5 rounded-full transition-colors inline-flex items-center justify-center shadow-xs"
           >
-            <span>Đăng ký</span>
-            <ArrowRight className="w-3 h-3" strokeWidth={1.75} />
+            Đăng ký
           </Link>
 
           {/* Mobile Hamburger Trigger */}
