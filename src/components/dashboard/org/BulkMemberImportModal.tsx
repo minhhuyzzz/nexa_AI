@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useTransition, useId } from 'react';
+import ExcelJS from 'exceljs';
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -39,6 +40,24 @@ interface BulkMemberImportModalProps {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function extractCellString(value: ExcelJS.CellValue): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value).trim();
+  if (typeof value === 'object') {
+    if ('richText' in value && Array.isArray((value as any).richText)) {
+      return (value as any).richText.map((t: any) => t.text || '').join('').trim();
+    }
+    if ('result' in value && value.result !== undefined) {
+      return String(value.result).trim();
+    }
+    if ('text' in value && typeof (value as any).text === 'string') {
+      return (value as any).text.trim();
+    }
+  }
+  return '';
+}
+
 export function BulkMemberImportModal({
   isOpen,
   onClose,
@@ -66,19 +85,142 @@ export function BulkMemberImportModal({
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
     setErrorMessage(null);
     setSuccessResult(null);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      parseCSV(content);
-    };
-    reader.readAsText(file);
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (isExcel) {
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet || worksheet.rowCount <= 1) {
+          setErrorMessage('File Excel không có dữ liệu hoặc chỉ chứa tiêu đề.');
+          setParsedRows([]);
+          return;
+        }
+
+        parseExcelWorksheet(worksheet);
+      } catch (err) {
+        console.error('Lỗi khi đọc file Excel:', err);
+        setErrorMessage('Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng tệp.');
+        setParsedRows([]);
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        parseCSV(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const parseExcelWorksheet = (worksheet: ExcelJS.Worksheet) => {
+    const firstRow = worksheet.getRow(1);
+    let emailCol = -1;
+    let nameCol = -1;
+    let studentIdCol = -1;
+    let roleCol = -1;
+
+    firstRow.eachCell((cell, colNumber) => {
+      const val = extractCellString(cell.value).toLowerCase();
+      if (val.includes('email')) emailCol = colNumber;
+      else if (val.includes('họ') || val.includes('tên') || val.includes('name')) nameCol = colNumber;
+      else if (val.includes('mã') || val.includes('mssv') || val.includes('student')) studentIdCol = colNumber;
+      else if (val.includes('vai trò') || val.includes('role')) roleCol = colNumber;
+    });
+
+    // Fallbacks if header names don't match standard patterns
+    if (emailCol === -1) {
+      const col2Val = extractCellString(worksheet.getRow(2).getCell(2).value);
+      if (col2Val.includes('@')) {
+        emailCol = 2;
+        nameCol = 3;
+        studentIdCol = 4;
+        roleCol = 5;
+      } else {
+        emailCol = 1;
+        nameCol = 2;
+        studentIdCol = 3;
+        roleCol = 4;
+      }
+    }
+
+    const rows: ParsedMember[] = [];
+    const seenEmails = new Set<string>();
+
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+      const row = worksheet.getRow(rowNumber);
+      const email = extractCellString(row.getCell(emailCol).value).toLowerCase();
+      const fullName = nameCol > 0 ? extractCellString(row.getCell(nameCol).value) : '';
+      const studentId = studentIdCol > 0 ? extractCellString(row.getCell(studentIdCol).value) : '';
+      const roleRaw = roleCol > 0 ? extractCellString(row.getCell(roleCol).value).toUpperCase() : '';
+
+      if (!email && !fullName && !studentId && !roleRaw) {
+        continue;
+      }
+
+      let orgRole: 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR' = defaultRole;
+      if (roleRaw === 'ORG_ADMIN' || roleRaw === 'ADMIN') orgRole = 'ORG_ADMIN';
+      else if (roleRaw === 'ASSESSOR' || roleRaw === 'EVALUATOR') orgRole = 'ASSESSOR';
+
+      if (!email) {
+        rows.push({
+          email: '—',
+          fullName,
+          studentId,
+          orgRole,
+          isValid: false,
+          error: 'Thiếu địa chỉ email',
+        });
+        continue;
+      }
+
+      if (!EMAIL_REGEX.test(email)) {
+        rows.push({
+          email,
+          fullName,
+          studentId,
+          orgRole,
+          isValid: false,
+          error: 'Email không đúng định dạng',
+        });
+      } else if (seenEmails.has(email)) {
+        rows.push({
+          email,
+          fullName,
+          studentId,
+          orgRole,
+          isValid: false,
+          error: 'Email trùng lặp trong tệp',
+        });
+      } else {
+        seenEmails.add(email);
+        rows.push({
+          email,
+          fullName,
+          studentId,
+          orgRole,
+          isValid: true,
+        });
+      }
+    }
+
+    if (rows.length === 0) {
+      setErrorMessage('File Excel không có dòng dữ liệu hợp lệ nào.');
+      setParsedRows([]);
+      return;
+    }
+
+    setParsedRows(rows);
+    setStep(2);
   };
 
   const parseCSV = (text: string) => {
@@ -160,18 +302,154 @@ export function BulkMemberImportModal({
   const invalidRows = parsedRows.filter((r) => !r.isValid);
   const exceedsSeats = validRows.length > remainingSeats;
 
-  const handleDownloadSample = () => {
-    const csvContent =
-      '\uFEFF' +
-      'Email,HoVaTen,MaSinhVien,VaiTro\nhocvien1@truong.edu.vn,Nguyễn Văn An,SV202601,MEMBER\ngiangvien2@truong.edu.vn,Trần Thị Bình,GV202602,ASSESSOR\nhocvien3@truong.edu.vn,Lê Hoàng Nam,SV202603,MEMBER\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'nexa_danh_sach_thanh_vien_mau.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadSample = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'NEXA AI Platform';
+      workbook.created = new Date();
+
+      // Sheet 1: Danh sách thành viên mẫu
+      const worksheet = workbook.addWorksheet('Mau_Nhap_Thanh_Vien', {
+        views: [{ showGridLines: true }],
+      });
+
+      worksheet.columns = [
+        { header: 'STT', key: 'stt', width: 8 },
+        { header: 'Email (*)', key: 'email', width: 32 },
+        { header: 'Họ và tên', key: 'fullName', width: 26 },
+        { header: 'Mã số / MSSV', key: 'studentId', width: 22 },
+        { header: 'Vai trò (MEMBER / ASSESSOR / ORG_ADMIN)', key: 'role', width: 38 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 30;
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF2563EB' }, // Cobalt #2563EB
+        };
+        cell.font = {
+          name: 'Segoe UI',
+          size: 10,
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF1D4ED8' } },
+          bottom: { style: 'medium', color: { argb: 'FF1D4ED8' } },
+          left: { style: 'thin', color: { argb: 'FF3B82F6' } },
+          right: { style: 'thin', color: { argb: 'FF3B82F6' } },
+        };
+      });
+
+      const sampleRows = [
+        {
+          stt: 1,
+          email: 'hocvien1@truong.edu.vn',
+          fullName: 'Nguyễn Văn An',
+          studentId: 'SV202601',
+          role: 'MEMBER',
+        },
+        {
+          stt: 2,
+          email: 'giangvien2@truong.edu.vn',
+          fullName: 'Trần Thị Bình',
+          studentId: 'GV202602',
+          role: 'ASSESSOR',
+        },
+        {
+          stt: 3,
+          email: 'canbo3@truong.edu.vn',
+          fullName: 'Lê Hoàng Nam',
+          studentId: 'CB202603',
+          role: 'MEMBER',
+        },
+      ];
+
+      sampleRows.forEach((item) => {
+        const row = worksheet.addRow(item);
+        row.height = 24;
+        row.eachCell((cell, colNumber) => {
+          cell.font = { name: 'Segoe UI', size: 10 };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
+          if (colNumber === 1 || colNumber === 4 || colNumber === 5) {
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          } else {
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          }
+        });
+      });
+
+      // Sheet 2: Hướng dẫn
+      const guideSheet = workbook.addWorksheet('Huong_Dan', {
+        views: [{ showGridLines: true }],
+      });
+      guideSheet.columns = [
+        { header: 'Cột dữ liệu', key: 'col', width: 24 },
+        { header: 'Bắt buộc?', key: 'required', width: 14 },
+        { header: 'Mô tả chi tiết & Quy tắc hợp lệ', key: 'desc', width: 68 },
+      ];
+      const guideHeader = guideSheet.getRow(1);
+      guideHeader.height = 28;
+      guideHeader.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF2563EB' },
+        };
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      });
+
+      const guideData = [
+        { col: 'Email', required: 'Bắt buộc (*)', desc: 'Địa chỉ email người dùng hợp lệ (ví dụ: user@donvi.edu.vn). Không được trùng lặp trong tệp.' },
+        { col: 'Họ và tên', required: 'Tùy chọn', desc: 'Họ và tên đầy đủ của thành viên.' },
+        { col: 'Mã số / MSSV', required: 'Tùy chọn', desc: 'Mã số học viên, sinh viên hoặc mã cán bộ nội bộ.' },
+        { col: 'Vai trò', required: 'Tùy chọn', desc: 'Nhập một trong các mã: MEMBER (Thành viên - mặc định), ASSESSOR (Khảo thí viên), ORG_ADMIN (Quản trị viên). Nếu bỏ trống sẽ lấy vai trò cấu hình ở Bước 2.' },
+        { col: 'Định dạng', required: 'Tùy chọn', desc: 'Có thể lưu dạng tệp Excel (.xlsx) hoặc CSV UTF-8 để tải lên hệ thống.' },
+      ];
+
+      guideData.forEach((item) => {
+        const row = guideSheet.addRow(item);
+        row.height = 24;
+        row.eachCell((cell, colNumber) => {
+          cell.font = { name: 'Segoe UI', size: 10 };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
+          if (colNumber === 2) {
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          } else {
+            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+          }
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Mau_nhap_thanh_vien_NEXA.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Lỗi khi tải file mẫu Excel:', err);
+    }
   };
 
   const handleSubmit = () => {
@@ -236,7 +514,7 @@ export function BulkMemberImportModal({
                 Nhập danh sách thành viên hàng loạt
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Thêm đồng loạt học viên, cán bộ vào tổ chức qua tệp CSV hoặc Excel
+                Thêm đồng loạt học viên, cán bộ vào tổ chức qua tệp Excel (.xlsx) hoặc CSV
               </p>
             </div>
           </div>
@@ -252,7 +530,7 @@ export function BulkMemberImportModal({
         {/* 3 Steps indicator */}
         <div className="grid grid-cols-3 text-xs bg-slate-50/50 dark:bg-zinc-900/50">
           {[
-            { num: 1, label: 'Tải tệp CSV' },
+            { num: 1, label: 'Tải tệp Excel / CSV' },
             { num: 2, label: 'Cấu hình vai trò' },
             { num: 3, label: 'Xem trước & Xác nhận' },
           ].map((s) => (
@@ -323,7 +601,7 @@ export function BulkMemberImportModal({
             className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
           >
             <Download className="w-3 h-3" />
-            Tải file mẫu .csv
+            Tải file mẫu Excel (.xlsx)
           </button>
         </div>
 
@@ -358,15 +636,15 @@ export function BulkMemberImportModal({
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept=".csv"
+                  accept=".xlsx, .xls, .csv"
                   className="hidden"
                 />
                 <UploadCloud className="w-10 h-10 mx-auto text-slate-400 mb-2.5" />
                 <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {fileName ? fileName : 'Bấm để chọn file CSV hoặc kéo thả vào đây'}
+                  {fileName ? fileName : 'Bấm để chọn file Excel (.xlsx) hoặc CSV hoặc kéo thả vào đây'}
                 </p>
                 <p className="text-xs text-slate-400 dark:text-neutral-500 mt-1">
-                  Định dạng hỗ trợ: UTF-8 CSV (cột Email, Họ và tên, Mã sinh viên, Vai trò)
+                  Định dạng hỗ trợ: Excel (.xlsx, .xls) hoặc UTF-8 CSV (cột Email, Họ và tên, Mã sinh viên, Vai trò)
                 </p>
               </div>
 

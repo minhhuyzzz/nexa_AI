@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import ExcelJS from 'exceljs';
 import {
   Search,
   Download,
@@ -13,6 +14,7 @@ import {
   Crown,
   PauseCircle,
   PlayCircle,
+  Loader2,
 } from 'lucide-react';
 import type { OrgMemberItem } from './types';
 import { normalizeOrgRole } from '@/lib/auth/org-roles';
@@ -67,6 +69,7 @@ export function MemberDirectoryTable({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
   // 3-dots Dropdown State
   const [dropdownMenu, setDropdownMenu] = useState<{
@@ -151,29 +154,102 @@ export function MemberDirectoryTable({
     );
   };
 
-  const handleExportCsv = () => {
-    const headers = ['Họ tên', 'Email', 'Vai trò', 'Lớp/Nhóm', 'Trạng thái', 'Ngày tham gia'];
-    const rows = filtered.map((m) => [
-      m.nickname,
-      m.email,
-      ROLE_BADGES[m.role]?.label || m.role,
-      m.className || 'Chưa phân lớp',
-      m.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngưng',
-      new Date(m.createdAt).toLocaleDateString('vi-VN'),
-    ]);
+  const handleExportExcel = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'NEXA AI Platform';
+      workbook.created = new Date();
 
-    const csvContent =
-      '\uFEFF' +
-      [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
+      const worksheet = workbook.addWorksheet('Thanh_Vien', {
+        views: [{ showGridLines: true }],
+      });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `danh_sach_thanh_vien_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      worksheet.columns = [
+        { header: 'STT', key: 'stt', width: 8 },
+        { header: 'Họ và tên', key: 'name', width: 26 },
+        { header: 'Email', key: 'email', width: 32 },
+        { header: 'Nhóm / Lớp', key: 'class', width: 22 },
+        { header: 'Vai trò', key: 'role', width: 18 },
+        { header: 'Trạng thái', key: 'status', width: 16 },
+        { header: 'Ngày tham gia', key: 'joinedAt', width: 16 },
+      ];
+
+      // Format Header Row
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 28;
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF2563EB' }, // Cobalt #2563EB
+        };
+        cell.font = {
+          name: 'Segoe UI',
+          size: 10,
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF1D4ED8' } },
+          bottom: { style: 'medium', color: { argb: 'FF1D4ED8' } },
+          left: { style: 'thin', color: { argb: 'FF3B82F6' } },
+          right: { style: 'thin', color: { argb: 'FF3B82F6' } },
+        };
+      });
+
+      // Add Data Rows
+      filtered.forEach((m, idx) => {
+        const normRole = normalizeOrgRole(m.role);
+        const roleLabel = ROLE_BADGES[normRole]?.label || m.role;
+        const row = worksheet.addRow({
+          stt: idx + 1,
+          name: m.nickname,
+          email: m.email,
+          class: m.className || 'Chưa phân lớp',
+          role: roleLabel,
+          status: m.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngưng',
+          joinedAt: new Date(m.createdAt).toLocaleDateString('vi-VN'),
+        });
+
+        row.height = 22;
+        row.eachCell((cell, colNumber) => {
+          cell.font = { name: 'Segoe UI', size: 10 };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
+
+          // Alignment
+          if (colNumber === 1 || colNumber === 5 || colNumber === 6 || colNumber === 7) {
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          } else {
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          }
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `danh_sach_thanh_vien_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Lỗi khi xuất file Excel:', err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -233,15 +309,20 @@ export function MemberDirectoryTable({
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-              <span>Nhập danh sách (.CSV)</span>
+              <span>Nhập Excel / CSV</span>
             </button>
           )}
           <button
-            onClick={handleExportCsv}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-            <span>Xuất danh sách</span>
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 text-slate-500 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+            )}
+            <span>{isExporting ? 'Đang xuất...' : 'Xuất Excel'}</span>
           </button>
           <span className="text-[11px] font-mono text-slate-400 dark:text-neutral-500 shrink-0">
             {filtered.length} bản ghi
@@ -340,16 +421,17 @@ export function MemberDirectoryTable({
 
                       <td className="py-3 px-4">
                         <div className="inline-flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${roleConfig.badgeClass}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${roleConfig.dotClass}`} />
-                            <span>{roleConfig.label}</span>
-                          </span>
-                          {m.role === 'ORG_OWNER' && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800 tracking-tight font-mono">
-                              <Crown className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                          {normRole === 'ORG_OWNER' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800 tracking-tight font-mono">
+                              <Crown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                               <span>Chủ sở hữu</span>
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${roleConfig.badgeClass}`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${roleConfig.dotClass}`} />
+                              <span>{roleConfig.label}</span>
                             </span>
                           )}
                         </div>

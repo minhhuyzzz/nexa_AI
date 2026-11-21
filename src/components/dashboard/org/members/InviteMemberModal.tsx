@@ -57,6 +57,12 @@ export function InviteMemberModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lastInviteResult, setLastInviteResult] = useState<{
+    email: string;
+    inviteUrl: string;
+    emailSent: boolean;
+  } | null>(null);
+  const [copiedDirectInviteLink, setCopiedDirectInviteLink] = useState(false);
 
   // Validate email on blur (chỉ kiểm tra khi rời khỏi trường nhập, không kiểm tra liên tục khi đang gõ)
   const validateEmailOnBlur = () => {
@@ -200,6 +206,8 @@ export function InviteMemberModal({
       setSelectedRole('MEMBER');
       setCopiedCode(false);
       setCopiedLink(false);
+      setLastInviteResult(null);
+      setCopiedDirectInviteLink(false);
     }
   }, [isOpen, fetchOrGenerateCode]);
 
@@ -250,11 +258,21 @@ export function InviteMemberModal({
         throw new Error(data.details || data.error || 'Không thể tạo lời mời');
       }
 
-      setSuccessMsg(`Đã gửi thư mời thành công đến ${email.trim()}`);
+      const inv = data.invitation;
+      setLastInviteResult({
+        email: email.trim().toLowerCase(),
+        inviteUrl: inv?.inviteUrl || '',
+        emailSent: Boolean(inv?.emailSent),
+      });
+
+      setSuccessMsg(
+        inv?.emailSent
+          ? `Đã gửi thư mời qua email thành công tới ${email.trim()}`
+          : `Đã ghi nhận lời mời thành công cho ${email.trim()}`
+      );
       setEmail('');
       setFieldError(null);
       onSuccess?.();
-      setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi lời mời');
     } finally {
@@ -445,10 +463,57 @@ export function InviteMemberModal({
               </div>
             )}
 
-            {successMsg && (
-              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 font-medium">
-                <Check className="w-4 h-4 shrink-0 text-emerald-600" />
-                <span>{successMsg}</span>
+            {lastInviteResult && (
+              <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs space-y-2.5">
+                <div className="flex items-start gap-2 text-emerald-800 dark:text-emerald-200 font-medium">
+                  <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {lastInviteResult.emailSent
+                        ? `Đã gửi thư mời qua email thành công tới ${lastInviteResult.email}`
+                        : `Đã ghi nhận lời mời thành công cho ${lastInviteResult.email}`}
+                    </p>
+                    <p className="text-[11px] text-slate-600 dark:text-neutral-300 mt-0.5 leading-relaxed">
+                      {lastInviteResult.emailSent
+                        ? 'Thành viên đã nhận được thư mời trong hòm thư đến và có thể kích hoạt ngay.'
+                        : 'Hệ thống đã lưu lời mời có hiệu lực 7 ngày vào cơ sở dữ liệu. Vì máy chủ hiện chưa cấu hình gửi email tự động (Resend), bạn hãy sao chép liên kết bên dưới để gửi cho thành viên qua tin nhắn, Zalo hoặc Slack.'}
+                    </p>
+                  </div>
+                </div>
+
+                {lastInviteResult.inviteUrl && (
+                  <div className="pt-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={lastInviteResult.inviteUrl}
+                      className="flex-1 h-9 px-3 text-[11px] font-mono rounded-lg bg-white dark:bg-zinc-900 border border-emerald-300 dark:border-emerald-800 text-neutral-800 dark:text-zinc-200 select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(lastInviteResult.inviteUrl);
+                          setCopiedDirectInviteLink(true);
+                          setTimeout(() => setCopiedDirectInviteLink(false), 2000);
+                        } catch {}
+                      }}
+                      className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] shrink-0 transition flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedDirectInviteLink ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Đã sao chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Chép link</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
