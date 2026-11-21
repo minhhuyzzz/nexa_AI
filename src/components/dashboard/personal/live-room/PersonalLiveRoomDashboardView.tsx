@@ -285,13 +285,13 @@ export function PersonalLiveRoomDashboardView() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* 1. Header with Title & Direct PIN Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Radio className="w-4 h-4 animate-pulse" />
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h1 className="text-base sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
               Phòng thi trực tiếp
             </h1>
             <button
@@ -301,7 +301,7 @@ export function PersonalLiveRoomDashboardView() {
                   'Quy trình tổ chức phòng đánh giá trực tiếp:\n1. Bấm "Mở phòng mới" và chọn bài đánh giá năng lực số.\n2. Chia sẻ mã PIN 6 số hoặc liên kết cho học viên.\n3. Nhấn "Bắt đầu làm bài" khi học viên đã có mặt đầy đủ trong sảnh chờ.\n4. Theo dõi tiến độ nộp bài và kết quả theo thời gian thực.'
                 );
               }}
-              className="w-7 h-7 rounded-full border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0"
               title="Hướng dẫn tổ chức phòng thi"
               aria-label="Hướng dẫn tổ chức phòng thi"
             >
@@ -311,22 +311,23 @@ export function PersonalLiveRoomDashboardView() {
         </div>
 
         {/* Right Header Controls: Vào phòng bằng PIN & Làm mới */}
-        <div className="flex items-center gap-2 relative self-start sm:self-auto" ref={pinDropdownRef}>
-          {/* Nút Vào phòng bằng PIN ngang hàng tiêu đề */}
+        <div className="flex items-center gap-1.5 sm:gap-2 relative shrink-0" ref={pinDropdownRef}>
+          {/* Nút Tham gia đặt ngang hàng tiêu đề */}
           <button
             type="button"
             onClick={() => {
               setIsPinDropdownOpen((prev) => !prev);
               setHeaderPinError('');
             }}
-            className={`px-3.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs ${
+            className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shadow-2xs ${
               isPinDropdownOpen
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
                 : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-800 dark:text-neutral-200'
             }`}
+            title="Tham gia phòng thi bằng mã PIN"
           >
-            <Radio className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Vào phòng bằng PIN</span>
+            <Radio className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>Tham gia</span>
             <ChevronDown
               className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
                 isPinDropdownOpen ? 'rotate-180 text-blue-600' : ''
@@ -336,7 +337,7 @@ export function PersonalLiveRoomDashboardView() {
 
           {/* Menu popover xổ ra ngay khi nhấn để nhập mã */}
           {isPinDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 z-50 w-80 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl animate-in fade-in slide-in-from-top-2 duration-150 space-y-3">
+            <div className="absolute right-0 top-full mt-2 z-50 w-[calc(100vw-2rem)] sm:w-80 max-w-xs sm:max-w-sm p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl animate-in fade-in slide-in-from-top-2 duration-150 space-y-3">
               <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-zinc-900">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
@@ -393,10 +394,10 @@ export function PersonalLiveRoomDashboardView() {
           {/* Nút làm mới */}
           <button
             onClick={fetchRooms}
-            className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-500 dark:text-neutral-400 transition-colors cursor-pointer shadow-2xs"
+            className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-500 dark:text-neutral-400 transition-colors cursor-pointer shadow-2xs shrink-0"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
           </button>
         </div>
       </div>
