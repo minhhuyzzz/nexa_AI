@@ -36,6 +36,7 @@ import {
   Shield,
   EyeOff,
   ChevronDown,
+  CheckSquare,
 } from 'lucide-react';
 import { SecuritySettingsCard } from '@/features/assessments/components/SecuritySettingsCard';
 import {
@@ -115,6 +116,7 @@ export function AdminAssessmentBankClient({
   const [cloningId, setCloningId] = useState<string | null>(null);
 
   // Bulk Selection State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
@@ -696,6 +698,7 @@ export function AdminAssessmentBankClient({
       );
       showToast(data.message || 'Cập nhật thành công!');
       setSelectedIds([]);
+      setIsSelectionMode(false);
     } catch (err: any) {
       showToast(err.message || 'Lỗi thao tác hàng loạt');
     } finally {
@@ -718,6 +721,7 @@ export function AdminAssessmentBankClient({
       setAssessments((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
       showToast(data.message || `Đã xóa thành công ${selectedIds.length} bài khảo thí!`);
       setSelectedIds([]);
+      setIsSelectionMode(false);
       setIsBulkDeleteModalOpen(false);
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi xóa hàng loạt');
@@ -1069,6 +1073,36 @@ export function AdminAssessmentBankClient({
             <option value="FREE">Miễn phí</option>
             <option value="VIP">Nâng cấp</option>
           </select>
+
+          {/* Nút bật/tắt chế độ Chọn nhiều */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isSelectionMode) {
+                setIsSelectionMode(false);
+                setSelectedIds([]);
+              } else {
+                setIsSelectionMode(true);
+              }
+            }}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs ${
+              isSelectionMode
+                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+                : 'bg-white dark:bg-[#111114] border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800/60'
+            }`}
+          >
+            {isSelectionMode ? (
+              <>
+                <X className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                <span>Hủy chọn{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}</span>
+              </>
+            ) : (
+              <>
+                <CheckSquare className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+                <span>Chọn nhiều</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -1092,15 +1126,17 @@ export function AdminAssessmentBankClient({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 text-xs font-medium">
-                  <th className="py-3 px-2 w-[38px] text-center">
-                    <input
-                      type="checkbox"
-                      checked={filteredAssessments.length > 0 && selectedIds.length === filteredAssessments.length}
-                      onChange={handleToggleSelectAll}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      title="Chọn tất cả bài khảo thí"
-                    />
-                  </th>
+                  {isSelectionMode && (
+                    <th className="py-3 px-2 w-[38px] text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredAssessments.length > 0 && selectedIds.length === filteredAssessments.length}
+                        onChange={handleToggleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        title={selectedIds.length === filteredAssessments.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả bài khảo thí'}
+                      />
+                    </th>
+                  )}
                   <th className="py-3 px-2 w-[42px] text-center font-medium">STT</th>
                   <th className="py-3 px-3 max-w-[200px] xl:max-w-[240px]">Bài khảo thí</th>
                   <th className="py-3 px-3 whitespace-nowrap">Miền năng lực</th>
@@ -1125,14 +1161,16 @@ export function AdminAssessmentBankClient({
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="py-3.5 px-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleSelect(exam.id)}
-                          className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                      </td>
+                      {isSelectionMode && (
+                        <td className="py-3.5 px-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(exam.id)}
+                            className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
 
                       {/* STT */}
                       <td className="py-3.5 px-2 text-center font-mono tabular-nums text-slate-500 dark:text-zinc-400">
@@ -2269,9 +2307,12 @@ export function AdminAssessmentBankClient({
           {/* Nút hủy chọn */}
           <button
             type="button"
-            onClick={() => setSelectedIds([])}
+            onClick={() => {
+              setSelectedIds([]);
+              setIsSelectionMode(false);
+            }}
             className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer shrink-0"
-            title="Bỏ chọn tất cả"
+            title="Thoát chế độ chọn"
           >
             <X className="w-4 h-4" />
           </button>
