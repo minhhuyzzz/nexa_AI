@@ -497,57 +497,24 @@ export default function LearnerDashboardPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header & Quick Indicators (Không viền ngang) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-6 pb-1">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
+      {/* 1. Header & Quick Indicators (Level đưa cùng hàng với Lời chào) */}
+      <div className="flex flex-col gap-3 pb-1">
+        {/* Top Row: Greeting on left & Level Progress Gauge on right */}
+        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
               {loadingStats ? (
-                <span className="inline-block w-48 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse align-middle" />
+                <span className="inline-block w-40 sm:w-48 h-7 sm:h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse align-middle" />
               ) : (
                 `Xin chào, ${stats.fullName && stats.fullName !== 'Học viên' ? stats.fullName : stats.nickname}!`
               )}
             </h1>
           </div>
-        </div>
 
-        {/* Quick Indicators: Streak & Level (Borderless, Background-transparent, seamlessly blending with page) */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 lg:gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0">
-          {/* Streak Days Tracker (Hòa vào nền, không viền, không rớt dòng) */}
-          <div className="p-0 bg-transparent shadow-none w-full sm:w-auto">
-            <div className="flex items-center justify-between sm:justify-start gap-3 text-[11px] mb-1.5">
-              <div className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100 font-bold whitespace-nowrap">
-                <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span>Chuỗi {stats.loginStreak} ngày</span>
-              </div>
-              <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono whitespace-nowrap">
-                (Tổng {stats.totalLoginDays} ngày)
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {weekDays.map((item) => (
-                <div key={item.label} className="flex flex-col items-center gap-0.5">
-                  <span className="text-[9px] text-slate-500 dark:text-neutral-400 font-medium">{item.label}</span>
-                  <span
-                    className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono tabular-nums transition-colors ${
-                      item.done
-                        ? 'bg-amber-500 text-white font-bold shadow-2xs'
-                        : item.today
-                        ? 'border-2 border-amber-500 bg-amber-50/60 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold'
-                        : 'bg-slate-200/60 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400'
-                    }`}
-                  >
-                    {item.done ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : item.num}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Level Progress Gauge (Hòa vào nền, không viền) */}
-          <div className="p-0 bg-transparent shadow-none flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <div className="relative w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center shrink-0">
-              <svg className="w-11 h-11 sm:w-12 sm:h-12 transform -rotate-90" viewBox="0 0 36 36">
+          {/* Level Progress Gauge (Cùng hàng với Lời chào) */}
+          <div className="p-0 bg-transparent shadow-none flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center shrink-0">
+              <svg className="w-10 h-10 sm:w-11 sm:h-11 transform -rotate-90" viewBox="0 0 36 36">
                 <path
                   className="text-slate-200/70 dark:text-zinc-800"
                   strokeWidth="3.5"
@@ -580,13 +547,44 @@ export default function LearnerDashboardPage() {
                   className="text-[10px] text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer shrink-0"
                   title="Xem chi tiết các mốc cấp bậc"
                 >
-                  (Quy định cấp độ)
+                  (Quy định)
                 </button>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">
                 <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{animatedPoints}</strong> / {stats.levelNextTarget} PTS
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Row 2: Streak Days Tracker */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-neutral-700 dark:text-zinc-300">
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100 font-bold whitespace-nowrap">
+              <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+              <span>Chuỗi {stats.loginStreak} ngày</span>
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono whitespace-nowrap">
+              (Tổng {stats.totalLoginDays} ngày)
+            </span>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+            {weekDays.map((item) => (
+              <div key={item.label} className="flex flex-col items-center gap-0.5 shrink-0">
+                <span className="text-[9px] text-slate-500 dark:text-neutral-400 font-medium">{item.label}</span>
+                <span
+                  className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono tabular-nums transition-colors ${
+                    item.done
+                      ? 'bg-amber-500 text-white font-bold shadow-2xs'
+                      : item.today
+                      ? 'border-2 border-amber-500 bg-amber-50/60 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold'
+                      : 'bg-slate-200/60 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400'
+                  }`}
+                >
+                  {item.done ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : item.num}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

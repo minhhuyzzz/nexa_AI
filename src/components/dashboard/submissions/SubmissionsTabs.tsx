@@ -21,7 +21,7 @@ export function SubmissionsTabs({ activeTab, onTabChange, counts }: SubmissionsT
   ];
 
   return (
-    <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl overflow-x-auto no-scrollbar">
+    <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl overflow-x-auto no-scrollbar max-w-full">
       {tabs.map((t) => {
         const isActive = activeTab === t.key;
         return (
@@ -29,13 +29,13 @@ export function SubmissionsTabs({ activeTab, onTabChange, counts }: SubmissionsT
             key={t.key}
             type="button"
             onClick={() => onTabChange(t.key)}
-            className={`flex items-center gap-2 min-h-[40px] py-2 px-3.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 min-h-[40px] py-1.5 px-3 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
               isActive
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-zinc-200'
             }`}
           >
-            <span>{t.label}</span>
+            <span className="whitespace-nowrap">{t.label}</span>
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${
                 isActive

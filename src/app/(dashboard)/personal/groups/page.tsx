@@ -469,19 +469,19 @@ function LearnerGroupsContent() {
 
       {/* 2. Tabs Stand & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full text-xs font-semibold">
+        {/* Tabs (Chống rớt dòng trên mobile) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full text-xs font-semibold py-0.5">
           <button
             type="button"
             onClick={() => setActiveTab('ALL')}
-            className={`px-3.5 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'ALL'
                 ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
                 : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            <span>Tất cả</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
+            <span className="whitespace-nowrap">Tất cả</span>
+            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
               {groups.length}
             </span>
           </button>
@@ -489,14 +489,14 @@ function LearnerGroupsContent() {
           <button
             type="button"
             onClick={() => setActiveTab('MANAGED')}
-            className={`px-3.5 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'MANAGED'
                 ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
                 : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            <span>Tôi quản trị</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
+            <span className="whitespace-nowrap">Tôi quản trị</span>
+            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
               {managedCount}
             </span>
           </button>
@@ -504,14 +504,14 @@ function LearnerGroupsContent() {
           <button
             type="button"
             onClick={() => setActiveTab('JOINED')}
-            className={`px-3.5 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'JOINED'
                 ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
                 : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            <span>Tôi tham gia</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
+            <span className="whitespace-nowrap">Tôi tham gia</span>
+            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
               {joinedCount}
             </span>
           </button>
@@ -519,14 +519,14 @@ function LearnerGroupsContent() {
           <button
             type="button"
             onClick={() => setActiveTab('INVITATIONS')}
-            className={`px-3.5 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'INVITATIONS'
                 ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
                 : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            <span>Lời mời</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
+            <span className="whitespace-nowrap">Lời mời</span>
+            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700">
               0
             </span>
           </button>
