@@ -261,7 +261,10 @@ export function AuthoringEditorTwoPane({
               allowedSubmissionModes: Array.isArray(item.submission_modes)
                 ? item.submission_modes
                 : ['TEXT', 'FILE', 'URL'],
-              practicalGuide: item.rubric_guide || '',
+              practicalGuide:
+                item.rubric_guide ||
+                sortedOptions.find((o: any) => o.is_correct)?.explanation ||
+                '',
               options:
                 qType !== 'PRACTICAL'
                   ? options.length > 0
@@ -494,6 +497,7 @@ export function AuthoringEditorTwoPane({
           prompt: q.prompt,
           points: Number(q.points) > 0 ? Number(q.points) : 1,
           domainCode: targetDomainCode,
+          practicalGuide: q.explanation?.trim() || '',
           options,
         };
       });
@@ -1764,7 +1768,7 @@ export function AuthoringEditorTwoPane({
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-neutral-800 dark:text-zinc-200 flex items-center gap-1.5">
                       <Paperclip className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                      <span>Tài liệu &amp; Tệp dữ liệu đề bài</span>
+                      <span>Tài liệu và Tệp dữ liệu đề bài</span>
                       <span className="text-[10px] font-normal text-slate-400">(Tối đa 10 MB / tệp • Tùy chọn)</span>
                     </label>
 
@@ -1953,7 +1957,7 @@ export function AuthoringEditorTwoPane({
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold text-neutral-800 dark:text-zinc-100">
-                                Barem điểm &amp; Hướng dẫn chấm
+                                Barem điểm và Hướng dẫn chấm
                               </span>
                               <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
                                 Ẩn với người làm bài
@@ -2006,7 +2010,7 @@ export function AuthoringEditorTwoPane({
                                 }`}
                               >
                                 <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                                <span>Đáp án chuẩn &amp; Hướng dẫn giải</span>
+                                <span>Đáp án chuẩn và Hướng dẫn giải</span>
                                 {hasSolution && (
                                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                                 )}
@@ -2160,7 +2164,7 @@ export function AuthoringEditorTwoPane({
                       : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                 >
-                  2. Giám thị &amp; Bảo mật
+                  2. Giám thị và Bảo mật
                 </button>
               </div>
             )}
@@ -2302,7 +2306,7 @@ export function AuthoringEditorTwoPane({
                         </div>
                         <div className="space-y-1 text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
                           <div>&bull; <strong>Tự do gắn cờ xem lại:</strong> Cho phép thí sinh đánh dấu câu hỏi chưa chắc chắn để rà soát trước khi nộp.</div>
-                          <div>&bull; <strong>Mở khóa giải thích &amp; lộ trình:</strong> Tự động phân tích 5 miền năng lực số và mở khóa giải thích chi tiết sau khi nộp bài để bù đắp kiến thức.</div>
+                          <div>&bull; <strong>Mở khóa giải thích và lộ trình:</strong> Tự động phân tích 5 miền năng lực số và mở khóa giải thích chi tiết sau khi nộp bài để bù đắp kiến thức.</div>
                         </div>
                       </div>
                     </div>
@@ -2719,7 +2723,7 @@ export function AuthoringEditorTwoPane({
                                 {practicalData.sampleSolution && (
                                   <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 space-y-1.5 text-xs">
                                     <span className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
-                                      <BookOpen className="w-3.5 h-3.5" /> Đáp án chuẩn &amp; Hướng dẫn đối chiếu:
+                                      <BookOpen className="w-3.5 h-3.5" /> Đáp án chuẩn và Hướng dẫn đối chiếu:
                                     </span>
                                     <p className="whitespace-pre-wrap text-neutral-700 dark:text-zinc-300 leading-relaxed font-sans">
                                       {practicalData.sampleSolution}
@@ -2898,6 +2902,7 @@ export function AuthoringEditorTwoPane({
                           <th className="py-2 px-3">STT</th>
                           <th className="py-2 px-3">Nội dung câu hỏi</th>
                           <th className="py-2 px-3 text-center">Đáp án</th>
+                          <th className="py-2 px-3">Giải thích</th>
                           <th className="py-2 px-3 text-right">Điểm</th>
                         </tr>
                       </thead>
@@ -2912,6 +2917,9 @@ export function AuthoringEditorTwoPane({
                               <span className="px-1.5 py-0.5 rounded font-mono font-bold text-[11px] bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                                 {row.correct_answer}
                               </span>
+                            </td>
+                            <td className="py-2 px-3 max-w-[200px] truncate text-slate-500 dark:text-neutral-400" title={row.explanation}>
+                              {row.explanation || <span className="text-slate-300 dark:text-zinc-600 italic">Không có</span>}
                             </td>
                             <td className="py-2 px-3 text-right font-mono font-semibold text-neutral-900 dark:text-neutral-100">
                               {row.points || 1}

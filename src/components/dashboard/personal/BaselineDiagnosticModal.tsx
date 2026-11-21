@@ -834,7 +834,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                 >
                   <span className="flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-blue-600" />
-                    <span>Xem lại đáp án &amp; giải thích chi tiết ({submitResult.evaluations.length} câu)</span>
+                    <span>Xem lại đáp án và giải thích chi tiết ({submitResult.evaluations.length} câu)</span>
                   </span>
                   {showReviewAnswers ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>

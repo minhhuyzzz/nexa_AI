@@ -309,7 +309,7 @@ export function InviteMemberModal({
             }`}
           >
             <KeyRound className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Mã mời &amp; Liên kết</span>
+            <span>Mã mời và Liên kết</span>
           </button>
 
           <button

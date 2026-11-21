@@ -15,10 +15,10 @@ import {
 } from 'lucide-react';
 
 const DOMAIN_OPTIONS = [
-  { id: 1, code: 'D1', title: 'Thông tin & Dữ liệu' },
-  { id: 2, code: 'D2', title: 'Giao tiếp & Hợp tác' },
-  { id: 3, code: 'D3', title: 'Sáng tạo Nội dung & AI' },
-  { id: 4, code: 'D4', title: 'An toàn & Bảo mật' },
+  { id: 1, code: 'D1', title: 'Thông tin và Dữ liệu' },
+  { id: 2, code: 'D2', title: 'Giao tiếp và Hợp tác' },
+  { id: 3, code: 'D3', title: 'Sáng tạo Nội dung và AI' },
+  { id: 4, code: 'D4', title: 'An toàn và Bảo mật' },
   { id: 5, code: 'D5', title: 'Giải quyết Vấn đề' },
 ];
 
@@ -134,7 +134,7 @@ export default function PersonalNewAssessmentPage() {
           {/* Mô tả & mục tiêu */}
           <div>
             <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-1.5">
-              Mục tiêu &amp; Mô tả ngắn
+              Mục tiêu và Mô tả ngắn
             </label>
             <textarea
               value={description}

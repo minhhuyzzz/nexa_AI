@@ -235,7 +235,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                   }}
                   className="w-full py-2 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
                 >
-                  Hoàn tất &amp; Bắt đầu
+                  Hoàn tất và Bắt đầu
                 </button>
               </div>
             </div>

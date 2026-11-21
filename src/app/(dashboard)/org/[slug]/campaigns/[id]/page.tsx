@@ -256,7 +256,7 @@ export default async function OrgCampaignDetailPage({
         </div>
 
         <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-4 shadow-2xs text-xs">
-          <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">Đã duyệt &amp; Đạt</span>
+          <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">Đã duyệt và Đạt</span>
           <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
             {passedCount}/{gradedCount || 0}
           </span>
@@ -276,7 +276,7 @@ export default async function OrgCampaignDetailPage({
       <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-5 shadow-2xs space-y-4 text-xs">
         <div className="flex items-center justify-between pb-3">
           <h2 className="font-bold text-slate-900 dark:text-zinc-100 uppercase text-xs tracking-wide">
-            Danh Sách Bài Nộp &amp; Kết Quả Thí Sinh ({submissions.length})
+            Danh Sách Bài Nộp và Kết Quả Thí Sinh ({submissions.length})
           </h2>
           <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
             Cập nhật thời gian thực

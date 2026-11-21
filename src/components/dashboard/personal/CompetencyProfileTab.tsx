@@ -96,7 +96,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
               </span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-              Điểm Đánh Giá 5 Miền &amp; Bằng Chứng Khảo Thí
+              Điểm Đánh Giá 5 Miền và Bằng Chứng Khảo Thí
             </h2>
             <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-2xl">
               Hồ sơ ghi nhận minh chứng khảo thí thực tế từ các bài đánh giá chuẩn hóa. Không suy đoán hoặc giả lập điểm số khi chưa có bài làm hợp lệ.
@@ -123,7 +123,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
               <span className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400">
                 {totalEvidenceCount}
               </span>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Bài thi &amp; nhiệm vụ</span>
+              <span className="text-[10px] text-slate-400 block mt-0.5">Bài thi và nhiệm vụ</span>
             </div>
           </div>
         </div>

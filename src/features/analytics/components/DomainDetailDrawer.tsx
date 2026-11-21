@@ -92,7 +92,7 @@ export function DomainDetailDrawer({ domain, onClose }: Props) {
             </div>
 
             <div className="p-3.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40">
-              <div className="text-[11px] text-slate-500 dark:text-neutral-400">Độ phủ &amp; Người đánh giá</div>
+              <div className="text-[11px] text-slate-500 dark:text-neutral-400">Độ phủ và Người đánh giá</div>
               <div className="text-xl font-bold font-mono text-slate-900 dark:text-neutral-100 mt-1 tabular-nums">
                 {domain.coverageRate !== null ? `${domain.coverageRate}%` : '—'}
               </div>

@@ -13,7 +13,7 @@ export function PolicyNavHeader() {
     { href: '/policies', label: 'Tổng quan', icon: Sparkles },
     { href: '/policies/privacy', label: 'Bảo vệ dữ liệu cá nhân', icon: ShieldCheck },
     { href: '/policies/terms', label: 'Điều khoản dịch vụ', icon: FileText },
-    { href: '/policies/security', label: 'An toàn dữ liệu & AI', icon: Lock },
+    { href: '/policies/security', label: 'An toàn dữ liệu và AI', icon: Lock },
     { href: '/faq', label: 'Câu hỏi thường gặp', icon: HelpCircle },
   ];
 
@@ -31,7 +31,7 @@ export function PolicyNavHeader() {
               href="/policies"
               className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              Chính sách & Quy định Pháp lý
+              Chính sách và Quy định Pháp lý
             </Link>
           </div>
 

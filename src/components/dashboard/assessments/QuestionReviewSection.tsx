@@ -159,7 +159,7 @@ export function QuestionReviewSection({
         <div>
           <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
             <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-            <span>Xem lại chi tiết câu hỏi &amp; Giải trình kiến thức</span>
+            <span>Xem lại chi tiết câu hỏi và Giải trình kiến thức</span>
           </h3>
           <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
             Đối chiếu câu trả lời với đáp án chuẩn và phân tích sư phạm từng câu hỏi

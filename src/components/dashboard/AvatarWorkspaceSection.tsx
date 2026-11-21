@@ -452,7 +452,7 @@ export function AvatarWorkspaceSection({
                     className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-850 transition-colors cursor-pointer text-left"
                   >
                     <Building2 className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-                    <span>Thông tin &amp; Rời tổ chức</span>
+                    <span>Thông tin và Rời tổ chức</span>
                   </button>
                 ) : null
               ) : (

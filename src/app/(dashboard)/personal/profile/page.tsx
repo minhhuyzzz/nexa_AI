@@ -77,7 +77,7 @@ export default function LearnerProfilePage() {
       fallback={
         <div className="py-20 flex flex-col items-center justify-center text-slate-400">
           <Loader2 className="w-6 h-6 animate-spin text-blue-600 mb-2" strokeWidth={1.75} />
-          <p className="text-xs">Đang tải hồ sơ &amp; cài đặt...</p>
+          <p className="text-xs">Đang tải hồ sơ và cài đặt...</p>
         </div>
       }
     >
@@ -406,7 +406,7 @@ function LearnerProfileContent() {
     return (
       <div className="py-20 flex flex-col items-center justify-center text-slate-400">
         <Loader2 className="w-6 h-6 animate-spin text-blue-600 mb-2" strokeWidth={1.75} />
-        <p className="text-xs">Đang tải hồ sơ &amp; cài đặt...</p>
+        <p className="text-xs">Đang tải hồ sơ và cài đặt...</p>
       </div>
     );
   }
@@ -434,7 +434,7 @@ function LearnerProfileContent() {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-          Hồ sơ &amp; Cài đặt
+          Hồ sơ và Cài đặt
         </h1>
         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
           Quản lý thông tin cá nhân, tùy chỉnh trải nghiệm và thiết lập tài khoản trên NEXA.
@@ -735,7 +735,7 @@ function LearnerProfileContent() {
                 }`}
               >
                 <User className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-                <span>Dữ liệu &amp; tài khoản</span>
+                <span>Dữ liệu và tài khoản</span>
               </button>
             </div>
           </aside>
@@ -753,7 +753,7 @@ function LearnerProfileContent() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Quyền riêng tư &amp; hiển thị
+                    Quyền riêng tư và hiển thị
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                     Kiểm soát cách thông tin của bạn được hiển thị trên NEXA.
@@ -831,7 +831,7 @@ function LearnerProfileContent() {
                   <div className="space-y-0.5 max-w-lg">
                     <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
                       <Award className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                      <span>Chia sẻ chứng chỉ &amp; xác minh bằng QR</span>
+                      <span>Chia sẻ chứng chỉ và xác minh bằng QR</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400">
                       Cho phép chia sẻ chứng chỉ của bạn và cho phép người khác xác minh tính xác thực thông qua mã QR.
@@ -955,7 +955,7 @@ function LearnerProfileContent() {
                   <div className="space-y-0.5 max-w-lg">
                     <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
                       <BarChart3 className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                      <span>Kết quả &amp; điểm số</span>
+                      <span>Kết quả và điểm số</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400">
                       Hiển thị thông báo khi có kết quả chấm điểm hoặc cập nhật hồ sơ năng lực số.
@@ -1161,7 +1161,7 @@ function LearnerProfileContent() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Dữ liệu &amp; tài khoản
+                    Dữ liệu và tài khoản
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                     Quản lý dữ liệu cá nhân và các tùy chọn liên quan đến tài khoản.

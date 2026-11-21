@@ -163,7 +163,7 @@ export function ClassMaterialsTab({ classId, role, currentUserId }: ClassMateria
       {/* Header Bar */}
       <div className="flex items-center justify-between pb-1">
         <div>
-          <h3 className="text-sm font-bold text-slate-900">Kho Tài Liệu &amp; Tham Khảo</h3>
+          <h3 className="text-sm font-bold text-slate-900">Kho Tài Liệu và Tham Khảo</h3>
           <p className="text-xs text-slate-500">
             {role === 'EVALUATOR'
               ? 'Tải lên giáo trình, hướng dẫn khảo thí và các liên kết học tập cho lớp.'

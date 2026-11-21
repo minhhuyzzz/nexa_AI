@@ -540,7 +540,7 @@ export function AssignAssessmentModal({
                 <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-700 text-[10px] flex items-center justify-center font-mono">
                   4
                 </span>
-                Giám sát &amp; Bảo mật phòng thi
+                Giám sát và Bảo mật phòng thi
               </h3>
               <SecuritySettingsCard
                 value={securitySettings}

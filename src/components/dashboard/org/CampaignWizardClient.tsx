@@ -432,7 +432,7 @@ export function CampaignWizardClient({
                 4
               </span>
               <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                Thời gian mở bài &amp; Chuẩn đạt
+                Thời gian mở bài và Chuẩn đạt
               </h2>
             </div>
 

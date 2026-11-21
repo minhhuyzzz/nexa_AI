@@ -374,7 +374,7 @@ export default function AdminLearningPathsPage() {
       <div className="flex items-center justify-between py-1">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-zinc-300">
           <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <span>Hệ thống Trạm Bồi dưỡng & Khảo thí Năng lực số</span>
+          <span>Hệ thống Trạm Bồi dưỡng và Khảo thí Năng lực số</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
           <span>Đã gắn đề:</span>
@@ -908,7 +908,7 @@ export default function AdminLearningPathsPage() {
                 <div className="flex items-center justify-between gap-3 pt-2">
                   <div>
                     <span className="font-semibold text-slate-800 dark:text-zinc-200 block text-[11px]">
-                      Tự động xáo trộn câu hỏi & đáp án
+                      Tự động xáo trộn câu hỏi và đáp án
                     </span>
                     <span className="text-[10px] text-slate-400">
                       Ngẫu nhiên hóa thứ tự câu hỏi và phương án A, B, C, D khi thí sinh làm bài

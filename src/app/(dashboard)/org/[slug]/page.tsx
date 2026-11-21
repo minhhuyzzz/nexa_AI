@@ -259,7 +259,7 @@ export default async function OrgOverviewPage({
               {membersCount}
             </div>
             <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Nhân sự &amp; người học hoạt động
+              Nhân sự và người học hoạt động
             </div>
           </div>
           <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
@@ -275,7 +275,7 @@ export default async function OrgOverviewPage({
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
-              Lớp học &amp; Đơn vị
+              Lớp học và Đơn vị
             </span>
             <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
               <GraduationCap className="w-4 h-4" strokeWidth={1.75} />
@@ -441,7 +441,7 @@ export default async function OrgOverviewPage({
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    Lớp học &amp; Đơn vị
+                    Lớp học và Đơn vị
                   </h3>
                 </div>
               </div>
@@ -534,7 +534,7 @@ export default async function OrgOverviewPage({
                     <BarChart2 className="w-4 h-4" />
                   </div>
                   <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    Thẩm định &amp; Phổ điểm
+                    Thẩm định và Phổ điểm
                   </h3>
                 </div>
               </div>
@@ -562,7 +562,7 @@ export default async function OrgOverviewPage({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Đợt Khảo Thí &amp; Hoạt Động Đánh Giá
+                    Đợt Khảo Thí và Hoạt Động Đánh Giá
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400">
                     {rawCampaigns.length}
@@ -674,7 +674,7 @@ export default async function OrgOverviewPage({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Lớp Học &amp; Không Gian Đào Tạo
+                    Lớp Học và Không Gian Đào Tạo
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400">
                     {classesCount}
@@ -946,10 +946,10 @@ export default async function OrgOverviewPage({
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      Báo cáo &amp; Phân tích phổ điểm
+                      Báo cáo và Phân tích phổ điểm
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-neutral-400">
-                      Khoảng trống &amp; Đề xuất học phần
+                      Khoảng trống và Đề xuất học phần
                     </div>
                   </div>
                 </div>
@@ -967,7 +967,7 @@ export default async function OrgOverviewPage({
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      Gói bản quyền &amp; Quota
+                      Gói bản quyền và Quota
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       {entitlements.planName || 'Business'} &bull; Tra cứu hạn mức

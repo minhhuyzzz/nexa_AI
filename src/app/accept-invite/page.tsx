@@ -202,7 +202,7 @@ function AcceptInviteContent() {
           Lời mời tham gia tổ chức
         </h1>
         <p className="text-xs text-slate-500 dark:text-neutral-400 text-center mt-1 mb-6">
-          Nền tảng đánh giá &amp; phát triển năng lực số NEXA AI
+          Nền tảng đánh giá và phát triển năng lực số NEXA AI
         </p>
 
         {error && (
@@ -269,7 +269,7 @@ function AcceptInviteContent() {
                     </>
                   ) : (
                     <>
-                      <span>Xác nhận &amp; Vào không gian tổ chức</span>
+                      <span>Xác nhận và Vào không gian tổ chức</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -389,7 +389,7 @@ function AcceptInviteContent() {
                     </>
                   ) : (
                     <>
-                      <span>Kích hoạt tài khoản &amp; Vào tổ chức</span>
+                      <span>Kích hoạt tài khoản và Vào tổ chức</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

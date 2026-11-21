@@ -1811,7 +1811,12 @@ export function AssessmentTakeContent({
               const correctOptId = evalData?.correctOptionId || q.options?.find((o: any) => o.is_correct)?.id || null;
               const isCorrect = evalData?.isCorrect ?? (selectedOptId && correctOptId ? selectedOptId === correctOptId : false);
               const scoreAwarded = evalData?.scoreAwarded ?? (isCorrect ? (q.points || 1) : 0);
-              const explanation = evalData?.explanation || q.explanation || q.options?.find((o: any) => o.id === correctOptId)?.explanation || null;
+              const explanation =
+                evalData?.explanation ||
+                q.explanation ||
+                q.rubric_guide ||
+                q.options?.find((o: any) => o.id === correctOptId)?.explanation ||
+                null;
               const domainCode = evalData?.domainCode || q.competencies?.competency_domains?.code || null;
               const domainTitle = evalData?.domainTitle || q.competencies?.competency_domains?.title || q.competencies?.title || null;
 
@@ -2059,7 +2064,7 @@ export function AssessmentTakeContent({
                 <Lock className="w-5 h-5" strokeWidth={1.75} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Khóa Chặng 1 &amp; Sang Thực Hành?</h3>
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Khóa Chặng 1 và Sang Thực Hành?</h3>
                 <p className="text-xs text-slate-500 dark:text-neutral-400">Quy tắc khảo thí khóa một chiều (One-way Lock)</p>
               </div>
             </div>
@@ -2081,7 +2086,7 @@ export function AssessmentTakeContent({
                 onClick={handleExecuteLockStage1}
                 className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
               >
-                Xác Nhận Khóa &amp; Làm Thực Hành
+                Xác Nhận Khóa và Làm Thực Hành
               </button>
             </div>
           </div>
@@ -2112,7 +2117,7 @@ export function AssessmentTakeContent({
                 onClick={() => setWarningModal({ ...warningModal, open: false })}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs"
               >
-                Tôi Đã Hiểu &amp; Tiếp Tục Làm Bài
+                Tôi Đã Hiểu và Tiếp Tục Làm Bài
               </button>
             </div>
           </div>
@@ -2355,7 +2360,7 @@ export function AssessmentTakeContent({
                 onClick={() => setShowConfirmModal(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
               >
-                <span>Nộp bài &amp; Xem kết quả</span>
+                <span>Nộp bài và Xem kết quả</span>
                 <Send className="w-3.5 h-3.5" />
               </button>
             ) : (

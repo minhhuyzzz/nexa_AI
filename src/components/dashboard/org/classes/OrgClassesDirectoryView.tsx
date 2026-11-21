@@ -486,7 +486,7 @@ export function OrgClassesDirectoryView({
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2 text-xs">
           <span className="text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
-            Hiển thị {paginatedClasses.length} trên {filtered.length} lớp &amp; nhóm
+            Hiển thị {paginatedClasses.length} trên {filtered.length} lớp và nhóm
           </span>
 
           <div className="flex items-center gap-1 font-mono tabular-nums">

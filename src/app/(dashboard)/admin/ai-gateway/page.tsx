@@ -123,7 +123,7 @@ const PROVIDER_OPTIONS = [
 ];
 
 const FEATURE_LABELS: Record<string, string> = {
-  RUBRIC_GRADING: 'Chấm Rubric & Minh chứng',
+  RUBRIC_GRADING: 'Chấm Rubric và Minh chứng',
   COMPETENCY_ANALYSIS: 'Phân tích Năng lực 5 Miền',
   AUTHORING_ASSIST: 'Trợ lý Soạn Đề',
   SIMILAR_QUESTION: 'Tạo Câu Hỏi Tương Tự',
@@ -356,7 +356,7 @@ function AdminAiGatewayContent() {
           }`}
         >
           <Sliders className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span>Cấu hình Model & Routing</span>
+          <span>Cấu hình Model và Routing</span>
         </button>
 
         <button
@@ -369,7 +369,7 @@ function AdminAiGatewayContent() {
           }`}
         >
           <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span>Định mức Credit & Tác vụ</span>
+          <span>Định mức Credit và Tác vụ</span>
         </button>
 
         <button
@@ -382,7 +382,7 @@ function AdminAiGatewayContent() {
           }`}
         >
           <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span>Hiệu chuẩn HITL & Độ lệch</span>
+          <span>Hiệu chuẩn HITL và Độ lệch</span>
         </button>
 
         <button
@@ -395,7 +395,7 @@ function AdminAiGatewayContent() {
           }`}
         >
           <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-          <span>Thống kê Token & Chi phí</span>
+          <span>Thống kê Token và Chi phí</span>
         </button>
       </div>
 
@@ -543,7 +543,7 @@ function AdminAiGatewayContent() {
                 <span className="text-xs text-slate-500 dark:text-neutral-400">Khóa API máy chủ</span>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                   <Key className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>{hasServerKey ? 'Đã kích hoạt & Lưu trữ an toàn' : 'Chưa cấu hình'}</span>
+                  <span>{hasServerKey ? 'Đã kích hoạt và Lưu trữ an toàn' : 'Chưa cấu hình'}</span>
                 </div>
               </div>
 
@@ -575,7 +575,7 @@ function AdminAiGatewayContent() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Cấu hình Động Cổng AI (Dynamic Gateway & Routing)
+                Cấu hình Động Cổng AI (Dynamic Gateway và Routing)
               </h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                 Thiết lập này được lưu trực tiếp vào bảng <code className="font-mono text-blue-600">platform_settings</code> và xóa cache in-memory tức thì.
@@ -736,7 +736,7 @@ function AdminAiGatewayContent() {
           <div className="p-5 bg-white dark:bg-[#111114] rounded-xl border border-slate-200 dark:border-zinc-800 space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Chính sách Định mức & Chi phí Tác vụ AI (ai_task_policies)
+                Chính sách Định mức và Chi phí Tác vụ AI (ai_task_policies)
               </h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                 Kiểm soát đơn giá Credits, thời gian chờ timeout và yêu cầu duyệt con người (HITL) cho từng nghiệp vụ.

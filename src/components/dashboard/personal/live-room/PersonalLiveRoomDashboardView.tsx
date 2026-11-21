@@ -759,7 +759,7 @@ export function PersonalLiveRoomDashboardView() {
                                   onClick={() => handleDownloadExcel(room.id, room.roomCode)}
                                   disabled={downloadingId === room.id}
                                   className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 font-semibold text-xs inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                                  title="Tải bảng điểm & phân tích Excel"
+                                  title="Tải bảng điểm và phân tích Excel"
                                 >
                                   {downloadingId === room.id ? (
                                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />

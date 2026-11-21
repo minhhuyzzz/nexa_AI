@@ -461,7 +461,7 @@ export default function AdminContributionsPage() {
             {/* Admin Decision Feedback Input */}
             <div className="space-y-1.5 pt-2">
               <label className="font-bold text-slate-800 block text-xs">
-                Ý kiến thẩm định &amp; Phản hồi cho người học:
+                Ý kiến thẩm định và Phản hồi cho người học:
               </label>
               <textarea
                 rows={3}

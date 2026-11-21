@@ -96,7 +96,7 @@ export function OrgClassAnalyticsView({
         </Link>
         <ChevronRight className="w-3 h-3 text-slate-400" />
         <Link href={`/org/${slug}/classes`} className="hover:text-blue-600 transition-colors">
-          Lớp &amp; nhóm
+          Lớp và nhóm
         </Link>
         <ChevronRight className="w-3 h-3 text-slate-400" />
         <Link href={`/org/${slug}/classes/${classData.id}`} className="hover:text-blue-600 transition-colors">
@@ -262,7 +262,7 @@ export function OrgClassAnalyticsView({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-xs font-mono">
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800">
-              <div className="text-slate-500 text-[11px]">Đã nộp &amp; chấm</div>
+              <div className="text-slate-500 text-[11px]">Đã nộp và chấm</div>
               <div className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-1">
                 {completedCount} bài
               </div>

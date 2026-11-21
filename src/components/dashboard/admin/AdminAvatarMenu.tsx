@@ -103,7 +103,7 @@ export function AdminAvatarMenu() {
                   </span>
                 </div>
                 <div className="text-[11px] text-purple-600 dark:text-purple-400">
-                  Toàn quyền quản trị hạ tầng &amp; dữ liệu nền tảng
+                  Toàn quyền quản trị hạ tầng và dữ liệu nền tảng
                 </div>
               </div>
 

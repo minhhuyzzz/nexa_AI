@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { RubricService } from '@/features/assessments/services/rubric.service';
 
@@ -34,7 +34,7 @@ export async function POST(
     }
 
     const { id: assessmentId } = await params;
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
     const body = await req.json();
 
     const items: ImportItemRow[] = Array.isArray(body.items) ? body.items : [];
@@ -43,19 +43,21 @@ export async function POST(
     }
 
     // 1. Fetch competencies map (skill_code -> id)
-    const { data: allCompetencies } = await supabase
+    const { data: allCompetencies } = await adminSupabase
       .from('competencies')
       .select('id, skill_code');
 
     const compMap = new Map<string, string>();
     (allCompetencies || []).forEach((c) => {
-      compMap.set(c.skill_code.trim(), c.id);
+      if (c.skill_code) {
+        compMap.set(c.skill_code.trim(), c.id);
+      }
     });
 
-    const defaultCompId = allCompetencies?.[0]?.id;
+    const defaultCompId = allCompetencies?.[0]?.id || '6c475f25-7c43-4a43-888f-450c0d103d44';
 
     // 2. Fetch current max order index
-    const { data: existingItems } = await supabase
+    const { data: existingItems } = await adminSupabase
       .from('assessment_items')
       .select('order_index')
       .eq('assessment_id', assessmentId)
@@ -105,8 +107,8 @@ export async function POST(
 
       currentOrder++;
 
-      // Insert question item (no difficulty level)
-      const { data: insertedItem, error: itemErr } = await supabase
+      // Insert question item with valid difficulty_level ('FOUNDATION' or 'INTERMEDIATE')
+      const { data: insertedItem, error: itemErr } = await adminSupabase
         .from('assessment_items')
         .insert({
           assessment_id: assessmentId,
@@ -115,7 +117,7 @@ export async function POST(
           prompt: cleanPrompt,
           points: Number(row.points) > 0 ? Number(row.points) : 1,
           order_index: currentOrder,
-          difficulty_level: 'STANDARD',
+          difficulty_level: 'FOUNDATION',
           is_multi_competency: Boolean(row.is_multi_competency),
           target_competencies: row.target_competencies || [],
           rubric_guide: row.rubric_guide?.trim() || row.explanation?.trim() || null,
@@ -124,7 +126,7 @@ export async function POST(
         .single();
 
       if (itemErr || !insertedItem) {
-        errorLogs.push({ row: rowNum, error: `Lỗi ghi CSDL: ${itemErr?.message || 'Không thể lưu'}` });
+        errorLogs.push({ row: rowNum, error: `Lỗi ghi CSDL: ${itemErr?.message || 'Không thể lưu câu hỏi'}` });
         continue;
       }
 
@@ -148,7 +150,10 @@ export async function POST(
             order_index: idx + 1,
           }));
 
-          await supabase.from('item_options').insert(optInserts);
+          const { error: optErr } = await adminSupabase.from('item_options').insert(optInserts);
+          if (optErr) {
+            console.error('Lỗi lưu các đáp án câu hỏi:', optErr);
+          }
         }
       }
 
@@ -156,7 +161,7 @@ export async function POST(
       const rubricPayload = row.rubric || row.structured_rubric;
       if (rubricPayload) {
         await RubricService.saveRubricForItem(
-          supabase,
+          adminSupabase,
           insertedItem.id,
           rubricPayload,
           insertedItem.points
@@ -166,8 +171,16 @@ export async function POST(
       successCount++;
     }
 
+    // Update assessment timestamp
+    if (successCount > 0) {
+      await adminSupabase
+        .from('assessments')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', assessmentId);
+    }
+
     return NextResponse.json({
-      success: true,
+      success: successCount > 0,
       totalReceived: items.length,
       successCount,
       failedCount: errorLogs.length,

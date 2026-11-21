@@ -73,7 +73,7 @@ export function OrgMemberOverviewView({
               className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
             >
               <Award className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>Xem kết quả &amp; chứng chỉ</span>
+              <span>Xem kết quả và chứng chỉ</span>
             </Link>
           </div>
         </div>

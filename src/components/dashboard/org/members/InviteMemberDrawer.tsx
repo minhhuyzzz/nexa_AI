@@ -346,7 +346,7 @@ export function InviteMemberDrawer({
                 {/* Step 3: Phân quyền & gán lớp */}
                 <div className="space-y-3">
                   <label className="block text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono">
-                    3. Phân quyền &amp; gán lớp
+                    3. Phân quyền và gán lớp
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>

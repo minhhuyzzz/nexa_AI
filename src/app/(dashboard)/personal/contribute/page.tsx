@@ -304,7 +304,7 @@ export default function LearnerContributeOverviewPage() {
               <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 space-y-2">
                 <div className="flex items-center gap-2 text-rose-900 font-bold text-xs">
                   <AlertCircle className="w-4 h-4 text-rose-600" />
-                  <span>CẦN BỔ SUNG &amp; HOÀN THIỆN ĐỀ XUẤT</span>
+                  <span>CẦN BỔ SUNG VÀ HOÀN THIỆN ĐỀ XUẤT</span>
                 </div>
                 <p className="text-rose-900 leading-relaxed text-[11px]">
                   <span className="font-semibold">Ý kiến phản hồi từ Ban Thẩm định:</span> &ldquo;
@@ -315,7 +315,7 @@ export default function LearnerContributeOverviewPage() {
                     href="/personal/contribute/new"
                     className="px-3 py-1.5 rounded bg-rose-700 hover:bg-rose-800 text-white font-semibold text-[11px] inline-flex items-center gap-1.5 transition-colors shadow-xs"
                   >
-                    <span>Cập nhật &amp; gửi lại đề bài</span>
+                    <span>Cập nhật và gửi lại đề bài</span>
                     <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>

@@ -713,7 +713,7 @@ export function ClassStreamTab({
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      Trao đổi &amp; Thảo luận nhóm
+                      Trao đổi và Thảo luận nhóm
                     </h4>
                     <span className="text-[11px] text-slate-500 dark:text-neutral-400 block font-normal">
                       Không gian hỏi bài và trao đổi trực tiếp giữa các thành viên ({chatMessages.length} tin nhắn)

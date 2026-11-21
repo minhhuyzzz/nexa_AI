@@ -265,9 +265,9 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
           <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wide">
-                Nội dung câu hỏi &amp; Yêu cầu khảo thí
+                Nội dung câu hỏi và Yêu cầu khảo thí
               </label>
-              <span className="text-[11px] text-slate-400 font-mono">Hỗ trợ Markdown &amp; KaTeX</span>
+              <span className="text-[11px] text-slate-400 font-mono">Hỗ trợ Markdown và KaTeX</span>
             </div>
 
             <textarea
@@ -387,10 +387,10 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
                 onChange={(e) => setDomainId(e.target.value)}
                 className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:border-blue-600 focus:outline-none"
               >
-                <option value="D1">D1: Vận hành thiết bị &amp; Dữ liệu số</option>
-                <option value="D2">D2: Giao tiếp &amp; Hợp tác số</option>
+                <option value="D1">D1: Vận hành thiết bị và Dữ liệu số</option>
+                <option value="D2">D2: Giao tiếp và Hợp tác số</option>
                 <option value="D3">D3: Sáng tạo nội dung số</option>
-                <option value="D4">D4: An toàn &amp; Bảo mật số</option>
+                <option value="D4">D4: An toàn và Bảo mật số</option>
                 <option value="D5">D5: Giải quyết vấn đề số</option>
               </select>
             </div>

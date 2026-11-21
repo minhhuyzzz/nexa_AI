@@ -155,7 +155,7 @@ export function LiveRoomDashboardView({
         ['Điểm thủ khoa ca thi:', stats.highestScore ?? '--'],
         ['Tiêu chuẩn đạt năng lực số:', `${room.passingScore || 70}%`],
         [''],
-        ['--- PHẦN 1: BẢNG XẾP HẠNG & PHÂN TÍCH 5 MIỀN NĂNG LỰC SỐ THÀNH VIÊN ---'],
+        ['--- PHẦN 1: BẢNG XẾP HẠNG VÀ PHÂN TÍCH 5 MIỀN NĂNG LỰC SỐ THÀNH VIÊN ---'],
         [
           'Xếp Hạng',
           'Mã Thành Viên',
@@ -164,8 +164,8 @@ export function LiveRoomDashboardView({
           'Điểm Tổng',
           'Chuẩn Đạt',
           'Xếp Loại Năng Lực',
-          'Miền 1: Dữ liệu & Thông tin (%)',
-          'Miền 2: Giao tiếp & Hợp tác (%)',
+          'Miền 1: Dữ liệu và Thông tin (%)',
+          'Miền 2: Giao tiếp và Hợp tác (%)',
           'Miền 3: Sáng tạo nội dung (%)',
           'Miền 4: An toàn số (%)',
           'Miền 5: Giải quyết vấn đề (%)',
@@ -202,7 +202,7 @@ export function LiveRoomDashboardView({
           ];
         }),
         [''],
-        ['--- PHẦN 2: GIÁM SÁT CA THI & CHỈ SỐ TIN CẬY KHẢO THÍ TỔ CHỨC ---'],
+        ['--- PHẦN 2: GIÁM SÁT CA THI VÀ CHỈ SỐ TIN CẬY KHẢO THÍ TỔ CHỨC ---'],
         ['Mã Thành Viên', 'Họ Và Tên', 'Số Lần Chuyển Tab', 'Rời Toàn Màn Hình', 'Chỉ Số Tin Cậy Giám Sát (%)', 'Đánh Giá Giám Sát'],
         ...results.map((r: any) => {
           const switches = r.proctoringSummary?.tab_switches ?? 0;
@@ -217,7 +217,7 @@ export function LiveRoomDashboardView({
           ];
         }),
         [''],
-        ['--- PHẦN 3: ĐỀ XUẤT ĐÀO TẠO & PHÁT TRIỂN NĂNG LỰC SỐ CHO TỔ CHỨC ---'],
+        ['--- PHẦN 3: ĐỀ XUẤT ĐÀO TẠO VÀ PHÁT TRIỂN NĂNG LỰC SỐ CHO TỔ CHỨC ---'],
         ['Khuyến nghị:', 'Tập trung bồi dưỡng các miền kỹ năng dưới 70% qua lộ trình học tập NEXA cho các nhân sự chưa đạt chuẩn.'],
       ];
 
@@ -1040,7 +1040,7 @@ export function LiveRoomDashboardView({
                   </span>
                   <div>
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                      Đúng giờ &amp; sẵn sàng
+                      Đúng giờ và sẵn sàng
                     </div>
                     <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
                       Có mặt tại phòng chờ trước giờ thi và bấm &quot;Sẵn sàng&quot; trước khi phiên thi bắt đầu.
@@ -1107,7 +1107,7 @@ export function LiveRoomDashboardView({
                   </span>
                   <div>
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                      Mở phòng &amp; chia sẻ
+                      Mở phòng và chia sẻ
                     </div>
                     <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
                       Tạo mã PIN 6 số và mời học viên tham gia.
@@ -1170,7 +1170,7 @@ export function LiveRoomDashboardView({
                 </div>
                 <div>
                   <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    Tích hợp đề thi &amp; chấm tự động
+                    Tích hợp đề thi và chấm tự động
                   </div>
                   <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
                     Đồng bộ trực tiếp với ngân hàng câu hỏi chuẩn hóa 5 miền.
@@ -1184,7 +1184,7 @@ export function LiveRoomDashboardView({
                 </div>
                 <div>
                   <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    Báo cáo &amp; kết quả ngay sau phiên
+                    Báo cáo và kết quả ngay sau phiên
                   </div>
                   <div className="text-slate-400 dark:text-neutral-500 text-[11px] mt-0.5">
                     Thống kê tỷ lệ hoàn thành, điểm trung bình và xuất kết quả.

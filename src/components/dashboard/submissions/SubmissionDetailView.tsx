@@ -35,7 +35,7 @@ export function SubmissionDetailView({ item, onBack, onNavigate }: SubmissionDet
   const requirements = item.requirements && item.requirements.length > 0 ? item.requirements : defaultRequirements;
 
   const defaultRubric = [
-    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 40 },
+    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin và minh chứng', maxPoints: 40 },
     { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 30 },
     { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 30 },
   ];
@@ -293,7 +293,7 @@ export function SubmissionDetailView({ item, onBack, onNavigate }: SubmissionDet
                   onClick={() => onNavigate('result')}
                   className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <span>Xem kết quả &amp; Phản hồi</span>
+                  <span>Xem kết quả và Phản hồi</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}

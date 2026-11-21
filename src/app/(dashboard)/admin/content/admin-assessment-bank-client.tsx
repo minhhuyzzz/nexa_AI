@@ -888,11 +888,23 @@ export function AdminAssessmentBankClient({
       const importData = await importRes.json();
       if (!importRes.ok) throw new Error(importData.error || 'Lỗi khi nạp dữ liệu');
 
-      showToast(
-        `Nạp thành công ${importData.successCount}/${importData.totalReceived} câu hỏi vào đề thi!`
-      );
+      if (importData.successCount === 0) {
+        const detailError =
+          importData.errors?.[0]?.error || 'Không thể lưu câu hỏi vào cơ sở dữ liệu';
+        throw new Error(`Nạp thất bại: ${detailError}`);
+      }
 
-      // Refresh assessment question count locally
+      if (importData.failedCount > 0) {
+        showToast(
+          `Nạp thành công ${importData.successCount}/${importData.totalReceived} câu hỏi (thất bại ${importData.failedCount} câu)!`
+        );
+      } else {
+        showToast(
+          `Nạp thành công toàn bộ ${importData.successCount} câu hỏi vào đề thi!`
+        );
+      }
+
+      // Refresh assessment question count locally or trigger page refresh
       setAssessments((prev) =>
         prev.map((item) =>
           item.id === targetId
@@ -900,6 +912,7 @@ export function AdminAssessmentBankClient({
             : item
         )
       );
+      router.refresh();
 
       setIsImportModalOpen(false);
       setImportParsedItems([]);
@@ -1807,6 +1820,7 @@ export function AdminAssessmentBankClient({
                           <th className="py-2 px-3">STT</th>
                           <th className="py-2 px-3">Nội dung câu hỏi</th>
                           <th className="py-2 px-3 text-center">Đáp án</th>
+                          <th className="py-2 px-3">Giải thích</th>
                           <th className="py-2 px-3 text-right">Điểm</th>
                         </tr>
                       </thead>
@@ -1821,6 +1835,9 @@ export function AdminAssessmentBankClient({
                               <span className="px-1.5 py-0.5 rounded font-mono font-bold text-[11px] bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                                 {row.correct_answer}
                               </span>
+                            </td>
+                            <td className="py-2 px-3 max-w-[200px] truncate text-slate-500 dark:text-neutral-400" title={row.explanation}>
+                              {row.explanation || <span className="text-slate-300 dark:text-zinc-600 italic">Không có</span>}
                             </td>
                             <td className="py-2 px-3 text-right font-mono font-semibold text-neutral-900 dark:text-neutral-100">
                               {row.points || 1}

@@ -19,7 +19,7 @@ interface EditGoalModalProps {
 const PRESET_GOALS = [
   'Nâng cao kỹ năng sử dụng công nghệ trong học tập và công việc',
   'Chuẩn bị thi sát hạch Chứng chỉ Năng lực số Quốc gia',
-  'Bồi dưỡng kỹ năng An toàn thông tin & Bảo mật dữ liệu',
+  'Bồi dưỡng kỹ năng An toàn thông tin và Bảo mật dữ liệu',
   'Phát triển năng lực xử lý dữ liệu số và ứng dụng AI',
   'Thành thạo giao tiếp số và cộng tác trực tuyến chuyên nghiệp',
 ];

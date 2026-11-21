@@ -66,7 +66,7 @@ export function SecuritySettingsCard({
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-              Giám sát phòng thi &amp; Chống gian lận
+              Giám sát phòng thi và Chống gian lận
             </h4>
           </div>
 
@@ -159,7 +159,7 @@ export function SecuritySettingsCard({
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-            Cấu trúc đề &amp; Trải nghiệm làm bài
+            Cấu trúc đề và Trải nghiệm làm bài
           </h4>
         </div>
 

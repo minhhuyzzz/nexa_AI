@@ -170,7 +170,7 @@ function PersonalAuthoringDeployContent({ id }: { id: string }) {
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-          Cấu hình đợt thi &amp; Giao bài
+          Cấu hình đợt thi và Giao bài
         </h1>
         <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
           Đề thi: <strong>{assessment?.title}</strong> • ASM-{id.slice(0, 6).toUpperCase()}
@@ -244,7 +244,7 @@ function PersonalAuthoringDeployContent({ id }: { id: string }) {
                 <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
                   Bạn chưa có lớp học nào. Hãy vào{' '}
                   <Link href="/personal/groups" className="underline font-bold">
-                    Lớp &amp; Nhóm
+                    Lớp và Nhóm
                   </Link>{' '}
                   để tạo lớp trước khi giao bài.
                 </div>

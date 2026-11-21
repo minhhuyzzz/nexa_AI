@@ -106,7 +106,7 @@ export function AnalyticsInsightPanel({
               <Sparkles className="w-3 h-3" />
             </div>
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Nhận định &amp; Ưu tiên hành động
+              Nhận định và Ưu tiên hành động
             </h2>
           </div>
 

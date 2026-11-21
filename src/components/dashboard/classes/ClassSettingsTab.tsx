@@ -212,7 +212,7 @@ export function ClassSettingsTab({
             <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/50 flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block">
-                  Quyền thảo luận &amp; Đặt câu hỏi của thành viên
+                  Quyền thảo luận và Đặt câu hỏi của thành viên
                 </label>
                 <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
                   {allowMemberPosts

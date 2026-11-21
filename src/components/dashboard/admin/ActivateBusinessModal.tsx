@@ -137,7 +137,7 @@ export function ActivateBusinessModal({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                Liên kết kích hoạt &amp; nhận quyền quản trị (1 lần):
+                Liên kết kích hoạt và nhận quyền quản trị (1 lần):
               </label>
               <div className="flex items-center gap-2">
                 <input

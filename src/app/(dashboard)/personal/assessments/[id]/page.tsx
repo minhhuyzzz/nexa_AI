@@ -551,7 +551,7 @@ export default function AssessmentBriefingPage() {
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5" />
                 <span>
-                  <strong>Báo cáo năng lực &amp; Xem lại:</strong> Ngay sau khi nộp, hệ thống phân tích khoảng trống các miền và hỗ trợ xem lại lời giải thích chi tiết từng câu.
+                  <strong>Báo cáo năng lực và Xem lại:</strong> Ngay sau khi nộp, hệ thống phân tích khoảng trống các miền và hỗ trợ xem lại lời giải thích chi tiết từng câu.
                 </span>
               </li>
             </ul>

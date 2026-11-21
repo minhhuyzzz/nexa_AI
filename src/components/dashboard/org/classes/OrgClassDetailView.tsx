@@ -261,7 +261,7 @@ export function OrgClassDetailView({
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
-          <span>Quay lại danh sách Lớp &amp; Nhóm</span>
+          <span>Quay lại danh sách Lớp và Nhóm</span>
         </Link>
       </div>
 
@@ -426,7 +426,7 @@ export function OrgClassDetailView({
             }`}
           >
             <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
-            <span>Bảng tin &amp; Thông báo</span>
+            <span>Bảng tin và Thông báo</span>
           </button>
 
           {/* Tab 2: Đề đánh giá đã giao */}
@@ -454,7 +454,7 @@ export function OrgClassDetailView({
             }`}
           >
             <FileText className="w-4 h-4" strokeWidth={1.75} />
-            <span>Tài liệu &amp; Học liệu</span>
+            <span>Tài liệu và Học liệu</span>
           </button>
 
           {/* Tab 4: Thành viên */}
@@ -675,7 +675,7 @@ export function OrgClassDetailView({
                   <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/50 flex items-start justify-between gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block">
-                        Quyền thảo luận &amp; Đặt câu hỏi của học viên
+                        Quyền thảo luận và Đặt câu hỏi của học viên
                       </label>
                       <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
                         {settingsAllowMemberPosts
@@ -963,7 +963,7 @@ export function OrgClassDetailView({
           </div>
 
           <div className="flex items-center justify-between text-xs text-neutral-500 pt-4">
-            <span>Hệ thống Khảo thí &amp; Quản lý Lớp học NEXA</span>
+            <span>Hệ thống Khảo thí và Quản lý Lớp học NEXA</span>
             <button
               type="button"
               onClick={copyJoinCode}

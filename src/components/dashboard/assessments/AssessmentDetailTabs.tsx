@@ -342,7 +342,7 @@ export function AssessmentDetailTabs({
             {/* Description & Target */}
             <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-3 shadow-2xs text-xs">
               <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide">
-                Mục tiêu &amp; Đối tượng khảo thí
+                Mục tiêu và Đối tượng khảo thí
               </h2>
               <p className="text-slate-600 dark:text-zinc-400 leading-relaxed text-xs sm:text-sm">
                 {assessment.description || 'Bài khảo thí chuẩn hóa đánh giá toàn diện năng lực số công dân, phục vụ chuẩn đầu ra nghề nghiệp và định hướng lộ trình bồi dưỡng kỹ năng số cá nhân hóa.'}
@@ -352,7 +352,7 @@ export function AssessmentDetailTabs({
             {/* Exam Format Breakdown */}
             <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-3 shadow-2xs text-xs">
               <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide">
-                Cấu trúc đề thi &amp; Phân bổ hình thức
+                Cấu trúc đề thi và Phân bổ hình thức
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
@@ -641,7 +641,7 @@ export function AssessmentDetailTabs({
       {activeTab === 'VERSIONS' && (
         <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-5 space-y-4 shadow-2xs text-xs">
           <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 uppercase tracking-wide">
-            Lịch sử phiên bản &amp; Toàn vẹn khảo thí
+            Lịch sử phiên bản và Toàn vẹn khảo thí
           </h2>
 
           <div className="space-y-4">
@@ -684,7 +684,7 @@ export function AssessmentDetailTabs({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
-                Các Đợt Thi &amp; Phiên Trực Tiếp Sử Dụng Bộ Đề
+                Các Đợt Thi và Phiên Trực Tiếp Sử Dụng Bộ Đề
               </h2>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                 Quản lý chiến dịch khảo thí doanh nghiệp và phiên phòng thi PIN trực tiếp.

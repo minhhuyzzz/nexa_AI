@@ -414,7 +414,7 @@ export function OrgGradingClientView({
         throw new Error(data.error || 'Không thể phê duyệt điểm số');
       }
 
-      setGradeSuccess('Đã lưu & phê duyệt điểm thành công (bảo toàn điểm trắc nghiệm)!');
+      setGradeSuccess('Đã lưu và phê duyệt điểm thành công (bảo toàn điểm trắc nghiệm)!');
 
       // Update state locally
       setSubmissions((prev) =>
@@ -469,7 +469,7 @@ export function OrgGradingClientView({
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="w-full h-9 pl-9 pr-8 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 appearance-none cursor-pointer"
             >
-              <option value="">Tất cả Lớp &amp; Nhóm ({classes.length})</option>
+              <option value="">Tất cả Lớp và Nhóm ({classes.length})</option>
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.class_code})
@@ -925,7 +925,7 @@ export function OrgGradingClientView({
 
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
-                    CÂU HỎI THỰC HÀNH &amp; TỰ LUẬN ({openAnswers.length} câu)
+                    CÂU HỎI THỰC HÀNH VÀ TỰ LUẬN ({openAnswers.length} câu)
                   </h4>
                   <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
                     {selectedSub.submission_answers?.length || 0} câu tổng cộng
@@ -1004,7 +1004,7 @@ export function OrgGradingClientView({
                     onClick={() => setMobileTab('rubric')}
                     className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                   >
-                    <span>Tiếp tục sang Bảng điểm &amp; Nhận xét</span>
+                    <span>Tiếp tục sang Bảng điểm và Nhận xét</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -1061,7 +1061,7 @@ export function OrgGradingClientView({
                   </span>
                   <div className="text-xs">
                     <span className="font-bold text-neutral-800 dark:text-zinc-200">
-                      Đối soát Rubric &amp; Phê duyệt điểm
+                      Đối soát Rubric và Phê duyệt điểm
                     </span>
                     <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
                       Giám khảo mở xem file/link sản phẩm, đối chiếu barem hướng dẫn, nhập nhận xét và phê duyệt kết quả.
@@ -1260,7 +1260,7 @@ export function OrgGradingClientView({
                 {/* Feedback Notes */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 dark:text-neutral-200">
-                    Nhận xét &amp; Góp ý của Giám khảo
+                    Nhận xét và Góp ý của Giám khảo
                   </label>
                   <textarea
                     rows={3}
@@ -1302,7 +1302,7 @@ export function OrgGradingClientView({
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Lưu &amp; Phê Duyệt Kết Quả ({calculatedTotalScore}/100)</span>
+                      <span>Lưu và Phê Duyệt Kết Quả ({calculatedTotalScore}/100)</span>
                     </>
                   )}
                 </button>

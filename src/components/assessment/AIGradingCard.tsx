@@ -190,7 +190,7 @@ export function AIGradingCard({
 
           {/* General Feedback */}
           <div className="p-3 rounded-md bg-white border border-slate-200 text-xs text-slate-700">
-            <span className="font-semibold text-slate-900">Nhận xét &amp; Định hướng bồi dưỡng: </span>
+            <span className="font-semibold text-slate-900">Nhận xét và Định hướng bồi dưỡng: </span>
             <span>{evaluation.feedback}</span>
           </div>
 

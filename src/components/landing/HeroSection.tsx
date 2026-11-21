@@ -54,34 +54,34 @@ export function HeroSection() {
               </Link>
             </div>
 
-            {/* 3 Core Highlights (Ground in real Dashboard capabilities, zero horizontal borders) */}
+            {/* 3 Core Highlights (Ground in real Dashboard capabilities, seamless with background) */}
             <div
-              className="mt-6 sm:mt-10 p-2 sm:p-2.5 rounded-2xl bg-slate-50/80 dark:bg-zinc-900/80 ring-1 ring-slate-200/70 dark:ring-zinc-800/70 grid grid-cols-3 gap-1.5 sm:gap-4 max-w-xl text-center sm:text-left"
+              className="mt-8 sm:mt-10 grid grid-cols-3 gap-2 sm:gap-4 max-w-xl text-center sm:text-left"
               aria-label="Giá trị cốt lõi"
             >
-              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2.5 px-1 py-1">
+              <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 ring-1 ring-blue-100 dark:ring-blue-900/40">
                   <BarChart3 className="w-3.5 h-3.5" strokeWidth={1.8} />
                 </div>
-                <span className="text-[10px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
+                <span className="text-[11px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
                   Khảo thí chuẩn hóa
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2.5 px-1 py-1">
+              <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 ring-1 ring-blue-100 dark:ring-blue-900/40">
                   <Layers className="w-3.5 h-3.5" strokeWidth={1.8} />
                 </div>
-                <span className="text-[10px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
+                <span className="text-[11px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
                   Lộ trình bồi dưỡng
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2.5 px-1 py-1">
+              <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 ring-1 ring-blue-100 dark:ring-blue-900/40">
                   <Target className="w-3.5 h-3.5" strokeWidth={1.8} />
                 </div>
-                <span className="text-[10px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
+                <span className="text-[11px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
                   Đánh giá thực chất
                 </span>
               </div>

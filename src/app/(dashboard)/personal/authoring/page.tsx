@@ -145,10 +145,10 @@ export default function PersonalAuthoringListPage() {
           let domainLabel = 'Tổng hợp (5 miền)';
           if (domainCodes.length === 1) {
             const c = Number(domainCodes[0]);
-            if (c === 1) domainLabel = 'Thông tin & Dữ liệu';
-            else if (c === 2) domainLabel = 'Giao tiếp & Hợp tác';
-            else if (c === 3) domainLabel = 'Sáng tạo Nội dung & AI';
-            else if (c === 4) domainLabel = 'An toàn & Bảo mật';
+            if (c === 1) domainLabel = 'Thông tin và Dữ liệu';
+            else if (c === 2) domainLabel = 'Giao tiếp và Hợp tác';
+            else if (c === 3) domainLabel = 'Sáng tạo Nội dung và AI';
+            else if (c === 4) domainLabel = 'An toàn và Bảo mật';
             else if (c === 5) domainLabel = 'Giải quyết Vấn đề';
           } else if (domainCodes.length > 1) {
             domainLabel = `Đa miền (${domainCodes.length} miền)`;
@@ -334,10 +334,10 @@ export default function PersonalAuthoringListPage() {
               className="pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-medium text-neutral-800 dark:text-zinc-200 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
             >
               <option value="all">Miền năng lực: Tất cả</option>
-              <option value="Dữ liệu">Thông tin &amp; Dữ liệu</option>
-              <option value="Giao tiếp">Giao tiếp &amp; Hợp tác</option>
-              <option value="Sáng tạo">Sáng tạo Nội dung &amp; AI</option>
-              <option value="An toàn">An toàn &amp; Bảo mật</option>
+              <option value="Dữ liệu">Thông tin và Dữ liệu</option>
+              <option value="Giao tiếp">Giao tiếp và Hợp tác</option>
+              <option value="Sáng tạo">Sáng tạo Nội dung và AI</option>
+              <option value="An toàn">An toàn và Bảo mật</option>
               <option value="Giải quyết">Giải quyết Vấn đề</option>
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />

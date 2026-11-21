@@ -1162,7 +1162,7 @@ function LiveControlContent() {
                   title="Kết thúc ca thi, tự động thu bài toàn bộ thí sinh và chốt điểm"
                 >
                   <Square className="w-3.5 h-3.5 fill-white" />
-                  <span>Kết thúc ca &amp; Chấm điểm</span>
+                  <span>Kết thúc ca và Chấm điểm</span>
                 </button>
               )}
 
@@ -1433,7 +1433,7 @@ function LiveControlContent() {
                 <div className="space-y-3 pt-3 text-xs">
                   <div className="flex items-center justify-between">
                     <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
-                      Cài đặt khảo thí &amp; Quy chế:
+                      Cài đặt khảo thí và Quy chế:
                     </label>
                     <button
                       type="button"
@@ -1555,7 +1555,7 @@ function LiveControlContent() {
                     {/* Setting 7: Cho phép xem đáp án & giải thích sau ca thi */}
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Xem đáp án &amp; giải thích</span>
+                        <span className="text-slate-800 dark:text-neutral-200 font-medium text-xs block">Xem đáp án và giải thích</span>
                         <span className="text-[11px] text-slate-500 block">Cho phép thí sinh xem lại lời giải chi tiết sau ca thi</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">

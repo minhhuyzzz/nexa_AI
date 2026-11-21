@@ -189,7 +189,7 @@ function AdminSettingsContent() {
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                      Vận hành &amp; Bảo trì
+                      Vận hành và Bảo trì
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-neutral-400">
                       Thông tin định danh và công tắc bảo trì toàn hệ thống
@@ -273,7 +273,7 @@ function AdminSettingsContent() {
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                      Điểm thưởng &amp; Chuyên cần
+                      Điểm thưởng và Chuyên cần
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-neutral-400">
                       Cấu hình mức điểm tích lũy (PTS) cho các hoạt động của người học
@@ -360,7 +360,7 @@ function AdminSettingsContent() {
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                      Múi giờ &amp; Định dạng hiển thị toàn sàn
+                      Múi giờ và Định dạng hiển thị toàn sàn
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-neutral-400">
                       Quy chuẩn thời gian cho các bài khảo thí, chứng chỉ số và báo cáo hệ thống

@@ -123,7 +123,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
               </span>
               <span className="text-xs text-slate-400 dark:text-neutral-500">•</span>
               <span className="text-xs font-semibold text-slate-700 dark:text-neutral-300">
-                Thẩm Định Đề Thi &amp; Đáp Án Chuẩn
+                Thẩm Định Đề Thi và Đáp Án Chuẩn
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
@@ -352,7 +352,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
                 <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs space-y-1.5">
                   <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 font-semibold text-[11px]">
                     <Lightbulb className="w-3.5 h-3.5" />
-                    <span>Giải trình sư phạm &amp; Cơ sở chấm điểm</span>
+                    <span>Giải trình sư phạm và Cơ sở chấm điểm</span>
                   </div>
                   <p className="text-slate-700 dark:text-neutral-300 leading-relaxed text-[11px] sm:text-xs">
                     {currentQ.item_options?.find((o: any) => o.is_correct)?.explanation ||

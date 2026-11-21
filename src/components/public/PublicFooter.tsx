@@ -167,7 +167,7 @@ export function PublicFooter() {
             {/* Column 1: Khảo thí & Năng lực */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-3 sm:mb-4">
-                Khảo thí & Năng lực
+                Khảo thí và Năng lực
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-[13px] text-slate-300">
                 <li>
@@ -196,12 +196,12 @@ export function PublicFooter() {
             {/* Column 2: Người dùng & Gói */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-3 sm:mb-4">
-                Người dùng & Gói
+                Người dùng và Gói
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-[13px] text-slate-300">
                 <li>
                   <Link href="/register" className="hover:text-white transition-colors">
-                    Học viên & Cá nhân
+                    Học viên và Cá nhân
                   </Link>
                 </li>
                 <li>
@@ -225,7 +225,7 @@ export function PublicFooter() {
             {/* Column 3: Xác thực & Trợ giúp */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-3 sm:mb-4">
-                Xác thực & Trợ giúp
+                Xác thực và Trợ giúp
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-[13px] text-slate-300">
                 <li>
@@ -264,7 +264,7 @@ export function PublicFooter() {
             {/* Column 4: Pháp lý & Bảo mật */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-3 sm:mb-4">
-                Pháp lý & Bảo mật
+                Pháp lý và Bảo mật
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-[13px] text-slate-300">
                 <li>
@@ -294,7 +294,7 @@ export function PublicFooter() {
                     rel="noopener noreferrer"
                     className="hover:text-white transition-colors"
                   >
-                    An toàn dữ liệu & AI
+                    An toàn dữ liệu và AI
                   </Link>
                 </li>
               </ul>

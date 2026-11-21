@@ -239,7 +239,7 @@ export function SubmissionSubmitView({
         <div className="lg:col-span-8 p-6 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-6">
           <div>
             <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-              Tệp bài làm &amp; Minh chứng
+              Tệp bài làm và Minh chứng
             </h2>
             <p className="text-xs text-slate-500 dark:text-neutral-400">
               Tải các tệp đáp ứng yêu cầu nhiệm vụ. Bạn có thể lưu bản nháp và quay lại hoàn thiện trước hạn nộp.

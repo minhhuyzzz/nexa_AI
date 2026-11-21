@@ -196,7 +196,7 @@ export function PersonalAvatarMenu() {
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   <User className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Hồ sơ &amp; Cài đặt</span>
+                  <span>Hồ sơ và Cài đặt</span>
                 </Link>
 
                 <Link
@@ -205,7 +205,7 @@ export function PersonalAvatarMenu() {
                   className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Gói dịch vụ & Thanh toán</span>
+                  <span>Gói dịch vụ và Thanh toán</span>
                 </Link>
 
                 {/* Dark/Light mode toggle switch */}

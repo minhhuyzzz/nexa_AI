@@ -228,9 +228,9 @@ export function PersonalSidebar() {
             onScroll={() => setHoveredTooltip(null)}
             className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2 space-y-3"
           >
-            {renderNavGroup('Học tập & Phát triển', learningNavItems)}
-            {renderNavGroup('Nhóm & Công việc', dynamicWorkNavItems)}
-            {renderNavGroup('Công cụ tạo & Tổ chức', creatorNavItems)}
+            {renderNavGroup('Học tập và phát triển', learningNavItems)}
+            {renderNavGroup('Nhóm và công việc', dynamicWorkNavItems)}
+            {renderNavGroup('Công cụ tạo và tổ chức', creatorNavItems)}
           </nav>
 
           {/* Blue Feedback Box at bottom */}
@@ -292,9 +292,9 @@ export function PersonalSidebar() {
 
             {/* Mobile Nav Links: clicking any closes drawer */}
             <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-3">
-              {renderNavGroup('Học tập & Phát triển', learningNavItems, closeMobile, false)}
-              {renderNavGroup('Nhóm & Công việc', dynamicWorkNavItems, closeMobile, false)}
-              {renderNavGroup('Công cụ tạo & Tổ chức', creatorNavItems, closeMobile, false)}
+              {renderNavGroup('Học tập và phát triển', learningNavItems, closeMobile, false)}
+              {renderNavGroup('Nhóm và công việc', dynamicWorkNavItems, closeMobile, false)}
+              {renderNavGroup('Công cụ tạo và tổ chức', creatorNavItems, closeMobile, false)}
             </nav>
 
             {/* Mobile Feedback Card */}

@@ -251,10 +251,10 @@ export default function NewContributionPage() {
                 onChange={(e) => setDomain(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs focus:bg-white focus:outline-none"
               >
-                <option value="D1: Thông tin & Dữ liệu">D1: Thông tin &amp; Dữ liệu</option>
-                <option value="D2: Giao tiếp & Hợp tác">D2: Giao tiếp &amp; Hợp tác</option>
+                <option value="D1: Thông tin & Dữ liệu">D1: Thông tin và Dữ liệu</option>
+                <option value="D2: Giao tiếp & Hợp tác">D2: Giao tiếp và Hợp tác</option>
                 <option value="D3: Sáng tạo Nội dung số">D3: Sáng tạo Nội dung số</option>
-                <option value="D4: An toàn & Bảo mật">D4: An toàn &amp; Bảo mật</option>
+                <option value="D4: An toàn & Bảo mật">D4: An toàn và Bảo mật</option>
                 <option value="D5: Giải quyết Vấn đề">D5: Giải quyết Vấn đề</option>
               </select>
             </div>
@@ -435,7 +435,7 @@ export default function NewContributionPage() {
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  <span>Gửi đề xuất &amp; nhận 100 điểm</span>
+                  <span>Gửi đề xuất và nhận 100 điểm</span>
                 </>
               )}
             </button>

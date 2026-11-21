@@ -694,7 +694,7 @@ export function AdminAssessmentDetailClient({
         {qType === 'PRACTICAL_TASK' && (
           <div className="space-y-2 pt-2">
             <label className="block font-semibold text-slate-800">
-              Hướng Dẫn Chấm &amp; Tiêu Chí Rubric (Dành cho AI &amp; Giảng viên) *
+              Hướng Dẫn Chấm và Tiêu Chí Rubric (Dành cho AI và Giảng viên) *
             </label>
             <textarea
               rows={4}
@@ -1049,7 +1049,7 @@ export function AdminAssessmentDetailClient({
                       <div className="flex items-center gap-2">
                         <FileCheck className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
                         <span className="font-bold text-slate-900">
-                          Tiêu chí &amp; Hướng dẫn chấm Rubric (Chuyên gia &amp; AI)
+                          Tiêu chí và Hướng dẫn chấm Rubric (Chuyên gia và AI)
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed pl-6">

@@ -398,15 +398,12 @@ function EvaluatorGradingContent() {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
             <span className="text-xs font-medium text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-              ĐÁNH GIÁ &amp; CHẤM ĐIỂM
+              ĐÁNH GIÁ VÀ CHẤM ĐIỂM
             </span>
           </div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Thẩm Định Bài Làm &amp; Minh Chứng
+            Thẩm Định Bài Làm và Minh Chứng
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Xem bài làm thực hành và bản giải trình của học viên kèm Rubric tiêu chí. Thầy cô có thể chủ động tự chấm điểm hoặc nhấn nút để AI gợi ý nhận xét.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1005,7 +1002,7 @@ function EvaluatorGradingContent() {
                     {/* Evaluator Official Qualitative Feedback */}
                     <div className="space-y-1.5 pt-2">
                       <label className="text-xs font-bold text-neutral-800 dark:text-zinc-200 block">
-                        Nhận xét &amp; Góp ý của Chuyên gia Khảo thí
+                        Nhận xét và Góp ý của Chuyên gia Khảo thí
                       </label>
                       <textarea
                         rows={3}

@@ -20,7 +20,7 @@ export function SubmissionResultView({ item, onBack }: SubmissionResultViewProps
   const isPassed = item.isPassed ?? score >= (maxScore * 0.7);
 
   const defaultRubricBreakdown = [
-    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin & minh chứng', maxPoints: 40, awardedPoints: Math.round(score * 0.4) },
+    { id: '1', name: 'Độ chính xác và đầy đủ của thông tin và minh chứng', maxPoints: 40, awardedPoints: Math.round(score * 0.4) },
     { id: '2', name: 'Phương pháp phân tích, tư duy và lập luận logic', maxPoints: 30, awardedPoints: Math.round(score * 0.3) },
     { id: '3', name: 'Hình thức trình bày, cấu trúc tài liệu và kết luận', maxPoints: 30, awardedPoints: Math.round(score * 0.3) },
   ];
@@ -47,7 +47,7 @@ export function SubmissionResultView({ item, onBack }: SubmissionResultViewProps
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
           <span className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
-            KẾT QUẢ &amp; PHẢN HỒI
+            KẾT QUẢ VÀ PHẢN HỒI
           </span>
         </div>
 

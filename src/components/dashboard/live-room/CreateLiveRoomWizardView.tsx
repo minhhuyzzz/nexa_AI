@@ -354,7 +354,7 @@ export function CreateLiveRoomWizardView({
               </span>
             </div>
             <h1 className="text-2xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Chọn đề thi & Mở sảnh chờ
+              Chọn đề thi và Mở sảnh chờ
             </h1>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
               {isOrg
@@ -454,7 +454,7 @@ export function CreateLiveRoomWizardView({
                 <option value="D_ALL">Đa Miền Năng Lực Số (Tổng hợp)</option>
                 <option value="D1">Miền 1: Thông tin và Dữ liệu số</option>
                 <option value="D2">Miền 2: Giao tiếp và Cộng tác số</option>
-                <option value="D3">Miền 3: Sáng tạo Nội dung & AI</option>
+                <option value="D3">Miền 3: Sáng tạo nội dung và AI</option>
                 <option value="D4">Miền 4: An toàn và Sức khỏe số</option>
                 <option value="D5">Miền 5: Giải quyết Vấn đề số</option>
               </select>
@@ -594,7 +594,7 @@ export function CreateLiveRoomWizardView({
                     {selectedAssessment.title}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
-                    {selectedAssessment.questionCount || 40} câu hỏi &bull; {selectedAssessment.typeLabel || 'Trắc nghiệm & Tự luận'} &bull; {selectedAssessment.duration_minutes || 45} phút
+                    {selectedAssessment.questionCount || 40} câu hỏi &bull; {selectedAssessment.typeLabel || 'Trắc nghiệm và Tự luận'} &bull; {selectedAssessment.duration_minutes || 45} phút
                   </div>
                 </div>
 
@@ -684,7 +684,7 @@ export function CreateLiveRoomWizardView({
                     className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs inline-flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                   >
                     <Play className="w-4 h-4 fill-white" />
-                    <span>{submitting ? 'Đang khởi tạo phòng thi...' : 'Mở phòng & Vào sảnh chờ'}</span>
+                    <span>{submitting ? 'Đang khởi tạo phòng thi...' : 'Mở phòng và Vào sảnh chờ'}</span>
                   </button>
 
                   <p className="text-[11px] text-center text-slate-400 leading-relaxed">

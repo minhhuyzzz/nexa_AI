@@ -48,7 +48,7 @@ export function SubmissionCard({ item, onSelect }: SubmissionCardProps) {
       isPrimaryCta = false;
       break;
     case 'resubmit':
-      ctaText = 'Sửa & nộp lại';
+      ctaText = 'Sửa và nộp lại';
       targetView = 'submit';
       isPrimaryCta = true;
       break;

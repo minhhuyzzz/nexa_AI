@@ -51,7 +51,7 @@ export function SubmissionEmptyState({ hasFilters, onClearFilters }: SubmissionE
         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
       >
         <Users className="w-4 h-4" strokeWidth={1.75} />
-        <span>Xem Lớp & Nhóm của tôi</span>
+        <span>Xem Lớp và Nhóm của tôi</span>
         <ArrowRight className="w-3.5 h-3.5" />
       </Link>
     </div>

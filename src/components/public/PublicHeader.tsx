@@ -96,7 +96,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
   const frameworkDomains = [
     {
       code: '01',
-      title: 'Thông tin & Dữ liệu số',
+      title: 'Thông tin và Dữ liệu số',
       skills: [
         'Duyệt, tìm kiếm và lọc dữ liệu, thông tin',
         'Đánh giá dữ liệu, thông tin và nội dung số',
@@ -106,7 +106,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '02',
-      title: 'Giao tiếp & Cộng tác số',
+      title: 'Giao tiếp và Cộng tác số',
       skills: [
         'Tương tác qua công nghệ số',
         'Chia sẻ qua công nghệ số',
@@ -119,7 +119,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '03',
-      title: 'Sáng tạo Nội dung số & AI',
+      title: 'Sáng tạo Nội dung số và AI',
       skills: [
         'Phát triển nội dung số',
         'Tích hợp và tái cấu trúc nội dung số',
@@ -130,10 +130,10 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
     },
     {
       code: '04',
-      title: 'An toàn & Bảo mật số',
+      title: 'An toàn và Bảo mật số',
       skills: [
         'Bảo vệ thiết bị',
-        'Bảo vệ dữ liệu cá nhân & riêng tư',
+        'Bảo vệ dữ liệu cá nhân và riêng tư',
         'Hỗ trợ sức khỏe tinh thần và thể chất',
         'Tác động môi trường của công nghệ số',
       ],
@@ -143,10 +143,10 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
       code: '05',
       title: 'Giải quyết Vấn đề số',
       skills: [
-        'Xác định & giải quyết sự cố kỹ thuật',
-        'Nhận diện nhu cầu & giải pháp công nghệ',
+        'Xác định và giải quyết sự cố kỹ thuật',
+        'Nhận diện nhu cầu và giải pháp công nghệ',
         'Giải pháp sáng tạo bằng công nghệ số',
-        'Nhận diện & bồi dưỡng năng lực số',
+        'Nhận diện và bồi dưỡng năng lực số',
       ],
       icon: Cpu,
     },
@@ -208,7 +208,7 @@ export function PublicHeader({ activePath }: PublicHeaderProps) {
                     </span>
                     <span className="text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                      Chuẩn hóa & Tin cậy
+                      Chuẩn hóa và Tin cậy
                     </span>
                   </div>
                   <Link

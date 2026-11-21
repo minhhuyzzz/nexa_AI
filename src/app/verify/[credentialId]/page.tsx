@@ -180,7 +180,7 @@ export default async function VerifyCredentialKioskPage({
               <span className="text-slate-400 text-[11px] block mb-1">
                 KHUNG THAM CHIẾU TIÊU CHUẨN
               </span>
-              <span className="text-slate-700">5 Miền Năng Lực Số Chuẩn Hóa &amp; NĐ 13/2023/NĐ-CP</span>
+              <span className="text-slate-700">5 Miền Năng Lực Số Chuẩn Hóa và NĐ 13/2023/NĐ-CP</span>
             </div>
           </div>
 
@@ -188,7 +188,7 @@ export default async function VerifyCredentialKioskPage({
           <div className="p-4 rounded-md bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
               <Hash className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-              Chữ Ký Điện Tử &amp; Đối Soát Băm SHA-256 Kép (Tamper-Proof)
+              Chữ Ký Điện Tử và Đối Soát Băm SHA-256 Kép (Tamper-Proof)
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
               Mã băm được tính toán độc lập tại thời điểm phát hành. Bất kỳ sự sửa đổi nào trên nội dung hoặc tệp PDF đều làm thay đổi giá trị băm này.

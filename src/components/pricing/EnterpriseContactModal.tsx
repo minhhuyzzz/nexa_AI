@@ -62,7 +62,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
             <h3 className="text-sm font-bold text-slate-900">
-              Đăng Ký Khảo Thí Cho Trường Học &amp; Doanh Nghiệp
+              Đăng Ký Khảo Thí Cho Trường Học và Doanh Nghiệp
             </h3>
           </div>
           <button

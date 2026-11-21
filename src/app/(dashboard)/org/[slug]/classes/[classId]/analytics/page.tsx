@@ -106,7 +106,7 @@ export default async function OrgClassAnalyticsPage({
           </Link>
           <ChevronRight className="w-3 h-3 text-slate-400" />
           <Link href={`/org/${slug}/classes`} className="hover:text-blue-600">
-            Lớp &amp; nhóm
+            Lớp và nhóm
           </Link>
           <ChevronRight className="w-3 h-3 text-slate-400" />
           <Link href={`/org/${slug}/classes/${classRecord.id}`} className="hover:text-blue-600">

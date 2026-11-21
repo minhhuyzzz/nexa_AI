@@ -162,7 +162,7 @@ export function CreatePersonalGroupModal({
           {/* Description */}
           <div>
             <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5">
-              Mục tiêu &amp; Mô tả ngắn (tùy chọn)
+              Mục tiêu và Mô tả ngắn (tùy chọn)
             </label>
             <textarea
               rows={3}

@@ -341,9 +341,9 @@ export default function AdminCommunicationsPage() {
                   onChange={(e) => setBroadcastType(e.target.value as any)}
                   className="w-full p-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded text-xs text-neutral-900 dark:text-neutral-100"
                 >
-                  <option value="SYSTEM">Hệ thống &amp; Tính năng mới (SYSTEM)</option>
+                  <option value="SYSTEM">Hệ thống và Tính năng mới (SYSTEM)</option>
                   <option value="SECURITY">Cảnh báo bảo mật (SECURITY)</option>
-                  <option value="CAMPAIGN">Đợt đánh giá &amp; Khảo thí (CAMPAIGN)</option>
+                  <option value="CAMPAIGN">Đợt đánh giá và Khảo thí (CAMPAIGN)</option>
                 </select>
               </div>
 
@@ -411,7 +411,7 @@ export default function AdminCommunicationsPage() {
           <div className="pb-3">
             <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-              <span>Gửi Bản Tin &amp; Thông Báo Email</span>
+              <span>Gửi Bản Tin và Thông Báo Email</span>
             </h2>
             <p className="text-slate-500 dark:text-neutral-400 text-[11px] mt-0.5">
               Hệ thống gửi thư hàng loạt yêu cầu cấu hình máy chủ SMTP / Email Marketing Service để bảo vệ uy tín tên miền.
@@ -441,7 +441,7 @@ export default function AdminCommunicationsPage() {
               >
                 <option value="ALL">Toàn bộ người dùng đã xác thực email</option>
                 <option value="STUDENTS">Chỉ học viên (Learners)</option>
-                <option value="TEACHERS">Chỉ giảng viên &amp; Giám thị (Evaluators)</option>
+                <option value="TEACHERS">Chỉ giảng viên và Giám thị (Evaluators)</option>
               </select>
             </div>
 

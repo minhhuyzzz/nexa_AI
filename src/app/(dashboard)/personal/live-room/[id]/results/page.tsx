@@ -562,7 +562,7 @@ export default function LiveRoomResultsPage() {
                   <div>
                     <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>Đáp án &amp; Giải thích chi tiết</span>
+                      <span>Đáp án và Giải thích chi tiết</span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
                       Xem lại từng câu hỏi, lựa chọn của bạn và đáp án chính thức từ ngân hàng câu hỏi.

@@ -143,7 +143,7 @@ export function AuthoringCard({ item, onDuplicate, onDelete }: AuthoringCardProp
             href={`/personal/authoring/${item.id}`}
             className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs transition-colors inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <span>Xem chi tiết &amp; Giao bài</span>
+            <span>Xem chi tiết và Giao bài</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         ) : (

@@ -144,7 +144,7 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
           {/* Mô tả & mục tiêu */}
           <div>
             <label className="block text-xs font-bold text-neutral-800 dark:text-zinc-200 mb-1.5">
-              Mục tiêu &amp; Mô tả ngắn
+              Mục tiêu và Mô tả ngắn
             </label>
             <textarea
               value={description}
@@ -279,7 +279,7 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
               </div>
               <ul className="text-[11px] text-blue-700/80 dark:text-blue-300/80 space-y-1 list-disc list-inside leading-relaxed">
                 <li>Bước 1: Thiết lập tên đề, mục tiêu và phạm vi năng lực.</li>
-                <li>Bước 2: Trình soạn 2 vùng với câu hỏi Trắc nghiệm &amp; Thực hành số.</li>
+                <li>Bước 2: Trình soạn 2 vùng với câu hỏi Trắc nghiệm và Thực hành số.</li>
                 <li>Học viên nộp file hoặc link sẽ tự động chuyển về <strong>Bàn chấm bài</strong>.</li>
               </ul>
             </div>

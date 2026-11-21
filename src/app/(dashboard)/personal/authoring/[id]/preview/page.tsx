@@ -447,7 +447,7 @@ export default function PersonalAuthoringPreviewPage({
                     </>
                   ) : (
                     <>
-                      <span>Lưu &amp; Xuất bản đề</span>
+                      <span>Lưu và Xuất bản đề</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   )}

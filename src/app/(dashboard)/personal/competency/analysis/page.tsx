@@ -309,7 +309,7 @@ function CompetencyAnalysisContent() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Chẩn đoán Khoảng trống Năng lực &amp; Lộ trình 4 Bước
+            Chẩn đoán Khoảng trống Năng lực và Lộ trình 4 Bước
           </h1>
         </div>
 
@@ -557,7 +557,7 @@ function CompetencyAnalysisContent() {
                     <div className="flex items-center gap-2 mb-1">
                       <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
                       <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                        Khóa Học &amp; Chuyên Đề Bồi Dưỡng Đề Xuất Bởi AI
+                        Khóa Học và Chuyên Đề Bồi Dưỡng Đề Xuất Bởi AI
                       </h3>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-neutral-400">
