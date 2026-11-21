@@ -499,7 +499,7 @@ export function ClassAssignmentsTab({
                     Kho đề cá nhân đang trống
                   </h4>
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                    Bạn chưa có bài khảo thí nào trong mục "Đề đánh giá của tôi". Hãy tạo đề mới để bắt đầu giao cho nhóm.
+                    Bạn chưa có bài khảo thí nào trong mục &quot;Đề đánh giá của tôi&quot;. Hãy tạo đề mới để bắt đầu giao cho nhóm.
                   </p>
                 </div>
                 <Link

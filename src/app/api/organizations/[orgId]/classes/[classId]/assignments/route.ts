@@ -171,43 +171,66 @@ export async function POST(
 
     const adminSupabase = createAdminClient();
 
-    // Verify assessment exists
+    // Verify assessment exists and belongs to this organization
     const { data: assessment, error: assessErr } = await adminSupabase
       .from('assessments')
-      .select('id, title')
+      .select('id, title, organization_id')
       .eq('id', assessmentId)
+      .eq('organization_id', orgId)
       .single();
 
     if (assessErr || !assessment) {
-      return NextResponse.json({ error: 'Không tìm thấy đề đánh giá đã chọn' }, { status: 404 });
+      return NextResponse.json({ error: 'Không tìm thấy đề đánh giá của tổ chức' }, { status: 404 });
     }
 
-    // Insert class assignment record
-    const { data: assignment, error: insertError } = await adminSupabase
+    // Insert or update class assignment record without relying on dropped unique constraint
+    const { data: existingAssignment } = await adminSupabase
       .from('class_assignments')
-      .upsert(
-        {
-          class_id: classId,
-          assessment_id: assessmentId,
-          start_time: startTime ? new Date(startTime).toISOString() : null,
-          deadline: deadline ? new Date(deadline).toISOString() : null,
-          timezone,
-          allow_late_submission: allowLateSubmission,
-          reminder_before_hours: reminderBeforeHours,
-          ai_grading_enabled: aiGradingEnabled,
-          shuffle_questions: shuffleQuestions,
-          immediate_results: immediateResults,
-          require_evidence: requireEvidence,
-          allowed_evidence_types: allowedEvidenceTypes,
-          max_evidence_mb: maxEvidenceMb,
-          estimated_ai_credits: estimatedAiCredits,
-          security_settings: securitySettings || {},
-          status: 'PUBLISHED',
-        },
-        { onConflict: 'class_id, assessment_id' }
-      )
-      .select()
-      .single();
+      .select('id')
+      .eq('class_id', classId)
+      .eq('assessment_id', assessmentId)
+      .maybeSingle();
+
+    const assignmentPayload = {
+      class_id: classId,
+      assessment_id: assessmentId,
+      start_time: startTime ? new Date(startTime).toISOString() : null,
+      deadline: deadline ? new Date(deadline).toISOString() : null,
+      timezone,
+      allow_late_submission: allowLateSubmission,
+      reminder_before_hours: reminderBeforeHours,
+      ai_grading_enabled: aiGradingEnabled,
+      shuffle_questions: shuffleQuestions,
+      immediate_results: immediateResults,
+      require_evidence: requireEvidence,
+      allowed_evidence_types: allowedEvidenceTypes,
+      max_evidence_mb: maxEvidenceMb,
+      estimated_ai_credits: estimatedAiCredits,
+      security_settings: securitySettings || {},
+      status: 'PUBLISHED',
+    };
+
+    let assignment;
+    let insertError;
+
+    if (existingAssignment) {
+      const res = await adminSupabase
+        .from('class_assignments')
+        .update(assignmentPayload)
+        .eq('id', existingAssignment.id)
+        .select()
+        .single();
+      assignment = res.data;
+      insertError = res.error;
+    } else {
+      const res = await adminSupabase
+        .from('class_assignments')
+        .insert(assignmentPayload)
+        .select()
+        .single();
+      assignment = res.data;
+      insertError = res.error;
+    }
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });

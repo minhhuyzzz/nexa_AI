@@ -47,19 +47,39 @@ export async function POST(
 
     const { assessmentId, deadline } = parsed.data;
 
-    // Upsert class_assignment
-    const { data: assignment, error: assignError } = await supabase
+    // Check if assignment exists
+    const { data: existingAssignment } = await supabase
       .from('class_assignments')
-      .upsert(
-        {
+      .select('id')
+      .eq('class_id', classId)
+      .eq('assessment_id', assessmentId)
+      .maybeSingle();
+
+    let assignment;
+    let assignError;
+
+    if (existingAssignment) {
+      const res = await supabase
+        .from('class_assignments')
+        .update({ deadline: deadline || null })
+        .eq('id', existingAssignment.id)
+        .select()
+        .single();
+      assignment = res.data;
+      assignError = res.error;
+    } else {
+      const res = await supabase
+        .from('class_assignments')
+        .insert({
           class_id: classId,
           assessment_id: assessmentId,
           deadline: deadline || null,
-        },
-        { onConflict: 'class_id,assessment_id' }
-      )
-      .select()
-      .single();
+        })
+        .select()
+        .single();
+      assignment = res.data;
+      assignError = res.error;
+    }
 
     if (assignError || !assignment) {
       console.error('Error assigning assessment:', assignError);

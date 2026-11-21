@@ -159,11 +159,11 @@ export default async function OrgClassDetailPage({
       };
     });
 
-  // 5. Available assessments for the class assignment modal
+  // 5. Available assessments for the class assignment modal (cách ly 100% theo tổ chức)
   const { data: rawAssessments } = await adminSupabase
     .from('assessments')
     .select('id, title, duration_minutes, assessment_items(id)')
-    .or(`organization_id.eq.${org.id},organization_id.is.null`)
+    .eq('organization_id', org.id)
     .order('created_at', { ascending: false })
     .limit(30);
 

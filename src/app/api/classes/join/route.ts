@@ -30,11 +30,14 @@ export async function POST(request: NextRequest) {
     const cleanCode = rawCode.replace(/[-\s]/g, '');
 
     // 1. Tìm lớp học theo mã class_code (resilient lookup: rawCode, cleanCode, prefixes, legacy hyphenated)
-    let { data: cls, error: findErr } = await supabase
+    const initialLookup = await supabase
       .from('evaluator_classes')
       .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
       .ilike('class_code', rawCode)
       .maybeSingle();
+
+    let cls = initialLookup.data;
+    const findErr = initialLookup.error;
 
     if (!cls && cleanCode !== rawCode) {
       const retry = await supabase
