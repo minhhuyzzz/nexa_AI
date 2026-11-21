@@ -80,7 +80,7 @@ export async function POST(request: Request) {
         profile?.admin_role || ''
       );
 
-    let role = hasAdminRole ? 'ADMIN' : (profile?.role || authData.user.user_metadata?.role || 'LEARNER');
+    const role = hasAdminRole ? 'ADMIN' : (profile?.role || authData.user.user_metadata?.role || 'LEARNER');
 
     let redirectUrl = '/personal/dashboard';
     let targetOrgId: string | null = null;
