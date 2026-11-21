@@ -37,20 +37,15 @@ import {
   EyeOff,
   ChevronDown,
   CheckSquare,
+  FileSpreadsheet,
+  Loader2,
 } from 'lucide-react';
 import { SecuritySettingsCard } from '@/features/assessments/components/SecuritySettingsCard';
 import {
   AssessmentSecuritySettings,
   DEFAULT_SECURITY_SETTINGS,
 } from '@/features/assessments/types/security.types';
-import {
-  downloadMCQTemplate,
-  downloadScenarioTemplate,
-  downloadPracticalTemplate,
-  downloadCSVTemplate,
-  parseCSV,
-  type ParsedItemRow,
-} from '@/features/assessments/utils/csv-helper';
+import { type MCQExcelRow } from '@/features/assessments/utils/excel-mcq-helper';
 
 export interface AssessmentItemRecord {
   id: string;
@@ -96,11 +91,17 @@ export function AdminAssessmentBankClient({
   const [isDomainDropdownOpen, setIsDomainDropdownOpen] = useState(false);
   const domainDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Đóng domain dropdown khi click ra ngoài
+  const [isExcelDropdownOpen, setIsExcelDropdownOpen] = useState(false);
+  const excelDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Đóng domain / excel dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (domainDropdownRef.current && !domainDropdownRef.current.contains(e.target as Node)) {
         setIsDomainDropdownOpen(false);
+      }
+      if (excelDropdownRef.current && !excelDropdownRef.current.contains(e.target as Node)) {
+        setIsExcelDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -193,9 +194,10 @@ export function AdminAssessmentBankClient({
   // Bulk Import State
   const [importTargetAssessmentId, setImportTargetAssessmentId] = useState<string>('');
   const [importNewTitle, setImportNewTitle] = useState('');
-  const [importParsedItems, setImportParsedItems] = useState<ParsedItemRow[]>([]);
+  const [importParsedItems, setImportParsedItems] = useState<MCQExcelRow[]>([]);
   const [importFileName, setImportFileName] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
+  const [isParsingExcel, setIsParsingExcel] = useState(false);
   const [isSubmittingImport, setIsSubmittingImport] = useState(false);
 
   // Toast feedback
@@ -770,48 +772,61 @@ export function AdminAssessmentBankClient({
     }
   };
 
-  // Handle File Upload for Bulk Import
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Excel Import và Template Handlers
+  const handleDownloadExcelTemplate = () => {
+    setIsExcelDropdownOpen(false);
+    window.open('/api/assessments/template/excel', '_blank');
+  };
+
+  const handleOpenExcelImport = () => {
+    setIsExcelDropdownOpen(false);
+    setImportParsedItems([]);
+    setImportFileName('');
+    setImportError(null);
+    setIsImportModalOpen(true);
+  };
+
+  // Handle File Upload for Excel MCQ Import
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImportError(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      setImportError('Vui lòng chọn tệp bảng tính định dạng Excel (.xlsx).');
+      return;
+    }
+
     setImportFileName(file.name);
-    const reader = new FileReader();
+    setIsParsingExcel(true);
 
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        if (!text) throw new Error('Tệp tải lên rỗng');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-        if (file.name.endsWith('.json')) {
-          const parsed = JSON.parse(text);
-          const rawItems = Array.isArray(parsed) ? parsed : parsed.items;
-          if (!Array.isArray(rawItems) || rawItems.length === 0) {
-            throw new Error('Định dạng JSON không hợp lệ hoặc không có danh sách câu hỏi');
-          }
-          setImportParsedItems(rawItems);
-        } else {
-          // Assume CSV
-          const parsed = parseCSV(text);
-          if (parsed.length === 0) {
-            throw new Error('Không tìm thấy dòng câu hỏi hợp lệ trong tệp CSV');
-          }
-          setImportParsedItems(parsed);
-        }
-      } catch (err: any) {
-        setImportError(err.message || 'Lỗi đọc tệp');
-        setImportParsedItems([]);
+      const res = await fetch('/api/assessments/import/parse-excel', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể đọc tệp Excel');
       }
-    };
 
-    reader.readAsText(file, 'utf-8');
+      setImportParsedItems(data.questions || []);
+    } catch (err: any) {
+      setImportError(err.message || 'Lỗi khi đọc dữ liệu từ tệp Excel');
+      setImportParsedItems([]);
+    } finally {
+      setIsParsingExcel(false);
+    }
   };
 
   // Submit Bulk Import
   const handleExecuteImport = async () => {
     if (importParsedItems.length === 0) {
-      setImportError('Vui lòng chọn hoặc tải lên tệp có ít nhất một câu hỏi hợp lệ');
+      setImportError('Vui lòng tải lên tệp Excel có ít nhất một câu hỏi trắc nghiệm hợp lệ');
       return;
     }
 
@@ -832,7 +847,7 @@ export function AdminAssessmentBankClient({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             title: importNewTitle.trim(),
-            description: `Bài khảo thí nạp hàng loạt từ tệp ${importFileName || 'mẫu'}`,
+            description: `Bài khảo thí nạp từ tệp Excel ${importFileName || ''}`,
             duration_minutes: 45,
             passing_score: 70,
             point_reward: 50,
@@ -850,11 +865,24 @@ export function AdminAssessmentBankClient({
         throw new Error('Vui lòng chọn bài thi cần nạp câu hỏi');
       }
 
+      // Format MCQ items to match import route schema
+      const formattedItems = importParsedItems.map((q) => ({
+        type: 'MCQ',
+        prompt: q.prompt,
+        option_a: q.option_a,
+        option_b: q.option_b,
+        option_c: q.option_c || '',
+        option_d: q.option_d || '',
+        correct_answer: q.correct_answer,
+        points: q.points || 1,
+        explanation: q.explanation || '',
+      }));
+
       // Execute import
       const importRes = await fetch(`/api/admin/assessments/${targetId}/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: importParsedItems }),
+        body: JSON.stringify({ items: formattedItems }),
       });
 
       const importData = await importRes.json();
@@ -907,23 +935,39 @@ export function AdminAssessmentBankClient({
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={downloadCSVTemplate}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-            <span>Tải mẫu Excel/CSV</span>
-          </button>
+          {/* Dropdown Nhập liệu Excel */}
+          <div className="relative" ref={excelDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsExcelDropdownOpen((prev) => !prev)}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2 cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+              <span>Nhập liệu Excel</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-2"
-          >
-            <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-            <span>Nạp hàng loạt</span>
-          </button>
+            {isExcelDropdownOpen && (
+              <div className="absolute right-0 top-full mt-1.5 z-40 w-52 p-1.5 bg-white dark:bg-[#111114] rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  onClick={handleDownloadExcelTemplate}
+                  className="w-full px-3 py-2 text-left rounded-lg text-xs font-medium text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                  <span>Tải tệp mẫu Excel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenExcelImport}
+                  className="w-full px-3 py-2 text-left rounded-lg text-xs font-medium text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />
+                  <span>Nạp câu hỏi từ Excel</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
@@ -947,7 +991,7 @@ export function AdminAssessmentBankClient({
         </div>
       </div>
 
-      {/* Toolbar: Search & Filters */}
+      {/* Toolbar: Tìm kiếm và Bộ lọc */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         <div className="flex-1 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
@@ -1640,24 +1684,24 @@ export function AdminAssessmentBankClient({
         </div>
       )}
 
-      {/* Modal: Nạp Hàng Loạt */}
+      {/* Modal: Nạp Câu Hỏi Từ Excel */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-md border border-slate-200 w-full max-w-2xl shadow-sm overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 flex items-center justify-between shrink-0">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-zinc-800">
               <div>
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                  <span>Nạp đề và câu hỏi hàng loạt</span>
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                  <span>Nạp câu hỏi từ tệp Excel</span>
                 </h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Nhập nhanh danh sách câu hỏi Trắc nghiệm, Tình huống, Thực hành từ tệp Excel/CSV hoặc JSON.
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                  Nhập danh sách câu hỏi trắc nghiệm từ tệp Excel (.xlsx). Hệ thống tự động nhận diện và gán vào bài thi.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
@@ -1666,19 +1710,19 @@ export function AdminAssessmentBankClient({
             <div className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
               {/* Target selection */}
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">
-                  Chọn Đề Khảo Thí Tiếp Nhận Câu Hỏi *
+                <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1">
+                  Chọn đề khảo thí tiếp nhận câu hỏi *
                 </label>
                 <select
                   value={importTargetAssessmentId}
                   onChange={(e) => setImportTargetAssessmentId(e.target.value)}
-                  className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 bg-white text-xs focus:outline-hidden focus:border-sky-600"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-neutral-900 dark:text-neutral-100 bg-white dark:bg-zinc-900 text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="">-- Chọn bài thi có sẵn hoặc tạo bài mới --</option>
                   <option value="NEW">+ Tạo bài khảo thí mới từ danh sách này</option>
                   {assessments.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.title} ({a.questionCount} câu - {a.is_vip ? 'VIP' : 'FREE'})
+                      {a.title} ({a.questionCount} câu - {a.is_vip ? 'VIP' : 'Miễn phí'})
                     </option>
                   ))}
                 </select>
@@ -1686,123 +1730,103 @@ export function AdminAssessmentBankClient({
 
               {importTargetAssessmentId === 'NEW' && (
                 <div>
-                  <label className="block font-semibold text-slate-800 mb-1">
-                    Tiêu Đề Bài Khảo Thí Mới *
+                  <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1">
+                    Tiêu đề bài khảo thí mới *
                   </label>
                   <input
                     type="text"
                     value={importNewTitle}
                     onChange={(e) => setImportNewTitle(e.target.value)}
-                    placeholder="Ví dụ: Đánh giá Đa Miền Năng Lực Số Tổng Hợp"
-                    className="w-full px-3 py-2 rounded border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-sky-600"
+                    placeholder="Ví dụ: Đánh giá Năng lực số Thực hành"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-neutral-900 dark:text-neutral-100 bg-white dark:bg-zinc-900 text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
               )}
 
-              {/* Template & Guidelines */}
-              {/* Template & Guidelines */}
-              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-2.5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-800">
-                    Tải tệp mẫu Excel / CSV chuẩn theo 5 Miền năng lực số (UTF-8)
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={downloadMCQTemplate}
-                      className="px-2 py-1 rounded bg-white border border-slate-200 text-sky-700 hover:bg-sky-50 font-semibold inline-flex items-center gap-1 text-[11px]"
-                    >
-                      <Download className="w-3 h-3" strokeWidth={1.75} />
-                      <span>Mẫu Trắc Nghiệm</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={downloadScenarioTemplate}
-                      className="px-2 py-1 rounded bg-white border border-slate-200 text-amber-700 hover:bg-amber-50 font-semibold inline-flex items-center gap-1 text-[11px]"
-                    >
-                      <Download className="w-3 h-3" strokeWidth={1.75} />
-                      <span>Mẫu Tình Huống</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={downloadPracticalTemplate}
-                      className="px-2 py-1 rounded bg-white border border-slate-200 text-emerald-700 hover:bg-emerald-50 font-semibold inline-flex items-center gap-1 text-[11px]"
-                    >
-                      <Download className="w-3 h-3" strokeWidth={1.75} />
-                      <span>Mẫu Thực Hành</span>
-                    </button>
+              {/* Template download notice */}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-neutral-800 dark:text-zinc-200 text-xs">
+                    Mẫu Excel trắc nghiệm chuẩn hóa
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-neutral-400">
+                    Cột điểm là tùy chọn (mặc định 1 điểm/câu nếu để trống).
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Cột <code className="font-mono text-slate-800">domain</code> nhận số 1 đến 5 (hoặc kết hợp &ldquo;1, 2&rdquo;). Mẫu Thực hành hỗ trợ các cột tiêu chí phẳng (<code className="font-mono text-slate-800">criterion_1_name</code>, <code className="font-mono text-slate-800">criterion_1_weight</code>...) không cần nhập JSON phức tạp.
-                </p>
+                <button
+                  type="button"
+                  onClick={handleDownloadExcelTemplate}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-zinc-700 font-semibold inline-flex items-center gap-1.5 text-xs shrink-0 cursor-pointer transition-colors shadow-2xs"
+                >
+                  <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span>Tải tệp mẫu Excel</span>
+                </button>
               </div>
 
-              {/* Upload Input */}
+              {/* File Upload Input */}
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">
-                  Chọn Tệp CSV hoặc JSON từ máy tính
+                <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1.5">
+                  Chọn tệp Excel (.xlsx) từ thiết bị
                 </label>
                 <input
                   type="file"
-                  accept=".csv,.json,text/csv,application/json"
+                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   onChange={handleFileUpload}
-                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
+                  disabled={isParsingExcel}
+                  className="w-full text-xs text-slate-500 dark:text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 dark:file:bg-blue-950/60 file:text-blue-600 dark:file:text-blue-400 hover:file:bg-blue-100 cursor-pointer"
                 />
+                {isParsingExcel && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang đọc và kiểm tra tệp Excel...</span>
+                  </div>
+                )}
               </div>
 
-              {/* Error message */}
+              {/* Error Alert */}
               {importError && (
-                <div className="p-3 rounded bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" strokeWidth={1.75} />
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" strokeWidth={1.75} />
                   <span>{importError}</span>
                 </div>
               )}
 
-              {/* Preview table */}
+              {/* Preview Table */}
               {importParsedItems.length > 0 && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100">
                       Xem trước dữ liệu ({importParsedItems.length} câu hỏi hợp lệ)
                     </span>
-                    <span className="text-[10px] text-slate-500">
-                      File: {importFileName}
+                    <span className="text-[11px] font-mono text-slate-500 dark:text-neutral-400">
+                      Tổng điểm: {importParsedItems.reduce((acc, q) => acc + (q.points || 1), 0)} điểm
                     </span>
                   </div>
 
-                  <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md">
-                    <table className="w-full text-left text-[11px]">
-                      <thead className="bg-slate-50 font-semibold text-slate-500 sticky top-0">
+                  <div className="max-h-56 overflow-y-auto border border-slate-200 dark:border-zinc-800 rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 dark:bg-zinc-850 font-semibold text-slate-500 dark:text-neutral-400 sticky top-0 border-b border-slate-200 dark:border-zinc-800">
                         <tr>
-                          <th className="py-2 px-3">#</th>
-                          <th className="py-2 px-3">Kỹ năng</th>
-                          <th className="py-2 px-3">Dạng</th>
-                          <th className="py-2 px-3">Nội dung</th>
-                          <th className="py-2 px-3">Đáp án / Rubric</th>
+                          <th className="py-2 px-3">STT</th>
+                          <th className="py-2 px-3">Nội dung câu hỏi</th>
+                          <th className="py-2 px-3 text-center">Đáp án</th>
                           <th className="py-2 px-3 text-right">Điểm</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                         {importParsedItems.slice(0, 15).map((row, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50">
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-zinc-900/60">
                             <td className="py-2 px-3 font-mono text-slate-400">{idx + 1}</td>
-                            <td className="py-2 px-3 font-mono font-medium text-slate-800">
-                              {row.skill_code || '1.1'}
-                            </td>
-                            <td className="py-2 px-3 whitespace-nowrap">
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
-                                {row.type || 'MCQ'}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 max-w-xs truncate text-slate-800" title={row.prompt}>
+                            <td className="py-2 px-3 max-w-xs truncate text-neutral-800 dark:text-zinc-200" title={row.prompt}>
                               {row.prompt}
                             </td>
-                            <td className="py-2 px-3 text-slate-600 font-mono">
-                              {row.correct_answer || (row.rubric_guide ? 'Rubric' : '-')}
+                            <td className="py-2 px-3 text-center">
+                              <span className="px-1.5 py-0.5 rounded font-mono font-bold text-[11px] bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                                {row.correct_answer}
+                              </span>
                             </td>
-                            <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900">
-                              {row.points || 10}
+                            <td className="py-2 px-3 text-right font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                              {row.points || 1}
                             </td>
                           </tr>
                         ))}
@@ -1810,34 +1834,37 @@ export function AdminAssessmentBankClient({
                     </table>
                   </div>
                   {importParsedItems.length > 15 && (
-                    <p className="text-[10px] text-slate-400 italic">
-                      ... và {importParsedItems.length - 15} câu hỏi khác
+                    <p className="text-[11px] text-slate-400 dark:text-neutral-500 italic">
+                      ... và {importParsedItems.length - 15} câu hỏi khác đã được nạp sẵn
                     </p>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-4 flex items-center justify-end gap-2 shrink-0 bg-slate-50/50">
+            <div className="px-6 py-4 flex items-center justify-end gap-2.5 shrink-0 bg-slate-50/60 dark:bg-zinc-900/60 border-t border-slate-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className="px-4 py-2 rounded border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-medium"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer transition-colors"
               >
-                Đóng
+                Hủy bỏ
               </button>
               <button
                 type="button"
                 onClick={handleExecuteImport}
                 disabled={isSubmittingImport || importParsedItems.length === 0}
-                className="px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 font-semibold text-xs transition-colors shadow-xs disabled:opacity-50 inline-flex items-center gap-2"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-2xs disabled:opacity-40 inline-flex items-center gap-2 cursor-pointer"
               >
                 {isSubmittingImport ? (
-                  'Đang xử lý...'
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang nạp câu hỏi...</span>
+                  </>
                 ) : (
                   <>
                     <Upload className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    <span>Xác Nhận Nạp {importParsedItems.length} Câu Hỏi</span>
+                    <span>Xác nhận nạp {importParsedItems.length} câu hỏi</span>
                   </>
                 )}
               </button>

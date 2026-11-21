@@ -138,6 +138,16 @@ export function AuthoringEditorTwoPane({
   const [customPointsInput, setCustomPointsInput] = useState('');
   const batchPointsPopoverRef = useRef<HTMLDivElement>(null);
 
+  // Excel Import State
+  const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
+  const excelMenuRef = useRef<HTMLDivElement>(null);
+  const [isExcelImportModalOpen, setIsExcelImportModalOpen] = useState(false);
+  const [excelParsedQuestions, setExcelParsedQuestions] = useState<any[]>([]);
+  const [isParsingExcel, setIsParsingExcel] = useState(false);
+  const [excelImportError, setExcelImportError] = useState<string | null>(null);
+  const [excelImportMode, setExcelImportMode] = useState<'APPEND' | 'REPLACE'>('APPEND');
+  const [isImportingQuestions, setIsImportingQuestions] = useState(false);
+
   // 1. Load Assessment & Items
   useEffect(() => {
     async function loadData() {
@@ -383,14 +393,135 @@ export function AuthoringEditorTwoPane({
       ) {
         setIsBatchPointsOpen(false);
       }
+      if (
+        excelMenuRef.current &&
+        !excelMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsExcelMenuOpen(false);
+      }
     }
-    if (isDurationPopoverOpen || isBatchPointsOpen) {
+    if (isDurationPopoverOpen || isBatchPointsOpen || isExcelMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isDurationPopoverOpen, isBatchPointsOpen]);
+  }, [isDurationPopoverOpen, isBatchPointsOpen, isExcelMenuOpen]);
+
+  // Excel File Upload và Import trong Authoring Studio
+  const handleAuthoringExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setExcelImportError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      setExcelImportError('Vui lòng chọn tệp bảng tính định dạng Excel (.xlsx).');
+      return;
+    }
+
+    setIsParsingExcel(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/assessments/import/parse-excel', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể đọc dữ liệu từ tệp Excel');
+      }
+
+      setExcelParsedQuestions(data.questions || []);
+    } catch (err: any) {
+      setExcelImportError(err.message || 'Lỗi khi đọc tệp Excel');
+      setExcelParsedQuestions([]);
+    } finally {
+      setIsParsingExcel(false);
+    }
+  };
+
+  const handleConfirmAuthoringExcelImport = () => {
+    if (excelParsedQuestions.length === 0) return;
+
+    setIsImportingQuestions(true);
+    try {
+      const targetDomainCode = assessment?.selectedDomains?.[0]
+        ? String(assessment.selectedDomains[0]).padStart(2, '0')
+        : '01';
+
+      const newMappedQuestions: AuthoringQuestionItem[] = excelParsedQuestions.map((q, idx) => {
+        const qId = `q-${Date.now()}-${idx}`;
+        const options: MCQOption[] = [
+          {
+            id: `opt-${idx}-a`,
+            text: q.option_a || '',
+            isCorrect: q.correct_answer === 'A',
+            explanation: q.correct_answer === 'A' ? q.explanation : undefined,
+          },
+          {
+            id: `opt-${idx}-b`,
+            text: q.option_b || '',
+            isCorrect: q.correct_answer === 'B',
+            explanation: q.correct_answer === 'B' ? q.explanation : undefined,
+          },
+        ];
+
+        if (q.option_c && q.option_c.trim()) {
+          options.push({
+            id: `opt-${idx}-c`,
+            text: q.option_c.trim(),
+            isCorrect: q.correct_answer === 'C',
+            explanation: q.correct_answer === 'C' ? q.explanation : undefined,
+          });
+        }
+
+        if (q.option_d && q.option_d.trim()) {
+          options.push({
+            id: `opt-${idx}-d`,
+            text: q.option_d.trim(),
+            isCorrect: q.correct_answer === 'D',
+            explanation: q.correct_answer === 'D' ? q.explanation : undefined,
+          });
+        }
+
+        return {
+          id: qId,
+          type: 'MCQ',
+          prompt: q.prompt,
+          points: Number(q.points) > 0 ? Number(q.points) : 1,
+          domainCode: targetDomainCode,
+          options,
+        };
+      });
+
+      const updated = excelImportMode === 'REPLACE'
+        ? newMappedQuestions
+        : [...questions, ...newMappedQuestions];
+
+      setQuestions(updated);
+      saveChanges(updated);
+
+      if (excelImportMode === 'REPLACE') {
+        setSelectedIndex(0);
+      } else {
+        setSelectedIndex(questions.length);
+      }
+
+      setAiActionMessage(`Đã nạp thành công ${newMappedQuestions.length} câu hỏi từ tệp Excel!`);
+      setTimeout(() => setAiActionMessage(null), 3500);
+
+      setIsExcelImportModalOpen(false);
+      setExcelParsedQuestions([]);
+    } catch (err: any) {
+      setExcelImportError(err.message || 'Lỗi khi nạp câu hỏi');
+    } finally {
+      setIsImportingQuestions(false);
+    }
+  };
 
   // Batch set points handler: sets specified points across all questions
   const handleBatchSetPoints = (pts: number) => {
@@ -1044,11 +1175,136 @@ export function AuthoringEditorTwoPane({
           </div>
         </div>
 
-        {/* Right actions: Balance Status + Auto-balance + Tools + Next */}
+        {/* Right actions: Settings + Preview + Save */}
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          {/* Total Points & Quick Batch Set Dropdown */}
-          <div className="relative inline-flex items-center shadow-2xs rounded-xl" ref={batchPointsPopoverRef}>
-            <div className="px-3 py-2 rounded-l-xl border border-r-0 border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-xs font-bold font-mono text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 tabular-nums">
+          {/* Cài đặt đề */}
+          <button
+            type="button"
+            onClick={() => setIsPublishModalOpen(true)}
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+            title="Cài đặt thông số bảo mật, ngưỡng đạt và giám thị"
+          >
+            <Sliders className="w-3.5 h-3.5 text-slate-500" />
+            <span>Cài đặt đề</span>
+          </button>
+
+          {/* Nút Xem trước toàn màn hình: chỉ xem cấu trúc, không tính điểm / thời gian */}
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewActiveQIndex(selectedIndex >= 0 ? selectedIndex : 0);
+              setIsPreviewModalOpen(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-semibold text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+            title="Xem trước cấu trúc và giao diện đề thi toàn màn hình (Không tính điểm và không giới hạn thời gian)"
+          >
+            <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-zinc-400" />
+            <span>Xem trước</span>
+          </button>
+
+          {/* Nút Lưu đề thi / Xuất bản */}
+          <button
+            type="button"
+            onClick={handleTogglePublish}
+            disabled={isPublishing}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer ${
+              isPublished
+                ? 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+            title={isPublished ? 'Chuyển về trạng thái bản nháp' : 'Lưu và hoàn tất đề thi trong kho'}
+          >
+            {isPublishing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isPublished ? (
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            <span>
+              {isPublishing
+                ? 'Đang lưu...'
+                : isPublished
+                ? effectiveMode === 'ORG'
+                  ? 'Đã lưu trong Kho đề'
+                  : 'Đã lưu đề thi'
+                : effectiveMode === 'ORG'
+                ? 'Lưu vào Kho đề'
+                : 'Lưu đề thi'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sub-Header: [X] Câu hỏi • [Z] Phút • Tổng: [Y] Điểm / Đổi điểm tất cả • [Nhập liệu Excel ▾] */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
+        <div className="flex items-center gap-2.5 flex-wrap text-xs text-slate-600 dark:text-zinc-300">
+          <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+            {questions.length} Câu hỏi
+          </span>
+          <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
+
+          {/* Ô thời gian làm bài */}
+          <div className="relative" ref={durationPopoverRef}>
+            <button
+              type="button"
+              onClick={() => setIsDurationPopoverOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-750 text-blue-600 dark:text-blue-400 font-bold font-mono transition-colors cursor-pointer"
+              title="Bấm để thay đổi thời lượng làm bài nhanh"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>{publishDuration} Phút</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {isDurationPopoverOpen && (
+              <div className="absolute left-0 top-full mt-1.5 z-40 w-64 p-3 bg-white dark:bg-[#111114] rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                <div className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-2">
+                  Thời lượng làm bài:
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 mb-2.5">
+                  {[15, 30, 45, 60, 90, 120].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => handleSelectPresetDuration(mins)}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold font-mono transition cursor-pointer ${
+                        publishDuration === mins
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      {mins}p
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <input
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={customMinutesInput}
+                    onChange={(e) => setCustomMinutesInput(e.target.value)}
+                    placeholder="Tùy chỉnh"
+                    className="flex-1 px-2 py-1 text-xs font-mono rounded-lg border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCustomDuration}
+                    className="px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
+                  >
+                    Lưu
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
+
+          {/* Cụm điểm tổng bài thi và Đổi điểm hàng loạt - ĐÃ DỜI XUỐNG NGANG Ô THỜI GIAN */}
+          <div className="relative inline-flex items-center shadow-2xs rounded-lg" ref={batchPointsPopoverRef}>
+            <div className="px-2.5 py-1 rounded-l-lg border border-r-0 border-slate-200 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-800 text-xs font-bold font-mono text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 tabular-nums">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>Tổng: {currentTotalPoints} điểm</span>
             </div>
@@ -1056,15 +1312,15 @@ export function AuthoringEditorTwoPane({
             <button
               type="button"
               onClick={() => setIsBatchPointsOpen((prev) => !prev)}
-              className="px-2.5 py-2 rounded-r-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 inline-flex items-center gap-1 cursor-pointer transition-colors"
+              className="px-2 py-1 rounded-r-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 inline-flex items-center gap-1 cursor-pointer transition-colors"
               title="Đổi điểm cho tất cả các câu hỏi"
             >
               <span>Đổi điểm tất cả</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
 
             {isBatchPointsOpen && (
-              <div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-3.5 bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100 space-y-3">
+              <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-40 w-72 p-3.5 bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
                   <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                     Đổi điểm tất cả câu hỏi
@@ -1126,125 +1382,47 @@ export function AuthoringEditorTwoPane({
               </div>
             )}
           </div>
-
-
-          {/* Cài đặt đề */}
-          <button
-            type="button"
-            onClick={() => setIsPublishModalOpen(true)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
-            title="Cài đặt thông số bảo mật, ngưỡng đạt và giám thị"
-          >
-            <Sliders className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cài đặt đề</span>
-          </button>
-
-          {/* Nút Xem trước toàn màn hình: chỉ xem cấu trúc, không tính điểm / thời gian */}
-          <button
-            type="button"
-            onClick={() => {
-              setPreviewActiveQIndex(selectedIndex >= 0 ? selectedIndex : 0);
-              setIsPreviewModalOpen(true);
-            }}
-            className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-semibold text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
-            title="Xem trước cấu trúc và giao diện đề thi toàn màn hình (Không tính điểm & không giới hạn thời gian)"
-          >
-            <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-zinc-400" />
-            <span>Xem trước</span>
-          </button>
-
-          {/* Nút Lưu đề thi / Xuất bản */}
-          <button
-            type="button"
-            onClick={handleTogglePublish}
-            disabled={isPublishing}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer ${
-              isPublished
-                ? 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-neutral-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-            title={isPublished ? 'Chuyển về trạng thái bản nháp' : 'Lưu và hoàn tất đề thi trong kho'}
-          >
-            {isPublishing ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : isPublished ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5" />
-            )}
-            <span>
-              {isPublishing
-                ? 'Đang lưu...'
-                : isPublished
-                ? effectiveMode === 'ORG'
-                  ? 'Đã lưu trong Kho đề'
-                  : 'Đã lưu đề thi'
-                : effectiveMode === 'ORG'
-                ? 'Lưu vào Kho đề'
-                : 'Lưu đề thi'}
-            </span>
-          </button>
         </div>
-      </div>
 
-      {/* Sub-Header theo chuẩn Quizizz / Wayground: [X] Câu hỏi • [Z] Phút */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
-        <div className="flex items-center gap-2.5 flex-wrap text-xs text-slate-600 dark:text-zinc-300">
-          <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
-            {questions.length} Câu hỏi
-          </span>
-          <span className="text-slate-300 dark:text-zinc-700">&bull;</span>
-          <div className="relative" ref={durationPopoverRef}>
+        {/* Phía bên phải: Nút dropdown Nhập liệu Excel */}
+        <div className="flex items-center gap-2">
+          <div className="relative" ref={excelMenuRef}>
             <button
               type="button"
-              onClick={() => setIsDurationPopoverOpen((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-750 text-blue-600 dark:text-blue-400 font-bold font-mono transition-colors cursor-pointer"
-              title="Bấm để thay đổi thời lượng làm bài nhanh"
+              onClick={() => setIsExcelMenuOpen((prev) => !prev)}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-neutral-800 dark:text-zinc-200 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
             >
-              <Clock className="w-3.5 h-3.5" />
-              <span>{publishDuration} Phút</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Nhập liệu Excel</span>
               <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
 
-            {isDurationPopoverOpen && (
-              <div className="absolute left-0 top-full mt-1.5 z-40 w-64 p-3 bg-white dark:bg-[#111114] rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100">
-                <div className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-2">
-                  Thời lượng làm bài:
-                </div>
-                <div className="grid grid-cols-3 gap-1.5 mb-2.5">
-                  {[15, 30, 45, 60, 90, 120].map((mins) => (
-                    <button
-                      key={mins}
-                      type="button"
-                      onClick={() => handleSelectPresetDuration(mins)}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold font-mono transition cursor-pointer ${
-                        publishDuration === mins
-                          ? 'bg-blue-600 text-white shadow-2xs'
-                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
-                      }`}
-                    >
-                      {mins}p
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1.5 pt-1">
-                  <input
-                    type="number"
-                    min={5}
-                    max={300}
-                    value={customMinutesInput}
-                    onChange={(e) => setCustomMinutesInput(e.target.value)}
-                    placeholder="Tùy chỉnh"
-                    className="flex-1 px-2 py-1 text-xs font-mono rounded-lg border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyCustomDuration}
-                    className="px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
-                  >
-                    Lưu
-                  </button>
-                </div>
+            {isExcelMenuOpen && (
+              <div className="absolute right-0 top-full mt-1.5 z-40 w-52 p-1.5 bg-white dark:bg-[#111114] rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExcelMenuOpen(false);
+                    window.open('/api/assessments/template/excel', '_blank');
+                  }}
+                  className="w-full px-3 py-2 text-left rounded-lg text-xs font-medium text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                  <span>Tải tệp mẫu Excel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExcelMenuOpen(false);
+                    setExcelParsedQuestions([]);
+                    setExcelImportError(null);
+                    setIsExcelImportModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2 text-left rounded-lg text-xs font-medium text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />
+                  <span>Nạp câu hỏi từ Excel</span>
+                </button>
               </div>
             )}
           </div>
@@ -2599,6 +2777,185 @@ export function AuthoringEditorTwoPane({
                   Đề thi hiện chưa có câu hỏi nào để xem trước.
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal: Nạp câu hỏi từ Excel trong Authoring Studio */}
+      {isExcelImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl shadow-xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-zinc-800">
+              <div>
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                  <span>Nạp câu hỏi từ tệp Excel</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                  Tải lên tệp Excel (.xlsx) trắc nghiệm. Câu hỏi sẽ được đưa ngay vào đề thi đang soạn.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExcelImportModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
+              {/* Notice và Download Template */}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-neutral-800 dark:text-zinc-200 text-xs">
+                    Mẫu Excel trắc nghiệm chuẩn hóa
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-neutral-400">
+                    Cột điểm là tùy chọn (mặc định 1 điểm/câu nếu để trống).
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.open('/api/assessments/template/excel', '_blank')}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-zinc-700 font-semibold inline-flex items-center gap-1.5 text-xs shrink-0 cursor-pointer transition-colors shadow-2xs"
+                >
+                  <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span>Tải tệp mẫu Excel</span>
+                </button>
+              </div>
+
+              {/* Upload Input */}
+              <div>
+                <label className="block font-semibold text-neutral-800 dark:text-zinc-200 mb-1.5">
+                  Chọn tệp Excel (.xlsx) từ máy tính
+                </label>
+                <input
+                  type="file"
+                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={handleAuthoringExcelUpload}
+                  disabled={isParsingExcel}
+                  className="w-full text-xs text-slate-500 dark:text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 dark:file:bg-blue-950/60 file:text-blue-600 dark:file:text-blue-400 hover:file:bg-blue-100 cursor-pointer"
+                />
+                {isParsingExcel && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang đọc dữ liệu câu hỏi từ Excel...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Error Box */}
+              {excelImportError && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" strokeWidth={1.75} />
+                  <span>{excelImportError}</span>
+                </div>
+              )}
+
+              {/* Preview và Import Mode */}
+              {excelParsedQuestions.length > 0 && (
+                <div className="space-y-3 pt-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-2">
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100 text-xs">
+                      Đã nhận diện {excelParsedQuestions.length} câu hỏi hợp lệ
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-500 dark:text-neutral-400">
+                      Tổng điểm: {excelParsedQuestions.reduce((acc, q) => acc + (q.points || 1), 0)} điểm
+                    </span>
+                  </div>
+
+                  {/* Mode options */}
+                  <div className="flex items-center gap-4 text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-zinc-200">
+                      <input
+                        type="radio"
+                        name="authoringExcelMode"
+                        checked={excelImportMode === 'APPEND'}
+                        onChange={() => setExcelImportMode('APPEND')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Thêm vào cuối danh sách (giữ {questions.length} câu hiện có)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-zinc-200">
+                      <input
+                        type="radio"
+                        name="authoringExcelMode"
+                        checked={excelImportMode === 'REPLACE'}
+                        onChange={() => setExcelImportMode('REPLACE')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Thay thế toàn bộ câu hỏi</span>
+                    </label>
+                  </div>
+
+                  {/* Preview list */}
+                  <div className="max-h-52 overflow-y-auto border border-slate-200 dark:border-zinc-800 rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 dark:bg-zinc-850 font-semibold text-slate-500 dark:text-neutral-400 sticky top-0 border-b border-slate-200 dark:border-zinc-800">
+                        <tr>
+                          <th className="py-2 px-3">STT</th>
+                          <th className="py-2 px-3">Nội dung câu hỏi</th>
+                          <th className="py-2 px-3 text-center">Đáp án</th>
+                          <th className="py-2 px-3 text-right">Điểm</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
+                        {excelParsedQuestions.slice(0, 10).map((row, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-zinc-900/60">
+                            <td className="py-2 px-3 font-mono text-slate-400">{idx + 1}</td>
+                            <td className="py-2 px-3 max-w-xs truncate text-neutral-800 dark:text-zinc-200" title={row.prompt}>
+                              {row.prompt}
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              <span className="px-1.5 py-0.5 rounded font-mono font-bold text-[11px] bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                                {row.correct_answer}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                              {row.points || 1}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {excelParsedQuestions.length > 10 && (
+                    <p className="text-[11px] text-slate-400 dark:text-neutral-500 italic">
+                      ... và {excelParsedQuestions.length - 10} câu hỏi khác
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 flex items-center justify-end gap-2.5 shrink-0 bg-slate-50/60 dark:bg-zinc-900/60 border-t border-slate-100 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setIsExcelImportModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAuthoringExcelImport}
+                disabled={isImportingQuestions || excelParsedQuestions.length === 0}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-2xs disabled:opacity-40 inline-flex items-center gap-2 cursor-pointer"
+              >
+                {isImportingQuestions ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang nạp câu hỏi...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    <span>Nạp {excelParsedQuestions.length} câu hỏi vào đề</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

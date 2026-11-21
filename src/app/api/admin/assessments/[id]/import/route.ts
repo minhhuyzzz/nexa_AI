@@ -113,7 +113,7 @@ export async function POST(
           competency_id: compId,
           type: cleanType,
           prompt: cleanPrompt,
-          points: Number(row.points) || 10,
+          points: Number(row.points) > 0 ? Number(row.points) : 1,
           order_index: currentOrder,
           difficulty_level: 'STANDARD',
           is_multi_competency: Boolean(row.is_multi_competency),
