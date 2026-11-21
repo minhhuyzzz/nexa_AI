@@ -295,32 +295,32 @@ export function OrgMembersClientView({
       </div>
 
       {/* 2. KPI Summary Bar */}
-      <div className="flex flex-wrap items-center gap-4 sm:gap-6 py-2 text-xs text-slate-600 dark:text-neutral-400">
-        <span className="flex items-center gap-2">
+      <div className="flex items-center gap-3 sm:gap-6 py-2 text-xs text-slate-600 dark:text-neutral-400 overflow-x-auto no-scrollbar">
+        <span className="flex items-center gap-2 whitespace-nowrap shrink-0">
           <Users className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
           <span>
             <strong className="text-neutral-900 dark:text-neutral-100 font-bold font-mono text-sm tabular-nums">
               {currentMemberCount}
             </strong>{' '}
-            thành viên đang hoạt động
+            thành viên hoạt động
           </span>
         </span>
 
-        <span className="text-slate-300 dark:text-zinc-700 hidden sm:inline">|</span>
+        <span className="text-slate-300 dark:text-zinc-700 shrink-0">|</span>
 
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 whitespace-nowrap shrink-0">
           <Mail className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={1.75} />
           <span>
             <strong className="text-neutral-900 dark:text-neutral-100 font-bold font-mono text-sm tabular-nums">
-              {pendingInvitationsCount.toString().padStart(2, '0')}
+              {pendingInvitationsCount}
             </strong>{' '}
-            lời mời đang chờ
+            lời mời chờ
           </span>
         </span>
 
-        <span className="text-slate-300 dark:text-zinc-700 hidden sm:inline">|</span>
+        <span className="text-slate-300 dark:text-zinc-700 shrink-0">|</span>
 
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 whitespace-nowrap shrink-0">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
           <span>
             <strong className="text-neutral-900 dark:text-neutral-100 font-bold font-mono text-sm tabular-nums">

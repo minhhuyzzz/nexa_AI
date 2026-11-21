@@ -415,30 +415,28 @@ export function LiveRoomDashboardView({
       {/* ============================================================ */}
       {/* 1. TOP BREADCRUMB & HEADER BLOCK                            */}
       {/* ============================================================ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-neutral-500 mb-1">
+      <div className="flex items-center justify-between gap-3 pb-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-neutral-500 mb-0.5">
             <span>{orgSlug ? 'Tổ chức' : 'Cá nhân'}</span>
             <span>/</span>
-            <span className="text-neutral-800 dark:text-neutral-300 font-medium">Phòng thi trực tiếp</span>
+            <span className="text-neutral-800 dark:text-neutral-300 font-medium truncate">Phòng thi</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Radio className="w-4 h-4" strokeWidth={1.75} />
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" strokeWidth={1.75} />
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-                {title}
-              </h1>
-            </div>
+            <h1 className="text-base sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
+              {title}
+            </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <button
             onClick={() => fetchRooms()}
             disabled={loading}
-            className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
             title="Làm mới danh sách"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.75} />
@@ -447,10 +445,10 @@ export function LiveRoomDashboardView({
           {!isMember && (
             <Link
               href={createRoomUrl}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1 sm:gap-1.5 transition-colors shadow-xs cursor-pointer shrink-0"
             >
-              <Plus className="w-4 h-4" strokeWidth={2} />
-              <span>Tạo phòng thi</span>
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
+              <span>Tạo phòng</span>
             </Link>
           )}
         </div>
@@ -459,83 +457,83 @@ export function LiveRoomDashboardView({
       {/* ============================================================ */}
       {/* 2. 4 EXECUTIVE KPI CARDS (Matching Image 5)                 */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Tổng phòng thi */}
-        <div className="p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+        <div className="p-3 sm:p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between mb-2 gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 truncate">
               Tổng phòng thi
             </span>
-            <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-neutral-300">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-neutral-300 shrink-0">
               <Layers className="w-3.5 h-3.5" />
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {totalCount}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-normal mt-1">
+            <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-normal mt-1 truncate">
               <span>{totalCount > 0 ? `${totalCount} phòng đã tạo` : 'Chưa có phòng thi'}</span>
             </div>
           </div>
         </div>
 
         {/* Card 2: Đang diễn ra (Live pulse) */}
-        <div className="p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+        <div className="p-3 sm:p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between mb-2 gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 truncate">
               Đang diễn ra
             </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
               <Play className="w-3.5 h-3.5 fill-current" />
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {inProgressCount}
             </div>
-            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{inProgressCount > 0 ? `${inProgressCount} phiên thi realtime` : 'Không có ca thi live'}</span>
+            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="truncate">{inProgressCount > 0 ? `${inProgressCount} phiên thi realtime` : 'Không có ca thi live'}</span>
             </div>
           </div>
         </div>
 
         {/* Card 3: Sắp diễn ra */}
-        <div className="p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+        <div className="p-3 sm:p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between mb-2 gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 truncate">
               Sắp diễn ra
             </span>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
               <Calendar className="w-3.5 h-3.5" />
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {waitingCount}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
-              {waitingCount > 0 ? `${waitingCount} phòng trong lịch thi` : 'Chưa có lịch sắp tới'}
+            <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1 truncate">
+              {waitingCount > 0 ? `${waitingCount} phòng trong lịch` : 'Chưa có lịch sắp tới'}
             </div>
           </div>
         </div>
 
         {/* Card 4: Đã kết thúc */}
-        <div className="p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
+        <div className="p-3 sm:p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between mb-2 gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 truncate">
               Đã kết thúc
             </span>
-            <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
+            <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {endedCount}
             </div>
-            <div className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-1">
+            <div className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-1 truncate">
               Đã lưu dữ liệu phổ điểm
             </div>
           </div>
@@ -556,7 +554,7 @@ export function LiveRoomDashboardView({
               setActiveTab('ALL');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
               activeTab === 'ALL'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
@@ -579,13 +577,13 @@ export function LiveRoomDashboardView({
               setActiveTab('WAITING');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
               activeTab === 'WAITING'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5" />
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
             <span>Sắp diễn ra</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
@@ -603,13 +601,13 @@ export function LiveRoomDashboardView({
               setActiveTab('IN_PROGRESS');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
               activeTab === 'IN_PROGRESS'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
             }`}
           >
-            <Play className="w-3.5 h-3.5" />
+            <Play className="w-3.5 h-3.5 fill-current shrink-0" />
             <span>Đang diễn ra</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
@@ -627,13 +625,13 @@ export function LiveRoomDashboardView({
               setActiveTab('ENDED');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
               activeTab === 'ENDED'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
             <span>Đã kết thúc</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${

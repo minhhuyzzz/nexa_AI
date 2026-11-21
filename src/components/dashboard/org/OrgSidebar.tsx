@@ -25,6 +25,7 @@ import {
   ClipboardCheck,
   LucideIcon,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import { useMobileNav } from '@/contexts/MobileNavContext';
 import {
@@ -503,63 +504,63 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
                     {group.items.map((item) => {
                       const active = isPrimaryActive(item);
                       const Icon = item.icon;
+                      const isAssessmentItem = item.href === `/org/${orgSlug}/assessments`;
 
                       return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={closeMobile}
-                          className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-medium transition-all duration-150 ${
-                            active
-                              ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
-                              : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
-                          }`}
-                        >
-                          <Icon
-                            className={`w-4 h-4 shrink-0 transition-colors ${
-                              active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                        <div key={item.href} className="space-y-1">
+                          <Link
+                            href={item.href}
+                            onClick={closeMobile}
+                            className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-medium transition-all duration-150 ${
+                              active
+                                ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
+                                : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
                             }`}
-                            strokeWidth={1.75}
-                          />
-                          <span className="truncate">{item.name}</span>
-                        </Link>
+                          >
+                            <Icon
+                              className={`w-4 h-4 shrink-0 transition-colors ${
+                                active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                              }`}
+                              strokeWidth={1.75}
+                            />
+                            <span className="truncate flex-1">{item.name}</span>
+                            {isAssessmentItem && isAssessmentRoute && (
+                              <ChevronDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                            )}
+                          </Link>
+
+                          {/* Nested Sub-nav directly under "Đánh giá năng lực" */}
+                          {isAssessmentItem && isAssessmentRoute && (
+                            <div className="ml-4 pl-3 my-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-900/60">
+                              {assessmentSubNavItems.map((tab) => {
+                                const TabIcon = tab.icon;
+                                return (
+                                  <Link
+                                    key={tab.href}
+                                    href={tab.href}
+                                    onClick={closeMobile}
+                                    className={`flex items-center gap-2.5 px-2.5 py-2 min-h-[40px] rounded-lg text-xs transition-all ${
+                                      tab.isActive
+                                        ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold'
+                                        : 'text-neutral-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
+                                    }`}
+                                  >
+                                    <TabIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+                                    <span className="truncate flex-1">{tab.name}</span>
+                                    {tab.isActive && (
+                                      <ChevronRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                    )}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               ))}
-
-              {/* Assessment Sub-nav if in assessment route */}
-              {isAssessmentRoute && (
-                <div className="space-y-1 pt-2">
-                  <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                    Danh mục khảo thí
-                  </div>
-                  <div className="space-y-1">
-                    {assessmentSubNavItems.map((tab) => {
-                      const Icon = tab.icon;
-                      return (
-                        <Link
-                          key={tab.href}
-                          href={tab.href}
-                          onClick={closeMobile}
-                          className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl text-xs transition-all duration-150 ${
-                            tab.isActive
-                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold'
-                              : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-900/60'
-                          }`}
-                        >
-                          <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-                          <span className="truncate flex-1">{tab.name}</span>
-                          {tab.isActive && (
-                            <ChevronRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Mobile Feedback Card */}

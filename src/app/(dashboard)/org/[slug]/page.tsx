@@ -240,130 +240,130 @@ export default async function OrgOverviewPage({
       {/* ============================================================ */}
       {/* 2. EXECUTIVE 4-PILLAR KPI METRICS GRID                       */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Thành viên & Người học */}
         <Link
           href={`/org/${slug}/members`}
-          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+          className="group p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none min-w-0"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
               Thành viên đơn vị
             </span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
-              <Users className="w-4 h-4" strokeWidth={1.75} />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors shrink-0">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.75} />
             </div>
           </div>
-          <div className="my-2.5">
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+          <div className="my-2 sm:my-2.5">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {membersCount}
             </div>
-            <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Nhân sự và người học hoạt động
+            <div className="text-[11px] sm:text-xs text-slate-500 dark:text-neutral-400 mt-0.5 truncate">
+              Nhân sự & người học
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
-            <span>Quản lý thành viên</span>
-            <ChevronRight className="w-3 h-3" />
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all truncate">
+            <span className="truncate">Quản lý thành viên</span>
+            <ChevronRight className="w-3 h-3 shrink-0" />
           </div>
         </Link>
 
         {/* Card 2: Lớp học & Không gian đào tạo */}
         <Link
           href={`/org/${slug}/classes`}
-          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+          className="group p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none min-w-0"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
               Lớp học và Đơn vị
             </span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
-              <GraduationCap className="w-4 h-4" strokeWidth={1.75} />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors shrink-0">
+              <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.75} />
             </div>
           </div>
-          <div className="my-2.5">
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+          <div className="my-2 sm:my-2.5">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {classesCount}
             </div>
-            <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Không gian đào tạo đang mở
+            <div className="text-[11px] sm:text-xs text-slate-500 dark:text-neutral-400 mt-0.5 truncate">
+              Không gian đào tạo
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
-            <span>Danh sách lớp học</span>
-            <ChevronRight className="w-3 h-3" />
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all truncate">
+            <span className="truncate">Danh sách lớp</span>
+            <ChevronRight className="w-3 h-3 shrink-0" />
           </div>
         </Link>
 
         {/* Card 3: Đợt khảo thí số */}
         <Link
           href={`/org/${slug}/campaigns`}
-          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+          className="group p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none min-w-0"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
               Đợt khảo thí
             </span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors">
-              <Calendar className="w-4 h-4" strokeWidth={1.75} />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 flex items-center justify-center transition-colors shrink-0">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.75} />
             </div>
           </div>
-          <div className="my-2.5">
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+          <div className="my-2 sm:my-2.5">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {rawCampaigns.length}
             </div>
-            <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+            <div className="text-[11px] sm:text-xs text-slate-500 dark:text-neutral-400 mt-0.5 truncate">
               {activeCampaigns.length > 0
-                ? `${activeCampaigns.length} đợt đang diễn ra`
+                ? `${activeCampaigns.length} đợt diễn ra`
                 : 'Chưa có đợt mở thi'}
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
-            <span>Xem đợt khảo thí</span>
-            <ChevronRight className="w-3 h-3" />
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all truncate">
+            <span className="truncate">Xem đợt khảo thí</span>
+            <ChevronRight className="w-3 h-3 shrink-0" />
           </div>
         </Link>
 
         {/* Card 4: Thẩm định & Bài nộp */}
         <Link
           href={`/org/${slug}/grading`}
-          className="group p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+          className="group p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xs transition-all flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none min-w-0"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
-              Bàn thẩm định bài
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
+              Bàn thẩm định
             </span>
             <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                 pendingGradingCount > 0
                   ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
                   : 'bg-slate-100 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400'
               }`}
             >
-              <FileCheck className="w-4 h-4" strokeWidth={1.75} />
+              <FileCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.75} />
             </div>
           </div>
-          <div className="my-2.5">
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
+          <div className="my-2 sm:my-2.5">
+            <div className="text-xl sm:text-3xl font-extrabold font-mono tracking-tight text-neutral-900 dark:text-neutral-100 tabular-nums">
               {evaluatedCount}
             </div>
-            <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1.5">
+            <div className="text-[11px] sm:text-xs text-slate-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1.5 truncate">
               {pendingGradingCount > 0 ? (
-                <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  {pendingGradingCount} bài chờ chấm
+                <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-1 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  {pendingGradingCount} chờ chấm
                 </span>
               ) : (
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Hàng chờ chấm sạch
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 truncate">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  Hàng chờ sạch
                 </span>
               )}
             </div>
           </div>
-          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
-            <span>Mở bàn chấm bài</span>
-            <ChevronRight className="w-3 h-3" />
+          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all truncate">
+            <span className="truncate">Mở bàn chấm</span>
+            <ChevronRight className="w-3 h-3 shrink-0" />
           </div>
         </Link>
       </div>
@@ -418,9 +418,9 @@ export default async function OrgOverviewPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 overflow-x-auto pb-2 snap-x no-scrollbar">
             {/* Step 1 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
+            <div className="w-[260px] sm:w-auto shrink-0 snap-start p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
@@ -455,7 +455,7 @@ export default async function OrgOverviewPage({
             </div>
 
             {/* Step 2 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors motion-reduce:transition-none">
+            <div className="w-[260px] sm:w-auto shrink-0 snap-start p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors motion-reduce:transition-none">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
@@ -490,7 +490,7 @@ export default async function OrgOverviewPage({
             </div>
 
             {/* Step 3 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-blue-200 dark:border-blue-900/60 flex flex-col justify-between shadow-2xs ring-1 ring-blue-500/10 hover:border-blue-400 transition-colors motion-reduce:transition-none">
+            <div className="w-[260px] sm:w-auto shrink-0 snap-start p-4 rounded-xl bg-white dark:bg-[#111114] border border-blue-200 dark:border-blue-900/60 flex flex-col justify-between shadow-2xs ring-1 ring-blue-500/10 hover:border-blue-400 transition-colors motion-reduce:transition-none">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
@@ -519,7 +519,7 @@ export default async function OrgOverviewPage({
             </div>
 
             {/* Step 4 */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors motion-reduce:transition-none">
+            <div className="w-[260px] sm:w-auto shrink-0 snap-start p-4 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 transition-colors motion-reduce:transition-none">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
