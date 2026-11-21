@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -159,7 +159,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   };
 
   // Helper tìm domainId từ competency
-  const getDomainIdFromItem = (item: Item): string => {
+  const getDomainIdFromItem = useCallback((item: Item): string => {
     const comp = Array.isArray(item.competencies) ? item.competencies[0] : item.competencies;
     if (comp?.domain_id) return comp.domain_id;
     if (comp?.competency_domains?.code) {
@@ -167,7 +167,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
       if (d) return d.id;
     }
     return domains[0]?.id || '';
-  };
+  }, [domains]);
 
   // Helper tìm competencyId hợp lệ từ domainId
   const getCompetencyIdForDomain = (domainId: string): string => {
@@ -214,7 +214,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
       }
       return true;
     });
-  }, [items, activeTab, searchQuery, domains]);
+  }, [items, activeTab, searchQuery, getDomainIdFromItem]);
 
   if (!assessment) {
     return (
@@ -463,9 +463,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             {assessment.title}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Quản trị các câu hỏi chẩn đoán 5 miền năng lực số. Mọi thay đổi sẽ đồng bộ trực tiếp sang bài thi của người học.
-          </p>
         </div>
 
         {/* Action Buttons */}

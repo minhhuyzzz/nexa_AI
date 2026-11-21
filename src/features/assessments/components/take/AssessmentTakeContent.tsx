@@ -529,6 +529,7 @@ export function AssessmentTakeContent({
     }
 
     loadAssessment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load on assessmentId, roomId, pin change
   }, [assessmentId, roomId, pin]);
 
   const isBaseline = Boolean(
@@ -809,6 +810,7 @@ export function AssessmentTakeContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyboard shortcuts for take exam
   }, [currentIndex, activeQuestionsList.length, isCurrentAnswered]);
 
   const handleTextChange = (questionId: string, value: string) => {

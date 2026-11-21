@@ -250,6 +250,7 @@ function ProjectorContent() {
 
           {/* QR Code Container Chính Diện */}
           <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrUrl}
               alt={`Mã QR PIN ${displayPin}`}

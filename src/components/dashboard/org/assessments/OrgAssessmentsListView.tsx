@@ -260,11 +260,8 @@ export function OrgAssessmentsListView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản lý Đề khảo thí
+            Kho đề thi
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Ngân hàng đề đánh giá năng lực số chuẩn 5 miền và các bài khảo thí nội bộ của {orgName}.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">

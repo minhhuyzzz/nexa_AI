@@ -160,9 +160,6 @@ export default function LearnerAssessmentsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Khảo thí chuẩn
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Hệ thống bài khảo thí chuẩn hóa các miền năng lực số dùng chung toàn nền tảng.
-          </p>
         </div>
       </div>
 

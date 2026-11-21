@@ -317,7 +317,7 @@ function LearnerGroupsContent() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Lớp &amp; Nhóm của tôi
+            Lớp và Nhóm
           </h1>
         </div>
 

@@ -227,8 +227,8 @@ export default function AdminPlansPage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản lý gói dịch vụ và định mức hợp đồng
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Gói dịch vụ
           </h1>
         </div>
 

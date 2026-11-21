@@ -291,12 +291,9 @@ export function PersonalLiveRoomDashboardView() {
               <Radio className="w-4 h-4 animate-pulse" />
             </div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Phòng đánh giá trực tiếp
+              Phòng thi trực tiếp
             </h1>
           </div>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-            Tổ chức phiên đánh giá năng lực số thời gian thực và quản lý các phòng làm bài của bạn.
-          </p>
         </div>
 
         {/* Right Header Controls: Vào phòng bằng PIN & Làm mới */}

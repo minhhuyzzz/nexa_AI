@@ -188,8 +188,8 @@ export default function AdminContributionsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Thẩm Định Đề Thi Đóng Góp Từ Cộng Đồng
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Kiểm duyệt đóng góp
             </h1>
             <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
               Chờ thẩm định: <strong className="font-semibold text-amber-900">{countPending}</strong> đề bài

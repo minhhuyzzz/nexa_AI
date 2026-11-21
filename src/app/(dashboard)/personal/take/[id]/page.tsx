@@ -577,6 +577,7 @@ function AssessmentTakeContent({
     }
 
     loadAssessment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load on assessmentId, roomId, pin change
   }, [assessmentId, roomId, pin]);
 
   // 2. Countdown Timer (Only for Formal Time-Limited Exams, NEVER for Intake Assessment, NEVER for Preview Mode)
@@ -603,7 +604,7 @@ function AssessmentTakeContent({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult, isRoomPaused, isPreview]);
+  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult, isRoomPaused, isPreview, roomId]);
 
   // 2.1 Live Room Realtime Sync (room:${roomId})
   useEffect(() => {
@@ -866,6 +867,7 @@ function AssessmentTakeContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyboard shortcuts for take exam
   }, [currentIndex, activeQuestionsList.length, isCurrentAnswered]);
 
   const handleTextChange = (questionId: string, value: string) => {

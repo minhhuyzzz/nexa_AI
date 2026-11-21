@@ -223,7 +223,7 @@ export function CreateLiveRoomWizardView({
     return () => {
       isMounted = false;
     };
-  }, [isOrg, orgName, searchParams]);
+  }, [isOrg, orgId, orgName, searchParams]);
 
   // Selected Assessment derived directly from state
   const selectedAssessment = useMemo(() => {

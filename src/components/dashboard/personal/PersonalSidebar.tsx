@@ -42,7 +42,7 @@ const learningNavItems: NavItem[] = [
 ];
 
 const workNavItems: NavItem[] = [
-  { name: 'Lớp & Nhóm', href: '/personal/groups', icon: Users },
+  { name: 'Lớp và Nhóm', href: '/personal/groups', icon: Users },
   { name: 'Bài được giao', href: '/personal/submissions', icon: ListChecks },
 ];
 

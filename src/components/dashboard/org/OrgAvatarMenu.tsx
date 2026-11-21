@@ -114,6 +114,7 @@ export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps
           className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/20"
         >
           {avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={avatarUrl}
               alt={displayName}
@@ -137,6 +138,7 @@ export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps
               {/* Profile Header */}
               <div className="px-4 py-3 flex items-center gap-3">
                 {avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={avatarUrl}
                     alt={displayName}

@@ -548,7 +548,7 @@ function LiveControlContent() {
       channelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [roomId, fetchRoomState, selectedCandidate, lobbySound]);
+  }, [roomId, fetchRoomState, selectedCandidate, lobbySound, room?.proctoringProfile]);
 
   // Derived Real Counts
   const totalJoined = participants.length;
@@ -730,6 +730,7 @@ function LiveControlContent() {
     }, 1000);
 
     return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- execute start exam on countdown completion
   }, [activeStartCountdown, lobbySound]);
 
   const handleStartExam = handleInitiateStartExam;
@@ -1252,6 +1253,7 @@ function LiveControlContent() {
 
                   {/* Right: QR Code Box */}
                   <div className="shrink-0 p-2.5 rounded-xl bg-white border border-slate-200 dark:border-zinc-700 shadow-xs flex flex-col items-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(
                         mounted && typeof window !== 'undefined'
@@ -1307,6 +1309,7 @@ function LiveControlContent() {
                         className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-center gap-2"
                       >
                         {p.avatarUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={p.avatarUrl}
                             alt={p.fullName}
@@ -1868,6 +1871,7 @@ function LiveControlContent() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
                               {p.avatarUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                   src={p.avatarUrl}
                                   alt={p.fullName}
@@ -2410,6 +2414,7 @@ function LiveControlContent() {
             <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2.5">
                 {selectedCandidate.avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={selectedCandidate.avatarUrl}
                     alt={selectedCandidate.fullName}

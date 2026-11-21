@@ -21,8 +21,8 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (emailParam && !email) {
-      setEmail(emailParam);
+    if (emailParam) {
+      setEmail((prev) => (!prev ? emailParam : prev));
     }
   }, [emailParam]);
 

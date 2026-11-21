@@ -203,11 +203,8 @@ export default function AdminTransactionsPage() {
       {/* 1. Header & Subtitle */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-          Thanh toán &amp; Đối soát
+          Giao dịch đối soát
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-          Theo dõi và đối soát các giao dịch thanh toán gói dịch vụ của người dùng và tổ chức.
-        </p>
       </div>
 
       {/* 2. Top Navigation Tabs (Pill Tabs, không gạch chân) */}

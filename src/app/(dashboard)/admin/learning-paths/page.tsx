@@ -354,11 +354,8 @@ export default function AdminLearningPathsPage() {
             <span className="text-xs text-slate-400 dark:text-neutral-500">• Khung Năng Lực Chuẩn Hóa</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản trị Trạm Kiểm chứng Năng lực
+            Lộ trình học tập
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-3xl leading-relaxed">
-            Cấu hình đề kiểm chứng, thời lượng, chuẩn đạt và quy chế giám sát cho các trạm bồi dưỡng năng lực số.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">

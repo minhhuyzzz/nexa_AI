@@ -35,18 +35,15 @@ export function OrgAnalyticsHeader({
       <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400 font-medium">
         <span>Đánh giá năng lực</span>
         <span>&rsaquo;</span>
-        <span className="text-neutral-900 dark:text-neutral-100 font-semibold">Báo cáo năng lực số</span>
+        <span className="text-neutral-900 dark:text-neutral-100 font-semibold">Báo cáo năng lực</span>
       </div>
 
       {/* Title & Global Filter Controls */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Báo cáo năng lực số
+            Báo cáo năng lực
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-2xl leading-relaxed">
-            Dashboard đo lường năng lực số 5 miền của tổ chức, dựa trên các kết quả đánh giá đủ điều kiện.
-          </p>
         </div>
 
         {/* Global Toolbar Filter Controls + Export Button */}

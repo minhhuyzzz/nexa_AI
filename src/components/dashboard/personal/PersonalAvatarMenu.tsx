@@ -129,6 +129,7 @@ export function PersonalAvatarMenu() {
           aria-expanded={isOpen}
         >
           {avatarUrl && !imgError ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={avatarUrl}
               alt={displayName}
@@ -155,6 +156,7 @@ export function PersonalAvatarMenu() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-zinc-800 text-white font-bold text-xs flex items-center justify-center font-mono overflow-hidden shrink-0">
                     {avatarUrl && !imgError ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={avatarUrl}
                         alt={displayName}

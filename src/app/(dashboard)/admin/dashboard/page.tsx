@@ -265,11 +265,8 @@ export default async function AdminDashboardPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Trung tâm điều hành nền tảng
+            Tổng quan nền tảng
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Tổng quan trạng thái vận hành, tăng trưởng và chất lượng dữ liệu của toàn bộ hệ thống NEXA.
-          </p>
         </div>
 
         <nav aria-label="Lối tắt điều hành quản trị" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full sm:w-auto">

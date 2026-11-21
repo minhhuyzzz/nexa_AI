@@ -135,9 +135,6 @@ function AdminSettingsContent() {
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Cài đặt nền tảng
           </h1>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Cấu hình vận hành hệ thống, chính sách điểm thưởng và định dạng hiển thị toàn sàn.
-          </p>
         </div>
 
         <button

@@ -213,6 +213,7 @@ function EvaluatorGradingContent() {
 
   useEffect(() => {
     fetchSubmissions(selectedGroupId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch on group change
   }, [selectedGroupId]);
 
   // Current active submission and item
@@ -259,6 +260,7 @@ function EvaluatorGradingContent() {
         ? `Đã thẩm định hoàn tất bởi Chuyên gia khảo thí.`
         : ''
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset grading fields on active item/sub change
   }, [activeSubmission?.id, activeItem?.id, activeSubmission?.status]);
 
   // Handle Level Selection

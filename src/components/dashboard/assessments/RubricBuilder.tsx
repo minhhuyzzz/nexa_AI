@@ -72,6 +72,7 @@ export function RubricBuilder({
     };
 
     onChange(rubricData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emit changes when rubric fields change
   }, [isEnabled, title, description, criteria]);
 
   // Toggle enable rubric

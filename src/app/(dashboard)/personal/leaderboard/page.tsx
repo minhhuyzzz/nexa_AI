@@ -150,12 +150,8 @@ function LeaderboardContent() {
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Bảng Xếp Hạng Thành Tích
+              Bảng xếp hạng
             </h1>
-
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
-              Vinh danh những cá nhân xuất sắc nhất trong quá trình bồi dưỡng và thực hành 5 miền năng lực số. Tích lũy điểm PTS từ bài thi, thực hành và hoạt động đóng góp.
-            </p>
 
             {/* Timeframe Filter Tabs: Tuần này / Tháng này / Tất cả */}
             <div className="pt-2 flex flex-wrap items-center gap-2">

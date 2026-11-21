@@ -77,7 +77,7 @@ export function OrgCampaignsClientView({
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Đợt khảo thí
+              Hoạt động khảo thí
             </h1>
             <span className="px-2 py-0.5 text-xs font-semibold font-mono rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
               {campaigns.length}

@@ -206,6 +206,7 @@ function AdminAiGatewayContent() {
 
   useEffect(() => {
     fetchData(period, flow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchData re-runs on period/flow change
   }, [period, flow]);
 
   useEffect(() => {
@@ -308,9 +309,6 @@ function AdminAiGatewayContent() {
               AI Gateway
             </span>
           </div>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Quản trị kết nối mô hình trí tuệ nhân tạo, điều phối routing và giám sát lưu lượng xử lý thực tế toàn sàn.
-          </p>
         </div>
 
         <button

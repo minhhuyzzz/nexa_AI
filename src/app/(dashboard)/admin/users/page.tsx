@@ -305,7 +305,7 @@ function UsersContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Quản lý người dùng và tài khoản
+            Người dùng
           </h1>
         </div>
       </div>

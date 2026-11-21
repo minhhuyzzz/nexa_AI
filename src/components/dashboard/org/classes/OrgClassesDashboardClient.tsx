@@ -67,7 +67,7 @@ export function OrgClassesDashboardClient({
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Nhóm &amp; Đơn vị
+              Nhóm và Đơn vị
             </h1>
             <span className="text-xs px-2 py-0.5 rounded-full font-mono font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 tabular-nums">
               {classes.length}

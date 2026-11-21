@@ -322,7 +322,7 @@ function LearningPathContent() {
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight mt-0.5">
-            Lộ trình Bồi dưỡng
+            Lộ trình của tôi
           </h1>
         </div>
       </div>

@@ -318,17 +318,14 @@ export function OrgSettingsView({
       {/* ============================================================ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-              Cài đặt tổ chức
+              Cài đặt
             </h1>
             <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
               @{org.slug}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400">
-            Quản lý hồ sơ nhận diện, thông tin người phụ trách và mã định danh của đơn vị.
-          </p>
         </div>
 
         {/* Global Action State Bar (Desktop) */}

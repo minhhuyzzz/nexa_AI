@@ -621,6 +621,7 @@ function WaitingRoomContent() {
     };
   }, [
     room?.id,
+    room?.themeId,
     roomIdFromUrl,
     room?.assessmentId,
     room?.roomCode,
@@ -1139,6 +1140,7 @@ function WaitingRoomContent() {
                     >
                       {/* Avatar */}
                       {avatar ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={avatar}
                           alt={p.fullName}

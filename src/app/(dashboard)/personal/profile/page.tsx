@@ -467,6 +467,7 @@ function LearnerProfileContent() {
             <div className="relative group shrink-0">
               <div className="w-20 h-20 rounded-full border-2 border-white dark:border-zinc-700 shadow-md overflow-hidden bg-slate-900 dark:bg-zinc-800 text-white flex items-center justify-center font-mono font-bold text-xl select-none">
                 {profile?.avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" />
                 ) : (
                   initials

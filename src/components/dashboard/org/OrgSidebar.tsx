@@ -120,7 +120,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
             ]
           : []),
         {
-          name: 'Nhóm & Đơn vị',
+          name: 'Nhóm và Đơn vị',
           href: `/org/${orgSlug}/classes`,
           icon: FolderKanban,
         },

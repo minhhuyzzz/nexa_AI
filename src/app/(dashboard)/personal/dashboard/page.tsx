@@ -342,6 +342,7 @@ export default function LearnerDashboardPage() {
 
     window.addEventListener('profile-updated', handleProfileUpdate);
     return () => window.removeEventListener('profile-updated', handleProfileUpdate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- register listener once on mount
   }, []);
 
   const progressRatio = Math.min(100, Math.round((stats.points / (stats.levelNextTarget || 150)) * 100));
@@ -1281,6 +1282,7 @@ export default function LearnerDashboardPage() {
                         )}
                         <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-zinc-200 shrink-0 overflow-hidden border border-slate-200/80">
                           {avatarSrc ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={avatarSrc} alt={user.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                           ) : (
                             <span>{user.avatar}</span>

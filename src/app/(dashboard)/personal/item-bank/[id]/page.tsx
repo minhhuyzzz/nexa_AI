@@ -116,6 +116,7 @@ export default function QuestionItemDetailPage({ params }: { params: Promise<{ i
     }
 
     fetchQuestion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch question on id change
   }, [id]);
 
   const handleSave = async () => {

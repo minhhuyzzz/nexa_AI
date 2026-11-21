@@ -470,7 +470,7 @@ export default function AdminOrganizationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Yêu cầu và quản trị tổ chức B2B
+            Tổ chức Business
           </h1>
         </div>
 

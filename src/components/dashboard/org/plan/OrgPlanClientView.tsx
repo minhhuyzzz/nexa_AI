@@ -113,7 +113,7 @@ export function OrgPlanClientView({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Gói Business
+            Gói sử dụng
           </h1>
         </div>
       </div>

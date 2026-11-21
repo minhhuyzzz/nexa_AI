@@ -93,6 +93,7 @@ function AdminAnalyticsContent() {
 
   useEffect(() => {
     fetchAnalytics(period);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch on period change
   }, [period]);
 
   async function fetchAnalytics(selectedPeriod = period) {
@@ -175,11 +176,8 @@ function AdminAnalyticsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            Báo cáo và phân tích vận hành khảo thí
+            Phân tích năng lực số
           </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Phân tích số liệu học thuật, đo lường khảo thí chuẩn hóa và tiến trình phát triển năng lực số.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">

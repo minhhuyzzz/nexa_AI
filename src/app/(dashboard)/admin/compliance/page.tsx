@@ -91,6 +91,7 @@ function AdminComplianceContent() {
 
   useEffect(() => {
     fetchAuditLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-fetch on filter change
   }, [actionFilter, targetFilter, period]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -111,9 +112,6 @@ function AdminComplianceContent() {
               Admin Audit Trail
             </span>
           </div>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Truy vết toàn bộ thao tác quản trị: thay đổi cài đặt, quản lý tài khoản, phê duyệt tổ chức và đối soát.
-          </p>
         </div>
 
         <button

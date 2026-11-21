@@ -246,6 +246,7 @@ export function OrgGradingClientView({
       setGradeError(null);
       setGradeSuccess(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync fields when selected submission changes
   }, [selectedSub?.id]);
 
   // Total calculated score: MCQ auto score + sum of open item scores

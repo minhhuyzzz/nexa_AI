@@ -142,7 +142,7 @@ export default function AdminCommunicationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Trung Tâm Truyền Thông &amp; Hộp Thư Góp Ý
+            Hộp thư góp ý
           </h1>
         </div>
 
