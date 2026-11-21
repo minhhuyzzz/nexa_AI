@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import {
   ShieldCheck,
   Search,
@@ -16,6 +16,8 @@ import {
   AlertCircle,
   ChevronRight,
   Filter,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 
 interface AdminAuditLog {
@@ -67,6 +69,110 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   INQUIRY_STATUS_UPDATED: { label: 'Cập nhật Tư vấn', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
   BROADCAST_NOTIFICATION: { label: 'Gửi Thông báo', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
 };
+
+const ACTION_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả hành động' },
+  { value: 'UPDATE', label: 'Cập nhật Đề thi' },
+  { value: 'CREATE', label: 'Tạo mới' },
+  { value: 'DELETE', label: 'Xóa' },
+  { value: 'GRANT_ROLE', label: 'Cấp quyền Quản trị' },
+  { value: 'REVOKE_ROLE', label: 'Thu hồi quyền Quản trị' },
+  { value: 'SUSPEND_USER', label: 'Khóa tài khoản' },
+  { value: 'UNSUSPEND_USER', label: 'Mở khóa tài khoản' },
+  { value: 'REVOKE_SESSION', label: 'Đăng xuất phiên' },
+  { value: 'UPDATE_TIER', label: 'Đổi Gói dịch vụ' },
+  { value: 'UPDATE_SYSTEM_SETTINGS', label: 'Cập nhật Cài đặt' },
+  { value: 'AI_CONFIG_UPDATED', label: 'Cập nhật Cổng AI' },
+  { value: 'APPROVE', label: 'Phê duyệt Đóng góp' },
+  { value: 'REJECT', label: 'Từ chối Đóng góp' },
+  { value: 'ORG_ACTIVATED', label: 'Kích hoạt Tổ chức' },
+  { value: 'ORG_RENEWAL_APPROVED', label: 'Duyệt Gia hạn Tổ chức' },
+  { value: 'TRANSACTION_MANUALLY_RECONCILED', label: 'Đối soát Giao dịch' },
+  { value: 'BROADCAST_NOTIFICATION', label: 'Gửi Thông báo' },
+];
+
+const TARGET_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả đối tượng' },
+  { value: 'ASSESSMENT', label: 'Đề thi' },
+  { value: 'USER', label: 'Người dùng' },
+  { value: 'ORGANIZATION', label: 'Tổ chức' },
+  { value: 'SYSTEM_SETTINGS', label: 'Cài đặt hệ thống' },
+  { value: 'AI_GATEWAY', label: 'Cổng AI' },
+  { value: 'CONTRIBUTION', label: 'Đóng góp câu hỏi' },
+  { value: 'TRANSACTION', label: 'Giao dịch' },
+];
+
+function FilterDropdown({
+  label,
+  value,
+  onChange,
+  options,
+  width = 'w-60',
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  width?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [open]);
+
+  const activeOption = options.find((o) => o.value === value) || options[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer min-w-[155px]"
+      >
+        <span className="truncate">{activeOption?.label || label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          className={`absolute top-full mt-1.5 left-0 ${width} max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100`}
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`w-full px-2.5 py-1.5 text-xs rounded-lg text-left flex items-center justify-between transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
+                    : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/80'
+                }`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 ml-2" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AdminComplianceContent() {
   const [logs, setLogs] = useState<AdminAuditLog[]>([]);
@@ -229,45 +335,21 @@ function AdminComplianceContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <select
+            <FilterDropdown
+              label="Hành động"
               value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
-              className="px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer"
-            >
-              <option value="ALL">Tất cả hành động</option>
-              <option value="UPDATE">Cập nhật Đề thi</option>
-              <option value="CREATE">Tạo mới</option>
-              <option value="DELETE">Xóa</option>
-              <option value="GRANT_ROLE">Cấp quyền Quản trị</option>
-              <option value="REVOKE_ROLE">Thu hồi quyền Quản trị</option>
-              <option value="SUSPEND_USER">Khóa tài khoản</option>
-              <option value="UNSUSPEND_USER">Mở khóa tài khoản</option>
-              <option value="REVOKE_SESSION">Đăng xuất phiên</option>
-              <option value="UPDATE_TIER">Đổi Gói dịch vụ</option>
-              <option value="UPDATE_SYSTEM_SETTINGS">Cập nhật Cài đặt</option>
-              <option value="AI_CONFIG_UPDATED">Cập nhật Cổng AI</option>
-              <option value="APPROVE">Phê duyệt Đóng góp</option>
-              <option value="REJECT">Từ chối Đóng góp</option>
-              <option value="ORG_ACTIVATED">Kích hoạt Tổ chức</option>
-              <option value="ORG_RENEWAL_APPROVED">Duyệt Gia hạn Tổ chức</option>
-              <option value="TRANSACTION_MANUALLY_RECONCILED">Đối soát Giao dịch</option>
-              <option value="BROADCAST_NOTIFICATION">Gửi Thông báo</option>
-            </select>
+              onChange={setActionFilter}
+              options={ACTION_OPTIONS}
+              width="w-64"
+            />
 
-            <select
+            <FilterDropdown
+              label="Đối tượng"
               value={targetFilter}
-              onChange={(e) => setTargetFilter(e.target.value)}
-              className="px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer"
-            >
-              <option value="ALL">Tất cả đối tượng</option>
-              <option value="SYSTEM_SETTINGS">Cài đặt hệ thống</option>
-              <option value="AI_GATEWAY">Cổng AI</option>
-              <option value="USER">Người dùng</option>
-              <option value="ORGANIZATION">Tổ chức</option>
-              <option value="CONTRIBUTION">Đóng góp câu hỏi</option>
-              <option value="TRANSACTION">Giao dịch</option>
-              <option value="ASSESSMENT">Đề thi</option>
-            </select>
+              onChange={setTargetFilter}
+              options={TARGET_OPTIONS}
+              width="w-56"
+            />
 
             {/* Period Pills */}
             <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-zinc-900 rounded-lg text-xs font-medium">
