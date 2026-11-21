@@ -1,25 +1,22 @@
-# Danh Sách Nhiệm Vụ Triển Khai (Todo List)
+# Danh Sách Nhiệm Vụ: Tinh Gọn RBAC 2 Cấp & Sửa Nhật Ký Kiểm Toán
 
-## Lát cắt 1: CSDL & Migration (Foundation)
-- [x] **Task 1.1:** Viết file migration `src/database/migrations/55_subscriptions_and_standardized_service_plans.sql` mở rộng `service_plans`, tạo bảng `subscriptions` và bảng `user_trial_history`.
-- [x] **Task 1.2:** Viết file rollback migration `src/database/migrations/55_rollback_subscriptions_and_service_plans.sql`.
-- [x] **Task 1.3:** Cập nhật TypeScript types trong `src/types/database.types.ts` để đồng bộ cấu trúc mới.
+- [x] **Lát cắt 1: Chuẩn hóa RBAC 2 Cấp & Logic Phân quyền Cốt lõi**
+  - [x] Task 1.1: Cập nhật `src/lib/auth/superadmin.ts` và `src/lib/auth/admin-guard.ts` (rút gọn về Platform Owner và Platform Admin, thêm bí danh isPlatformOwner)
+  - [x] Task 1.2: Sửa API `src/app/api/auth/login/route.ts` (chuyển hướng thẳng tới `/admin/dashboard` cho Admin/Owner, bỏ demote về LEARNER, set cookie admin)
 
-## Lát cắt 2: Backend APIs (Engine)
-- [x] **Task 2.1:** Nâng cấp `src/app/api/admin/plans/route.ts`: `GET` trả về 4 gói đầy đủ thuộc tính, `PATCH` cho phép Admin chỉnh sửa giá, credits, trial, hạn mức lưu DB.
-- [x] **Task 2.2:** Nâng cấp `src/app/api/admin/users/route.ts`: hiển thị đúng 4 gói chuẩn, cập nhật `PATCH` tự động cấp bù AI credits + 30 ngày thời hạn + ghi Audit log.
-- [x] **Task 2.3:** Cập nhật `src/app/api/billing/preview/route.ts` xác định tư cách dùng thử 0đ tháng đầu tiên cho Gói Tiêu Chuẩn.
-- [x] **Task 2.4:** Tạo endpoint `src/app/api/billing/confirm-trial/route.ts` kích hoạt 30 ngày dùng thử 0đ, lưu transaction `amount: 0`.
-- [x] **Task 2.5:** Tạo endpoint `src/app/api/billing/cancel-auto-renew/route.ts` cho phép người dùng hủy gia hạn kỳ tiếp theo.
+- [x] **Lát cắt 2: Sửa Triệt Để Dịch Vụ Nhật Ký Kiểm Toán & Khôi Phục Lịch Sử**
+  - [x] Task 2.1: Cập nhật `src/lib/audit/admin-audit.service.ts` và tạo `src/lib/audit/client-ip.ts` (tự động tra cứu email từ profiles, helper trích xuất IP thực an toàn)
+  - [x] Task 2.2: Cập nhật `src/app/api/admin/audit-logs/route.ts` (join profiles để sửa toàn bộ log cũ bị null email và null IP)
+  - [x] Task 2.3: Truyền `adminEmail` và `ipAddress` trong các API admin trọng yếu (`assessments/[id]`, `bulk`, `users`, `settings`)
 
-## Lát cắt 3: Admin Dashboard UI (Management)
-- [x] **Task 3.1:** Tái cấu trúc `src/app/(dashboard)/admin/plans/page.tsx`: xóa sạch mock state, load 4 gói thật từ API.
-- [x] **Task 3.2:** Xây dựng Modal cấu hình gói trong `admin/plans/page.tsx`: cho phép Admin chỉnh sửa giá tháng, giá năm, credits, số ngày trial, quotas và lưu thẳng DB.
-- [x] **Task 3.3:** Nâng cấp tab B2B trong `admin/plans/page.tsx`: hiển thị danh sách tổ chức thật từ API.
-- [x] **Task 3.4:** Cập nhật `src/app/(dashboard)/admin/users/page.tsx`: bộ lọc dropdown 4 gói, bảng hiển thị badge 4 gói, modal phân quyền cập nhật gói thật.
+- [x] **Lát cắt 3: Cập Nhật Giao Diện Báo Cáo & Phân Quyền UI**
+  - [x] Task 3.1: Cập nhật `src/app/(dashboard)/admin/compliance/page.tsx` (loại bỏ `System / Auto` và `Internal RPC`, hiển thị email/IP thật)
+  - [x] Task 3.2: Cập nhật `src/app/(dashboard)/admin/dashboard/page.tsx` (cột Người thực hiện hiển thị đúng danh tính Admin qua join profiles)
+  - [x] Task 3.3: Cập nhật `src/app/(dashboard)/admin/users/page.tsx` (giao diện thăng/giáng quyền Admin chỉ dành riêng cho Platform Owner, bảo vệ tài khoản Owner bất khả xâm phạm)
+  - [x] Task 3.4: Chuẩn hóa `src/components/dashboard/WorkspaceSwitcher.tsx` (tách biệt hoàn toàn cổng Admin khỏi dropdown chuyển không gian cá nhân/tổ chức)
 
-## Lát cắt 4: Personal UI, Quản lý Thanh toán & Kiểm thử
-- [x] **Task 4.1:** Cập nhật `src/app/(dashboard)/personal/checkout/page.tsx`: hiển thị đơn hàng 0đ cho Gói Tiêu Chuẩn dùng thử lần đầu, nút xác nhận kích hoạt 0đ.
-- [x] **Task 4.2:** Cập nhật `src/app/(dashboard)/personal/billing/page.tsx`: hiển thị banner thời hạn dùng thử, nút Hủy gia hạn, bảng biểu phí chuẩn hóa.
-- [x] **Task 4.3:** Viết unit & integration tests `tests/billing/free-trial-and-admin-plans.test.ts` (12/12 tests PASS).
-- [x] **Task 4.4:** Chạy kiểm thử tự động toàn bộ dự án (`npx tsc --noEmit` & `npm test`) đảm bảo 100% xanh.
+- [x] **Lát cắt 4: Kiểm Thử Tự Động & Kiểm Chứng**
+  - [x] Task 4.1: Chạy `npx vitest run src/features/security/` (14/14 passed)
+  - [x] Task 4.2: Chạy full test suite `npm test` (97/97 test files passed, 1542/1542 tests passed)
+  - [x] Task 4.3: Chạy `npx tsc --noEmit` (0 errors)
+  - [x] Task 4.4: Chạy `graphify update .`

@@ -190,13 +190,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Superadmin Master Authority: email whitelist only
+  // Platform Admin Authority: Superadmin email whitelist or platform admin role in profile
   const isSuperadmin = isSuperadminEmail(user.email);
+  const isPlatformAdmin =
+    isSuperadmin ||
+    profile?.role === 'ADMIN' ||
+    profile?.role === 'SUPERADMIN' ||
+    ['SUPER_ADMIN', 'ADMIN', 'OPERATIONS_ADMIN', 'CONTENT_ADMIN', 'FINANCE_ADMIN', 'AI_OPERATOR'].includes(
+      profile?.admin_role || ''
+    );
 
   // Helper to resolve user dashboard based on active workspace
   const activeWs = request.cookies.get('nexa_active_workspace')?.value;
   const orgSlug = request.cookies.get('nexa_active_org_slug')?.value;
-  const targetDashboard = isSuperadmin
+  const targetDashboard = isPlatformAdmin
     ? '/admin/dashboard'
     : activeWs?.startsWith('org_') && orgSlug
     ? `/org/${orgSlug}`
@@ -216,34 +223,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
-  // Superadmin Master Authority: always enter admin dashboard directly (never lands in /personal/*)
-  if (isSuperadmin && pathname.startsWith('/personal')) {
+  // Superadmin / Platform Admin: always enter admin dashboard directly (never lands in /personal/*)
+  if (isPlatformAdmin && pathname.startsWith('/personal')) {
     const url = request.nextUrl.clone();
     url.pathname = '/admin/dashboard';
     return NextResponse.redirect(url);
   }
 
-  // RBAC: Admin route strictly for verified Superadmin email
-  if (isAdminRoute && !isSuperadmin) {
+  // RBAC: Admin route strictly for verified Platform Admin
+  if (isAdminRoute && !isPlatformAdmin) {
     const url = request.nextUrl.clone();
     url.pathname = targetDashboard;
     return NextResponse.redirect(url);
   }
 
-  // RBAC: Admin API route strictly for verified Superadmin or Platform Admin
-  if (isAdminApiRoute && !isSuperadmin) {
-    const isPlatformAdmin =
-      profile?.role === 'ADMIN' ||
-      profile?.role === 'SUPERADMIN' ||
-      ['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'CONTENT_ADMIN', 'FINANCE_ADMIN', 'AI_OPERATOR'].includes(
-        profile?.admin_role || ''
-      );
-    if (!isPlatformAdmin) {
-      return NextResponse.json(
-        { error: 'Bạn không có quyền truy cập khu vực quản trị nền tảng (Platform Admin)' },
-        { status: 403 }
-      );
-    }
+  // RBAC: Admin API route strictly for verified Platform Admin
+  if (isAdminApiRoute && !isPlatformAdmin) {
+    return NextResponse.json(
+      { error: 'Bạn không có quyền truy cập khu vực quản trị nền tảng (Platform Admin)' },
+      { status: 403 }
+    );
   }
 
   return supabaseResponse;

@@ -40,6 +40,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/audit/admin-audit.service', () => ({
   recordAdminAudit: vi.fn().mockResolvedValue({ id: 'audit-1' }),
+  extractClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
 describe('Phase 1 Security & RBAC: AUTH-SUSP-01, AUTH-REV-01, RBAC-ADMIN-01', () => {

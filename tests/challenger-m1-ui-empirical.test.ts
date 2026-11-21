@@ -252,7 +252,7 @@ describe('Empirical Challenger M1: UI/UX & AGENTS.md Conformance Challenge', () 
     it('renders "Quy chế phòng thi trực tiếp" for MEMBER instead of creation guide', () => {
       expect(content).toContain('Quy chế phòng thi trực tiếp');
       expect(content).toContain('Mã PIN 6 chữ số');
-      expect(content).toContain('Đúng giờ &amp; sẵn sàng');
+      expect(content).toContain('Đúng giờ và sẵn sàng');
     });
   });
 

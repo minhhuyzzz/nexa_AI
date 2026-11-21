@@ -63,6 +63,23 @@ describe('Auth Flow Inspection & Verification', () => {
       expect(isSuperadminEmail('user@gmail.com')).toBe(false);
       expect(isSuperadminEmail(null)).toBe(false);
     });
+
+    it('tự động xử lý và làm sạch ký tự lạ như == hoặc khoảng trắng trong biến môi trường', () => {
+      const originalEnv = process.env.SUPER_ADMIN;
+      try {
+        process.env.SUPER_ADMIN = '==huy868762@gmail.com, minhh@gmail.com , "owner@nexa.ai" ';
+        expect(isSuperadminEmail('huy868762@gmail.com')).toBe(true);
+        expect(isSuperadminEmail('minhh@gmail.com')).toBe(true);
+        expect(isSuperadminEmail('owner@nexa.ai')).toBe(true);
+        expect(isSuperadminEmail('other@gmail.com')).toBe(false);
+      } finally {
+        if (originalEnv !== undefined) {
+          process.env.SUPER_ADMIN = originalEnv;
+        } else {
+          delete process.env.SUPER_ADMIN;
+        }
+      }
+    });
   });
 
   describe('POST /api/auth/login', () => {

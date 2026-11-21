@@ -491,16 +491,21 @@ function UsersContent() {
                       {/* Vai trò */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300">
-                          {u.role === 'ADMIN' ? (
-                            <>
+                          {u.adminRole === 'SUPER_ADMIN' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+                              <Shield className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Chủ nền tảng</span>
+                            </span>
+                          ) : u.role === 'ADMIN' || u.adminRole === 'ADMIN' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                               <Shield className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Quản trị hệ thống</span>
-                            </>
+                              <span>Quản trị viên</span>
+                            </span>
                           ) : (
-                            <>
+                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
                               <Users className="w-3.5 h-3.5 text-slate-400" />
                               <span>Người dùng</span>
-                            </>
+                            </span>
                           )}
                         </div>
                       </td>
@@ -582,20 +587,24 @@ function UsersContent() {
                               <Shield className="w-3.5 h-3.5 text-blue-600" />
                               <span>Phân quyền và Gói</span>
                             </button>
-                            <button
-                              onClick={() => handleToggleSuspend(u)}
-                              className="w-full px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2"
-                            >
-                              <UserX className="w-3.5 h-3.5" />
-                              <span>{u.isSuspended ? 'Mở khóa tài khoản' : 'Tạm khóa tài khoản'}</span>
-                            </button>
-                            <button
-                              onClick={() => handleRevokeSession(u)}
-                              className="w-full px-3 py-1.5 text-xs text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2"
-                            >
-                              <LogOut className="w-3.5 h-3.5" />
-                              <span>Đăng xuất phiên</span>
-                            </button>
+                            {u.adminRole !== 'SUPER_ADMIN' && (
+                              <>
+                                <button
+                                  onClick={() => handleToggleSuspend(u)}
+                                  className="w-full px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2"
+                                >
+                                  <UserX className="w-3.5 h-3.5" />
+                                  <span>{u.isSuspended ? 'Mở khóa tài khoản' : 'Tạm khóa tài khoản'}</span>
+                                </button>
+                                <button
+                                  onClick={() => handleRevokeSession(u)}
+                                  className="w-full px-3 py-1.5 text-xs text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2"
+                                >
+                                  <LogOut className="w-3.5 h-3.5" />
+                                  <span>Đăng xuất phiên</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </td>
@@ -642,16 +651,27 @@ function UsersContent() {
 
               <div>
                 <label className="block font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                  Vai trò chính
+                  Vai trò hệ thống
                 </label>
-                <select
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value as any)}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-                >
-                  <option value="LEARNER">Người dùng</option>
-                  <option value="ADMIN">Quản trị viên (ADMIN)</option>
-                </select>
+                {editingUser.adminRole === 'SUPER_ADMIN' ? (
+                  <div className="p-2.5 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-amber-600" />
+                    <span>Chủ sở hữu nền tảng (Bất khả xâm phạm)</span>
+                  </div>
+                ) : (
+                  <select
+                    value={newRole}
+                    onChange={(e) => {
+                      const r = e.target.value as any;
+                      setNewRole(r);
+                      setNewAdminRole(r === 'ADMIN' ? 'ADMIN' : 'LEARNER');
+                    }}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-900 dark:text-neutral-100"
+                  >
+                    <option value="LEARNER">Người dùng thông thường</option>
+                    <option value="ADMIN">Quản trị viên nền tảng (Platform Admin)</option>
+                  </select>
+                )}
               </div>
 
               <div>

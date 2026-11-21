@@ -293,7 +293,7 @@ function AdminComplianceContent() {
                             AD
                           </span>
                           <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                            {log.admin_email || 'System / Auto'}
+                            {log.admin_email || 'Quản trị viên'}
                           </span>
                         </div>
                       </td>
@@ -320,7 +320,7 @@ function AdminComplianceContent() {
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap text-slate-500 font-mono text-[11px]">
-                        {log.ip_address || 'Internal RPC'}
+                        {log.ip_address || '127.0.0.1'}
                       </td>
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">

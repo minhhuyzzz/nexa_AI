@@ -13,6 +13,8 @@ export interface RecordAdminAuditParams {
   ipAddress?: string;
 }
 
+export { extractClientIp } from './client-ip';
+
 /**
  * Persists an immutable privileged action audit record into public.admin_audit_logs.
  * Errors are caught and logged to console to prevent blocking administrative operations.
@@ -25,9 +27,28 @@ export async function recordAdminAudit(params: RecordAdminAuditParams): Promise<
       old_values: params.oldValues,
     };
 
+    const targetAdminId = params.adminId || params.actorId || null;
+    let resolvedEmail = params.adminEmail || null;
+
+    // Tự động đối soát tìm email từ bảng profiles nếu caller chưa truyền adminEmail
+    if (!resolvedEmail && targetAdminId) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', targetAdminId)
+          .maybeSingle();
+        if (profile?.email) {
+          resolvedEmail = profile.email;
+        }
+      } catch {
+        // Tiếp tục ghi log dù tra cứu phụ thất bại
+      }
+    }
+
     const { error } = await supabase.from('admin_audit_logs').insert({
-      admin_id: params.adminId || params.actorId || null,
-      admin_email: params.adminEmail || null,
+      admin_id: targetAdminId,
+      admin_email: resolvedEmail,
       action: params.action,
       target_type: params.targetType,
       target_id: params.targetId || null,

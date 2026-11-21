@@ -79,7 +79,7 @@ export default async function AdminDashboardPage() {
       .limit(5),
     adminSupabase
       .from('admin_audit_logs')
-      .select('id, action, target_type, target_id, created_at, admin_email')
+      .select('id, action, target_type, target_id, created_at, admin_email, admin_id')
       .order('created_at', { ascending: false })
       .limit(5),
     supabase
@@ -201,8 +201,27 @@ export default async function AdminDashboardPage() {
     icon: typeof Building2;
   };
 
-  const rawAuditLogs = auditLogsRes.data || [];
+  const rawAuditLogs = (auditLogsRes.data as any[]) || [];
   const rawSubmissions = (recentSubmissionsRes.data as any[]) || [];
+
+  // Tra cứu đối soát email người thực hiện từ profiles nếu log cũ bị null admin_email
+  const missingAuditAdminIds = Array.from(
+    new Set(rawAuditLogs.filter((l) => !l.admin_email && l.admin_id).map((l) => l.admin_id as string))
+  );
+  const auditEmailMap: Record<string, string> = {};
+  if (missingAuditAdminIds.length > 0) {
+    try {
+      const { data: auditProfiles } = await supabase
+        .from('profiles')
+        .select('id, email, nickname')
+        .in('id', missingAuditAdminIds);
+      if (auditProfiles) {
+        auditProfiles.forEach((p: any) => {
+          if (p.id) auditEmailMap[p.id] = p.email || p.nickname;
+        });
+      }
+    } catch {}
+  }
 
   const auditItems: ActivityItem[] = rawAuditLogs.map((log) => {
     const d = new Date(log.created_at);
@@ -220,6 +239,9 @@ export default async function AdminDashboardPage() {
         ? 'Cổng AI Telemetry'
         : log.target_type || 'Hệ thống';
 
+    const resolvedActor =
+      log.admin_email || (log.admin_id ? auditEmailMap[log.admin_id] : null) || 'Quản trị viên';
+
     return {
       time: d.toLocaleDateString('vi-VN', {
         hour: '2-digit',
@@ -231,7 +253,7 @@ export default async function AdminDashboardPage() {
       timestamp: d.getTime(),
       action: actionLabel,
       target: targetLabel,
-      actor: log.admin_email || 'Quản trị viên',
+      actor: resolvedActor,
       icon: ShieldCheck,
     };
   });

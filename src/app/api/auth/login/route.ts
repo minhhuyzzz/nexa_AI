@@ -63,27 +63,30 @@ export async function POST(request: Request) {
       }
     );
 
-    // Fetch profile and enforce Superadmin Authority (email only)
+    // Fetch profile and check Platform Admin Authority (Owner env or profiles.admin_role)
     const { data: profile } = await authedClient
       .from('profiles')
-      .select('role')
+      .select('role, admin_role')
       .eq('id', authData.user.id)
       .single();
 
     const isSuperadmin = isSuperadminEmail(authData.user.email);
+    const hasAdminRole =
+      isSuperadmin ||
+      profile?.admin_role === 'ADMIN' ||
+      profile?.admin_role === 'SUPER_ADMIN' ||
+      profile?.role === 'ADMIN' ||
+      ['SUPER_ADMIN', 'ADMIN', 'OPERATIONS_ADMIN', 'CONTENT_ADMIN', 'FINANCE_ADMIN', 'AI_OPERATOR'].includes(
+        profile?.admin_role || ''
+      );
 
-    let role = profile?.role || authData.user.user_metadata?.role || 'LEARNER';
-    if (isSuperadmin) {
-      role = 'ADMIN';
-    } else if (role === 'ADMIN') {
-      role = 'LEARNER';
-    }
+    let role = hasAdminRole ? 'ADMIN' : (profile?.role || authData.user.user_metadata?.role || 'LEARNER');
 
     let redirectUrl = '/personal/dashboard';
     let targetOrgId: string | null = null;
     let targetOrgSlug: string | null = null;
 
-    if (role === 'ADMIN') {
+    if (hasAdminRole) {
       redirectUrl = '/admin/dashboard';
     } else {
       // 3. Check organization memberships
@@ -181,7 +184,13 @@ export async function POST(request: Request) {
     });
     response.cookies.delete('nexa_demo_role');
 
-    if (targetOrgId && targetOrgSlug) {
+    if (hasAdminRole) {
+      response.cookies.set('nexa_active_workspace', 'admin', {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+    } else if (targetOrgId && targetOrgSlug) {
       response.cookies.set('nexa_active_workspace', `org_${targetOrgId}`, {
         path: '/',
         maxAge: 60 * 60 * 24 * 30,
@@ -192,7 +201,7 @@ export async function POST(request: Request) {
         maxAge: 60 * 60 * 24 * 30,
         sameSite: 'lax',
       });
-    } else if (role !== 'ADMIN') {
+    } else {
       response.cookies.set('nexa_active_workspace', 'personal', {
         path: '/',
         maxAge: 60 * 60 * 24 * 30,

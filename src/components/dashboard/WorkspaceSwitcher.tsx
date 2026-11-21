@@ -326,34 +326,6 @@ export function WorkspaceSwitcher() {
             </div>
           )}
 
-          {/* Platform Admin Option */}
-          {isPlatformAdmin && (
-            <div className="mt-1 pt-1">
-              <button
-                onClick={() => handleSelectWorkspace('admin')}
-                className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors hover:bg-slate-50 dark:hover:bg-zinc-900 cursor-pointer ${
-                  isAdmin ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold' : 'text-purple-700 dark:text-purple-400'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-6 h-6 rounded bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" strokeWidth={1.75} />
-                  </div>
-                  <div className="flex flex-col text-left truncate">
-                    <span className="truncate">Quản trị nền tảng NEXA</span>
-                    <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-normal">Toàn quyền hệ thống</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200">
-                    ADMIN
-                  </span>
-                  {isAdmin && <Check className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" strokeWidth={1.75} />}
-                </div>
-              </button>
-            </div>
-          )}
-
           {/* Manage or Invite button for Org Admin */}
           {isOrgManager && (
             <div className="mt-1.5 pt-1.5 px-2">

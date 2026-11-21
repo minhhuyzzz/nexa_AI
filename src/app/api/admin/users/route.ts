@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { extractClientIp } from '@/lib/audit/client-ip';
 import { isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
@@ -137,7 +138,7 @@ interface PatchBody {
   userId: string;
   action?: 'UPDATE' | 'SUSPEND' | 'UNSUSPEND' | 'REVOKE_SESSION';
   role?: 'LEARNER' | 'EVALUATOR' | 'ADMIN';
-  adminRole?: 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR' | 'LEARNER';
+  adminRole?: 'SUPER_ADMIN' | 'ADMIN' | 'OPERATIONS_ADMIN' | 'CONTENT_ADMIN' | 'FINANCE_ADMIN' | 'AI_OPERATOR' | 'LEARNER';
   planTier?: 'BASIC' | 'STANDARD' | 'ADVANCED' | 'ENTERPRISE' | 'FREE' | 'PRO' | 'BUSINESS';
   organizationId?: string;
   reason?: string;
@@ -145,6 +146,7 @@ interface PatchBody {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const clientIp = typeof extractClientIp === 'function' ? extractClientIp(request) : '127.0.0.1';
     const auth = await requirePlatformAdmin('MANAGE_USERS');
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
@@ -212,6 +214,7 @@ export async function PATCH(request: NextRequest) {
         targetType: 'USER',
         targetId: userId,
         details: { reason: suspensionReason },
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({ success: true, message: 'Đã tạm khóa tài khoản và thu hồi phiên thành công.' });
@@ -239,6 +242,7 @@ export async function PATCH(request: NextRequest) {
         targetType: 'USER',
         targetId: userId,
         details: {},
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({ success: true, message: 'Đã mở khóa tài khoản thành công.' });
@@ -272,6 +276,7 @@ export async function PATCH(request: NextRequest) {
         targetType: 'USER',
         targetId: userId,
         details: { requestedBy: auth.user?.email },
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({ success: true, message: 'Đã thu hồi phiên và buộc đăng xuất người dùng thành công.' });
@@ -281,7 +286,7 @@ export async function PATCH(request: NextRequest) {
     if (adminRole) {
       if (auth.user?.adminRole !== 'SUPER_ADMIN' && !isSuperadminEmail(auth.user?.email)) {
         return NextResponse.json(
-          { error: 'Chỉ Super Admin mới có quyền phân bổ vai trò quản trị (admin_role).' },
+          { error: 'Chỉ Chủ sở hữu nền tảng (Platform Owner) mới có quyền phân bổ vai trò quản trị.' },
           { status: 403 }
         );
       }
@@ -302,7 +307,15 @@ export async function PATCH(request: NextRequest) {
       updates.role = role;
     }
     if (adminRole) {
-      updates.admin_role = adminRole;
+      if (adminRole === 'ADMIN') {
+        updates.admin_role = 'ADMIN';
+        updates.role = 'ADMIN';
+      } else if (adminRole === 'LEARNER') {
+        updates.admin_role = 'LEARNER';
+        updates.role = 'LEARNER';
+      } else {
+        updates.admin_role = adminRole;
+      }
     }
     if (normalizedTier) {
       // Lưu tương thích ngược với DB
@@ -394,6 +407,7 @@ export async function PATCH(request: NextRequest) {
       targetType: 'USER',
       targetId: userId,
       details: { role, adminRole, planTier, organizationId },
+      ipAddress: clientIp,
     });
 
     return NextResponse.json({ success: true });

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { extractClientIp } from '@/lib/audit/client-ip';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = typeof extractClientIp === 'function' ? extractClientIp(req) : '127.0.0.1';
     const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
@@ -171,6 +173,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = typeof extractClientIp === 'function' ? extractClientIp(req) : '127.0.0.1';
     const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
@@ -285,10 +288,12 @@ export async function PUT(
 
     await recordAdminAudit({
       actorId: auth.user!.id,
+      adminEmail: auth.user?.email,
       action: 'UPDATE',
       targetType: 'ASSESSMENT',
       targetId: id,
       newValues: updatePayload,
+      ipAddress: clientIp,
     });
 
     return NextResponse.json({ assessment: updated });
@@ -303,6 +308,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientIp = typeof extractClientIp === 'function' ? extractClientIp(req) : '127.0.0.1';
     const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
@@ -356,10 +362,12 @@ export async function DELETE(
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user?.email,
         action: 'UPDATE',
         targetType: 'ASSESSMENT',
         targetId: id,
         newValues: { is_published: false, is_archived: true, reason: 'Archived due to existing submissions' },
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({
@@ -382,10 +390,12 @@ export async function DELETE(
 
     await recordAdminAudit({
       actorId: auth.user!.id,
+      adminEmail: auth.user?.email,
       action: 'DELETE',
       targetType: 'ASSESSMENT',
       targetId: id,
       newValues: { softDeleted: false },
+      ipAddress: clientIp,
     });
 
     return NextResponse.json({ success: true, message: 'Đã xóa vĩnh viễn bài khảo thí thành công' });

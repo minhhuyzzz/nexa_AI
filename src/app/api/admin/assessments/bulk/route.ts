@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
+import { extractClientIp } from '@/lib/audit/client-ip';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,7 @@ const bulkActionSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const clientIp = typeof extractClientIp === 'function' ? extractClientIp(req) : '127.0.0.1';
     const auth = await requirePlatformAdmin();
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
@@ -79,6 +81,7 @@ export async function POST(req: Request) {
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user?.email,
         action: 'BULK_DELETE',
         targetType: 'ASSESSMENT',
         details: {
@@ -87,6 +90,7 @@ export async function POST(req: Request) {
           softDeletedCount,
           targetIds: ids,
         },
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({
@@ -113,12 +117,14 @@ export async function POST(req: Request) {
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user?.email,
         action: 'BULK_UPDATE_STATUS',
         targetType: 'ASSESSMENT',
         details: {
           is_published: isPublished,
           targetIds: ids,
         },
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({
@@ -150,6 +156,7 @@ export async function POST(req: Request) {
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user?.email,
         action: 'BULK_UPDATE_TIER',
         targetType: 'ASSESSMENT',
         details: {
@@ -157,6 +164,7 @@ export async function POST(req: Request) {
           access_tier: accessTier,
           targetIds: ids,
         },
+        ipAddress: clientIp,
       });
 
       return NextResponse.json({

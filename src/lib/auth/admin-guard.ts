@@ -34,6 +34,14 @@ const ROLE_PERMISSIONS: Record<string, PlatformAdminPermission[]> = {
     'MANAGE_ORGANIZATIONS',
     'MANAGE_SETTINGS',
   ],
+  ADMIN: [
+    'MANAGE_USERS',
+    'VIEW_FINANCE',
+    'MANAGE_FINANCE',
+    'MANAGE_CONTENT',
+    'MANAGE_ORGANIZATIONS',
+  ],
+  // Legacy aliases for backward compatibility
   OPERATIONS_ADMIN: [
     'MANAGE_USERS',
     'MANAGE_ORGANIZATIONS',
@@ -109,16 +117,17 @@ export async function requirePlatformAdmin(
   }
 
   const isSuperadmin = isSuperadminEmail(user.email);
+  const rawAdminRole = profile?.admin_role;
   const effectiveAdminRole = isSuperadmin
     ? 'SUPER_ADMIN'
-    : profile?.admin_role || (profile?.role === 'ADMIN' ? 'SUPER_ADMIN' : 'LEARNER');
+    : rawAdminRole || (profile?.role === 'ADMIN' ? 'ADMIN' : 'LEARNER');
 
   const isPlatformAdmin =
     isSuperadmin ||
     profile?.role === 'ADMIN' ||
     profile?.role === 'SUPERADMIN' ||
-    ['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'CONTENT_ADMIN', 'FINANCE_ADMIN', 'AI_OPERATOR'].includes(
-      profile?.admin_role || ''
+    ['SUPER_ADMIN', 'ADMIN', 'OPERATIONS_ADMIN', 'CONTENT_ADMIN', 'FINANCE_ADMIN', 'AI_OPERATOR'].includes(
+      rawAdminRole || ''
     );
 
   if (!isPlatformAdmin) {

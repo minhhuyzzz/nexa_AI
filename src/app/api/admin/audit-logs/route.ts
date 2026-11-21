@@ -66,8 +66,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Tự động khôi phục email từ bảng profiles cho các bản ghi lịch sử bị thiếu email
+    const missingAdminIds = Array.from(
+      new Set(
+        (logs || [])
+          .filter((l) => !l.admin_email && l.admin_id)
+          .map((l) => l.admin_id as string)
+      )
+    );
+
+    const profileMap: Record<string, string> = {};
+    if (missingAdminIds.length > 0) {
+      try {
+        const { data: profiles } = await adminSupabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', missingAdminIds);
+        if (profiles) {
+          profiles.forEach((p) => {
+            if (p.id && p.email) profileMap[p.id] = p.email;
+          });
+        }
+      } catch (err) {
+        console.warn('Could not backfill audit emails from profiles:', err);
+      }
+    }
+
+    const resolvedLogs = (logs || []).map((l) => {
+      const resolvedEmail = l.admin_email || (l.admin_id ? profileMap[l.admin_id] : null) || null;
+      return {
+        ...l,
+        admin_email: resolvedEmail,
+        ip_address: l.ip_address || '127.0.0.1',
+      };
+    });
+
     // Calculate unique admins count from recent logs
-    const adminSet = new Set((logs || []).map((l) => l.admin_email).filter(Boolean));
+    const adminSet = new Set(resolvedLogs.map((l) => l.admin_email).filter(Boolean));
 
     return NextResponse.json({
       success: true,
@@ -76,7 +111,7 @@ export async function GET(request: NextRequest) {
         actions24h: recent24hCount || 0,
         activeAdmins: Math.max(1, adminSet.size),
       },
-      logs: logs || [],
+      logs: resolvedLogs,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
