@@ -96,13 +96,14 @@ export async function POST(
     let resolvedCampaignId = campaignId || null;
     let isAuthorizedClassAssignment = false;
     let isAuthorizedCampaignParticipant = false;
+    let assignmentImmediateResults = true;
 
     // 3. SEC-03: Validate classAssignmentId if provided
     if (classAssignmentId) {
       const { data: assignment, error: assignError } = await dbQuery((db) =>
         db
           .from('class_assignments')
-          .select('id, class_id, assessment_id, campaign_id')
+          .select('id, class_id, assessment_id, campaign_id, immediate_results')
           .eq('id', classAssignmentId)
           .maybeSingle()
       );
@@ -112,6 +113,10 @@ export async function POST(
           { error: 'Nhiệm vụ bài tập không tồn tại' },
           { status: 404 }
         );
+      }
+
+      if (assignment.immediate_results !== undefined && assignment.immediate_results !== null) {
+        assignmentImmediateResults = Boolean(assignment.immediate_results);
       }
 
       if (assignment.assessment_id !== assessmentId) {
@@ -789,6 +794,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       submissionId: activeSubmissionId,
+      immediateResults: assignmentImmediateResults,
       totalScore: hasOpenResponse ? null : totalScore,
       maxScore,
       correctAnswersCount,

@@ -539,12 +539,21 @@ export function OrgClassDetailView({
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
                         Đang mở
                       </span>
-                      <Link
-                        href={`/org/${slug}/grading?classId=${classData.id}`}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition"
-                      >
-                        Chấm bài
-                      </Link>
+                      {isManager ? (
+                        <Link
+                          href={`/org/${slug}/grading?classId=${classData.id}`}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition"
+                        >
+                          Chấm bài
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/personal/take/${a.assessmentId}?classId=${classData.id}&assignmentId=${a.id}`}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-xs"
+                        >
+                          Vào làm bài
+                        </Link>
+                      )}
                     </div>
                   </div>
                 ))}

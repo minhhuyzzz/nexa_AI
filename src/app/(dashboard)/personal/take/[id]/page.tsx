@@ -123,6 +123,7 @@ function AssessmentTakeContent({
   const themeParam = searchParams.get('theme');
   const [examTheme, setExamTheme] = useState<string>(themeParam || 'minimal_white');
   const assignmentId = searchParams.get('assignmentId');
+  const classId = searchParams.get('classId');
   const campaignId = searchParams.get('campaignId');
   const isPreview = isPreviewMode || searchParams.get('preview') === 'true';
   const returnUrlParam = searchParams.get('returnUrl');
@@ -1091,6 +1092,20 @@ function AssessmentTakeContent({
 
       // Continuous experience: redirect seamlessly to the full-page result view
       if (!isPreview && submitData?.submissionId) {
+        if (classId) {
+          if (submitData.immediateResults === false) {
+            setSubmittedResult({
+              ...resultPayload,
+              isClassSubmission: true,
+              classId,
+              hideDetailedScore: true,
+            });
+            return;
+          }
+          router.push(`/personal/assessments/${effectiveId}/result?submissionId=${submitData.submissionId}&classId=${classId}&assignmentId=${assignmentId || ''}`);
+          return;
+        }
+
         router.push(`/personal/assessments/${effectiveId}/result?submissionId=${submitData.submissionId}`);
         return;
       }
@@ -1302,6 +1317,36 @@ function AssessmentTakeContent({
 
   // Result Screen (After Final Submit)
   if (submittedResult) {
+    if (submittedResult.hideDetailedScore) {
+      return (
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#000000] flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-8 text-center space-y-5 shadow-lg">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                Đã nộp bài khảo thí thành công!
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+                Bài thi <strong className="text-neutral-800 dark:text-neutral-200">{submittedResult.assessmentTitle}</strong> đã được nộp vào lớp học.
+              </p>
+              <div className="p-3 bg-slate-50 dark:bg-zinc-900 rounded-lg text-[11px] text-slate-600 dark:text-neutral-400 text-left">
+                Người tổ chức/quản lý lớp đã tắt chế độ hiển thị điểm ngay. Kết quả bài thi sẽ được công bố sau khi người quản lý hoàn tất chấm điểm hoặc sau hạn chót nộp bài.
+              </div>
+            </div>
+            <Link
+              href={`/personal/groups/${submittedResult.classId}`}
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition shadow-xs"
+            >
+              <span>Quay về Lớp học</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     const domainScores: Record<string, number | null> = submittedResult.domainScores || {
       '01': 80,
       '02': 60,

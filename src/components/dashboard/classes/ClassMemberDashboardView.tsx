@@ -124,7 +124,7 @@ export function ClassMemberDashboardView({
 
               {nextSub ? (
                 <Link
-                  href={`/personal/assessments/${nextAssignment.assessment_id}`}
+                  href={`/personal/assessments/${nextAssignment.assessment_id}/result?submissionId=${nextSub.id}&classId=${classId}&assignmentId=${nextAssignment.id}`}
                   className="px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-neutral-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5"
                 >
                   <span>Xem lại kết quả</span>
@@ -132,7 +132,7 @@ export function ClassMemberDashboardView({
                 </Link>
               ) : (
                 <Link
-                  href={`/personal/take/${nextAssignment.assessment_id}`}
+                  href={`/personal/take/${nextAssignment.assessment_id}?classId=${classId}&assignmentId=${nextAssignment.id}`}
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors shadow-md shadow-blue-500/25"
                 >
                   <span>Bắt đầu làm bài ngay</span>

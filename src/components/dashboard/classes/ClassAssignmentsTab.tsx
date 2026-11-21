@@ -370,17 +370,50 @@ export function ClassAssignmentsTab({
                         <Clock className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
                         <span>Hạn nộp: <strong className="font-mono text-neutral-800 dark:text-zinc-200">{deadlineText}</strong></span>
                       </span>
+                      {role === 'EVALUATOR' && asgSubmissions.length > 0 && (
+                        <>
+                          <span>&bull;</span>
+                          <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                            Tiến độ: {asgSubmissions.filter((s) => s.status !== 'NOT_SUBMITTED').length}/{asgSubmissions.length} đã nộp
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   {role === 'LEARNER' ? (
-                    <Link
-                      href={`/assessments/${asg.assessment_id}`}
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
-                    >
-                      <span>Vào làm bài thi</span>
-                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    </Link>
+                    (() => {
+                      const mySub = submissions.find(
+                        (s) => s.assignmentId === asg.id && s.studentId === currentUserId && s.status !== 'NOT_SUBMITTED'
+                      );
+
+                      if (mySub) {
+                        return (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 font-mono text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
+                              Đã nộp{mySub.score !== undefined ? ` (${mySub.score}đ)` : ''}
+                            </span>
+                            <Link
+                              href={`/personal/assessments/${asg.assessment_id}/result?submissionId=${mySub.id}&classId=${classId}&assignmentId=${asg.id}`}
+                              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-zinc-850 hover:bg-slate-100 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-semibold border border-slate-200 dark:border-zinc-750 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <span>Xem bài làm</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                            </Link>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <Link
+                          href={`/personal/take/${asg.assessment_id}?classId=${classId}&assignmentId=${asg.id}`}
+                          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+                        >
+                          <span>Vào làm bài thi</span>
+                          <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        </Link>
+                      );
+                    })()
                   ) : (
                     <div className="flex items-center gap-2 shrink-0">
                       <Link

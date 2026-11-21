@@ -1,7 +1,7 @@
-# Graph Report - nexa  (2026-11-21)
+# Graph Report - nexa  (2026-11-22)
 
 ## Corpus Check
-- 1174 files · ~2,027,069 words
+- 1174 files · ~2,026,862 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 144 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `09bb7157`
+- Built from commit: `ae99225d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

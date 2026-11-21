@@ -15,10 +15,10 @@ export default async function AssessmentResultPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ submissionId?: string }>;
+  searchParams: Promise<{ submissionId?: string; classId?: string; assignmentId?: string }>;
 }) {
   const { id: rawId } = await params;
-  const { submissionId } = await searchParams;
+  const { submissionId, classId, assignmentId } = await searchParams;
 
   const CANONICAL_BASELINE_ID = 'a0000000-0000-0000-0000-000000000001';
   const assessmentId = rawId === 'baseline' ? CANONICAL_BASELINE_ID : rawId;
@@ -224,6 +224,8 @@ export default async function AssessmentResultPage({
       answers={formattedAnswers}
       evalMap={evalMap}
       submissionId={submission.id}
+      classId={classId}
+      assignmentId={assignmentId}
     />
   );
 }
