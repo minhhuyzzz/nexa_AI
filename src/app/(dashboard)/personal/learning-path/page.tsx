@@ -328,9 +328,70 @@ function LearningPathContent() {
       </div>
 
       {/* 2. Cột Trụ Miền Năng Lực & Trạm Bồi Dưỡng */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start pt-2">
-        {/* CỘT 1: 5 TRỤ MIỀN NĂNG LỰC */}
-        <div className="lg:col-span-4 space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start pt-2">
+        {/* MOBILE SELECTOR (< lg): Sleek compact horizontal scroll tab strip (~65px height) */}
+        <div className="block lg:hidden col-span-1 w-full overflow-x-auto no-scrollbar pb-1">
+          <div className="flex items-center gap-2 min-w-max px-0.5">
+            {DOMAIN_CURRICULUM.map((track) => {
+              const isSelected = activeDomainCode === track.code;
+              const isTrackUnlocked =
+                isProUser ||
+                (hasTakenAssessment && Boolean(unlockedFreeDomain) && normalizeDomainCode(track.code) === normalizeDomainCode(unlockedFreeDomain));
+              const IconComponent = DOMAIN_ICONS[track.iconName] || Database;
+
+              let trackCompletedLevels = 0;
+              const totalLevelsInThisTrack = track.subdomains.length * 4;
+              track.subdomains.forEach((s, sI) => {
+                const lvls = getSubdomainLevels(s, track.domainNumber, sI);
+                lvls.forEach((l) => {
+                  if (completedLevelIds.has(l.id)) trackCompletedLevels++;
+                });
+              });
+              const percent = Math.round((trackCompletedLevels / totalLevelsInThisTrack) * 100);
+
+              return (
+                <button
+                  key={track.code}
+                  type="button"
+                  onClick={() => setActiveDomainCode(track.code)}
+                  className={`h-[60px] px-3.5 rounded-2xl border flex items-center gap-2.5 transition-all cursor-pointer shrink-0 select-none ${
+                    isSelected
+                      ? 'border-blue-600 bg-blue-50/90 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 shadow-xs ring-2 ring-blue-600/20'
+                      : 'border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-800 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" strokeWidth={1.75} />
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                        Miền {track.domainNumber}
+                      </span>
+                      {mounted && (isProUser || isTrackUnlocked) ? (
+                        <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                      ) : (
+                        <Lock className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
+                      )}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono">
+                      {percent}% hoàn thành
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* DESKTOP CỘT 1 (>= lg): 5 TRỤ MIỀN NĂNG LỰC */}
+        <div className="hidden lg:block lg:col-span-4 space-y-3">
           <div className="rounded-3xl bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 shadow-2xs overflow-hidden">
             {/* Top Prominent Banner Header with Flowing Silk Ribbon (Dải lụa mềm mại) */}
             <div className="relative p-4 sm:p-5 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 text-white overflow-hidden shadow-xs">
@@ -536,7 +597,7 @@ function LearningPathContent() {
         </div>
 
         {/* CỘT 2: CÁC TRẠM KỸ NĂNG BỒI DƯỠNG */}
-        <div key={activeTrack.code} className="lg:col-span-8 space-y-4 pt-4 lg:pt-0">
+        <div key={activeTrack.code} className="col-span-1 lg:col-span-8 space-y-4 pt-1 lg:pt-0">
           {/* Header Chặng Bồi Dưỡng */}
           <div className="relative p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-blue-50/80 via-slate-50/40 to-white dark:from-blue-950/30 dark:via-zinc-900/40 dark:to-[#111114] border border-blue-200/70 dark:border-blue-900/40 shadow-xs space-y-4 overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
@@ -782,6 +843,37 @@ function LearningPathContent() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Freemium & Baseline Diagnostic Status Card on Mobile (< lg) */}
+          {!isProUser && (
+            <div className="block lg:hidden mt-6 p-4 rounded-3xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-2.5 text-xs shadow-2xs">
+              <div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
+                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>{hasTakenAssessment ? 'Tài khoản Miễn phí' : 'Khảo thí đầu vào'}</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
+                {hasTakenAssessment && unlockedFreeDomain
+                  ? 'Đang mở 1 miền miễn phí. Nâng cấp tài khoản để mở khóa toàn bộ 5 miền và nhận chứng chỉ.'
+                  : 'Làm bài khảo thí để xác định khoảng trống năng lực và mở khóa 1 miền miễn phí.'}
+              </p>
+              {!hasTakenAssessment ? (
+                <button
+                  type="button"
+                  onClick={() => setIsBaselineModalOpen(true)}
+                  className="block w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center shadow-xs"
+                >
+                  Khảo thí đầu vào ngay →
+                </button>
+              ) : (
+                <Link
+                  href="/personal/billing"
+                  className="block w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center shadow-xs"
+                >
+                  Nâng cấp tài khoản →
+                </Link>
+              )}
             </div>
           )}
         </div>

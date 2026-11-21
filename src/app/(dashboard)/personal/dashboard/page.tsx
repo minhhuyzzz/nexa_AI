@@ -498,10 +498,10 @@ export default function LearnerDashboardPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* 1. Header & Quick Indicators (Không viền ngang) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-1">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-6 pb-1">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
               {loadingStats ? (
                 <span className="inline-block w-48 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse align-middle" />
               ) : (
@@ -512,10 +512,10 @@ export default function LearnerDashboardPage() {
         </div>
 
         {/* Quick Indicators: Streak & Level (Borderless, Background-transparent, seamlessly blending with page) */}
-        <div className="flex items-center gap-4 sm:gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 lg:gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0">
           {/* Streak Days Tracker (Hòa vào nền, không viền, không rớt dòng) */}
-          <div className="p-0 bg-transparent shadow-none">
-            <div className="flex items-center justify-between gap-3 text-[11px] mb-1.5">
+          <div className="p-0 bg-transparent shadow-none w-full sm:w-auto">
+            <div className="flex items-center justify-between sm:justify-start gap-3 text-[11px] mb-1.5">
               <div className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100 font-bold whitespace-nowrap">
                 <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <span>Chuỗi {stats.loginStreak} ngày</span>
@@ -545,9 +545,9 @@ export default function LearnerDashboardPage() {
           </div>
 
           {/* Level Progress Gauge (Hòa vào nền, không viền) */}
-          <div className="p-0 bg-transparent shadow-none flex items-center gap-3">
-            <div className="relative w-12 h-12 flex items-center justify-center">
-              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+          <div className="p-0 bg-transparent shadow-none flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <div className="relative w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center shrink-0">
+              <svg className="w-11 h-11 sm:w-12 sm:h-12 transform -rotate-90" viewBox="0 0 36 36">
                 <path
                   className="text-slate-200/70 dark:text-zinc-800"
                   strokeWidth="3.5"
@@ -569,7 +569,7 @@ export default function LearnerDashboardPage() {
                 {animatedPoints}
               </span>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 font-mono">
                   {stats.levelCode}
@@ -577,7 +577,7 @@ export default function LearnerDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowLevelModal(true)}
-                  className="text-[10px] text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer"
+                  className="text-[10px] text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer shrink-0"
                   title="Xem chi tiết các mốc cấp bậc"
                 >
                   (Quy định cấp độ)
@@ -717,8 +717,93 @@ export default function LearnerDashboardPage() {
         </div>
       </div>
 
-      {/* 3. Four Key Metric Cards — Clean Executive Bento Design (#F8FAFC / Dark #111114) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3. Key Metric Cards: Compact Mobile Strip (< sm) & Desktop Bento Grid (>= sm) */}
+      {/* Mobile Compact Strip (< sm): 3-metric primary strip on 1 row + integrated 4th row, saving ~400px */}
+      <div className="block sm:hidden rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-[#111114] p-3.5 shadow-xs space-y-3">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {/* Col 1: Điểm TB */}
+          <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white dark:bg-zinc-900/80 border border-slate-200/60 dark:border-zinc-800">
+            <span className="text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+              Điểm TB
+            </span>
+            <div className="text-xl font-extrabold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums my-0.5">
+              {loadingCompetency ? (
+                <span className="inline-block w-8 h-6 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+              ) : competencyProfile?.overallScore !== null && competencyProfile?.overallScore !== undefined ? (
+                `${Math.round(competencyProfile.overallScore)}%`
+              ) : (
+                '--'
+              )}
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Đánh giá</span>
+          </div>
+
+          {/* Col 2: Miền đạt chuẩn */}
+          <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white dark:bg-zinc-900/80 border border-slate-200/60 dark:border-zinc-800">
+            <span className="text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+              Đạt chuẩn
+            </span>
+            <div className="text-xl font-extrabold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums my-0.5">
+              {loadingCompetency ? (
+                <span className="inline-block w-8 h-6 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+              ) : competencyProfile?.hasTakenAssessment ? (
+                `${passedDomainsCount}/5`
+              ) : (
+                '--'
+              )}
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Chuẩn ≥ 70%</span>
+          </div>
+
+          {/* Col 3: Điểm PTS */}
+          <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white dark:bg-zinc-900/80 border border-slate-200/60 dark:border-zinc-800">
+            <span className="text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
+              Điểm PTS
+            </span>
+            <div className="text-xl font-extrabold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums my-0.5">
+              {loadingStats ? (
+                <span className="inline-block w-8 h-6 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+              ) : (
+                animatedPoints
+              )}
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Tích lũy</span>
+          </div>
+        </div>
+
+        {/* Integrated 4th Metric: Danh hiệu / Chứng chỉ Năng lực số */}
+        <Link
+          href="/personal/credentials"
+          className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-zinc-900/80 border border-slate-200/60 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-400 transition-colors group cursor-pointer"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <Award className="w-3.5 h-3.5" strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  Chứng chỉ Năng lực số
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  stats.isCertUnlocked
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 border-slate-200 dark:border-zinc-700'
+                }`}>
+                  {stats.isCertUnlocked ? 'Đã đạt' : 'Chưa đạt'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 shrink-0 ml-2">
+            <span>Chi tiết</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </Link>
+      </div>
+
+      {/* Desktop View (>= sm): Four Bento Metric Cards */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Completed Assessments */}
         <div className="p-5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-[#111114] shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mb-1">
@@ -1120,7 +1205,7 @@ export default function LearnerDashboardPage() {
             )}
 
             {/* Dải Lộ Trình S-Curve Winding Pathway (Khúc cua uốn lượn nối 5 trạm) */}
-            <div className="relative py-6 sm:py-9 my-1">
+            <div className="relative py-3 sm:py-9 my-1">
               {/* Serpentine S-Curve Ambient Stream Line */}
               <svg
                 className="absolute inset-0 w-full h-full pointer-events-none select-none hidden sm:block"
@@ -1156,8 +1241,8 @@ export default function LearnerDashboardPage() {
                 />
               </svg>
 
-              {/* 5 Trạm Năng Lực Chuẩn Hóa trên các khúc cua */}
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 sm:gap-2 relative z-10">
+              {/* 5 Trạm Năng Lực Chuẩn Hóa: Horizontal Stepper Track on Mobile, Grid on Desktop */}
+              <div className="flex sm:grid sm:grid-cols-5 overflow-x-auto sm:overflow-x-visible gap-3 sm:gap-2 relative z-10 pb-2 sm:pb-0 snap-x no-scrollbar">
                 {dynamicStepperItems.map((item, index) => {
                   const Icon = item.icon;
                   const isCrest = index % 2 === 0;
@@ -1166,13 +1251,13 @@ export default function LearnerDashboardPage() {
                     <Link
                       key={item.step}
                       href={`/personal/learning-path?domain=${item.code}`}
-                      className={`flex flex-col items-center text-center group cursor-pointer transition-transform duration-200 hover:-translate-y-1 ${
+                      className={`flex-none w-[130px] sm:w-auto snap-center flex flex-col items-center text-center group cursor-pointer transition-transform duration-200 hover:-translate-y-1 ${
                         isCrest ? 'sm:-translate-y-2' : 'sm:translate-y-3'
                       }`}
                     >
                       {/* Checkpoint Node */}
                       <div
-                        className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                        className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
                           item.isSuggested
                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-500/20'
                             : item.done
@@ -1180,11 +1265,11 @@ export default function LearnerDashboardPage() {
                             : 'bg-white dark:bg-zinc-900 border-2 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 shadow-2xs group-hover:border-blue-400'
                         }`}
                       >
-                        <Icon className="w-5 h-5" strokeWidth={1.75} />
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={1.75} />
 
                         {/* Station Order Badge */}
                         <span
-                          className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full font-mono text-[9px] font-bold flex items-center justify-center border ${
+                          className={`absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full font-mono text-[8px] sm:text-[9px] font-bold flex items-center justify-center border ${
                             item.isSuggested
                               ? 'bg-blue-800 text-white border-blue-400'
                               : item.done
@@ -1197,26 +1282,26 @@ export default function LearnerDashboardPage() {
                       </div>
 
                       {/* Tên Miền Đầy Đủ — Tuyệt Đối Không Rút Gọn */}
-                      <div className="font-bold text-xs text-neutral-900 dark:text-neutral-100 mt-2.5 leading-snug px-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <div className="font-bold text-[11px] sm:text-xs text-neutral-900 dark:text-neutral-100 mt-2 leading-snug px-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                         {item.name}
                       </div>
 
-                      {/* Trạng thái tiến độ học tập các trạm của lộ trình — Tuyệt đối không lấy điểm bài thi đầu vào gán vào */}
+                      {/* Trạng thái tiến độ học tập các trạm của lộ trình */}
                       {item.isSuggested ? (
-                        <span className="mt-1.5 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200 dark:border-blue-900">
+                        <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[9px] sm:text-[10px] font-bold border border-blue-200 dark:border-blue-900 whitespace-nowrap">
                           Ưu tiên học
                         </span>
                       ) : item.done ? (
-                        <span className="mt-1.5 px-2 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-900 inline-flex items-center gap-1">
-                          <Check className="w-3 h-3" />
+                        <span className="mt-1 px-2 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] sm:text-[10px] font-semibold border border-emerald-200 dark:border-emerald-900 inline-flex items-center gap-1 whitespace-nowrap">
+                          <Check className="w-2.5 h-2.5" />
                           <span>Hoàn thành</span>
                         </span>
                       ) : item.trackPercent > 0 ? (
-                        <span className="mt-1.5 text-[10px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                        <span className="mt-1 text-[9px] sm:text-[10px] font-mono text-blue-600 dark:text-blue-400 font-semibold whitespace-nowrap">
                           {item.trackPercent}% hoàn thành
                         </span>
                       ) : (
-                        <span className="mt-1.5 text-[10px] font-mono text-slate-400 dark:text-neutral-500">
+                        <span className="mt-1 text-[9px] sm:text-[10px] font-mono text-slate-400 dark:text-neutral-500 whitespace-nowrap">
                           Chưa học
                         </span>
                       )}

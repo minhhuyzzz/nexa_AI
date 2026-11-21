@@ -221,8 +221,112 @@ function LeaderboardContent() {
             </div>
           </div>
 
-          {/* 3 Distinction Spotlight Cards with Architectural Podium */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5 items-end pt-4">
+          {/* Mobile View (< md): Unified 3-Column Horizontal Podium Card (#2 Silver left, #1 Gold center elevated, #3 Bronze right) */}
+          <div className="block md:hidden rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] p-3 sm:p-4 shadow-xs">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 items-end text-center pt-2">
+              {/* Column 1: #2 Silver (Left) */}
+              <div className="flex flex-col items-center min-w-0">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-850 border border-slate-300/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 text-[9px] font-extrabold font-mono mb-1.5 whitespace-nowrap">
+                  <Medal className="w-2.5 h-2.5 text-slate-500 shrink-0" strokeWidth={2} />
+                  <span>#2 Á Quân</span>
+                </span>
+
+                <div className="relative w-13 h-13 flex items-center justify-center my-1 mx-auto">
+                  <div className="w-11 h-11 rounded-full border-2 border-slate-300 dark:border-zinc-600 ring-2 ring-slate-100 dark:ring-zinc-800 overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-zinc-800 font-mono font-bold text-xs text-slate-700 dark:text-zinc-200">
+                    {top2?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={top2.avatarUrl} alt={top2.displayName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{top2?.displayName?.[0] || '2'}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full px-0.5 mt-0.5">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs text-neutral-900 dark:text-neutral-100 truncate" title={top2?.displayName}>
+                    {top2?.displayName || '---'}
+                  </h3>
+                  <div className="font-mono font-bold text-[11px] text-neutral-800 dark:text-zinc-200 tabular-nums mt-0.5 whitespace-nowrap">
+                    {top2?.points?.toLocaleString('vi-VN') || 0}{' '}
+                    <span className="text-[9px] font-normal text-slate-500 dark:text-neutral-400">PTS</span>
+                  </div>
+                </div>
+
+                <div className="w-full h-11 mt-2 rounded-t-lg bg-slate-200/80 dark:bg-zinc-800/80 flex items-center justify-center text-xs font-mono font-bold text-slate-600 dark:text-zinc-400">
+                  2
+                </div>
+              </div>
+
+              {/* Column 2: #1 Gold (Center Elevated) */}
+              <div className="flex flex-col items-center min-w-0 -translate-y-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-600 text-amber-900 dark:text-amber-200 text-[10px] font-black font-mono mb-1.5 whitespace-nowrap shadow-2xs">
+                  <Crown className="w-3 h-3 text-amber-600 dark:text-amber-300 fill-amber-500 shrink-0" strokeWidth={2} />
+                  <span>#1 Quán Quân</span>
+                </span>
+
+                <div className="relative w-15 h-15 flex items-center justify-center my-1 mx-auto">
+                  <div className="w-13 h-13 rounded-full border-2 border-amber-400 ring-2 ring-amber-200 dark:ring-amber-900/80 overflow-hidden flex items-center justify-center bg-white dark:bg-zinc-900 font-mono font-black text-sm text-amber-900 dark:text-amber-200 shadow-sm">
+                    {top1?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={top1.avatarUrl} alt={top1.displayName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{top1?.displayName?.[0] || '1'}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full px-0.5 mt-0.5">
+                  <h3 className="font-black text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 truncate" title={top1?.displayName}>
+                    {top1?.displayName || '---'}
+                  </h3>
+                  <div className="font-mono font-black text-xs text-amber-950 dark:text-amber-200 tabular-nums mt-0.5 whitespace-nowrap">
+                    {top1?.points?.toLocaleString('vi-VN') || 0}{' '}
+                    <span className="text-[9px] font-bold text-amber-800 dark:text-amber-300">PTS</span>
+                  </div>
+                </div>
+
+                <div className="w-full h-16 mt-2 rounded-t-lg bg-amber-300/80 dark:bg-amber-900/60 flex items-center justify-center text-sm font-mono font-black text-amber-950 dark:text-amber-200 shadow-2xs">
+                  1
+                </div>
+              </div>
+
+              {/* Column 3: #3 Bronze (Right) */}
+              <div className="flex flex-col items-center min-w-0">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-50/80 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-900 text-amber-900 dark:text-amber-200 text-[9px] font-extrabold font-mono mb-1.5 whitespace-nowrap">
+                  <Medal className="w-2.5 h-2.5 text-amber-700 shrink-0" strokeWidth={2} />
+                  <span>#3 Quý Quân</span>
+                </span>
+
+                <div className="relative w-13 h-13 flex items-center justify-center my-1 mx-auto">
+                  <div className="w-11 h-11 rounded-full border-2 border-amber-500/60 ring-2 ring-amber-100 dark:ring-amber-950 overflow-hidden flex items-center justify-center bg-amber-50/40 dark:bg-zinc-800 font-mono font-bold text-xs text-amber-900 dark:text-amber-200">
+                    {top3?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={top3.avatarUrl} alt={top3.displayName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{top3?.displayName?.[0] || '3'}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full px-0.5 mt-0.5">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs text-neutral-900 dark:text-neutral-100 truncate" title={top3?.displayName}>
+                    {top3?.displayName || '---'}
+                  </h3>
+                  <div className="font-mono font-bold text-[11px] text-amber-950 dark:text-zinc-200 tabular-nums mt-0.5 whitespace-nowrap">
+                    {top3?.points?.toLocaleString('vi-VN') || 0}{' '}
+                    <span className="text-[9px] font-normal text-amber-800 dark:text-amber-400">PTS</span>
+                  </div>
+                </div>
+
+                <div className="w-full h-8 mt-2 rounded-t-lg bg-amber-200/60 dark:bg-amber-950/40 flex items-center justify-center text-xs font-mono font-bold text-amber-900 dark:text-amber-400">
+                  3
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop View (>= md): 3 Distinction Spotlight Cards with Architectural Podium */}
+          <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-5 items-end pt-4">
 
             {/* CARD 2: Á QUÂN (HẠNG #2 - BẠC) */}
             <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] p-5 sm:p-6 shadow-xs flex flex-col items-center text-center relative hover:border-slate-300 dark:hover:border-zinc-700 transition-all order-2 md:order-1">

@@ -87,7 +87,7 @@ function LearnerGroupsContent() {
   const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
   const joinDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside & Escape key
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (joinDropdownRef.current && !joinDropdownRef.current.contains(event.target as Node)) {
@@ -95,11 +95,19 @@ function LearnerGroupsContent() {
         setJoinError(null);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsJoinDropdownOpen(false);
+        setJoinError(null);
+      }
+    }
     if (isJoinDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isJoinDropdownOpen]);
 
@@ -314,15 +322,15 @@ function LearnerGroupsContent() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* 1. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
+      <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 pb-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
             Lớp và Nhóm
           </h1>
         </div>
 
         {/* Action Buttons: Unified Dropdown Join + Create Group */}
-        <div className="flex items-center gap-2.5 shrink-0 relative flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 relative">
           {/* Nút Tham gia bằng mã tinh gọn (Chọn Lớp/Nhóm hoặc Tổ chức) */}
           <div className="relative" ref={joinDropdownRef}>
             <button
@@ -334,12 +342,13 @@ function LearnerGroupsContent() {
                 setJoinError(null);
                 setJoinSuccess(null);
               }}
-              className="px-4 py-2.5 rounded-xl border border-slate-200/90 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+              className="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-200/90 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1 sm:gap-1.5 transition-colors shadow-2xs cursor-pointer"
             >
-              <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-              <span>Tham gia bằng mã</span>
+              <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
+              <span className="hidden sm:inline">Tham gia bằng mã</span>
+              <span className="sm:hidden">Nhập mã</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${
                   isJoinDropdownOpen ? 'rotate-180' : ''
                 }`}
               />
@@ -347,105 +356,113 @@ function LearnerGroupsContent() {
 
             {/* Quick Join Popover */}
             {isJoinDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] p-1.5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                {joinTarget === 'SELECT' ? (
-                  <div className="space-y-0.5">
-                    {/* Option 1: Tham gia Lớp / Nhóm học tập */}
-                    <button
-                      type="button"
-                      onClick={() => setJoinTarget('CLASS')}
-                      className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/70 text-left transition-colors flex items-center gap-2.5 cursor-pointer group text-xs font-semibold text-neutral-800 dark:text-zinc-200"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <GraduationCap className="w-4 h-4" />
-                      </div>
-                      <span className="flex-1">Tham gia Lớp / Nhóm học tập</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
-                    </button>
-
-                    {/* Option 2: Tham gia Tổ chức / Doanh nghiệp */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsJoinDropdownOpen(false);
-                        setShowJoinOrgModal(true);
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/70 text-left transition-colors flex items-center gap-2.5 cursor-pointer group text-xs font-semibold text-neutral-800 dark:text-zinc-200"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <Building2 className="w-4 h-4" />
-                      </div>
-                      <span className="flex-1">Tham gia Tổ chức / Doanh nghiệp</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-3 space-y-3">
-                    <div className="flex items-center justify-between text-xs">
+              <>
+                {/* Mobile Backdrop */}
+                <div
+                  className="fixed inset-0 z-40 bg-black/30 backdrop-blur-2xs sm:hidden"
+                  onClick={() => setIsJoinDropdownOpen(false)}
+                />
+                <div className="fixed inset-x-4 top-20 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full mt-2 w-auto sm:w-80 max-w-[calc(100vw-2rem)] p-1.5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {joinTarget === 'SELECT' ? (
+                    <div className="space-y-0.5">
+                      {/* Option 1: Tham gia Lớp / Nhóm học tập */}
                       <button
                         type="button"
-                        onClick={() => setJoinTarget('SELECT')}
-                        className="text-blue-600 dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        onClick={() => setJoinTarget('CLASS')}
+                        className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/70 text-left transition-colors flex items-center gap-2.5 cursor-pointer group text-xs font-semibold text-neutral-800 dark:text-zinc-200"
                       >
-                        &larr; Chọn loại mã khác
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <GraduationCap className="w-4 h-4" />
+                        </div>
+                        <span className="flex-1">Tham gia Lớp / Nhóm học tập</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
                       </button>
+
+                      {/* Option 2: Tham gia Tổ chức / Doanh nghiệp */}
                       <button
                         type="button"
-                        onClick={() => setIsJoinDropdownOpen(false)}
-                        className="text-slate-400 hover:text-neutral-700 dark:hover:text-zinc-200 p-1 cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={joinCode}
-                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleQuickJoin();
+                        onClick={() => {
+                          setIsJoinDropdownOpen(false);
+                          setShowJoinOrgModal(true);
                         }}
-                        placeholder="Mã lớp (VD: CLS-4821)"
-                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        disabled={joining || !joinCode.trim()}
-                        onClick={handleQuickJoin}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                        className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/70 text-left transition-colors flex items-center gap-2.5 cursor-pointer group text-xs font-semibold text-neutral-800 dark:text-zinc-200"
                       >
-                        {joining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Vào lớp</span>}
+                        <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <span className="flex-1">Tham gia Tổ chức / Doanh nghiệp</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
                       </button>
                     </div>
-
-                    {joinError && (
-                      <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-[11px] flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        <span>{joinError}</span>
+                  ) : (
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setJoinTarget('SELECT')}
+                          className="text-blue-600 dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          &larr; Chọn loại mã khác
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsJoinDropdownOpen(false)}
+                          className="text-slate-400 hover:text-neutral-700 dark:hover:text-zinc-200 p-1 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    )}
 
-                    {joinSuccess && (
-                      <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                        <span>{joinSuccess}</span>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={joinCode}
+                          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleQuickJoin();
+                          }}
+                          placeholder="Mã lớp (VD: CLS-4821)"
+                          className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          disabled={joining || !joinCode.trim()}
+                          onClick={handleQuickJoin}
+                          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                        >
+                          {joining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Vào lớp</span>}
+                        </button>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                      {joinError && (
+                        <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-[11px] flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{joinError}</span>
+                        </div>
+                      )}
+
+                      {joinSuccess && (
+                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>{joinSuccess}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
           <button
             type="button"
             onClick={() => setShowCreateGroupModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer"
+            className="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-1 sm:gap-1.5 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4" strokeWidth={2.5} />
-            <span>Tạo lớp/nhóm</span>
+            <Plus className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+            <span className="hidden sm:inline">Tạo lớp/nhóm</span>
+            <span className="sm:hidden">Tạo nhóm</span>
           </button>
         </div>
       </div>
