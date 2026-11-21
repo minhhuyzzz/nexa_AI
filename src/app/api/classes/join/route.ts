@@ -29,26 +29,41 @@ export async function POST(request: NextRequest) {
     const rawCode = parsed.data.classCode.trim().toUpperCase();
     const cleanCode = rawCode.replace(/[-\s]/g, '');
 
-    // 1. Tìm lớp học theo mã class_code (resilient lookup: rawCode, cleanCode, legacy hyphenated)
+    // 1. Tìm lớp học theo mã class_code (resilient lookup: rawCode, cleanCode, prefixes, legacy hyphenated)
     let { data: cls, error: findErr } = await supabase
       .from('evaluator_classes')
       .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
       .ilike('class_code', rawCode)
-      .single();
+      .maybeSingle();
 
-    if ((findErr || !cls) && cleanCode !== rawCode) {
+    if (!cls && cleanCode !== rawCode) {
       const retry = await supabase
         .from('evaluator_classes')
         .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
         .ilike('class_code', cleanCode)
-        .single();
-      if (retry.data) {
-        cls = retry.data;
-        findErr = null;
+        .maybeSingle();
+      if (retry.data) cls = retry.data;
+    }
+
+    if (!cls) {
+      const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
+      for (const p of prefixes) {
+        if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
+          const hyp = `${p}-${cleanCode.slice(p.length)}`;
+          const retry = await supabase
+            .from('evaluator_classes')
+            .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
+            .ilike('class_code', hyp)
+            .maybeSingle();
+          if (retry.data) {
+            cls = retry.data;
+            break;
+          }
+        }
       }
     }
 
-    if (findErr || !cls) {
+    if (!cls) {
       const match = cleanCode.match(/^([A-Z]+)(\d+)$/);
       if (match) {
         const hyphenated = `${match[1]}-${match[2]}`;
@@ -56,15 +71,14 @@ export async function POST(request: NextRequest) {
           .from('evaluator_classes')
           .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
           .ilike('class_code', hyphenated)
-          .single();
+          .maybeSingle();
         if (retry.data) {
           cls = retry.data;
-          findErr = null;
         }
       }
     }
 
-    if (findErr || !cls) {
+    if (!cls) {
       return NextResponse.json(
         { error: `Không tìm thấy nhóm/lớp với mã '${cleanCode}'` },
         { status: 404 }

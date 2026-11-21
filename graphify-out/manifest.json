@@ -900,9 +900,9 @@
     "semantic_hash": ""
   },
   "src/app/api/classes/join/route.ts": {
-    "mtime": 1795272536.9146678,
-    "seen": 1795273427.3294225,
-    "ast_hash": "2af9618655eb879b8399f7b60469906b",
+    "mtime": 1795277764.3631916,
+    "seen": 1795278452.7220845,
+    "ast_hash": "7ff2af0e8064d477da580bf106fa6a04",
     "semantic_hash": ""
   },
   "src/app/api/classes/route.ts": {
@@ -1014,9 +1014,9 @@
     "semantic_hash": "671638580151c6e76e6b9057f9ecbf33"
   },
   "src/app/api/join/org/[joinCode]/route.ts": {
-    "mtime": 1795272472.3012128,
-    "seen": 1795273427.3366117,
-    "ast_hash": "8a78f338994533beb14eff875bf712db",
+    "mtime": 1795277865.9789188,
+    "seen": 1795278452.7299514,
+    "ast_hash": "28f4b4bc0b3bf298d3420b606f08a8ad",
     "semantic_hash": ""
   },
   "src/app/api/leaderboard/route.ts": {
@@ -3960,9 +3960,9 @@
     "semantic_hash": ""
   },
   "src/app/api/classes/preview/route.ts": {
-    "mtime": 1795272557.0336578,
-    "seen": 1795273427.3294342,
-    "ast_hash": "c48b05b9a7b1ddcc6b69c51153a9125d",
+    "mtime": 1795277792.3629117,
+    "seen": 1795278452.7220917,
+    "ast_hash": "0e425ac2f9ba50fcc6c21df0e271b090",
     "semantic_hash": ""
   },
   "src/components/dashboard/classes/ClassMemberDashboardView.tsx": {
@@ -5958,9 +5958,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/JoinOrgModal.tsx": {
-    "mtime": 1795272622.8728654,
-    "seen": 1795273427.3841107,
-    "ast_hash": "5ddcb17200ee3b660aa558b9f9a3d288",
+    "mtime": 1795277952.6412444,
+    "seen": 1795278452.7666008,
+    "ast_hash": "c40080929c23fe1d303f2a18fca9d05e",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgInviteModal.tsx": {

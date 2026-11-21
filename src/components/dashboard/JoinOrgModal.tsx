@@ -11,6 +11,7 @@ import {
   Loader2,
   ArrowRight,
   ShieldCheck,
+  GraduationCap,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -23,6 +24,12 @@ interface JoinOrgModalProps {
 interface OrgCheckResult {
   valid: boolean;
   error?: string;
+  isClass?: boolean;
+  class?: {
+    id: string;
+    name: string;
+    classCode: string;
+  };
   joinCode?: {
     id: string;
     code: string;
@@ -34,6 +41,7 @@ interface OrgCheckResult {
     name: string;
     code: string;
     type: string;
+    slug?: string;
   };
 }
 
@@ -50,6 +58,7 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
   const [submitting, setSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   // Auto-fetch profile name for background submission
   useEffect(() => {
@@ -151,9 +160,14 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
       }
 
       setIsSuccess(true);
+      if (data.redirectUrl) {
+        setRedirectUrl(data.redirectUrl);
+      }
       setSuccessMsg(
         data.message ||
-          `Chúc mừng bạn đã gia nhập thành công ${checkResult.organization?.name}.`
+          (checkResult?.isClass
+            ? `Chúc mừng bạn đã gia nhập lớp ${checkResult.class?.name} thuộc ${checkResult.organization?.name}.`
+            : `Chúc mừng bạn đã gia nhập thành công ${checkResult.organization?.name}.`)
       );
 
       if (onSuccess) {
@@ -204,14 +218,25 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
               </div>
               <div>
                 <h4 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
-                  Gia nhập tổ chức thành công!
+                  {checkResult?.isClass ? 'Gia nhập lớp học thành công!' : 'Gia nhập tổ chức thành công!'}
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-neutral-300 mt-1.5 leading-relaxed">
-                  {successMsg || `Chào mừng bạn đã trở thành thành viên của ${checkResult?.organization?.name}.`}
+                  {successMsg ||
+                    (checkResult?.isClass
+                      ? `Chào mừng bạn đến với lớp ${checkResult.class?.name} thuộc ${checkResult.organization?.name}.`
+                      : `Chào mừng bạn đã trở thành thành viên của ${checkResult?.organization?.name}.`)}
                 </p>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-left text-xs space-y-1 font-mono">
+                {checkResult?.isClass && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Lớp học:</span>
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">
+                      {checkResult.class?.name}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-slate-400">Tổ chức:</span>
                   <span className="font-semibold text-slate-800 dark:text-neutral-200">
@@ -231,11 +256,16 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                   type="button"
                   onClick={() => {
                     onClose();
-                    router.refresh();
+                    if (redirectUrl) {
+                      router.push(redirectUrl);
+                    } else {
+                      router.refresh();
+                    }
                   }}
-                  className="w-full py-2 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-xs"
                 >
-                  Hoàn tất và Bắt đầu
+                  <span>{checkResult?.isClass ? 'Đến không gian Lớp học ngay' : 'Hoàn tất và Bắt đầu'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -289,31 +319,41 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                 </p>
               </div>
 
-              {/* Step 2: Org Info & Instant Confirmation (Zero-friction) */}
+              {/* Step 2: Org / Class Info & Instant Confirmation */}
               {checkResult && checkResult.organization && (
                 <div className="space-y-4 pt-1 animate-in fade-in duration-150">
-                  {/* Org Banner Card */}
+                  {/* Banner Card */}
                   <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                        <Building2 className="w-4 h-4" />
+                      <div className="w-9 h-9 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        {checkResult.isClass ? (
+                          <GraduationCap className="w-5 h-5" />
+                        ) : (
+                          <Building2 className="w-4 h-4" />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-slate-900 dark:text-neutral-100 truncate">
-                          {checkResult.organization.name}
+                          {checkResult.isClass
+                            ? checkResult.class?.name || checkResult.joinCode?.title
+                            : checkResult.organization.name}
                         </div>
-                        <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5">
-                          {checkResult.joinCode?.title || 'Đơn vị thành viên'}
+                        <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 truncate">
+                          {checkResult.isClass
+                            ? `Thuộc tổ chức: ${checkResult.organization.name}`
+                            : checkResult.joinCode?.title || 'Đơn vị thành viên'}
                         </div>
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono uppercase">
-                        {checkResult.organization.code || 'ORG'}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono uppercase shrink-0">
+                        {checkResult.isClass ? 'LỚP HỌC' : checkResult.organization.code || 'ORG'}
                       </span>
                     </div>
                   </div>
 
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
-                    Hồ sơ tài khoản của bạn sẽ tự động kết nối với tổ chức này dưới vai trò <strong>Thành viên</strong>.
+                    {checkResult.isClass
+                      ? 'Bạn sẽ được gia nhập vào lớp này và tự động liên kết thành viên với tổ chức.'
+                      : 'Hồ sơ tài khoản của bạn sẽ tự động kết nối với tổ chức này dưới vai trò Thành viên.'}
                   </p>
 
                   {/* Submit Button */}
@@ -330,7 +370,11 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                         </>
                       ) : (
                         <>
-                          <span>Xác nhận tham gia tổ chức</span>
+                          <span>
+                            {checkResult.isClass
+                              ? 'Xác nhận tham gia Lớp & Tổ chức'
+                              : 'Xác nhận tham gia tổ chức'}
+                          </span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </>
                       )}

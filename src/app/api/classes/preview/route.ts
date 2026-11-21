@@ -22,72 +22,66 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient();
 
-    // 1. Tìm lớp theo mã (resilient lookup: rawCode, cleanCode, legacy hyphenated)
-    let { data: cls, error: clsError } = await adminClient
-      .from('evaluator_classes')
-      .select(`
-        id,
-        name,
-        class_code,
-        description,
-        evaluator_id,
-        created_at,
-        organization_id,
-        profiles:evaluator_id ( id, nickname, avatar_url )
-      `)
-      .ilike('class_code', rawCode)
-      .is('organization_id', null) // Chỉ tra cứu trong không gian cá nhân (Personal)
-      .single();
+    // 1. Tìm lớp theo mã (resilient lookup: rawCode, cleanCode, prefixes, legacy hyphenated)
+    const selectQuery = `
+      id,
+      name,
+      class_code,
+      description,
+      evaluator_id,
+      created_at,
+      organization_id,
+      profiles:evaluator_id ( id, nickname, avatar_url ),
+      organizations ( id, name, slug )
+    `;
 
-    if ((clsError || !cls) && cleanCode !== rawCode) {
+    let { data: cls } = await adminClient
+      .from('evaluator_classes')
+      .select(selectQuery)
+      .ilike('class_code', rawCode)
+      .maybeSingle();
+
+    if (!cls && cleanCode !== rawCode) {
       const retry = await adminClient
         .from('evaluator_classes')
-        .select(`
-          id,
-          name,
-          class_code,
-          description,
-          evaluator_id,
-          created_at,
-          organization_id,
-          profiles:evaluator_id ( id, nickname, avatar_url )
-        `)
+        .select(selectQuery)
         .ilike('class_code', cleanCode)
-        .is('organization_id', null)
-        .single();
-      if (retry.data) {
-        cls = retry.data;
-        clsError = null;
+        .maybeSingle();
+      if (retry.data) cls = retry.data;
+    }
+
+    if (!cls) {
+      const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
+      for (const p of prefixes) {
+        if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
+          const hyp = `${p}-${cleanCode.slice(p.length)}`;
+          const retry = await adminClient
+            .from('evaluator_classes')
+            .select(selectQuery)
+            .ilike('class_code', hyp)
+            .maybeSingle();
+          if (retry.data) {
+            cls = retry.data;
+            break;
+          }
+        }
       }
     }
 
-    if (clsError || !cls) {
+    if (!cls) {
       const match = cleanCode.match(/^([A-Z]+)(\d+)$/);
       if (match) {
         const hyphenated = `${match[1]}-${match[2]}`;
         const retry = await adminClient
           .from('evaluator_classes')
-          .select(`
-            id,
-            name,
-            class_code,
-            description,
-            evaluator_id,
-            created_at,
-            organization_id,
-            profiles:evaluator_id ( id, nickname, avatar_url )
-          `)
+          .select(selectQuery)
           .ilike('class_code', hyphenated)
-          .is('organization_id', null)
-          .single();
-        if (retry.data) {
-          cls = retry.data;
-          clsError = null;
-        }
+          .maybeSingle();
+        if (retry.data) cls = retry.data;
       }
     }
 
-    if (clsError || !cls) {
+    if (!cls) {
       return NextResponse.json(
         { error: `Không tìm thấy lớp học hoặc nhóm với mã '${cleanCode}'. Vui lòng kiểm tra lại.` },
         { status: 404 }
@@ -127,6 +121,7 @@ export async function GET(request: NextRequest) {
         evaluatorAvatar: evalProfile?.avatar_url || null,
         memberCount: memberCount ?? 0,
         createdAt: cls.created_at,
+        organizationName: (cls.organizations as any)?.name || null,
         isOwner,
         isMember,
         requiresApproval: false, // Mặc định vào ngay qua mã, có thể mở rộng

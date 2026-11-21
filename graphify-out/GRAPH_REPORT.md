@@ -1,7 +1,7 @@
 # Graph Report - nexa  (2026-11-21)
 
 ## Corpus Check
-- 1174 files · ~2,026,401 words
+- 1174 files · ~2,027,035 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 144 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `062a2653`
+- Built from commit: `998e8fa2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -2546,7 +2546,7 @@ Nodes (4): CATEGORIES, CategoryFilter, FAQ_DATA, FaqItem
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `next` connect `personal-phase5-account-and-subscriptions.test.ts` to `createClient`, `createClient`, `app/page.tsx`, `app/layout.tsx`, `round2-acceptance.test.ts`, `ref_node_fs`, `zod`, `faq/page.tsx`, `submissions/page.tsx`, `createAdminClient`, `classes/types.ts`, `live-room-analytics.test.ts`, `vitest`, `Skeleton`, `isSuperadminEmail`, `organizations/route.ts`, `admin/organizations/page.tsx`, `take/[id]/page.tsx`, `ref_react`, `authoring/page.tsx`, `package.json`, `[moduleId]/page.tsx`, `[groupId]/page.tsx`, `competency.types.ts`, `PolicyNavHeader.tsx`, `item-bank/[id]/page.tsx`, `personal/grading/page.tsx`, `learning-path/submit/route.ts`, `admin-preview-client.tsx`, `OrgSidebar.tsx`, `csv-helper.ts`, `OrgAnalyticsDashboard.tsx`, `server.ts`, `admin/dashboard/page.tsx`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `org-analytics.types.ts`, `dependencies`, `OrgClassDetailView.tsx`, `[id]/result/page.tsx`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `requireOrgPagePermission`, `join-codes/route.ts`, `AssessmentDetailTabs.tsx`, `admin/analytics/page.tsx`, `live-room.ts`, `checkout/page.tsx`, `OrgCampaignProgressTable.tsx`, `[itemId]/route.ts`, `personal/live-room/page.tsx`, `CreateLiveRoomWizardView.tsx`, `excel-mcq-helper.ts`, `baseline-admin-client.tsx`?**
-  _High betweenness centrality (0.128) - this node is a cross-community bridge._
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
 - **Are the 30 inferred relationships involving `createAdminClient()` (e.g. with `organizations/export/route.test.ts` and `organizations/route.test.ts`) actually correct?**
   _`createAdminClient()` has 30 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `SKILLS`, `RFC-4180` to the rest of the system?**
@@ -2554,7 +2554,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `createClient` be split into smaller, more focused modules?**
   _Cohesion score 0.04731355252606255 - nodes in this community are weakly interconnected._
 - **Why does `warn()` connect `stage.tsx` to `Roll`, `Observability Checklist`, `Process`, `Stage`?**
-  _High betweenness centrality (0.074) - this node is a cross-community bridge._
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._
 - **Are the 18 inferred relationships involving `createClient()` (e.g. with `[joinCode]/route.test.ts` and `leaderboard/route.test.ts`) actually correct?**
   _`createClient()` has 18 INFERRED edges - model-reasoned connections that need verification._
 - **Should `createClient` be split into smaller, more focused modules?**

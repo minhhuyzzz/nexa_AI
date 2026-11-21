@@ -171,6 +171,69 @@ export async function GET(
           title: `Gia nhập tổ chức ${orgRow.name}`,
           expiresAt: null,
         };
+      } else {
+        // Fallback 2: check if code is an organization class / group code (e.g. NX-QEBG9)
+        let { data: classCandidate } = await adminSupabase
+          .from('evaluator_classes')
+          .select('id, name, class_code, organization_id, organizations(*)')
+          .ilike('class_code', rawCode)
+          .not('organization_id', 'is', null)
+          .maybeSingle();
+
+        if (!classCandidate && cleanCode !== rawCode) {
+          const retry = await adminSupabase
+            .from('evaluator_classes')
+            .select('id, name, class_code, organization_id, organizations(*)')
+            .ilike('class_code', cleanCode)
+            .not('organization_id', 'is', null)
+            .maybeSingle();
+          if (retry.data) classCandidate = retry.data;
+        }
+
+        if (!classCandidate) {
+          const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
+          for (const p of prefixes) {
+            if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
+              const hyp = `${p}-${cleanCode.slice(p.length)}`;
+              const retry = await adminSupabase
+                .from('evaluator_classes')
+                .select('id, name, class_code, organization_id, organizations(*)')
+                .ilike('class_code', hyp)
+                .not('organization_id', 'is', null)
+                .maybeSingle();
+              if (retry.data) {
+                classCandidate = retry.data;
+                break;
+              }
+            }
+          }
+        }
+
+        if (classCandidate && classCandidate.organizations) {
+          const org = classCandidate.organizations as any;
+          return NextResponse.json({
+            valid: true,
+            isClass: true,
+            class: {
+              id: classCandidate.id,
+              name: classCandidate.name,
+              classCode: classCandidate.class_code,
+            },
+            joinCode: {
+              id: classCandidate.id,
+              code: classCandidate.class_code,
+              title: `Lớp/Nhóm: ${classCandidate.name}`,
+              expiresAt: null,
+            },
+            organization: {
+              id: org.id,
+              name: org.name,
+              code: org.code,
+              type: org.type,
+              slug: org.slug,
+            },
+          });
+        }
       }
     }
 
@@ -327,6 +390,7 @@ export async function POST(
     let orgId: string;
     let joinCodeId: string | null = null;
     let targetOrg: any = null;
+    let targetClass: any = null;
 
     if (codeRow && !codeErr) {
       if (codeRow.is_revoked) {
@@ -361,6 +425,50 @@ export async function POST(
         if (retry.data) orgRow = retry.data;
       }
 
+      if (!orgRow) {
+        // Fallback 2: check if code is an organization class / group code (e.g. NX-QEBG9)
+        let { data: classCandidate } = await adminSupabase
+          .from('evaluator_classes')
+          .select('id, name, class_code, organization_id, organizations(*)')
+          .ilike('class_code', rawCode)
+          .not('organization_id', 'is', null)
+          .maybeSingle();
+
+        if (!classCandidate && cleanCode !== rawCode) {
+          const retry = await adminSupabase
+            .from('evaluator_classes')
+            .select('id, name, class_code, organization_id, organizations(*)')
+            .ilike('class_code', cleanCode)
+            .not('organization_id', 'is', null)
+            .maybeSingle();
+          if (retry.data) classCandidate = retry.data;
+        }
+
+        if (!classCandidate) {
+          const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
+          for (const p of prefixes) {
+            if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
+              const hyp = `${p}-${cleanCode.slice(p.length)}`;
+              const retry = await adminSupabase
+                .from('evaluator_classes')
+                .select('id, name, class_code, organization_id, organizations(*)')
+                .ilike('class_code', hyp)
+                .not('organization_id', 'is', null)
+                .maybeSingle();
+              if (retry.data) {
+                classCandidate = retry.data;
+                break;
+              }
+            }
+          }
+        }
+
+        if (classCandidate && classCandidate.organizations) {
+          orgRow = classCandidate.organizations as any;
+          targetClass = classCandidate;
+        }
+      }
+
       if (!orgRow || orgRow.is_active === false || (orgRow.status && orgRow.status !== 'ACTIVE')) {
         return NextResponse.json({ error: 'Mã tham gia không tồn tại trong hệ thống' }, { status: 404 });
       }
@@ -379,6 +487,30 @@ export async function POST(
       .maybeSingle();
 
     if (existingMember && existingMember.status === 'ACTIVE') {
+      if (targetClass) {
+        await adminSupabase
+          .from('class_members')
+          .upsert(
+            {
+              class_id: targetClass.id,
+              user_id: user.id,
+              role_in_class: 'STUDENT',
+            },
+            { onConflict: 'class_id,user_id' }
+          );
+
+        return NextResponse.json({
+          success: true,
+          isClass: true,
+          classId: targetClass.id,
+          className: targetClass.name,
+          message: `Chúc mừng bạn đã gia nhập lớp ${targetClass.name} thuộc ${targetOrg.name}!`,
+          organizationSlug: targetOrg.slug,
+          organizationName: targetOrg.name,
+          redirectUrl: `/personal/groups/${targetClass.id}`,
+        });
+      }
+
       return NextResponse.json({
         success: true,
         alreadyMember: true,
@@ -458,11 +590,30 @@ export async function POST(
         { onConflict: 'organization_id,user_id' }
       );
 
+    if (targetClass) {
+      await adminSupabase
+        .from('class_members')
+        .upsert(
+          {
+            class_id: targetClass.id,
+            user_id: user.id,
+            role_in_class: 'STUDENT',
+          },
+          { onConflict: 'class_id,user_id' }
+        );
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Chúc mừng bạn đã gia nhập thành công ${targetOrg.name}!`,
+      message: targetClass
+        ? `Chúc mừng bạn đã gia nhập lớp ${targetClass.name} thuộc ${targetOrg.name}!`
+        : `Chúc mừng bạn đã gia nhập thành công ${targetOrg.name}!`,
       organizationSlug: targetOrg.slug,
       organizationName: targetOrg.name,
+      isClass: Boolean(targetClass),
+      classId: targetClass?.id || null,
+      className: targetClass?.name || null,
+      redirectUrl: targetClass ? `/personal/groups/${targetClass.id}` : undefined,
       member: memberRow,
       request: { status: 'APPROVED' },
     });
