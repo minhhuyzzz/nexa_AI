@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/org/[slug]/members/OrgMembersClientView.tsx": {
-    "mtime": 1795256884.3430521,
-    "seen": 1795257975.9202495,
-    "ast_hash": "cd1e0d90ff8504b2057ba3cbcebede7a",
+    "mtime": 1795264768.9945881,
+    "seen": 1795266285.163932,
+    "ast_hash": "4aaf61b291c23b8dd163dcf3dd9cce5d",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/org/[slug]/members/page.tsx": {
@@ -498,9 +498,9 @@
     "semantic_hash": "3fb3131792a27d5fa4d94bd3e25e3431"
   },
   "src/app/(dashboard)/org/[slug]/page.tsx": {
-    "mtime": 1795239289.8217158,
-    "seen": 1795240503.0374146,
-    "ast_hash": "2ee8e2f2de238aa61332615a324ef22f",
+    "mtime": 1795264688.796339,
+    "seen": 1795266285.1644347,
+    "ast_hash": "3e8d5022573544ae8150c7e5c9c4d428",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/org/[slug]/settings/page.tsx": {
@@ -1338,9 +1338,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/org/BulkMemberImportModal.tsx": {
-    "mtime": 1795257181.6093879,
-    "seen": 1795257976.0484045,
-    "ast_hash": "5f9c6d266a89820ec9a6a7c2906fc979",
+    "mtime": 1795266501.3056085,
+    "seen": 1795266985.6321049,
+    "ast_hash": "9f548b1ce64fc5c648bb58e59a33105b",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/CampaignComparisonChart.tsx": {
@@ -1368,15 +1368,15 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgSidebar.tsx": {
-    "mtime": 1795256486.3011966,
-    "seen": 1795257976.0516992,
-    "ast_hash": "54a0fba8a43b45b8c81611a7ee3101e3",
+    "mtime": 1795264392.6408358,
+    "seen": 1795266285.2129352,
+    "ast_hash": "9e1f6bdb747e029dae63a6c7d18eceec",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgTopbar.tsx": {
-    "mtime": 1795256492.3761415,
-    "seen": 1795257976.0517125,
-    "ast_hash": "0a89570beb47f6aa3170e937a74d07df",
+    "mtime": 1795264438.3316634,
+    "seen": 1795266285.2130687,
+    "ast_hash": "1e6c2174184b1596a69e8678eb3fa273",
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/CompetencyRadarChart.tsx": {
@@ -4374,9 +4374,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/org/members/MemberDirectoryTable.tsx": {
-    "mtime": 1795256624.0747814,
-    "seen": 1795257976.0594568,
-    "ast_hash": "336f2ed500264f37658928c802d04e1e",
+    "mtime": 1795265640.632521,
+    "seen": 1795266285.2165148,
+    "ast_hash": "bf1ee505218b69601f70b0b74a3032ba",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/members/MemberRoleDistributionCard.tsx": {
@@ -6078,9 +6078,9 @@
     "semantic_hash": "008fd4003ec0575ce93f40b975872ca1"
   },
   "src/components/dashboard/org/members/InviteMemberModal.tsx": {
-    "mtime": 1795239429.5962057,
-    "seen": 1795240503.0751193,
-    "ast_hash": "a4addfc9afdf02e1be77ea3b629011a4",
+    "mtime": 1795265872.7546656,
+    "seen": 1795266285.2163763,
+    "ast_hash": "4bca65eb0068d9e5c135df4c03d04f71",
     "semantic_hash": ""
   },
   "src/features/assessments/services/assessment-access-and-submit.test.ts": {
@@ -6144,9 +6144,9 @@
     "semantic_hash": "0491b0f88010c246c9c0a167d05d93cf"
   },
   "src/components/dashboard/live-room/LiveRoomDashboardView.tsx": {
-    "mtime": 1795240185.4208539,
-    "seen": 1795240503.0712047,
-    "ast_hash": "486c0a02a34a63b8a8ce819209178fb1",
+    "mtime": 1795264553.582664,
+    "seen": 1795266285.2115555,
+    "ast_hash": "fee3bc8335b8982238dad58dd4348af4",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/classes/EditClassModal.tsx": {
@@ -6288,9 +6288,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/live-room/PersonalLiveRoomDashboardView.tsx": {
-    "mtime": 1795240038.2232423,
-    "seen": 1795240503.0783086,
-    "ast_hash": "acf661f6a303521a71d33ca349d2de70",
+    "mtime": 1795262987.9187403,
+    "seen": 1795266285.2212903,
+    "ast_hash": "1ec312d54f1264e46b7d0918a4003a2e",
     "semantic_hash": ""
   },
   "tasks/archive/completed_live_room_plan.md": {
@@ -6366,10 +6366,10 @@
     "semantic_hash": ""
   },
   "src/features/analytics/components/OrgAnalyticsKpiRow.tsx": {
-    "mtime": 1793859129.6645641,
-    "seen": 1794532981.6190329,
-    "ast_hash": "dd5656bc64bab306133e02b276e05695",
-    "semantic_hash": "dd5656bc64bab306133e02b276e05695"
+    "mtime": 1795264743.6173892,
+    "seen": 1795266285.2299302,
+    "ast_hash": "143cc4cdc791ecbd5ecd30ad27db8091",
+    "semantic_hash": ""
   },
   "src/features/analytics/components/PeriodTrendSection.tsx": {
     "mtime": 1794155260.149204,
