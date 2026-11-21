@@ -149,13 +149,29 @@ function LeaderboardContent() {
               <span>VINH DANH NĂNG LỰC SỐ • BẢNG VÀNG TOÀN NỀN TẢNG</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Bảng xếp hạng
-            </h1>
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                Bảng xếp hạng
+              </h1>
 
-            {/* Timeframe Filter Tabs: Tuần này / Tháng này / Tất cả (chống rớt dòng) */}
-            <div className="pt-2 flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-2xs max-w-full overflow-x-auto no-scrollbar gap-1">
+              <button
+                type="button"
+                onClick={() => fetchLeaderboard(period)}
+                disabled={loading}
+                title="Làm mới dữ liệu"
+                aria-label="Làm mới bảng xếp hạng"
+                className="min-h-[40px] min-w-[40px] flex items-center justify-center p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-850 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`}
+                  strokeWidth={1.75}
+                />
+              </button>
+            </div>
+
+            {/* Timeframe Filter Tabs: 4 Cột chia đều toàn màn hình (grid-cols-4), thấy trọn vẹn cả 4 tab */}
+            <div className="pt-1.5 w-full">
+              <div className="grid grid-cols-4 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-2xs w-full gap-1">
                 {PERIOD_TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = period === tab.id;
@@ -164,32 +180,18 @@ function LeaderboardContent() {
                       key={tab.id}
                       type="button"
                       onClick={() => handlePeriodChange(tab.id)}
-                      className={`inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 whitespace-nowrap transition-all cursor-pointer select-none ${
+                      className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 min-h-[40px] px-1 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all cursor-pointer select-none text-center ${
                         isActive
-                          ? 'bg-white dark:bg-black text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/60 dark:border-zinc-800'
+                          ? 'bg-white dark:bg-black text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/60 dark:border-zinc-800 font-bold'
                           : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-slate-200/50 dark:hover:bg-zinc-800/60'
                       }`}
                     >
                       <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} strokeWidth={2} />
-                      <span className="whitespace-nowrap">{tab.label}</span>
+                      <span className="truncate">{tab.label}</span>
                     </button>
                   );
                 })}
               </div>
-
-              <button
-                type="button"
-                onClick={() => fetchLeaderboard(period)}
-                disabled={loading}
-                title="Làm mới dữ liệu"
-                aria-label="Làm mới bảng xếp hạng"
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-850 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`}
-                  strokeWidth={1.75}
-                />
-              </button>
             </div>
           </div>
 
