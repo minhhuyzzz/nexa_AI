@@ -22,7 +22,6 @@ import type { OrgClassItem } from './members/types';
 interface ParsedMember {
   email: string;
   fullName: string;
-  studentId: string;
   orgRole: 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR';
   className?: string;
   isValid: boolean;
@@ -126,14 +125,12 @@ export function BulkMemberImportModal({
     const firstRow = worksheet.getRow(1);
     let emailCol = -1;
     let nameCol = -1;
-    let studentIdCol = -1;
     let roleCol = -1;
 
     firstRow.eachCell((cell, colNumber) => {
       const val = extractCellString(cell.value).toLowerCase();
       if (val.includes('email')) emailCol = colNumber;
       else if (val.includes('họ') || val.includes('tên') || val.includes('name')) nameCol = colNumber;
-      else if (val.includes('mã') || val.includes('mssv') || val.includes('student')) studentIdCol = colNumber;
       else if (val.includes('vai trò') || val.includes('role')) roleCol = colNumber;
     });
 
@@ -143,13 +140,11 @@ export function BulkMemberImportModal({
       if (col2Val.includes('@')) {
         emailCol = 2;
         nameCol = 3;
-        studentIdCol = 4;
-        roleCol = 5;
+        roleCol = 4;
       } else {
         emailCol = 1;
         nameCol = 2;
-        studentIdCol = 3;
-        roleCol = 4;
+        roleCol = 3;
       }
     }
 
@@ -160,10 +155,9 @@ export function BulkMemberImportModal({
       const row = worksheet.getRow(rowNumber);
       const email = extractCellString(row.getCell(emailCol).value).toLowerCase();
       const fullName = nameCol > 0 ? extractCellString(row.getCell(nameCol).value) : '';
-      const studentId = studentIdCol > 0 ? extractCellString(row.getCell(studentIdCol).value) : '';
       const roleRaw = roleCol > 0 ? extractCellString(row.getCell(roleCol).value).toUpperCase() : '';
 
-      if (!email && !fullName && !studentId && !roleRaw) {
+      if (!email && !fullName && !roleRaw) {
         continue;
       }
 
@@ -175,7 +169,6 @@ export function BulkMemberImportModal({
         rows.push({
           email: '—',
           fullName,
-          studentId,
           orgRole,
           isValid: false,
           error: 'Thiếu địa chỉ email',
@@ -187,7 +180,6 @@ export function BulkMemberImportModal({
         rows.push({
           email,
           fullName,
-          studentId,
           orgRole,
           isValid: false,
           error: 'Email không đúng định dạng',
@@ -196,7 +188,6 @@ export function BulkMemberImportModal({
         rows.push({
           email,
           fullName,
-          studentId,
           orgRole,
           isValid: false,
           error: 'Email trùng lặp trong tệp',
@@ -206,7 +197,6 @@ export function BulkMemberImportModal({
         rows.push({
           email,
           fullName,
-          studentId,
           orgRole,
           isValid: true,
         });
@@ -245,8 +235,7 @@ export function BulkMemberImportModal({
       const cols = line.split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
       const email = cols[0]?.toLowerCase() || '';
       const fullName = cols[1] || '';
-      const studentId = cols[2] || '';
-      const roleRaw = cols[3]?.toUpperCase() || defaultRole;
+      const roleRaw = cols[2]?.toUpperCase() || defaultRole;
 
       let orgRole: 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR' = defaultRole;
       if (roleRaw === 'ORG_ADMIN' || roleRaw === 'ADMIN') orgRole = 'ORG_ADMIN';
@@ -256,7 +245,6 @@ export function BulkMemberImportModal({
         rows.push({
           email: '—',
           fullName,
-          studentId,
           orgRole,
           isValid: false,
           error: 'Thiếu địa chỉ email',
@@ -268,7 +256,6 @@ export function BulkMemberImportModal({
         rows.push({
           email,
           fullName,
-          studentId,
           orgRole,
           isValid: false,
           error: 'Email không đúng định dạng',
@@ -277,7 +264,6 @@ export function BulkMemberImportModal({
         rows.push({
           email,
           fullName,
-          studentId,
           orgRole,
           isValid: false,
           error: 'Email trùng lặp trong tệp',
@@ -287,7 +273,6 @@ export function BulkMemberImportModal({
         rows.push({
           email,
           fullName,
-          studentId,
           orgRole,
           isValid: true,
         });
@@ -316,8 +301,7 @@ export function BulkMemberImportModal({
       worksheet.columns = [
         { header: 'STT', key: 'stt', width: 8 },
         { header: 'Email (*)', key: 'email', width: 32 },
-        { header: 'Họ và tên', key: 'fullName', width: 26 },
-        { header: 'Mã số / MSSV', key: 'studentId', width: 22 },
+        { header: 'Họ và tên', key: 'fullName', width: 28 },
         { header: 'Vai trò (MEMBER / ASSESSOR / ORG_ADMIN)', key: 'role', width: 38 },
       ];
 
@@ -349,21 +333,18 @@ export function BulkMemberImportModal({
           stt: 1,
           email: 'hocvien1@truong.edu.vn',
           fullName: 'Nguyễn Văn An',
-          studentId: 'SV202601',
           role: 'MEMBER',
         },
         {
           stt: 2,
           email: 'giangvien2@truong.edu.vn',
           fullName: 'Trần Thị Bình',
-          studentId: 'GV202602',
           role: 'ASSESSOR',
         },
         {
           stt: 3,
           email: 'canbo3@truong.edu.vn',
           fullName: 'Lê Hoàng Nam',
-          studentId: 'CB202603',
           role: 'MEMBER',
         },
       ];
@@ -379,7 +360,7 @@ export function BulkMemberImportModal({
             left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
             right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
           };
-          if (colNumber === 1 || colNumber === 4 || colNumber === 5) {
+          if (colNumber === 1 || colNumber === 4) {
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           } else {
             cell.alignment = { vertical: 'middle', horizontal: 'left' };
@@ -411,7 +392,6 @@ export function BulkMemberImportModal({
       const guideData = [
         { col: 'Email', required: 'Bắt buộc (*)', desc: 'Địa chỉ email người dùng hợp lệ (ví dụ: user@donvi.edu.vn). Không được trùng lặp trong tệp.' },
         { col: 'Họ và tên', required: 'Tùy chọn', desc: 'Họ và tên đầy đủ của thành viên.' },
-        { col: 'Mã số / MSSV', required: 'Tùy chọn', desc: 'Mã số học viên, sinh viên hoặc mã cán bộ nội bộ.' },
         { col: 'Vai trò', required: 'Tùy chọn', desc: 'Nhập một trong các mã: MEMBER (Thành viên - mặc định), ASSESSOR (Khảo thí viên), ORG_ADMIN (Quản trị viên). Nếu bỏ trống sẽ lấy vai trò cấu hình ở Bước 2.' },
         { col: 'Định dạng', required: 'Tùy chọn', desc: 'Có thể lưu dạng tệp Excel (.xlsx) hoặc CSV UTF-8 để tải lên hệ thống.' },
       ];
@@ -462,7 +442,6 @@ export function BulkMemberImportModal({
           members: validRows.map((r) => ({
             email: r.email,
             fullName: r.fullName || undefined,
-            studentId: r.studentId || undefined,
             orgRole: r.orgRole || defaultRole,
             classId: targetClassId || undefined,
           })),
@@ -644,7 +623,7 @@ export function BulkMemberImportModal({
                   {fileName ? fileName : 'Bấm để chọn file Excel (.xlsx) hoặc CSV hoặc kéo thả vào đây'}
                 </p>
                 <p className="text-xs text-slate-400 dark:text-neutral-500 mt-1">
-                  Định dạng hỗ trợ: Excel (.xlsx, .xls) hoặc UTF-8 CSV (cột Email, Họ và tên, Mã sinh viên, Vai trò)
+                  Định dạng hỗ trợ: Excel (.xlsx, .xls) hoặc UTF-8 CSV (cột Email, Họ và tên, Vai trò)
                 </p>
               </div>
 
@@ -782,7 +761,6 @@ export function BulkMemberImportModal({
                     <tr>
                       <th className="py-2 px-3">Email</th>
                       <th className="py-2 px-3">Họ và tên</th>
-                      <th className="py-2 px-3">Mã SV</th>
                       <th className="py-2 px-3">Vai trò</th>
                       <th className="py-2 px-3">Trạng thái</th>
                     </tr>
@@ -790,7 +768,7 @@ export function BulkMemberImportModal({
                   <tbody className="">
                     {displayedRows.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-6 text-center text-slate-400">
+                        <td colSpan={4} className="py-6 text-center text-slate-400">
                           Không có dòng dữ liệu nào trong mục này.
                         </td>
                       </tr>
@@ -809,9 +787,6 @@ export function BulkMemberImportModal({
                           </td>
                           <td className="py-2 px-3 text-slate-700 dark:text-neutral-300">
                             {row.fullName || 'Chưa cập nhật'}
-                          </td>
-                          <td className="py-2 px-3 font-mono text-[11px] text-slate-500">
-                            {row.studentId || 'Chưa có'}
                           </td>
                           <td className="py-2 px-3 text-[11px]">
                             <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-medium">
