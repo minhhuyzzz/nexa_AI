@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
       adminEmail: auth.user!.email,
       action: 'UPDATE_SYSTEM_SETTINGS',
       targetType: 'SYSTEM_SETTINGS',
+      req: request,
       details: {
         keys: ['general_config', 'security_policy', 'gamification_reward_policy'],
         maintenanceMode: validatedData.maintenanceMode,

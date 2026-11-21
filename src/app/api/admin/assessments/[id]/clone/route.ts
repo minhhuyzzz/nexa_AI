@@ -101,9 +101,11 @@ export async function POST(
     // 4. Audit Log
     await recordAdminAudit({
       actorId: auth.user!.id,
+      adminEmail: auth.user!.email,
       action: 'CLONE',
       targetType: 'ASSESSMENT',
       targetId: newAssessment.id,
+      req,
       newValues: {
         original_assessment_id: id,
         new_assessment_id: newAssessment.id,

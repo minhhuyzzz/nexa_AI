@@ -94,9 +94,11 @@ export async function PATCH(request: NextRequest) {
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user!.email,
         action: 'CREATE',
         targetType: 'FRAMEWORK_VERSION',
         targetId: newFw.id,
+        req: request,
         newValues: { version: nextVersion, previousId: frameworkId },
       });
 
@@ -148,9 +150,11 @@ export async function PATCH(request: NextRequest) {
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user!.email,
         action: 'UPDATE',
         targetType: 'FRAMEWORK_DOMAIN',
         targetId: id,
+        req: request,
         newValues: updates,
       });
 
@@ -177,9 +181,11 @@ export async function PATCH(request: NextRequest) {
 
       await recordAdminAudit({
         actorId: auth.user!.id,
+        adminEmail: auth.user!.email,
         action: 'UPDATE',
         targetType: 'FRAMEWORK_COMPETENCY',
         targetId: id,
+        req: request,
         newValues: updates,
       });
 
@@ -244,9 +250,11 @@ export async function POST(request: NextRequest) {
 
     await recordAdminAudit({
       actorId: auth.user!.id,
+      adminEmail: auth.user!.email,
       action: 'CREATE',
       targetType: 'FRAMEWORK_COMPETENCY',
       targetId: data.id,
+      req: request,
       newValues: {
         domain_id,
         skill_code,

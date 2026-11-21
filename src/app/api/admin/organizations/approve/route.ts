@@ -252,6 +252,7 @@ export async function POST(request: NextRequest | Request) {
       action: 'ORG_ACTIVATED',
       targetType: 'ORGANIZATION',
       targetId: org.id,
+      req: request,
       details: {
         orgName: org.name,
         orgCode: cleanCode,

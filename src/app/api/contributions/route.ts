@@ -282,9 +282,11 @@ export async function PATCH(request: NextRequest) {
 
     await recordAdminAudit({
       actorId: auth.user!.id,
+      adminEmail: auth.user!.email,
       action: status === 'APPROVED' ? 'APPROVE' : 'UPDATE',
       targetType: 'COMMUNITY_CONTRIBUTION',
       targetId: id,
+      req: request,
       newValues: {
         status,
         adminFeedback,

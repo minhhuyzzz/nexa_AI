@@ -367,6 +367,7 @@ export async function DELETE(
       action: 'ORG_MEMBER_REMOVED',
       targetType: 'user_organization',
       targetId: targetMembership.id,
+      req: request,
       details: {
         organization_id: orgId,
         target_user_id: targetUserId,

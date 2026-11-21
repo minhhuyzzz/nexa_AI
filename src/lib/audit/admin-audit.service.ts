@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { extractClientIp } from './client-ip';
 
 export interface RecordAdminAuditParams {
   adminId?: string;
@@ -11,6 +12,7 @@ export interface RecordAdminAuditParams {
   newValues?: Record<string, unknown>;
   oldValues?: Record<string, unknown>;
   ipAddress?: string;
+  req?: any;
 }
 
 export { extractClientIp } from './client-ip';
@@ -29,6 +31,7 @@ export async function recordAdminAudit(params: RecordAdminAuditParams): Promise<
 
     const targetAdminId = params.adminId || params.actorId || null;
     let resolvedEmail = params.adminEmail || null;
+    const resolvedIp = params.ipAddress || (params.req ? extractClientIp(params.req) : null);
 
     // Tự động đối soát tìm email từ bảng profiles nếu caller chưa truyền adminEmail
     if (!resolvedEmail && targetAdminId) {
@@ -53,7 +56,7 @@ export async function recordAdminAudit(params: RecordAdminAuditParams): Promise<
       target_type: params.targetType,
       target_id: params.targetId || null,
       details,
-      ip_address: params.ipAddress || null,
+      ip_address: resolvedIp || null,
     });
 
     if (error) {

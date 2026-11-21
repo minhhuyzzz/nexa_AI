@@ -95,9 +95,11 @@ export async function POST(request: NextRequest) {
 
     await recordAdminAudit({
       actorId: auth.user!.id,
+      adminEmail: auth.user!.email,
       action: 'BROADCAST_NOTIFICATION',
       targetType: 'SYSTEM',
       targetId: 'GLOBAL',
+      req: request,
       newValues: {
         title,
         category,

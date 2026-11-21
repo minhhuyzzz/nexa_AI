@@ -351,6 +351,7 @@ async function handleUpdateAiConfig(request: NextRequest) {
       adminEmail: adminUser.email,
       action: 'AI_CONFIG_UPDATED',
       targetType: 'AI_GATEWAY',
+      req: request,
       details: {
         provider: updated.provider,
         defaultModel: updated.defaultModel,

@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
       action: 'TRANSACTION_MANUALLY_RECONCILED',
       targetType: 'TRANSACTION',
       targetId: transactionId,
+      req: request,
       details: {
         proofReference,
         reason,

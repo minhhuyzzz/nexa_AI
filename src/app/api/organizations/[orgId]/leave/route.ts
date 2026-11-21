@@ -93,6 +93,7 @@ export async function POST(
       action: 'ORG_MEMBER_SELF_LEFT',
       targetType: 'user_organization',
       targetId: membership.id,
+      req: request,
       details: {
         organization_id: orgId,
         user_id: user.id,

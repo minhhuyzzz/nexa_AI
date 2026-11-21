@@ -136,6 +136,7 @@ export async function POST(
       action: 'ORG_RENEWAL_APPROVED',
       targetType: 'RENEWAL_REQUEST',
       targetId: id,
+      req: request,
       details: {
         organizationId: orgId,
         organizationName: orgName,

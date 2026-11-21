@@ -102,16 +102,33 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Calculate unique active admins count from logs and total configured superadmins
+    // Calculate unique active admins count from the period (not capped by pagination limit)
     const totalSuperAdmins = getSuperadminEmails().length;
-    const adminSet = new Set(resolvedLogs.map((l) => l.admin_email).filter(Boolean));
+    let periodAdminsQuery = adminSupabase.from('admin_audit_logs').select('admin_email');
+    if (period === '24h') {
+      periodAdminsQuery = periodAdminsQuery.gte('created_at', past24hIso);
+    } else if (period === '7d') {
+      const past7dIso = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+      periodAdminsQuery = periodAdminsQuery.gte('created_at', past7dIso);
+    } else if (period === '30d') {
+      const past30dIso = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+      periodAdminsQuery = periodAdminsQuery.gte('created_at', past30dIso);
+    }
+    const { data: periodAdmins } = await periodAdminsQuery;
+    const distinctPeriodAdmins = new Set(
+      (periodAdmins || []).map((p: any) => p.admin_email).filter(Boolean)
+    );
+    const activeAdmins =
+      distinctPeriodAdmins.size > 0
+        ? distinctPeriodAdmins.size
+        : new Set(resolvedLogs.map((l) => l.admin_email).filter(Boolean)).size || 1;
 
     return NextResponse.json({
       success: true,
       stats: {
         totalActions: totalCount || 0,
         actions24h: recent24hCount || 0,
-        activeAdmins: adminSet.size > 0 ? adminSet.size : 1,
+        activeAdmins,
         totalSuperAdmins,
       },
       logs: resolvedLogs,

@@ -97,6 +97,7 @@ export async function PATCH(request: NextRequest) {
       action: 'INQUIRY_STATUS_UPDATED',
       targetType: 'BUSINESS_INQUIRY',
       targetId: id,
+      req: request,
       details: {
         newStatus: status,
         notes,

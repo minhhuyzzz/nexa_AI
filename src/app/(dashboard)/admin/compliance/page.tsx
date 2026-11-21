@@ -38,17 +38,33 @@ interface AuditStats {
 }
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  UPDATE: { label: 'Cập nhật Đề thi', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+  CREATE: { label: 'Tạo mới Đề thi', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+  DELETE: { label: 'Xóa Đề thi', color: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
+  GRANT_ROLE: { label: 'Cấp quyền Quản trị', color: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
+  REVOKE_ROLE: { label: 'Thu hồi quyền Quản trị', color: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
+  SUSPEND_USER: { label: 'Tạm khóa tài khoản', color: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
+  UNSUSPEND_USER: { label: 'Mở khóa tài khoản', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+  REVOKE_SESSION: { label: 'Đăng xuất phiên', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+  UPDATE_TIER: { label: 'Đổi Gói dịch vụ', color: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800' },
+  UPDATE_ROLE: { label: 'Đổi Vai trò', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
   UPDATE_SYSTEM_SETTINGS: { label: 'Cập nhật Cài đặt', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
   UPDATE_AI_CONFIG: { label: 'Cập nhật Cổng AI', color: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' },
+  AI_CONFIG_UPDATED: { label: 'Cập nhật Cổng AI', color: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' },
   APPROVE: { label: 'Phê duyệt Đóng góp', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
   REJECT: { label: 'Từ chối Đóng góp', color: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
   APPROVE_ORGANIZATION: { label: 'Duyệt Tổ chức Business', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+  ORG_ACTIVATED: { label: 'Kích hoạt Tổ chức', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+  ORG_RENEWAL_APPROVED: { label: 'Duyệt Gia hạn Tổ chức', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
   BAN_USER: { label: 'Khóa tài khoản', color: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
   UNBAN_USER: { label: 'Mở khóa tài khoản', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
   USER_ROLE_ASSIGN: { label: 'Phân quyền tài khoản', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
   RECONCILE_PAYMENT: { label: 'Đối soát Giao dịch', color: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800' },
+  TRANSACTION_MANUALLY_RECONCILED: { label: 'Đối soát Giao dịch', color: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800' },
   PUBLISH_ASSESSMENT: { label: 'Xuất bản Đề thi', color: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
   CLONE_ASSESSMENT: { label: 'Nhân bản Đề thi', color: 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700' },
+  CLONE: { label: 'Nhân bản Đề thi', color: 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700' },
+  INQUIRY_STATUS_UPDATED: { label: 'Cập nhật Tư vấn', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
   BROADCAST_NOTIFICATION: { label: 'Gửi Thông báo', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
 };
 
@@ -219,15 +235,23 @@ function AdminComplianceContent() {
               className="px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer"
             >
               <option value="ALL">Tất cả hành động</option>
+              <option value="UPDATE">Cập nhật Đề thi</option>
+              <option value="CREATE">Tạo mới</option>
+              <option value="DELETE">Xóa</option>
+              <option value="GRANT_ROLE">Cấp quyền Quản trị</option>
+              <option value="REVOKE_ROLE">Thu hồi quyền Quản trị</option>
+              <option value="SUSPEND_USER">Khóa tài khoản</option>
+              <option value="UNSUSPEND_USER">Mở khóa tài khoản</option>
+              <option value="REVOKE_SESSION">Đăng xuất phiên</option>
+              <option value="UPDATE_TIER">Đổi Gói dịch vụ</option>
               <option value="UPDATE_SYSTEM_SETTINGS">Cập nhật Cài đặt</option>
-              <option value="UPDATE_AI_CONFIG">Cập nhật Cổng AI</option>
+              <option value="AI_CONFIG_UPDATED">Cập nhật Cổng AI</option>
               <option value="APPROVE">Phê duyệt Đóng góp</option>
               <option value="REJECT">Từ chối Đóng góp</option>
-              <option value="APPROVE_ORGANIZATION">Duyệt Tổ chức</option>
-              <option value="BAN_USER">Khóa tài khoản</option>
-              <option value="UNBAN_USER">Mở khóa tài khoản</option>
-              <option value="USER_ROLE_ASSIGN">Phân quyền</option>
-              <option value="RECONCILE_PAYMENT">Đối soát Giao dịch</option>
+              <option value="ORG_ACTIVATED">Kích hoạt Tổ chức</option>
+              <option value="ORG_RENEWAL_APPROVED">Duyệt Gia hạn Tổ chức</option>
+              <option value="TRANSACTION_MANUALLY_RECONCILED">Đối soát Giao dịch</option>
+              <option value="BROADCAST_NOTIFICATION">Gửi Thông báo</option>
             </select>
 
             <select
@@ -316,7 +340,7 @@ function AdminComplianceContent() {
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold flex items-center justify-center shrink-0">
-                            AD
+                            {(log.admin_email || 'AD').substring(0, 2).toUpperCase()}
                           </span>
                           <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                             {log.admin_email || 'Quản trị viên'}
@@ -412,6 +436,10 @@ function AdminComplianceContent() {
               <div>
                 <span className="text-slate-400">Đối tượng:</span>
                 <p className="font-mono text-neutral-900 dark:text-neutral-100">{selectedLog.target_type} {selectedLog.target_id ? `(#${selectedLog.target_id})` : ''}</p>
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-400">Địa chỉ IP ghi nhận:</span>
+                <p className="font-mono text-neutral-900 dark:text-neutral-100">{selectedLog.ip_address || '127.0.0.1'}</p>
               </div>
             </div>
 
