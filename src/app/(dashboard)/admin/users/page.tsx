@@ -20,6 +20,7 @@ import {
   LogOut,
   UserPlus,
   Copy,
+  CreditCard,
 } from 'lucide-react';
 import {
   AdminKpiCard,
@@ -130,8 +131,6 @@ function UsersContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: editingUser.id,
-          role: newRole,
-          adminRole: newRole === 'ADMIN' ? newAdminRole : 'LEARNER',
           planTier: newTier,
         }),
       });
@@ -147,8 +146,6 @@ function UsersContent() {
           u.id === editingUser.id
             ? {
                 ...u,
-                role: newRole,
-                adminRole: newRole === 'ADMIN' ? newAdminRole : 'LEARNER',
                 planTier: newTier,
               }
             : u
@@ -156,7 +153,7 @@ function UsersContent() {
       );
 
       setEditingUser(null);
-      setActionMsg('Đã cập nhật vai trò và phân quyền thành công.');
+      setActionMsg('Đã cập nhật gói dịch vụ thành công.');
       setTimeout(() => setActionMsg(''), 3000);
     } catch {
       setEditError('Lỗi kết nối máy chủ khi cập nhật');
@@ -304,9 +301,15 @@ function UsersContent() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Người dùng
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-3">
+            <span>Học viên và Khách hàng</span>
           </h1>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+            Quản lý tài khoản học viên và tổ chức. Nhân sự điều hành được quản lý riêng tại{' '}
+            <Link href="/admin/roles" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+              Quản trị viên và Phân quyền →
+            </Link>
+          </p>
         </div>
       </div>
 
@@ -491,20 +494,15 @@ function UsersContent() {
                       {/* Vai trò */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300">
-                          {u.adminRole === 'SUPER_ADMIN' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
-                              <Shield className="w-3.5 h-3.5 text-amber-600" />
-                              <span>Chủ nền tảng</span>
-                            </span>
-                          ) : u.role === 'ADMIN' || u.adminRole === 'ADMIN' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-                              <Shield className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Quản trị viên</span>
+                          {u.organization ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                              <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                              <span>{u.organization.orgRole === 'ORG_OWNER' ? 'Chủ tổ chức' : u.organization.orgRole === 'ORG_ADMIN' ? 'Quản trị tổ chức' : 'Thành viên'}</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
                               <Users className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Người dùng</span>
+                              <span>Học viên</span>
                             </span>
                           )}
                         </div>
@@ -582,29 +580,25 @@ function UsersContent() {
                           <div className="absolute right-4 top-10 w-48 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-lg py-1.5 z-30 text-left">
                             <button
                               onClick={() => handleOpenEdit(u)}
-                              className="w-full px-3 py-1.5 text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2"
+                              className="w-full px-3 py-1.5 text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
                             >
-                              <Shield className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Phân quyền và Gói</span>
+                              <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Điều chỉnh Gói dịch vụ</span>
                             </button>
-                            {u.adminRole !== 'SUPER_ADMIN' && (
-                              <>
-                                <button
-                                  onClick={() => handleToggleSuspend(u)}
-                                  className="w-full px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2"
-                                >
-                                  <UserX className="w-3.5 h-3.5" />
-                                  <span>{u.isSuspended ? 'Mở khóa tài khoản' : 'Tạm khóa tài khoản'}</span>
-                                </button>
-                                <button
-                                  onClick={() => handleRevokeSession(u)}
-                                  className="w-full px-3 py-1.5 text-xs text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2"
-                                >
-                                  <LogOut className="w-3.5 h-3.5" />
-                                  <span>Đăng xuất phiên</span>
-                                </button>
-                              </>
-                            )}
+                            <button
+                              onClick={() => handleToggleSuspend(u)}
+                              className="w-full px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 cursor-pointer"
+                            >
+                              <UserX className="w-3.5 h-3.5" />
+                              <span>{u.isSuspended ? 'Mở khóa tài khoản' : 'Tạm khóa tài khoản'}</span>
+                            </button>
+                            <button
+                              onClick={() => handleRevokeSession(u)}
+                              className="w-full px-3 py-1.5 text-xs text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer"
+                            >
+                              <LogOut className="w-3.5 h-3.5" />
+                              <span>Đăng xuất phiên</span>
+                            </button>
                           </div>
                         )}
                       </td>
@@ -632,7 +626,7 @@ function UsersContent() {
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3">
               <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                Phân quyền và Gói: {editingUser.email}
+                Điều chỉnh Gói dịch vụ: {editingUser.email}
               </h3>
               <button
                 onClick={() => setEditingUser(null)}
@@ -648,31 +642,6 @@ function UsersContent() {
                   {editError}
                 </div>
               )}
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                  Vai trò hệ thống
-                </label>
-                {editingUser.adminRole === 'SUPER_ADMIN' ? (
-                  <div className="p-2.5 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-amber-600" />
-                    <span>Chủ sở hữu nền tảng (Bất khả xâm phạm)</span>
-                  </div>
-                ) : (
-                  <select
-                    value={newRole}
-                    onChange={(e) => {
-                      const r = e.target.value as any;
-                      setNewRole(r);
-                      setNewAdminRole(r === 'ADMIN' ? 'ADMIN' : 'LEARNER');
-                    }}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-neutral-900 dark:text-neutral-100"
-                  >
-                    <option value="LEARNER">Người dùng thông thường</option>
-                    <option value="ADMIN">Quản trị viên nền tảng (Platform Admin)</option>
-                  </select>
-                )}
-              </div>
 
               <div>
                 <label className="block font-bold text-xs text-slate-700 dark:text-zinc-300 mb-1">

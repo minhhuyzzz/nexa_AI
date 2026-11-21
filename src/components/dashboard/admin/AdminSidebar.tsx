@@ -34,6 +34,7 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   exact?: boolean;
+  superAdminOnly?: boolean;
 }
 
 interface NavSection {
@@ -82,9 +83,10 @@ const adminNavSections: NavSection[] = [
     id: 'system',
     label: 'Hệ thống và bảo mật',
     items: [
-      { name: 'Cổng kết nối AI', href: '/admin/ai-gateway', icon: Sparkles, exact: false },
-      { name: 'Nhật ký kiểm toán', href: '/admin/compliance', icon: ShieldCheck, exact: false },
-      { name: 'Cài đặt nền tảng', href: '/admin/settings', icon: Settings, exact: false },
+      { name: 'Quản trị viên & Phân quyền', href: '/admin/roles', icon: Shield, exact: false, superAdminOnly: true },
+      { name: 'Cổng kết nối AI', href: '/admin/ai-gateway', icon: Sparkles, exact: false, superAdminOnly: true },
+      { name: 'Nhật ký kiểm toán', href: '/admin/compliance', icon: ShieldCheck, exact: false, superAdminOnly: true },
+      { name: 'Cài đặt nền tảng', href: '/admin/settings', icon: Settings, exact: false, superAdminOnly: true },
     ],
   },
 ];
@@ -93,7 +95,26 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hoveredTooltip, setHoveredTooltip] = useState<TooltipState | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const { isMobileOpen, closeMobile } = useMobileNav();
+
+  useEffect(() => {
+    fetch('/api/admin/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user?.isSuperAdmin) {
+          setIsSuperAdmin(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const visibleSections = adminNavSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.superAdminOnly || isSuperAdmin),
+    }))
+    .filter((section) => section.items.length > 0);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -157,7 +178,7 @@ export function AdminSidebar() {
           onScroll={() => setHoveredTooltip(null)}
           className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 pb-8"
         >
-          {adminNavSections.map((section) => (
+          {visibleSections.map((section) => (
             <div key={section.id} className="space-y-1">
               {!isCollapsed ? (
                 <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
@@ -316,7 +337,7 @@ export function AdminSidebar() {
 
           {/* Mobile Nav Links: clicking any closes drawer */}
           <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-4">
-            {adminNavSections.map((section) => (
+            {visibleSections.map((section) => (
               <div key={section.id} className="space-y-1">
                 <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
                   {section.label}

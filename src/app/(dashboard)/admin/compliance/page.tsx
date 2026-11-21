@@ -34,6 +34,7 @@ interface AuditStats {
   totalActions: number;
   actions24h: number;
   activeAdmins: number;
+  totalSuperAdmins?: number;
 }
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
@@ -53,12 +54,13 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
 
 function AdminComplianceContent() {
   const [logs, setLogs] = useState<AdminAuditLog[]>([]);
-  const [stats, setStats] = useState<AuditStats>({ totalActions: 0, actions24h: 0, activeAdmins: 0 });
+  const [stats, setStats] = useState<AuditStats>({ totalActions: 0, actions24h: 0, activeAdmins: 0, totalSuperAdmins: 0 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
   const [targetFilter, setTargetFilter] = useState('ALL');
   const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Modal payload view
   const [selectedLog, setSelectedLog] = useState<AdminAuditLog | null>(null);
@@ -66,6 +68,7 @@ function AdminComplianceContent() {
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const params = new URLSearchParams();
       if (actionFilter !== 'ALL') params.set('action', actionFilter);
       if (targetFilter !== 'ALL') params.set('target_type', targetFilter);
@@ -74,7 +77,12 @@ function AdminComplianceContent() {
       params.set('limit', '100');
 
       const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
-      if (!res.ok) throw new Error('Không thể tải nhật ký kiểm toán');
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('Chỉ Chủ sở hữu nền tảng (Super Admin) mới có quyền truy cập Nhật ký kiểm toán.');
+        }
+        throw new Error('Không thể tải nhật ký kiểm toán');
+      }
       const data = await res.json();
       if (data.logs) {
         setLogs(data.logs);
@@ -83,7 +91,7 @@ function AdminComplianceContent() {
         setStats(data.stats);
       }
     } catch (err) {
-      console.error('Failed to load audit logs:', err);
+      setErrorMsg(err instanceof Error ? err.message : 'Lỗi tải dữ liệu');
     } finally {
       setLoading(false);
     }
@@ -124,6 +132,22 @@ function AdminComplianceContent() {
         </button>
       </div>
 
+      {errorMsg && (
+        <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMsg(null)}
+            className="text-rose-700 dark:text-rose-300 hover:underline cursor-pointer font-medium ml-2"
+          >
+            Đóng
+          </button>
+        </div>
+      )}
+
       {/* 2. 3 Activity Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-xs flex items-center justify-between">
@@ -159,12 +183,14 @@ function AdminComplianceContent() {
         <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
-              Quản trị viên thao tác
+              Quản trị viên có hoạt động
             </span>
             <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums mt-1">
               {stats.activeAdmins}
             </div>
-            <span className="text-[10px] text-slate-400">Tài khoản Super Admin</span>
+            <span className="text-[10px] text-slate-400">
+              {stats.activeAdmins} trên tổng số {stats.totalSuperAdmins || stats.activeAdmins} Chủ nền tảng đã thao tác
+            </span>
           </div>
           <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
             <User className="w-5 h-5" strokeWidth={1.75} />

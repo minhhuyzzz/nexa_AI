@@ -237,6 +237,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Strict Super Admin Routes: compliance, roles, settings, ai-gateway
+  const isSuperadminOnlyRoute =
+    pathname.startsWith('/admin/compliance') ||
+    pathname.startsWith('/admin/roles') ||
+    pathname.startsWith('/admin/settings') ||
+    pathname.startsWith('/admin/ai-gateway');
+
+  if (isSuperadminOnlyRoute && !isSuperadmin) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/dashboard';
+    return NextResponse.redirect(url);
+  }
+
   // RBAC: Admin API route strictly for verified Platform Admin
   if (isAdminApiRoute && !isPlatformAdmin) {
     return NextResponse.json(

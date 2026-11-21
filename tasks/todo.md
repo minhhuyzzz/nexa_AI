@@ -1,22 +1,18 @@
-# Danh Sách Nhiệm Vụ: Tinh Gọn RBAC 2 Cấp & Sửa Nhật Ký Kiểm Toán
+# Danh Sách Nhiệm Vụ: Tách Biệt Phân Quyền Quản Trị, Ẩn Ban Quản Trị Khỏi Trang Người Dùng & Chuẩn Hóa Nhật Ký Kiểm Toán
 
-- [x] **Lát cắt 1: Chuẩn hóa RBAC 2 Cấp & Logic Phân quyền Cốt lõi**
-  - [x] Task 1.1: Cập nhật `src/lib/auth/superadmin.ts` và `src/lib/auth/admin-guard.ts` (rút gọn về Platform Owner và Platform Admin, thêm bí danh isPlatformOwner)
-  - [x] Task 1.2: Sửa API `src/app/api/auth/login/route.ts` (chuyển hướng thẳng tới `/admin/dashboard` cho Admin/Owner, bỏ demote về LEARNER, set cookie admin)
+- [x] **Phase 1: Xây Dựng Trang & API Quản Trị Viên & Phân Quyền (`/admin/roles`)**
+  - [x] Task 1: Tạo API `src/app/api/admin/roles/route.ts` (GET danh sách Super Admin + Admin, POST gán Admin qua email, DELETE thu hồi quyền Admin, ghi log audit)
+  - [x] Task 2: Xây dựng Giao diện Trang `src/app/(dashboard)/admin/roles/page.tsx` (Khối Chủ nền tảng bất biến + Khối Quản trị viên thao tác, Modal Thêm Admin, tuân thủ AGENTS.md)
+  - [x] Task 3: Cập nhật Sidebar `src/components/dashboard/admin/AdminSidebar.tsx` (Thêm menu `/admin/roles`, ẩn menu nhạy cảm với Admin thường)
 
-- [x] **Lát cắt 2: Sửa Triệt Để Dịch Vụ Nhật Ký Kiểm Toán & Khôi Phục Lịch Sử**
-  - [x] Task 2.1: Cập nhật `src/lib/audit/admin-audit.service.ts` và tạo `src/lib/audit/client-ip.ts` (tự động tra cứu email từ profiles, helper trích xuất IP thực an toàn)
-  - [x] Task 2.2: Cập nhật `src/app/api/admin/audit-logs/route.ts` (join profiles để sửa toàn bộ log cũ bị null email và null IP)
-  - [x] Task 2.3: Truyền `adminEmail` và `ipAddress` trong các API admin trọng yếu (`assessments/[id]`, `bulk`, `users`, `settings`)
+- [x] **Phase 2: Lọc Ẩn Ban Quản Trị Khỏi Danh Sách Người Dùng (`/admin/users`)**
+  - [x] Task 4: Cập nhật API `src/app/api/admin/users/route.ts` (Loại trừ toàn bộ Super Admin và Admin khỏi danh sách người dùng)
+  - [x] Task 5: Tinh gọn giao diện `src/app/(dashboard)/admin/users/page.tsx` (Gỡ bỏ modal/dropdown phân quyền Admin, thuần hóa cho học viên/khách hàng)
 
-- [x] **Lát cắt 3: Cập Nhật Giao Diện Báo Cáo & Phân Quyền UI**
-  - [x] Task 3.1: Cập nhật `src/app/(dashboard)/admin/compliance/page.tsx` (loại bỏ `System / Auto` và `Internal RPC`, hiển thị email/IP thật)
-  - [x] Task 3.2: Cập nhật `src/app/(dashboard)/admin/dashboard/page.tsx` (cột Người thực hiện hiển thị đúng danh tính Admin qua join profiles)
-  - [x] Task 3.3: Cập nhật `src/app/(dashboard)/admin/users/page.tsx` (giao diện thăng/giáng quyền Admin chỉ dành riêng cho Platform Owner, bảo vệ tài khoản Owner bất khả xâm phạm)
-  - [x] Task 3.4: Chuẩn hóa `src/components/dashboard/WorkspaceSwitcher.tsx` (tách biệt hoàn toàn cổng Admin khỏi dropdown chuyển không gian cá nhân/tổ chức)
+- [x] **Phase 3: Khóa Độc Quyền Nhật Ký Kiểm Toán & Chuẩn Hóa Thống Kê**
+  - [x] Task 6: Cập nhật `src/lib/auth/admin-guard.ts` và `src/middleware.ts` (Khóa quyền truy cập `/admin/compliance` và `/api/admin/audit-logs` chỉ dành riêng cho Super Admin)
+  - [x] Task 7: Cập nhật API `src/app/api/admin/audit-logs/route.ts` và UI `src/app/(dashboard)/admin/compliance/page.tsx` (Hiển thị rõ "X trên tổng số Y Chủ nền tảng đã thao tác")
 
-- [x] **Lát cắt 4: Kiểm Thử Tự Động & Kiểm Chứng**
-  - [x] Task 4.1: Chạy `npx vitest run src/features/security/` (14/14 passed)
-  - [x] Task 4.2: Chạy full test suite `npm test` (97/97 test files passed, 1542/1542 tests passed)
-  - [x] Task 4.3: Chạy `npx tsc --noEmit` (0 errors)
-  - [x] Task 4.4: Chạy `graphify update .`
+- [x] **Phase 4: Kiểm Thử & Kiểm Chứng Toàn Diện**
+  - [x] Task 8: Bổ sung Test Cases tự động cho phân quyền roles và lọc người dùng trong `src/features/security/admin-security-and-rbac.test.ts`
+  - [x] Task 9: Chạy toàn bộ Test Suite (`npx vitest run`), Lint (`npm run lint`) và Typecheck (`npx tsc --noEmit`)

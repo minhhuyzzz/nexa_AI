@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
 import { recordAdminAudit } from '@/lib/audit/admin-audit.service';
 import { extractClientIp } from '@/lib/audit/client-ip';
-import { isSuperadminEmail } from '@/lib/auth/superadmin';
+import { getSuperadminEmails, isSuperadminEmail } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,8 +81,24 @@ export async function GET() {
       if (s.user_id) subCountMap[s.user_id] = (subCountMap[s.user_id] || 0) + 1;
     });
 
+    const superadminEmails = getSuperadminEmails();
     const rows = (profiles || []) as unknown as ProfileRow[];
-    const formatted = rows.map((p) => {
+
+    // Tách bạch: Lọc ẩn toàn bộ Chủ nền tảng và Quản trị viên khỏi bảng Người dùng
+    const learnerRows = rows.filter((p) => {
+      const emailLower = p.email?.trim().toLowerCase() || '';
+      if (superadminEmails.includes(emailLower)) return false;
+      if (
+        p.admin_role === 'ADMIN' ||
+        p.admin_role === 'SUPER_ADMIN' ||
+        p.role === 'ADMIN'
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    const formatted = learnerRows.map((p) => {
       const firstOrg =
         Array.isArray(p.user_organizations) && p.user_organizations.length > 0
           ? p.user_organizations[0]

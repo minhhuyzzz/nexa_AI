@@ -19,13 +19,23 @@ export function AdminAvatarMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
 
-  const [displayName, setDisplayName] = useState('Quản Trị Viên Tối Cao');
+  const [displayName, setDisplayName] = useState('Quản Trị Viên');
   const [displayEmail, setDisplayEmail] = useState('admin.nexa@gmail.com');
-  const [displayInitials] = useState('AD');
+  const [displayInitials, setDisplayInitials] = useState('AD');
+  const [adminRole, setAdminRole] = useState<'SUPER_ADMIN' | 'ADMIN'>('SUPER_ADMIN');
 
   useEffect(() => {
     async function fetchUser() {
       try {
+        const meRes = await fetch('/api/admin/me');
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData?.user) {
+            if (meData.user.email) setDisplayEmail(meData.user.email);
+            setAdminRole(meData.user.adminRole === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN');
+          }
+        }
+
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -37,8 +47,15 @@ export function AdminAvatarMenu() {
             .single();
 
           if (profile) {
-            const name = profile.full_name || user.user_metadata?.full_name || 'Quản Trị Viên Tối Cao';
+            const name = profile.full_name || user.user_metadata?.full_name || profile.nickname || 'Quản Trị Viên';
             setDisplayName(name);
+            const inits = name
+              .split(' ')
+              .filter(Boolean)
+              .slice(-2)
+              .map((w: string) => w[0]?.toUpperCase())
+              .join('') || 'AD';
+            setDisplayInitials(inits);
           }
         }
       } catch {
@@ -95,17 +112,31 @@ export function AdminAvatarMenu() {
               </div>
 
               {/* Status info */}
-              <div className="p-3 mx-3 my-2.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-900/50">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-purple-700 dark:text-purple-300 text-[11px] font-semibold">Quyền hạn</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-700 text-white shadow-2xs">
-                    SUPER ADMIN
-                  </span>
+              {adminRole === 'SUPER_ADMIN' ? (
+                <div className="p-3 mx-3 my-2.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-900/50">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-purple-700 dark:text-purple-300 text-[11px] font-semibold">Quyền hạn</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-700 text-white shadow-2xs">
+                      SUPER ADMIN
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-purple-600 dark:text-purple-400">
+                    Toàn quyền quản trị hạ tầng và dữ liệu nền tảng
+                  </div>
                 </div>
-                <div className="text-[11px] text-purple-600 dark:text-purple-400">
-                  Toàn quyền quản trị hạ tầng và dữ liệu nền tảng
+              ) : (
+                <div className="p-3 mx-3 my-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/50">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-blue-700 dark:text-blue-300 text-[11px] font-semibold">Quyền hạn</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-700 text-white shadow-2xs">
+                      QUẢN TRỊ VIÊN
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-blue-600 dark:text-blue-400">
+                    Quản trị viên vận hành khách hàng và nội dung
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">
@@ -118,14 +149,16 @@ export function AdminAvatarMenu() {
                   <span>Quản trị khung năng lực</span>
                 </Link>
 
-                <Link
-                  href="/admin/ai-gateway"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
-                >
-                  <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Cổng kết nối AI</span>
-                </Link>
+                {adminRole === 'SUPER_ADMIN' && (
+                  <Link
+                    href="/admin/ai-gateway"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
+                    <span>Cổng kết nối AI</span>
+                  </Link>
+                )}
 
                 {/* Dark/Light mode toggle switch */}
                 <div className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">

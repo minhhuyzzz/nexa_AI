@@ -1,88 +1,83 @@
-# Kế hoạch Triển khai: Tinh Gọn RBAC 2 Cấp (Platform Owner & Admin), Đăng Nhập Trực Tiếp & Sửa Triệt Để Nhật Ký Kiểm Toán
+# Kế hoạch Triển khai: Tách Biệt Trang Quản Trị Viên & Phân Quyền (/admin/roles), Lọc Ẩn Ban Quản Trị Khỏi Trang Người Dùng, Khóa Độc Quyền Nhật Ký Kiểm Toán & Chuẩn Hóa Số Liệu
 
 ## 1. Mục tiêu tổng thể
-1. **Tinh gọn RBAC Quản trị nền tảng từ 5 vai trò xuống 2 vai trò chuẩn:**
-   - **Chủ sở hữu nền tảng (Platform Owner):** Duy nhất 1 tài khoản sáng lập, toàn quyền tối cao, email neo trong server env làm Root of Trust. Là người duy nhất được bổ nhiệm / thu hồi quyền Admin khác và quản trị cài đặt cốt lõi.
-   - **Quản trị viên nền tảng (Platform Admin):** Được Owner phân quyền trực tiếp trên giao diện web (bảng `profiles.admin_role = 'ADMIN'`), toàn quyền vận hành (quản lý người dùng, tổ chức, đề thi, giao dịch) nhưng không thể phân quyền hay can thiệp vào tài khoản Owner.
-2. **Đăng nhập vào thẳng `/admin/dashboard` & Tách biệt Không gian:**
-   - Khi tài khoản có quyền Admin/Owner đăng nhập thành công, hệ thống tự động định tuyến thẳng vào `/admin/dashboard`. Xóa bỏ hoàn toàn đoạn code cũ vốn tự động hạ quyền về `LEARNER` nếu email không có trong `.env`.
-   - Tách cổng Admin hệ thống độc lập, không đặt lẫn lộn vào dropdown Chuyển không gian làm việc (Workspace Switcher).
-3. **Khắc phục triệt để lỗi hiển thị Nhật ký kiểm toán (`/admin/compliance`) & Hoạt động gần đây (`/admin/dashboard`):**
-   - Lưu trữ và hiển thị chính xác Email thật, Tên thật và Địa chỉ IP của Admin thực hiện thao tác thay vì hiển thị `System / Auto`, `Quản trị viên` và `Internal RPC`.
-   - Tương thích ngược: tự động đối soát join bảng `profiles` theo `admin_id` để khôi phục danh tính cho toàn bộ 53+ bản ghi kiểm toán lịch sử đã lỡ bị lưu `null`.
-4. **Tuân thủ quy chuẩn [AGENTS.md](file:///c:/nexa/AGENTS.md):**
-   - Zero horizontal borders (không `<hr>`).
-   - Light Mode `#FFFFFF`, Dark Mode `#000000`, Cobalt `#2563EB` cho link/CTA, trung tính `#171717` cho tiêu đề.
+1. **Tách biệt hoàn toàn Quản lý Phân quyền Quản trị viên (`/admin/roles`):**
+   - Xây dựng trang riêng "Quản trị viên & Phân quyền" dưới nhóm "Hệ thống và bảo mật" trên Sidebar.
+   - Phân định rõ 2 khối:
+     + **Chủ nền tảng (Super Admin):** Nguồn từ file cấu hình `.env`, toàn quyền tối cao, bất biến qua giao diện để bảo vệ hạ tầng.
+     + **Quản trị viên hệ thống (Admin):** Quản lý qua cơ sở dữ liệu (`profiles.admin_role = 'ADMIN'`), cung cấp chức năng Thêm Quản trị viên qua email và Thu hồi quyền Admin.
+2. **Lọc và ẩn 100% Ban quản trị khỏi trang Người dùng (`/admin/users`):**
+   - Loại trừ toàn bộ tài khoản Super Admin và Admin khỏi danh sách của `/api/admin/users`.
+   - Trang `/admin/users` trở thành trang chuyên biệt chỉ quản lý khách hàng, học viên và tổ chức.
+   - Gỡ bỏ modal/dropdown phân quyền Admin rải rác ở trang Người dùng để tập trung 100% vào trang `/admin/roles`.
+3. **Thực thi phân quyền RBAC nghiêm ngặt:**
+   - **Chủ nền tảng (Super Admin):** Độc quyền truy cập `/admin/compliance` (Nhật ký kiểm toán), `/admin/roles` (Phân quyền Admin), `/admin/ai-gateway` (Cổng kết nối AI) và `/admin/settings` (Cài đặt nền tảng).
+   - **Quản trị viên (Admin):** Chỉ quản lý các nghiệp vụ vận hành thông thường (người dùng, tổ chức, đề thi, gói cước). Bị chặn (403 / ẩn menu) khi cố truy cập 4 phân hệ nhạy cảm trên.
+4. **Chuẩn hóa hiển thị thẻ thống kê Quản trị viên trong Nhật ký kiểm toán (`/admin/compliance`):**
+   - Hiển thị rõ số quản trị viên đã phát sinh thao tác ghi log kèm tổng số Chủ nền tảng hiện có (ví dụ: `5 trên tổng số 7 Chủ nền tảng đã thao tác`).
 
 ---
 
 ## 2. Phân tích phụ thuộc (Dependency Graph)
 
 ```
-Database Schema & Profiles
-  └── profiles.admin_role: Chuẩn hóa CHECK constraint ('SUPER_ADMIN' / 'ADMIN' / 'LEARNER')
+Config & Environment
+  └── src/lib/auth/superadmin.ts (getSuperadminEmails / isSuperadminEmail)
           │
           ▼
-Core Auth & Authorization Guards
-  ├── src/lib/auth/superadmin.ts (isPlatformOwner / getPlatformOwnerEmail)
-  ├── src/lib/auth/admin-guard.ts (Rút gọn ROLE_PERMISSIONS về OWNER & ADMIN)
-  └── src/app/api/auth/login/route.ts (Fix redirectUrl thẳng tới /admin/dashboard)
+RBAC Core Guards & API Authorization
+  ├── src/lib/auth/admin-guard.ts (Khóa quyền SUPER_ADMIN cho compliance, roles, settings, ai-gateway)
+  └── src/middleware.ts (Chặn route /admin/compliance & /admin/roles đối với Admin thường)
           │
           ▼
-Audit Service & Client Data Binding
-  ├── src/lib/audit/admin-audit.service.ts (Auto-resolve profile email, extract request IP)
-  ├── src/app/api/admin/audit-logs/route.ts (Fallback join profiles on null email)
-  └── Update callers in admin API routes (pass adminEmail & real IP)
+Backend API Endpoints
+  ├── src/app/api/admin/roles/route.ts (GET danh sách Super Admin + Admin, POST gán Admin, DELETE gỡ Admin)
+  ├── src/app/api/admin/users/route.ts (Lọc bỏ Super Admin & Admin khỏi danh sách người dùng)
+  └── src/app/api/admin/audit-logs/route.ts (Trả về activeAdmins và totalSuperAdmins)
           │
           ▼
-Admin UI Components & Management
-  ├── /admin/compliance/page.tsx (Hiển thị đúng Email, Tên thật, IP thật)
-  ├── /admin/dashboard/page.tsx (Hiển thị đúng Người thực hiện trong Hoạt động gần đây)
-  ├── /admin/users/page.tsx (Nút bổ nhiệm Admin chỉ dành riêng cho Platform Owner)
-  └── src/components/dashboard/WorkspaceSwitcher.tsx (Tách biệt cổng Admin)
+Frontend UI Components
+  ├── src/app/(dashboard)/admin/roles/page.tsx (Trang Quản trị viên & Phân quyền chuẩn AGENTS.md)
+  ├── src/app/(dashboard)/admin/users/page.tsx (Lược bỏ modal phân quyền Admin, thuần hóa cho học viên)
+  ├── src/app/(dashboard)/admin/compliance/page.tsx (Cập nhật nhãn & phụ đề thẻ Quản trị viên thao tác)
+  └── src/components/dashboard/admin/AdminSidebar.tsx (Thêm menu /admin/roles, ẩn menu nhạy cảm với Admin thường)
 ```
 
 ---
 
-## 3. Các nhiệm vụ chi tiết (Vertical Slices)
+## 3. Các giai đoạn triển khai chi tiết
 
-### Lát cắt 1: Chuẩn hóa RBAC 2 Cấp & Logic Phân quyền Cốt lõi
-- **Task 1.1:** Cập nhật `src/lib/auth/superadmin.ts` và `src/lib/auth/admin-guard.ts`
-  - Đặt `isPlatformOwner(email)` làm Root of Trust kiểm tra tài khoản sáng lập tối cao.
-  - Rút gọn `ROLE_PERMISSIONS`:
-    - `SUPER_ADMIN` (Platform Owner): Có tất cả quyền, bao gồm `MANAGE_ROLES`, `MANAGE_SETTINGS`, `OPERATE_AI`.
-    - `ADMIN` (Platform Admin): Có quyền `MANAGE_USERS`, `MANAGE_ORGANIZATIONS`, `MANAGE_CONTENT`, `VIEW_FINANCE`, `MANAGE_FINANCE`.
-- **Task 1.2:** Sửa API login `src/app/api/auth/login/route.ts`
-  - Bỏ đoạn code cũ demote tài khoản về `LEARNER`.
-  - Nếu tài khoản có `profile.admin_role === 'ADMIN'` hoặc là Platform Owner: trả về `redirectUrl: '/admin/dashboard'`.
+### Phase 1: Xây Dựng Trang & API Quản Trị Viên & Phân Quyền (`/admin/roles`)
+- **Task 1: Tạo API Quản lý Roles `src/app/api/admin/roles/route.ts`**
+  - `GET`: Trả về danh sách Super Admins (từ env) và danh sách Admins (từ `profiles` có `admin_role = 'ADMIN'`).
+  - `POST`: Thêm Admin mới qua email (chỉ Super Admin mới được gọi).
+  - `DELETE`: Thu hồi quyền Admin (chỉ Super Admin mới được gọi, chặn thu hồi Super Admin).
+- **Task 2: Xây dựng Giao diện Trang `src/app/(dashboard)/admin/roles/page.tsx`**
+  - Thiết kế bảng phân nhóm: Khối Chủ nền tảng (Super Admin) và Khối Quản trị viên hệ thống (Admin).
+  - Modal thêm Admin mới qua email và dialog xác nhận thu hồi quyền.
+  - Tuân thủ quy chuẩn giao diện [AGENTS.md](file:///c:/nexa/AGENTS.md): Light `#FFFFFF`, Dark `#000000`, không `<hr>`.
+- **Task 3: Cập nhật Sidebar `src/components/dashboard/admin/AdminSidebar.tsx`**
+  - Thêm mục "Quản trị viên & Phân quyền" (`/admin/roles`) vào nhóm "Hệ thống và bảo mật".
+  - Ẩn các mục nhạy cảm (`/admin/roles`, `/admin/compliance`) nếu người dùng không phải Super Admin.
 
-### Lát cắt 2: Sửa Triệt Để Dịch Vụ Nhật Ký Kiểm Toán (Audit Service)
-- **Task 2.1:** Cập nhật `src/lib/audit/admin-audit.service.ts`
-  - Nếu caller không truyền `adminEmail`, tự động query bảng `profiles` theo `actorId`/`adminId` để lấy email và gán vào bản ghi audit log.
-  - Bổ sung helper trích xuất địa chỉ IP thực từ `request.headers` (`x-forwarded-for` hoặc `x-real-ip`).
-- **Task 2.2:** Cập nhật API route `src/app/api/admin/audit-logs/route.ts`
-  - Truy vấn kết hợp với bảng `profiles(email, full_name, nickname)` theo `admin_id` khi `admin_email` bị null, đảm bảo toàn bộ lịch sử thao tác trước đây lập tức hiển thị đúng email người thực hiện.
-- **Task 2.3:** Bổ sung `adminEmail` và `ipAddress` vào các API route admin trọng yếu
-  - `src/app/api/admin/assessments/[id]/route.ts`
-  - `src/app/api/admin/assessments/bulk/route.ts`
-  - `src/app/api/admin/organizations/approve/route.ts`
-  - `src/app/api/admin/settings/route.ts`
+### Phase 2: Lọc Ẩn Ban Quản Trị Khỏi Danh Sách Người Dùng (`/admin/users`)
+- **Task 4: Cập nhật API `src/app/api/admin/users/route.ts`**
+  - Lọc loại trừ tất cả tài khoản thuộc `getSuperadminEmails()` hoặc có `admin_role === 'ADMIN' | 'SUPER_ADMIN'`.
+  - Đảm bảo danh sách chỉ chứa khách hàng, học viên cá nhân và tổ chức.
+- **Task 5: Tinh gọn giao diện `src/app/(dashboard)/admin/users/page.tsx`**
+  - Gỡ bỏ modal phân quyền Admin cũ và nút gán quyền Admin khỏi bảng người dùng.
+  - Đơn giản hóa hiển thị vai trò (học viên/người dùng).
 
-### Lát cắt 3: Cập Nhật Giao Diện Báo Cáo & Phân Quyền
-- **Task 3.1:** Cập nhật trang Nhật ký kiểm toán `src/app/(dashboard)/admin/compliance/page.tsx`
-  - Hiển thị email thật (hoặc fallback tên hiển thị) và địa chỉ IP thực, loại bỏ hoàn toàn chữ `System / Auto` và `Internal RPC`.
-- **Task 3.2:** Cập nhật bảng Hoạt động gần đây tại `src/app/(dashboard)/admin/dashboard/page.tsx`
-  - Cột "Người thực hiện" hiển thị đúng email hoặc họ tên của Admin thao tác thay vì chữ `Quản trị viên` mặc định.
-- **Task 3.3:** Cập nhật trang Quản lý người dùng `src/app/(dashboard)/admin/users/page.tsx`
-  - Chỉ hiển thị nút gán/thu hồi quyền `Quản trị viên (ADMIN)` nếu người đang đăng nhập là **Platform Owner**.
-  - Không cho phép bất kỳ ai giáng cấp hoặc khóa tài khoản của Platform Owner.
-- **Task 3.4:** Chuẩn hóa `src/components/dashboard/WorkspaceSwitcher.tsx`
-  - Tách bạch cổng Quản trị nền tảng, không để lẫn vào dropdown chuyển không gian của cá nhân/tổ chức.
+### Phase 3: Khóa Độc Quyền Nhật Ký Kiểm Toán & Chuẩn Hóa Số Liệu
+- **Task 6: Cập nhật Phân Quyền Bảo Mật (`admin-guard.ts` & `middleware.ts`)**
+  - Yêu cầu quyền `SUPER_ADMIN` cho API `/api/admin/audit-logs` và route `/admin/compliance`.
+- **Task 7: Chuẩn hóa thẻ thống kê trên trang Nhật ký kiểm toán**
+  - `api/admin/audit-logs`: Trả về `totalSuperAdmins` cùng `activeAdmins`.
+  - `admin/compliance/page.tsx`: Cập nhật thẻ thành "Quản trị viên có hoạt động", hiển thị `X trên tổng số Y Chủ nền tảng đã thao tác`.
 
-### Lát cắt 4: Kiểm Thử & Kiểm Chứng Toàn Diện
-- **Task 4.1:** Chạy test kiểm tra RBAC và bảo mật:
-  - `npx vitest run src/features/security/`
-- **Task 4.2:** Chạy kiểm tra kiểu tĩnh TypeScript:
-  - `npx tsc --noEmit`
-- **Task 4.3:** Cập nhật đồ thị tri thức mã nguồn:
-  - `graphify update .`
+### Phase 4: Kiểm Thử & Kiểm Chứng Toàn Diện
+- **Task 8: Bổ sung Test Cases Tự Động**
+  - Kiểm thử phân quyền API `/api/admin/roles` và loại trừ người dùng trong `/api/admin/users`.
+- **Task 9: Kiểm tra Chất lượng Toàn Bộ Hệ Thống**
+  - Chạy `npx vitest run` kiểm tra toàn bộ 97+ test suite.
+  - Chạy `npm run lint` và `npx tsc --noEmit`.

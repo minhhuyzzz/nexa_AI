@@ -11,7 +11,8 @@ export type PlatformAdminPermission =
   | 'MANAGE_CONTENT'
   | 'OPERATE_AI'
   | 'MANAGE_ORGANIZATIONS'
-  | 'MANAGE_SETTINGS';
+  | 'MANAGE_SETTINGS'
+  | 'VIEW_AUDIT';
 
 export interface AdminAuthResult {
   isAuthorized: boolean;
@@ -33,6 +34,7 @@ const ROLE_PERMISSIONS: Record<string, PlatformAdminPermission[]> = {
     'OPERATE_AI',
     'MANAGE_ORGANIZATIONS',
     'MANAGE_SETTINGS',
+    'VIEW_AUDIT',
   ],
   ADMIN: [
     'MANAGE_USERS',

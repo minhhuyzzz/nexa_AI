@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/lib/auth/admin-guard';
+import { getSuperadminEmails } from '@/lib/auth/superadmin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requirePlatformAdmin();
+    const auth = await requirePlatformAdmin('VIEW_AUDIT');
     if (!auth.isAuthorized) {
       return auth.errorResponse!;
     }
@@ -101,7 +102,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Calculate unique admins count from recent logs
+    // Calculate unique active admins count from logs and total configured superadmins
+    const totalSuperAdmins = getSuperadminEmails().length;
     const adminSet = new Set(resolvedLogs.map((l) => l.admin_email).filter(Boolean));
 
     return NextResponse.json({
@@ -109,7 +111,8 @@ export async function GET(request: NextRequest) {
       stats: {
         totalActions: totalCount || 0,
         actions24h: recent24hCount || 0,
-        activeAdmins: Math.max(1, adminSet.size),
+        activeAdmins: adminSet.size > 0 ? adminSet.size : 1,
+        totalSuperAdmins,
       },
       logs: resolvedLogs,
     });
