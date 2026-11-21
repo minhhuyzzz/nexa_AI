@@ -230,7 +230,7 @@ export async function PATCH(
     }
     if (body.regenerateCode === true) {
       const rand = Math.floor(1000 + Math.random() * 9000);
-      updatePayload.class_code = `CLS-${rand}`;
+      updatePayload.class_code = `CLS${rand}`;
     }
     if (typeof body.allowMemberPosts === 'boolean') {
       const { data: currentCls } = await supabase

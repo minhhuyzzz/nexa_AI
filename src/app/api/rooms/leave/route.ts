@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 const leaveSchema = z.object({
   roomId: z.string().uuid().optional(),
-  pin: z.string().optional(),
+  pin: z.string().transform((val) => val.replace(/[-\s]/g, '').trim()).optional(),
 });
 
 export async function POST(request: Request) {

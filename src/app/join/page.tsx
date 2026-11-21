@@ -21,7 +21,7 @@ export default function JoinPortalPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCode = code.trim().toUpperCase();
+    const cleanCode = code.trim().replace(/[-\s]/g, '').toUpperCase();
     if (!cleanCode) {
       setError('Vui lòng nhập mã tham gia hoặc mã tổ chức.');
       return;
@@ -85,10 +85,10 @@ export default function JoinPortalPage() {
                   type="text"
                   value={code}
                   onChange={(e) => {
-                    setCode(e.target.value.toUpperCase());
+                    setCode(e.target.value.replace(/[-\s]/g, '').toUpperCase());
                     if (error) setError('');
                   }}
-                  placeholder="VD: FPT-POLY, NX-K24-HN..."
+                  placeholder="VD: FPTPOLY, NX81OVQG..."
                   disabled={loading}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all uppercase"
                   autoFocus

@@ -225,7 +225,7 @@ export default function JoinOrgPage({
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
                   <span className="uppercase">{data.organization?.code}</span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-neutral-200 font-bold">
-                    Mã PIN: {data.joinCode?.code}
+                    Mã tham gia: {data.joinCode?.code}
                   </span>
                 </div>
                 <div className="text-base font-bold text-neutral-900 dark:text-neutral-100 pt-0.5">

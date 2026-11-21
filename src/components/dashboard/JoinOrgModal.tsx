@@ -260,11 +260,11 @@ export function JoinOrgModal({ isOpen, onClose, onSuccess }: JoinOrgModalProps) 
                     type="text"
                     value={code}
                     onChange={(e) => {
-                      setCode(e.target.value.toUpperCase());
+                      setCode(e.target.value.replace(/[-\s]/g, '').toUpperCase());
                       if (checkResult) setCheckResult(null);
                       if (errorMessage) setErrorMessage('');
                     }}
-                    placeholder="VD: FPT-POLY, NX-K24-HN..."
+                    placeholder="VD: FPTPOLY, NX81OVQG..."
                     disabled={checking || submitting}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all uppercase"
                     autoFocus

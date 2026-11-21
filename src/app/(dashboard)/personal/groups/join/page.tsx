@@ -44,7 +44,7 @@ export default function JoinPersonalGroupPage() {
   const [joining, setJoining] = useState(false);
   const [joinSuccessMsg, setJoinSuccessMsg] = useState<string | null>(null);
 
-  const cleanCode = code.trim().toUpperCase();
+  const cleanCode = code.trim().replace(/[-\s]/g, '').toUpperCase();
 
   const handleCheckCode = async () => {
     if (!cleanCode || cleanCode.length < 2) {
@@ -166,11 +166,11 @@ export default function JoinPersonalGroupPage() {
               <input
                 type="text"
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onChange={(e) => setCode(e.target.value.replace(/[-\s]/g, '').toUpperCase())}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCheckCode();
                 }}
-                placeholder="VD: CLS-4821"
+                placeholder="VD: CLS4821"
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-base font-mono font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
@@ -318,7 +318,7 @@ export default function JoinPersonalGroupPage() {
                     Nhận mã tham gia
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
-                    Giảng viên hoặc chủ nhóm cung cấp cho bạn mã định danh (Ví dụ: <code>CLS-8921</code>).
+                    Giảng viên hoặc chủ nhóm cung cấp cho bạn mã định danh (Ví dụ: <code>CLS8921</code>).
                   </p>
                 </div>
               </div>

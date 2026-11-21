@@ -111,9 +111,11 @@ export async function POST(req: Request) {
     let code = parsed.data.classCode?.trim().toUpperCase();
 
     if (!code) {
-      // Auto-generate clean code NX-XXXX (e.g. NX-4892)
+      // Auto-generate clean code NXXXXX (e.g. NX4892)
       const rand = Math.floor(1000 + Math.random() * 9000);
-      code = `NX-${rand}`;
+      code = `NX${rand}`;
+    } else {
+      code = code.replace(/[-\s]/g, '');
     }
 
     const { data: newClass, error: insertError } = await supabase

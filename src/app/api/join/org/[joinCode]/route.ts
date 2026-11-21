@@ -16,7 +16,8 @@ export async function GET(
 ) {
   try {
     const { joinCode } = await params;
-    const cleanCode = (joinCode || '').trim().toUpperCase();
+    const rawCode = (joinCode || '').trim().toUpperCase();
+    const cleanCode = rawCode.replace(/[-\s]/g, '');
 
     if (!cleanCode) {
       return NextResponse.json({ valid: false, error: 'Thiếu mã tham gia' }, { status: 400 });
@@ -24,8 +25,8 @@ export async function GET(
 
     const adminSupabase = createAdminClient();
 
-    // Query join code
-    const { data: codeRow, error: codeErr } = await adminSupabase
+    // Query join code (resilient lookup: rawCode, cleanCode, or legacy 3x3 format)
+    let { data: codeRow, error: codeErr } = await adminSupabase
       .from('organization_join_codes')
       .select(`
         id,
@@ -47,8 +48,71 @@ export async function GET(
           max_members
         )
       `)
-      .eq('code', cleanCode)
+      .eq('code', rawCode)
       .maybeSingle();
+
+    if (!codeRow && cleanCode !== rawCode) {
+      const retry = await adminSupabase
+        .from('organization_join_codes')
+        .select(`
+          id,
+          code,
+          title,
+          max_uses,
+          used_count,
+          expires_at,
+          is_revoked,
+          organization_id,
+          organizations (
+            id,
+            name,
+            slug,
+            code,
+            type,
+            status,
+            is_active,
+            max_members
+          )
+        `)
+        .eq('code', cleanCode)
+        .maybeSingle();
+      if (retry.data) {
+        codeRow = retry.data;
+        codeErr = retry.error;
+      }
+    }
+
+    if (!codeRow && cleanCode.length === 9) {
+      const formattedLegacy = `${cleanCode.slice(0, 3)}-${cleanCode.slice(3, 6)}-${cleanCode.slice(6, 9)}`;
+      const retry = await adminSupabase
+        .from('organization_join_codes')
+        .select(`
+          id,
+          code,
+          title,
+          max_uses,
+          used_count,
+          expires_at,
+          is_revoked,
+          organization_id,
+          organizations (
+            id,
+            name,
+            slug,
+            code,
+            type,
+            status,
+            is_active,
+            max_members
+          )
+        `)
+        .eq('code', formattedLegacy)
+        .maybeSingle();
+      if (retry.data) {
+        codeRow = retry.data;
+        codeErr = retry.error;
+      }
+    }
 
     let targetOrg: any = null;
     let targetJoinCode: any = null;
@@ -83,12 +147,21 @@ export async function GET(
         expiresAt: codeRow.expires_at,
       };
     } else {
-      // Fallback: check if cleanCode matches an active organization code
-      const { data: orgRow } = await adminSupabase
+      // Fallback: check if rawCode or cleanCode matches an active organization code
+      let { data: orgRow } = await adminSupabase
         .from('organizations')
         .select('id, name, code, slug, type, status, is_active, max_members')
-        .eq('code', cleanCode)
+        .eq('code', rawCode)
         .maybeSingle();
+
+      if (!orgRow && cleanCode !== rawCode) {
+        const retry = await adminSupabase
+          .from('organizations')
+          .select('id, name, code, slug, type, status, is_active, max_members')
+          .eq('code', cleanCode)
+          .maybeSingle();
+        if (retry.data) orgRow = retry.data;
+      }
 
       if (orgRow) {
         targetOrg = orgRow;
@@ -138,7 +211,12 @@ export async function POST(
 ) {
   try {
     const { joinCode } = await params;
-    const cleanCode = (joinCode || '').trim().toUpperCase();
+    const rawCode = (joinCode || '').trim().toUpperCase();
+    const cleanCode = rawCode.replace(/[-\s]/g, '');
+
+    if (!cleanCode) {
+      return NextResponse.json({ error: 'Mã tham gia không hợp lệ' }, { status: 400 });
+    }
 
     const supabase = await createClient();
     const {
@@ -166,8 +244,8 @@ export async function POST(
     const { fullName, studentId } = validation.data;
     const adminSupabase = createAdminClient();
 
-    // 1. Verify join code or organization code
-    const { data: codeRow, error: codeErr } = await adminSupabase
+    // 1. Verify join code or organization code (resilient lookup: rawCode, cleanCode, legacy 3x3)
+    let { data: codeRow, error: codeErr } = await adminSupabase
       .from('organization_join_codes')
       .select(`
         id,
@@ -186,8 +264,65 @@ export async function POST(
           max_members
         )
       `)
-      .eq('code', cleanCode)
+      .eq('code', rawCode)
       .maybeSingle();
+
+    if (!codeRow && cleanCode !== rawCode) {
+      const retry = await adminSupabase
+        .from('organization_join_codes')
+        .select(`
+          id,
+          code,
+          organization_id,
+          max_uses,
+          used_count,
+          expires_at,
+          is_revoked,
+          organizations (
+            id,
+            name,
+            slug,
+            status,
+            is_active,
+            max_members
+          )
+        `)
+        .eq('code', cleanCode)
+        .maybeSingle();
+      if (retry.data) {
+        codeRow = retry.data;
+        codeErr = retry.error;
+      }
+    }
+
+    if (!codeRow && cleanCode.length === 9) {
+      const formattedLegacy = `${cleanCode.slice(0, 3)}-${cleanCode.slice(3, 6)}-${cleanCode.slice(6, 9)}`;
+      const retry = await adminSupabase
+        .from('organization_join_codes')
+        .select(`
+          id,
+          code,
+          organization_id,
+          max_uses,
+          used_count,
+          expires_at,
+          is_revoked,
+          organizations (
+            id,
+            name,
+            slug,
+            status,
+            is_active,
+            max_members
+          )
+        `)
+        .eq('code', formattedLegacy)
+        .maybeSingle();
+      if (retry.data) {
+        codeRow = retry.data;
+        codeErr = retry.error;
+      }
+    }
 
     let orgId: string;
     let joinCodeId: string | null = null;
@@ -210,12 +345,21 @@ export async function POST(
       joinCodeId = codeRow.id;
       targetOrg = codeRow.organizations as any;
     } else {
-      // Fallback: check if cleanCode matches an active organization
-      const { data: orgRow } = await adminSupabase
+      // Fallback: check if rawCode or cleanCode matches an active organization
+      let { data: orgRow } = await adminSupabase
         .from('organizations')
         .select('id, name, code, slug, status, is_active, max_members')
-        .eq('code', cleanCode)
+        .eq('code', rawCode)
         .maybeSingle();
+
+      if (!orgRow && cleanCode !== rawCode) {
+        const retry = await adminSupabase
+          .from('organizations')
+          .select('id, name, code, slug, status, is_active, max_members')
+          .eq('code', cleanCode)
+          .maybeSingle();
+        if (retry.data) orgRow = retry.data;
+      }
 
       if (!orgRow || orgRow.is_active === false || (orgRow.status && orgRow.status !== 'ACTIVE')) {
         return NextResponse.json({ error: 'Mã tham gia không tồn tại trong hệ thống' }, { status: 404 });

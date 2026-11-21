@@ -70,7 +70,7 @@ export function JoinCodesView({
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://nexa.edu.vn';
     const sampleUrl = selectedCodeForQr
       ? `${origin}/join/org/${selectedCodeForQr.code}`
-      : `${origin}/join/org/NX-SAMPLE`;
+      : `${origin}/join/org/NXSAMPLE`;
 
     QRCode.toDataURL(sampleUrl, {
       width: 140,
@@ -247,7 +247,7 @@ export function JoinCodesView({
               <input
                 id={searchInputId}
                 type="text"
-                placeholder="Tìm kiếm theo mã (NX-...) hoặc tên..."
+                placeholder="Tìm kiếm theo mã (NX...) hoặc tên..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
@@ -564,7 +564,7 @@ export function JoinCodesView({
               )}
 
               <p className="font-mono text-sm font-bold tracking-widest text-blue-600 dark:text-blue-400 mt-2.5">
-                {selectedCodeForQr ? selectedCodeForQr.code : 'NX-XXXX-XXXX'}
+                {selectedCodeForQr ? selectedCodeForQr.code : 'NX81OVQG'}
               </p>
 
               <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1 max-w-[220px]">

@@ -158,7 +158,7 @@ export default function PersonalAuthoringListPage() {
 
           return {
             id: a.id,
-            code: `ĐE-${new Date(a.created_at).getFullYear()}-${a.id.slice(0, 3).toUpperCase()}`,
+            code: `DE${new Date(a.created_at).getFullYear()}${a.id.slice(0, 3).toUpperCase()}`,
             title: a.title,
             description: a.description || '',
             domain: domainLabel,

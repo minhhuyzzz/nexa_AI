@@ -71,14 +71,13 @@ async function checkOrgManager(user: { id: string; email?: string }, resolvedOrg
 }
 
 /**
- * Generate cryptographically secure 9-character code in 3 segments (e.g. BF8-1OV-QG8 or NX8-6M2-9K1)
+ * Generate cryptographically secure 8-character code without hyphens (e.g. BF81OVQG)
  */
 function generateSecureJoinCode(): string {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const randomBytes = new Uint8Array(9);
+  const randomBytes = new Uint8Array(8);
   globalThis.crypto.getRandomValues(randomBytes);
-  const raw = Array.from(randomBytes).map((b) => chars[b % chars.length]).join('');
-  return `${raw.slice(0, 3)}-${raw.slice(3, 6)}-${raw.slice(6, 9)}`;
+  return Array.from(randomBytes).map((b) => chars[b % chars.length]).join('');
 }
 
 export async function GET(

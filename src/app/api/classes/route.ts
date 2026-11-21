@@ -59,7 +59,9 @@ export async function POST(request: NextRequest) {
     if (!finalCode) {
       const rand = Math.floor(1000 + Math.random() * 9000);
       const prefix = organizationId ? 'ORG' : 'CLS';
-      finalCode = `${prefix}-${rand}`;
+      finalCode = `${prefix}${rand}`;
+    } else {
+      finalCode = finalCode.replace(/[-\s]/g, '');
     }
 
     // 3. Tạo bản ghi lớp học

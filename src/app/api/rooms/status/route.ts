@@ -5,7 +5,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const roomId = searchParams.get('roomId');
-    const pin = searchParams.get('pin');
+    const rawPin = searchParams.get('pin');
+    const pin = rawPin ? rawPin.replace(/[-\s]/g, '').trim() : null;
 
     if (!roomId && !pin) {
       return NextResponse.json(

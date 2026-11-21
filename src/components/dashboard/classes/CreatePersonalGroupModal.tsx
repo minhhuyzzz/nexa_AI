@@ -177,7 +177,7 @@ export function CreatePersonalGroupModal({
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 flex items-center gap-2.5 text-xs text-slate-500 dark:text-neutral-400">
             <KeyRound className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
             <span>
-              Mã tham gia lớp sẽ được hệ thống <strong>tự động sinh ngẫu nhiên</strong> (dạng <code className="font-mono text-blue-600 dark:text-blue-400 font-bold">CLS-XXXX</code>) sau khi tạo.
+              Mã tham gia lớp sẽ được hệ thống <strong>tự động sinh ngẫu nhiên</strong> (dạng <code className="font-mono text-blue-600 dark:text-blue-400 font-bold">CLSXXXX</code>) sau khi tạo.
             </span>
           </div>
 

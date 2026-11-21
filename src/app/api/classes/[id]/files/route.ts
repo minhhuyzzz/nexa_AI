@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getEffectiveUser } from '@/lib/auth/getEffectiveUser';
 import { verifyClassAccess } from '@/lib/classes/access';
+
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB limit
 
 const createFileSchema = z.object({
   fileName: z.string().trim().min(1, 'Tên tệp không được để trống').max(255),
@@ -91,6 +94,13 @@ export async function POST(
         return NextResponse.json({ error: 'Không tìm thấy tệp đính kèm' }, { status: 400 });
       }
 
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        return NextResponse.json(
+          { error: 'Tệp tải lên vượt quá dung lượng tối đa cho phép (10 MB).' },
+          { status: 400 }
+        );
+      }
+
       fileName = customName?.trim() || file.name;
       fileSizeBytes = file.size;
 
@@ -106,7 +116,8 @@ export async function POST(
       const fileExt = file.name.split('.').pop();
       const safeName = `${classId}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const storageClient = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+      const { data: uploadData, error: uploadError } = await storageClient.storage
         .from('class-files')
         .upload(safeName, file, {
           cacheControl: '3600',
@@ -115,10 +126,10 @@ export async function POST(
 
       if (uploadError || !uploadData) {
         console.error('Storage upload error:', uploadError);
-        return NextResponse.json({ error: 'Tải tệp lên máy chủ thất bại' }, { status: 500 });
+        return NextResponse.json({ error: 'Tải tệp lên máy chủ thất bại. Vui lòng thử lại.' }, { status: 500 });
       }
 
-      const { data: publicUrlData } = supabase.storage
+      const { data: publicUrlData } = storageClient.storage
         .from('class-files')
         .getPublicUrl(uploadData.path);
 

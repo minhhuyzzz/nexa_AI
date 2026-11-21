@@ -417,11 +417,11 @@ function LearnerGroupsContent() {
                         <input
                           type="text"
                           value={joinCode}
-                          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                          onChange={(e) => setJoinCode(e.target.value.replace(/[-\s]/g, '').toUpperCase())}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleQuickJoin();
                           }}
-                          placeholder="Mã lớp (VD: CLS-4821)"
+                          placeholder="Mã lớp (VD: CLS4821)"
                           className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
                           autoFocus
                         />

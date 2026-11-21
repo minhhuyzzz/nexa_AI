@@ -14,6 +14,7 @@ import {
   X,
   Loader2,
   Calendar,
+  Layers,
 } from 'lucide-react';
 import {
   InContextGradingDrawer,
@@ -67,6 +68,15 @@ interface AssignmentItem {
   };
 }
 
+interface AvailableAssessmentItem {
+  id: string;
+  title: string;
+  description?: string;
+  duration_minutes?: number;
+  passing_score?: number;
+  assessment_items?: Array<{ id: string }>;
+}
+
 interface StudentSubmission {
   id: string;
   studentId: string;
@@ -98,7 +108,7 @@ export function ClassAssignmentsTab({
 }: ClassAssignmentsTabProps) {
   const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
-  const [availableAssessments, setAvailableAssessments] = useState<Array<{ id: string; title: string; duration_minutes: number }>>([]);
+  const [availableAssessments, setAvailableAssessments] = useState<AvailableAssessmentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Assign Modal
@@ -106,6 +116,7 @@ export function ClassAssignmentsTab({
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
   const [deadline, setDeadline] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
 
   // Drawer
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -170,8 +181,9 @@ export function ClassAssignmentsTab({
         setSubmissions(subList);
       }
 
+      // Fetch user's personal assessment bank
       if (role === 'EVALUATOR') {
-        const assessRes = await fetch('/api/admin/assessments');
+        const assessRes = await fetch('/api/personal/assessments');
         if (assessRes.ok) {
           const assessData = await assessRes.json();
           setAvailableAssessments(assessData.assessments || []);
@@ -190,7 +202,11 @@ export function ClassAssignmentsTab({
 
   const handleAssignSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAssessmentId) return;
+    setAssignError(null);
+    if (!selectedAssessmentId) {
+      setAssignError('Vui lòng chọn bài khảo thí để giao.');
+      return;
+    }
 
     try {
       setIsAssigning(true);
@@ -207,13 +223,15 @@ export function ClassAssignmentsTab({
         setShowAssignModal(false);
         setSelectedAssessmentId('');
         setDeadline('');
+        setToastMessage('Đã giao bài khảo thí vào nhóm thành công!');
+        setTimeout(() => setToastMessage(null), 3000);
         fetchData();
       } else {
-        const err = await res.json();
-        alert(err.error || 'Không thể giao đề');
+        const err = await res.json().catch(() => ({}));
+        setAssignError(err.error || 'Không thể giao đề cho nhóm');
       }
     } catch {
-      alert('Đã xảy ra lỗi khi giao đề');
+      setAssignError('Đã xảy ra lỗi kết nối khi giao đề');
     } finally {
       setIsAssigning(false);
     }
@@ -251,59 +269,66 @@ export function ClassAssignmentsTab({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleRemind = (name: string) => {
-    setToastMessage(`Đã gửi thông báo nhắc nhở nộp bài đến: ${name}`);
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleRemind = (studentName: string) => {
+    alert(`Đã gửi lời nhắc nộp bài khảo thí đến ${studentName}`);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="p-3 bg-sky-50 border border-sky-200 text-sky-800 rounded-md text-xs font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
+        <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.75} />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="flex items-center justify-between pb-1">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900">Danh Sách Bài Khảo Thí Được Giao</h3>
-          <p className="text-xs text-slate-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Danh Sách Bài Khảo Thí Được Giao</h3>
+          <p className="text-xs text-slate-500 dark:text-neutral-400">
             {role === 'EVALUATOR'
-              ? 'Giao đề khảo thí, quản lý hạn nộp và theo dõi tiến độ làm bài của học viên.'
-              : 'Các bài khảo thí bạn được giao trong nhóm học tập này.'}
+              ? 'Giao đề khảo thí từ kho cá nhân, quản lý hạn nộp và theo dõi tiến độ nộp bài của học viên.'
+              : 'Các bài khảo thí bạn được giao hoàn thành trong nhóm học tập này.'}
           </p>
         </div>
 
         {role === 'EVALUATOR' && (
           <button
             type="button"
-            onClick={() => setShowAssignModal(true)}
-            className="px-3 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            onClick={() => {
+              setAssignError(null);
+              setShowAssignModal(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
           >
-            <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <Plus className="w-4 h-4" strokeWidth={1.75} />
             <span>Giao đề mới</span>
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
-          <Loader2 className="w-4 h-4 animate-spin text-sky-600" strokeWidth={1.75} />
+        <div className="py-16 text-center text-slate-400 dark:text-neutral-500 flex items-center justify-center gap-2 text-xs">
+          <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
           <span>Đang nạp danh sách bài khảo thí...</span>
         </div>
       ) : assignments.length === 0 ? (
-        <div className="p-8 text-center border border-dashed border-slate-200 rounded-md bg-white space-y-2">
-          <p className="text-xs text-slate-500">Chưa có bài khảo thí nào được giao cho nhóm này.</p>
+        <div className="p-10 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-[#111114] space-y-3">
+          <FileText className="w-8 h-8 text-slate-300 dark:text-zinc-600 mx-auto" strokeWidth={1.75} />
+          <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium">Chưa có bài khảo thí nào được giao cho nhóm này.</p>
           {role === 'EVALUATOR' && (
             <button
               type="button"
-              onClick={() => setShowAssignModal(true)}
-              className="px-3 py-1 text-xs bg-sky-600 text-white font-semibold rounded hover:bg-sky-700 cursor-pointer"
+              onClick={() => {
+                setAssignError(null);
+                setShowAssignModal(true);
+              }}
+              className="px-4 py-2 text-xs bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
             >
-              Giao bài khảo thí đầu tiên
+              <Plus className="w-3.5 h-3.5" />
+              <span>Giao bài khảo thí đầu tiên</span>
             </button>
           )}
         </div>
@@ -312,26 +337,38 @@ export function ClassAssignmentsTab({
           {assignments.map((asg) => {
             const asm = asg.assessments;
             const deadlineText = asg.deadline
-              ? new Date(asg.deadline).toLocaleString('vi-VN')
-              : 'Không giới hạn';
+              ? new Date(asg.deadline).toLocaleString('vi-VN', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Không giới hạn thời gian';
+
+            const asgSubmissions = submissions.filter((s) => s.assignmentId === asg.id);
 
             return (
               <div
                 key={asg.id}
-                className="p-4 rounded-md border border-slate-200 bg-white hover:border-slate-300 transition-all space-y-3"
+                className="p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-700 transition-all space-y-4 shadow-2xs"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                      <h4 className="font-bold text-sm text-slate-900">{asm?.title || 'Bài khảo thí'}</h4>
+                      <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
+                      <h4 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 truncate">
+                        {asm?.title || 'Bài khảo thí'}
+                      </h4>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                      <span>Thời lượng: <strong className="font-mono text-slate-700">{asm?.duration_minutes || 45} phút</strong></span>
-                      <span>·</span>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-neutral-400 flex-wrap">
+                      <span>
+                        Thời lượng: <strong className="font-mono text-neutral-800 dark:text-zinc-200">{asm?.duration_minutes || 45} phút</strong>
+                      </span>
+                      <span>&bull;</span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-                        <span>Hạn nộp: <strong className="font-mono text-slate-700">{deadlineText}</strong></span>
+                        <span>Hạn nộp: <strong className="font-mono text-neutral-800 dark:text-zinc-200">{deadlineText}</strong></span>
                       </span>
                     </div>
                   </div>
@@ -339,7 +376,7 @@ export function ClassAssignmentsTab({
                   {role === 'LEARNER' ? (
                     <Link
                       href={`/assessments/${asg.assessment_id}`}
-                      className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
                     >
                       <span>Vào làm bài thi</span>
                       <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -348,70 +385,73 @@ export function ClassAssignmentsTab({
                     <div className="flex items-center gap-2 shrink-0">
                       <Link
                         href={`/personal/grading?assessmentId=${asg.assessment_id}&classId=${classId}`}
-                        className="px-3 py-1.5 rounded bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-zinc-850 hover:bg-slate-100 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-semibold border border-slate-200 dark:border-zinc-750 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                         title="Mở Bàn chấm bài cho bài khảo thí này"
                       >
                         <span>Bàn chấm</span>
                         <ArrowRight className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
                       </Link>
-                      <span className="text-xs px-2.5 py-1 rounded bg-slate-100 font-mono text-slate-700 font-semibold border border-slate-200">
-                        Đang hoạt động
+                      <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 font-mono text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
+                        Đang mở
                       </span>
                     </div>
                   )}
                 </div>
 
                 {/* Evaluator: Submissions List for this assignment */}
-                {role === 'EVALUATOR' && submissions.length > 0 && (
-                  <div className="pt-3">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                      Danh sách bài nộp của học viên
+                {role === 'EVALUATOR' && asgSubmissions.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider block font-mono">
+                      Bài nộp của học viên ({asgSubmissions.length})
                     </span>
-                    <div className="border border-slate-100 rounded">
-                      {submissions
-                        .filter((s) => s.assignmentId === asg.id)
-                        .slice(0, 5)
-                        .map((sub) => (
-                          <div
-                            key={sub.id}
-                            className="p-2.5 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
-                          >
-                            <div>
-                              <span className="font-bold text-slate-800">{sub.studentName}</span>
-                              <span className="text-slate-400 ml-2 text-[11px] font-mono">({sub.studentEmail})</span>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  sub.status === 'GRADED'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    : 'bg-slate-100 text-slate-600 border border-slate-200'
-                                }`}
-                              >
-                                {sub.status === 'GRADED' ? `Đã chấm (${sub.score}đ)` : 'Chưa nộp'}
-                              </span>
-
-                              {sub.status === 'NOT_SUBMITTED' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemind(sub.studentName)}
-                                  className="px-2 py-0.5 rounded text-[11px] border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
-                                >
-                                  Nhắc nhở
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenGrading(sub)}
-                                  className="px-2 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 font-semibold cursor-pointer"
-                                >
-                                  Chấm điểm
-                                </button>
-                              )}
-                            </div>
+                    <div className="rounded-xl border border-slate-100 dark:border-zinc-850 overflow-hidden divide-y divide-slate-100 dark:divide-zinc-850">
+                      {asgSubmissions.slice(0, 5).map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="p-3 flex items-center justify-between text-xs hover:bg-slate-50/70 dark:hover:bg-zinc-850/50 transition-colors"
+                        >
+                          <div>
+                            <span className="font-bold text-neutral-900 dark:text-neutral-100">{sub.studentName}</span>
+                            <span className="text-slate-400 dark:text-neutral-500 ml-2 text-[11px] font-mono">({sub.studentEmail})</span>
                           </div>
-                        ))}
+
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${
+                                sub.status === 'GRADED'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : sub.status === 'PENDING'
+                                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 border border-slate-200 dark:border-zinc-700'
+                              }`}
+                            >
+                              {sub.status === 'GRADED'
+                                ? `Đã chấm (${sub.score}đ)`
+                                : sub.status === 'PENDING'
+                                ? 'Chờ chấm'
+                                : 'Chưa nộp'}
+                            </span>
+
+                            {sub.status === 'NOT_SUBMITTED' ? (
+                              <button
+                                type="button"
+                                onClick={() => handleRemind(sub.studentName)}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer font-medium"
+                              >
+                                Nhắc nhở
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenGrading(sub)}
+                                className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-900 font-semibold cursor-pointer"
+                              >
+                                Chấm điểm
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -423,75 +463,118 @@ export function ClassAssignmentsTab({
 
       {/* Assign Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <form
-            onSubmit={handleAssignSubmit}
-            className="bg-white border border-slate-200 rounded-md shadow-md max-w-md w-full p-6 space-y-4"
-          >
-            <div className="flex items-center justify-between pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-                <span>Giao Bài Khảo Thí Vào Nhóm</span>
-              </h3>
+        <div className="fixed inset-0 z-50 bg-neutral-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+                  <span>Giao Bài Khảo Thí Vào Nhóm</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                  Chọn đề từ kho đề đánh giá cá nhân của bạn
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}
-                className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-neutral-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
               >
                 <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">
-                  Chọn bài khảo thí *
-                </label>
-                <select
-                  required
-                  value={selectedAssessmentId}
-                  onChange={(e) => setSelectedAssessmentId(e.target.value)}
-                  className="w-full p-2 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500 font-sans"
+            {assignError && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                <span>{assignError}</span>
+              </div>
+            )}
+
+            {availableAssessments.length === 0 ? (
+              <div className="p-6 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl bg-slate-50/50 dark:bg-zinc-900/50 space-y-3">
+                <Layers className="w-8 h-8 text-slate-300 dark:text-zinc-600 mx-auto" />
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    Kho đề cá nhân đang trống
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                    Bạn chưa có bài khảo thí nào trong mục "Đề đánh giá của tôi". Hãy tạo đề mới để bắt đầu giao cho nhóm.
+                  </p>
+                </div>
+                <Link
+                  href="/personal/assessments/new"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-xs cursor-pointer"
                 >
-                  <option value="">-- Chọn bài khảo thí từ kho --</option>
-                  {availableAssessments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.title} ({a.duration_minutes} phút)
-                    </option>
-                  ))}
-                </select>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tạo đề đánh giá mới</span>
+                </Link>
               </div>
+            ) : (
+              <form onSubmit={handleAssignSubmit} className="space-y-4 text-xs">
+                <div>
+                  <label className="font-semibold text-neutral-800 dark:text-zinc-200 block mb-1.5">
+                    Chọn bài khảo thí từ kho đề của bạn *
+                  </label>
+                  <select
+                    required
+                    value={selectedAssessmentId}
+                    onChange={(e) => setSelectedAssessmentId(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 font-sans"
+                  >
+                    <option value="">-- Chọn đề từ kho cá nhân ({availableAssessments.length} đề) --</option>
+                    {availableAssessments.map((a) => {
+                      const itemCount = a.assessment_items?.length ?? 0;
+                      return (
+                        <option key={a.id} value={a.id}>
+                          {a.title} — {a.duration_minutes || 45} phút {itemCount > 0 ? `(${itemCount} câu)` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
 
-              <div>
-                <label className="font-semibold text-slate-800 block mb-1">
-                  Hạn nộp bài (Tùy chọn)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full p-2 border border-slate-200 rounded-md text-xs font-mono focus:outline-none focus:ring-1 focus:ring-sky-500"
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="font-semibold text-neutral-800 dark:text-zinc-200 block mb-1.5">
+                    Hạn nộp bài (Tùy chọn)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-mono bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  />
+                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
+                    Để trống nếu không giới hạn thời gian nộp bài.
+                  </span>
+                </div>
 
-            <div className="pt-3 flex items-center justify-end gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setShowAssignModal(false)}
-                className="px-3.5 py-1.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={isAssigning || !selectedAssessmentId}
-                className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {isAssigning ? 'Đang giao...' : 'Xác nhận giao đề'}
-              </button>
-            </div>
-          </form>
+                <div className="pt-2 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAssignModal(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-800 font-medium transition cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isAssigning || !selectedAssessmentId}
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-50 cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                  >
+                    {isAssigning ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang giao đề...</span>
+                      </>
+                    ) : (
+                      <span>Xác nhận giao đề</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
 

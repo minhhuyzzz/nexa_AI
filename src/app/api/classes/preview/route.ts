@@ -13,16 +13,17 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code')?.trim().toUpperCase();
+    const rawCode = (searchParams.get('code') || '').trim().toUpperCase();
+    const cleanCode = rawCode.replace(/[-\s]/g, '');
 
-    if (!code || code.length < 2) {
+    if (!cleanCode || cleanCode.length < 2) {
       return NextResponse.json({ error: 'Vui lòng cung cấp mã hợp lệ' }, { status: 400 });
     }
 
     const adminClient = createAdminClient();
 
-    // 1. Tìm lớp theo mã
-    const { data: cls, error: clsError } = await adminClient
+    // 1. Tìm lớp theo mã (resilient lookup: rawCode, cleanCode, legacy hyphenated)
+    let { data: cls, error: clsError } = await adminClient
       .from('evaluator_classes')
       .select(`
         id,
@@ -34,13 +35,61 @@ export async function GET(request: NextRequest) {
         organization_id,
         profiles:evaluator_id ( id, nickname, avatar_url )
       `)
-      .ilike('class_code', code)
+      .ilike('class_code', rawCode)
       .is('organization_id', null) // Chỉ tra cứu trong không gian cá nhân (Personal)
       .single();
 
+    if ((clsError || !cls) && cleanCode !== rawCode) {
+      const retry = await adminClient
+        .from('evaluator_classes')
+        .select(`
+          id,
+          name,
+          class_code,
+          description,
+          evaluator_id,
+          created_at,
+          organization_id,
+          profiles:evaluator_id ( id, nickname, avatar_url )
+        `)
+        .ilike('class_code', cleanCode)
+        .is('organization_id', null)
+        .single();
+      if (retry.data) {
+        cls = retry.data;
+        clsError = null;
+      }
+    }
+
+    if (clsError || !cls) {
+      const match = cleanCode.match(/^([A-Z]+)(\d+)$/);
+      if (match) {
+        const hyphenated = `${match[1]}-${match[2]}`;
+        const retry = await adminClient
+          .from('evaluator_classes')
+          .select(`
+            id,
+            name,
+            class_code,
+            description,
+            evaluator_id,
+            created_at,
+            organization_id,
+            profiles:evaluator_id ( id, nickname, avatar_url )
+          `)
+          .ilike('class_code', hyphenated)
+          .is('organization_id', null)
+          .single();
+        if (retry.data) {
+          cls = retry.data;
+          clsError = null;
+        }
+      }
+    }
+
     if (clsError || !cls) {
       return NextResponse.json(
-        { error: `Không tìm thấy lớp học hoặc nhóm với mã '${code}'. Vui lòng kiểm tra lại.` },
+        { error: `Không tìm thấy lớp học hoặc nhóm với mã '${cleanCode}'. Vui lòng kiểm tra lại.` },
         { status: 404 }
       );
     }

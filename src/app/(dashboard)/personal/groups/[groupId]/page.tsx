@@ -263,6 +263,7 @@ export default function LearnerGroupDetailPage() {
             members={group.members}
             role={userClassRole}
             currentUserId={currentUserId}
+            ownerId={group.evaluatorId}
             onRefresh={fetchGroup}
           />
         )}

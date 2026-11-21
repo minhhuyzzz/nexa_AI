@@ -10,7 +10,6 @@ import {
   GraduationCap,
   Users,
   Settings,
-  Radio,
   FileCheck,
 } from 'lucide-react';
 
@@ -133,17 +132,6 @@ export function ClassHeader({
             )}
           </button>
 
-          {/* Live Room action button */}
-          {isOwner && (
-            <Link
-              href={`/personal/live-room/new?classId=${id}`}
-              className="px-3.5 py-2 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-2xs"
-              title="Mở phòng thi thời gian thực cho lớp này"
-            >
-              <Radio className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Thi trực tiếp</span>
-            </Link>
-          )}
 
           {/* Grading workbench button */}
           {isOwner && (
