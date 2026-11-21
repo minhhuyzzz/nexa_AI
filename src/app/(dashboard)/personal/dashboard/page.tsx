@@ -495,61 +495,58 @@ export default function LearnerDashboardPage() {
   ];
   const completedMilestonesCount = masterMilestones.filter((m) => m.done).length;
 
-  const renderLevelGauge = (size: 'sm' | 'md' = 'md') => {
-    const isSm = size === 'sm';
-    return (
-      <div className="p-0 bg-transparent shadow-none flex items-center gap-2 sm:gap-3 shrink-0">
-        <div className={`relative ${isSm ? 'w-10 h-10' : 'w-11 h-11 sm:w-12 sm:h-12'} flex items-center justify-center shrink-0`}>
-          <svg className={`${isSm ? 'w-10 h-10' : 'w-11 h-11 sm:w-12 sm:h-12'} transform -rotate-90`} viewBox="0 0 36 36">
-            <path
-              className="text-slate-200/70 dark:text-zinc-800"
-              strokeWidth="3.5"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <path
-              className="text-blue-600 dark:text-blue-400 transition-all duration-500"
-              strokeDasharray={`${Math.max(6, progressRatio)}, 100`}
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-          </svg>
-          <span className="absolute font-bold text-xs text-blue-700 dark:text-blue-300 font-mono tabular-nums">
-            {animatedPoints}
+  const renderLevelGauge = () => (
+    <div className="p-0 bg-transparent shadow-none flex items-center gap-2 sm:gap-2.5 shrink-0">
+      <div className="relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center shrink-0">
+        <svg className="w-10 h-10 sm:w-11 sm:h-11 transform -rotate-90" viewBox="0 0 36 36">
+          <path
+            className="text-slate-200/70 dark:text-zinc-800"
+            strokeWidth="3.5"
+            stroke="currentColor"
+            fill="none"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+          />
+          <path
+            className="text-blue-600 dark:text-blue-400 transition-all duration-500"
+            strokeDasharray={`${Math.max(6, progressRatio)}, 100`}
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            stroke="currentColor"
+            fill="none"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+          />
+        </svg>
+        <span className="absolute font-bold text-xs text-blue-700 dark:text-blue-300 font-mono tabular-nums">
+          {animatedPoints}
+        </span>
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+            {stats.levelCode}
           </span>
+          <button
+            type="button"
+            onClick={() => setShowLevelModal(true)}
+            className="text-[10px] text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer shrink-0"
+            title="Xem chi tiết các mốc cấp bậc"
+          >
+            (Quy định)
+          </button>
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 font-mono">
-              {stats.levelCode}
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowLevelModal(true)}
-              className="text-[10px] text-slate-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 underline cursor-pointer shrink-0"
-              title="Xem chi tiết các mốc cấp bậc"
-            >
-              (Quy định)
-            </button>
-          </div>
-          <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">
-            <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{animatedPoints}</strong> / {stats.levelNextTarget} PTS
-          </div>
+        <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">
+          <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{animatedPoints}</strong> / {stats.levelNextTarget} PTS
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header & Quick Indicators (Trên Web: Tiêu đề, Chuỗi ngày và Level cùng một hàng) */}
+      {/* 1. Header & Quick Indicators (Level nằm kế tiêu đề tên, Chuỗi ngày nằm bên phải) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-6 pb-1">
-        {/* Top/Left Row: Greeting on left & Mobile Level Gauge on right */}
-        <div className="flex items-center justify-between gap-3 min-w-0">
+        {/* Left Side: Greeting Title + Level Progress Gauge directly next to it */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap min-w-0">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
             {loadingStats ? (
               <span className="inline-block w-40 sm:w-48 h-7 sm:h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse align-middle" />
@@ -558,20 +555,13 @@ export default function LearnerDashboardPage() {
             )}
           </h1>
 
-          {/* Level Progress Gauge on mobile only (cùng hàng với Lời chào) */}
-          <div className="lg:hidden shrink-0">
-            {renderLevelGauge('sm')}
+          <div className="shrink-0">
+            {renderLevelGauge()}
           </div>
         </div>
 
-        {/* Right Indicators: Level Gauge & Streak Tracker (Chuỗi 7 ngày nằm bên phải) */}
-        <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0">
-          {/* Level Progress Gauge on desktop (cùng hàng với Chuỗi ngày & Tiêu đề) */}
-          <div className="hidden lg:flex shrink-0">
-            {renderLevelGauge('md')}
-          </div>
-
-          {/* Streak Days Tracker (Gom gọn chữ và các ô ngày thành một khối thống nhất, nằm bên phải) */}
+        {/* Right Side: Streak Days Tracker (Chuỗi 7 ngày nằm bên phải) */}
+        <div className="flex items-center justify-start lg:justify-end text-xs text-neutral-700 dark:text-zinc-300 shrink-0">
           <div className="p-0 bg-transparent shadow-none flex flex-col gap-1 shrink-0">
             <div className="flex items-center gap-2 sm:gap-3 text-[11px]">
               <div className="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100 font-bold whitespace-nowrap">
