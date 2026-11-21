@@ -594,9 +594,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/dashboard/page.tsx": {
-    "mtime": 1795260148.3814535,
-    "seen": 1795260686.973505,
-    "ast_hash": "51b9b816a8ff89fc3ddae42f047c2d34",
+    "mtime": 1795262119.4886131,
+    "seen": 1795262605.346297,
+    "ast_hash": "cb0b2693a1286d1d174ee50e22e2767d",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/grading/page.tsx": {
@@ -612,9 +612,9 @@
     "semantic_hash": "611969f0314e917488a9c35947db490d"
   },
   "src/app/(dashboard)/personal/groups/page.tsx": {
-    "mtime": 1795260382.900481,
-    "seen": 1795260686.974207,
-    "ast_hash": "1443b662dec2567c45a11a157a1e546e",
+    "mtime": 1795262153.3485284,
+    "seen": 1795262605.3467045,
+    "ast_hash": "6140f6920588755c509e1655ed89dca3",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/layout.tsx": {
@@ -624,9 +624,9 @@
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/leaderboard/page.tsx": {
-    "mtime": 1795260296.3015335,
-    "seen": 1795260686.9744687,
-    "ast_hash": "c9c5d727c978904831e966ac90d8a0eb",
+    "mtime": 1795262394.6798725,
+    "seen": 1795262605.3468726,
+    "ast_hash": "73dabda1e4393cdb08f562c1c130dad2",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/personal/learning-path/page.tsx": {
@@ -4032,9 +4032,9 @@
     "semantic_hash": "08bb6156811afa97db6b41ffe33a9194"
   },
   "src/components/dashboard/submissions/SubmissionsTabs.tsx": {
-    "mtime": 1795257048.2666261,
-    "seen": 1795257976.07325,
-    "ast_hash": "c5658bed187ace5c1d5769691522c90d",
+    "mtime": 1795262166.3593247,
+    "seen": 1795262605.3727157,
+    "ast_hash": "7ce8502a1920243f94bfcc9a82b3dce9",
     "semantic_hash": ""
   },
   "src/features/classes/services/personal-submissions-workflow.test.ts": {

@@ -29,6 +29,7 @@ import {
   Link2,
   ChevronDown,
   Download,
+  HelpCircle,
 } from 'lucide-react';
 
 interface LiveRoomItem {
@@ -286,13 +287,26 @@ export function PersonalLiveRoomDashboardView() {
       {/* 1. Header with Title & Direct PIN Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Radio className="w-4 h-4 animate-pulse" />
             </div>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
               Phòng thi trực tiếp
             </h1>
+            <button
+              type="button"
+              onClick={() => {
+                alert(
+                  'Quy trình tổ chức phòng đánh giá trực tiếp:\n1. Bấm "Mở phòng mới" và chọn bài đánh giá năng lực số.\n2. Chia sẻ mã PIN 6 số hoặc liên kết cho học viên.\n3. Nhấn "Bắt đầu làm bài" khi học viên đã có mặt đầy đủ trong sảnh chờ.\n4. Theo dõi tiến độ nộp bài và kết quả theo thời gian thực.'
+                );
+              }}
+              className="w-7 h-7 rounded-full border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0"
+              title="Hướng dẫn tổ chức phòng thi"
+              aria-label="Hướng dẫn tổ chức phòng thi"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -387,27 +401,29 @@ export function PersonalLiveRoomDashboardView() {
         </div>
       </div>
 
-      {/* 2. Three Metric KPI Cards (Screen 01) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* 2. Three Metric KPI Cards (Screen 01) - 3 cards in 1 row on mobile */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {/* Sắp diễn ra */}
         <div
           onClick={() => {
             setStatusFilter(statusFilter === 'SCHEDULED' ? 'ALL' : 'SCHEDULED');
             setCurrentPage(1);
           }}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
+          className={`p-2.5 sm:p-4 rounded-xl border cursor-pointer transition-all min-w-0 ${
             statusFilter === 'SCHEDULED'
               ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20'
               : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-black hover:border-slate-300 shadow-xs'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">Sắp diễn ra</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Calendar className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-neutral-400 truncate">
+              Sắp diễn ra
+            </span>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div className="text-lg sm:text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1 sm:mt-2">
             {stats.scheduled}
           </div>
         </div>
@@ -418,19 +434,21 @@ export function PersonalLiveRoomDashboardView() {
             setStatusFilter(statusFilter === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS');
             setCurrentPage(1);
           }}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
+          className={`p-2.5 sm:p-4 rounded-xl border cursor-pointer transition-all min-w-0 ${
             statusFilter === 'IN_PROGRESS'
               ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/20'
               : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-black hover:border-slate-300 shadow-xs'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">Đang diễn ra</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Radio className="w-4 h-4 animate-pulse" />
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-neutral-400 truncate">
+              Đang diễn ra
+            </span>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div className="text-lg sm:text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1 sm:mt-2">
             {stats.inProgress}
           </div>
         </div>
@@ -441,29 +459,31 @@ export function PersonalLiveRoomDashboardView() {
             setStatusFilter(statusFilter === 'COMPLETED' ? 'ALL' : 'COMPLETED');
             setCurrentPage(1);
           }}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
+          className={`p-2.5 sm:p-4 rounded-xl border cursor-pointer transition-all min-w-0 ${
             statusFilter === 'COMPLETED'
               ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-950/20'
               : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-black hover:border-slate-300 shadow-xs'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">Đã hoàn thành</span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-neutral-400 truncate">
+              Đã hoàn thành
+            </span>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-300 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div className="text-lg sm:text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1 sm:mt-2">
             {stats.completed}
           </div>
         </div>
       </div>
 
       {/* 3. Action Buttons Row */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
         <Link
           href="/personal/live-room/new"
-          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+          className="px-3.5 sm:px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Mở phòng mới</span>
@@ -472,17 +492,17 @@ export function PersonalLiveRoomDashboardView() {
         {recentTemplates.length > 0 ? (
           <Link
             href={`/personal/live-room/new?cloneFrom=${recentTemplates[0].id}`}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-2 transition-colors shadow-2xs cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer truncate max-w-[200px] sm:max-w-none"
           >
-            <Layers className="w-4 h-4 text-slate-500" />
-            <span>Nhân bản phòng gần đây</span>
+            <Layers className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="truncate">Nhân bản gần đây</span>
           </Link>
         ) : (
           <Link
             href="/personal/live-room/new"
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-2 transition-colors shadow-2xs cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
           >
-            <Layers className="w-4 h-4 text-slate-500" />
+            <Layers className="w-4 h-4 text-slate-500 shrink-0" />
             <span>Tạo từ bài đánh giá</span>
           </Link>
         )}
@@ -494,10 +514,11 @@ export function PersonalLiveRoomDashboardView() {
               'Quy trình tổ chức phòng đánh giá trực tiếp:\n1. Bấm "Mở phòng mới" và chọn bài đánh giá năng lực số.\n2. Chia sẻ mã PIN 6 số hoặc liên kết cho học viên.\n3. Nhấn "Bắt đầu làm bài" khi học viên đã có mặt đầy đủ trong sảnh chờ.\n4. Theo dõi tiến độ nộp bài và kết quả theo thời gian thực.'
             );
           }}
-          className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-neutral-200 font-semibold text-xs inline-flex items-center gap-2 transition-colors shadow-2xs cursor-pointer"
+          className="w-8 h-8 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 inline-flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
+          title="Hướng dẫn tổ chức phòng thi"
+          aria-label="Hướng dẫn tổ chức phòng thi"
         >
-          <BookOpen className="w-4 h-4 text-slate-500" />
-          <span>Xem hướng dẫn</span>
+          <HelpCircle className="w-4 h-4" />
         </button>
       </div>
 

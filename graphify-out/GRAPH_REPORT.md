@@ -1,7 +1,7 @@
 # Graph Report - nexa  (2026-11-21)
 
 ## Corpus Check
-- 1174 files · ~2,022,878 words
+- 1174 files · ~2,022,929 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 144 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a7ea9acb`
+- Built from commit: `a5bae4c1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -2560,7 +2560,7 @@ Nodes (4): Step 1: Parse the request, Step 2: Reuse the page, then start, Step 3
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `next` connect `org-guard.ts` to `createClient`, `createClient`, `app/page.tsx`, `app/layout.tsx`, `round2-acceptance.test.ts`, `ref_node_fs`, `zod`, `faq/page.tsx`, `submissions/page.tsx`, `createAdminClient`, `classes/types.ts`, `live-room-analytics.test.ts`, `org-guard.ts`, `feedback/route.ts`, `Skeleton`, `isSuperadminEmail`, `BaselineDiagnosticModal.tsx`, `ref_react`, `personal-phase5-account-and-subscriptions.test.ts`, `take/[id]/page.tsx`, `ref_react`, `OrgAnalyticsDashboard.tsx`, `authoring/page.tsx`, `package.json`, `[moduleId]/page.tsx`, `getEffectiveUser`, `competency.types.ts`, `PolicyNavHeader.tsx`, `item-bank/[id]/page.tsx`, `personal/grading/page.tsx`, `OrgSidebar.tsx`, `csv-helper.ts`, `zod`, `admin.ts`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `dependencies`, `[id]/result/page.tsx`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `join-codes/route.ts`, `AdminUIComponents.tsx`, `admin/analytics/page.tsx`, `live-room.ts`, `checkout/page.tsx`, `admin-preview-client.tsx`, `[itemId]/route.ts`, `personal/live-room/page.tsx`, `renewal-requests/route.ts`, `challenger-m1-r2-2-empirical.test.ts`, `excel-mcq-helper.ts`, `baseline-admin-client.tsx`?**
-  _High betweenness centrality (0.123) - this node is a cross-community bridge._
+  _High betweenness centrality (0.124) - this node is a cross-community bridge._
 - **Are the 30 inferred relationships involving `createAdminClient()` (e.g. with `organizations/export/route.test.ts` and `organizations/route.test.ts`) actually correct?**
   _`createAdminClient()` has 30 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `SKILLS`, `RFC-4180` to the rest of the system?**
