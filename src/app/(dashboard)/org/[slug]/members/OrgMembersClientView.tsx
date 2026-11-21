@@ -281,11 +281,11 @@ export function OrgMembersClientView({
         </div>
 
         {isManager && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsInviteModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] sm:min-h-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               <span>Mời thành viên</span>
@@ -295,7 +295,7 @@ export function OrgMembersClientView({
       </div>
 
       {/* 2. KPI Summary Bar */}
-      <div className="flex flex-wrap items-center gap-6 py-2 text-xs text-slate-600 dark:text-neutral-400">
+      <div className="flex flex-wrap items-center gap-4 sm:gap-6 py-2 text-xs text-slate-600 dark:text-neutral-400">
         <span className="flex items-center gap-2">
           <Users className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
           <span>
@@ -334,11 +334,11 @@ export function OrgMembersClientView({
 
       {/* 3. Navigation Tabs */}
       <div>
-        <nav className="flex space-x-6 overflow-x-auto" aria-label="Tabs">
+        <nav className="flex space-x-6 overflow-x-auto no-scrollbar" aria-label="Tabs">
           <button
             type="button"
             onClick={() => setActiveTab('members')}
-            className={`pb-3 text-xs transition whitespace-nowrap relative cursor-pointer ${
+            className={`pb-3 min-h-[44px] flex items-center text-xs transition whitespace-nowrap relative cursor-pointer ${
               activeTab === 'members'
                 ? 'text-blue-600 dark:text-blue-400 font-bold after:content-[""] after:absolute after:left-0 after:right-0 after:bottom-[-1px] after:h-[2px] after:bg-blue-600 dark:after:bg-blue-400'
                 : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 font-medium'
@@ -351,7 +351,7 @@ export function OrgMembersClientView({
             <button
               type="button"
               onClick={() => setActiveTab('invitations')}
-              className={`pb-3 text-xs transition whitespace-nowrap relative cursor-pointer ${
+              className={`pb-3 min-h-[44px] flex items-center text-xs transition whitespace-nowrap relative cursor-pointer ${
                 activeTab === 'invitations'
                   ? 'text-blue-600 dark:text-blue-400 font-bold after:content-[""] after:absolute after:left-0 after:right-0 after:bottom-[-1px] after:h-[2px] after:bg-blue-600 dark:after:bg-blue-400'
                   : 'text-slate-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 font-medium'

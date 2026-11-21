@@ -155,7 +155,7 @@ export function OrgDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-neutral-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-neutral-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
@@ -242,7 +242,7 @@ export function OrgDetailModal({
                 type="button"
                 disabled={leaving}
                 onClick={() => setIsConfirmingLeave(false)}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-medium hover:bg-white dark:hover:bg-zinc-800 cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-medium hover:bg-white dark:hover:bg-zinc-800 cursor-pointer"
               >
                 Hủy
               </button>
@@ -250,7 +250,7 @@ export function OrgDetailModal({
                 type="button"
                 disabled={leaving}
                 onClick={handleLeaveOrg}
-                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 {leaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
                 <span>Xác nhận rời trường</span>
@@ -262,7 +262,7 @@ export function OrgDetailModal({
             <button
               type="button"
               onClick={() => setIsConfirmingLeave(true)}
-              className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+              className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold inline-flex items-center min-h-[44px] sm:min-h-0 gap-1.5 px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Rời tổ chức</span>
@@ -271,7 +271,7 @@ export function OrgDetailModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+              className="px-4 py-2 min-h-[44px] sm:min-h-0 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white text-xs font-semibold transition-colors cursor-pointer"
             >
               Đóng
             </button>

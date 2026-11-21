@@ -223,7 +223,7 @@ export default function AdminRolesPage() {
         <div className="space-y-6">
           {/* 2. KHỐI 1: CHỦ SỞ HỮU NỀN TẢNG (SUPER ADMIN) */}
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xs overflow-hidden">
-            <div className="p-5 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/40">
+            <div className="p-5 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/40">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0">
                   <Crown className="w-5 h-5" strokeWidth={1.75} />
@@ -245,13 +245,13 @@ export default function AdminRolesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 font-medium">
+                  <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 font-medium">
                     <th className="py-3 px-4">Thành viên</th>
                     <th className="py-3 px-4">Vai trò</th>
                     <th className="py-3 px-4">Phạm vi quyền hạn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+                <tbody className="divide-y-0 space-y-0.5">
                   {superAdmins.map((admin) => (
                     <tr key={admin.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/30 transition-colors">
                       <td className="py-3.5 px-4">
@@ -289,7 +289,7 @@ export default function AdminRolesPage() {
 
           {/* 3. KHỐI 2: QUẢN TRỊ VIÊN HỆ THỐNG */}
           <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xs overflow-hidden">
-            <div className="p-5 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/40">
+            <div className="p-5 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/40">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0">
                   <Shield className="w-5 h-5" strokeWidth={1.75} />
@@ -330,14 +330,14 @@ export default function AdminRolesPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 font-medium">
+                    <tr className="bg-slate-50 dark:bg-zinc-900/60 text-slate-500 dark:text-neutral-400 font-medium">
                       <th className="py-3 px-4">Thành viên</th>
                       <th className="py-3 px-4">Vai trò</th>
                       <th className="py-3 px-4">Phạm vi quyền hạn</th>
                       <th className="py-3 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+                  <tbody className="divide-y-0 space-y-0.5">
                     {platformAdmins.map((admin) => (
                       <tr key={admin.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/30 transition-colors">
                         <td className="py-3.5 px-4">
@@ -426,19 +426,19 @@ export default function AdminRolesPage() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
                   disabled={isSubmittingAdd}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+                  className="min-h-[44px] sm:min-h-0 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingAdd || !addEmail.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] sm:min-h-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingAdd && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Xác nhận bổ nhiệm</span>
@@ -475,12 +475,12 @@ export default function AdminRolesPage() {
               ? Tài khoản này sẽ không còn quyền truy cập vào khu vực quản trị hệ thống.
             </p>
 
-            <div className="flex items-center justify-end gap-2.5">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setRevokingUser(null)}
                 disabled={isSubmittingRevoke}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+                className="min-h-[44px] sm:min-h-0 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
               >
                 Hủy
               </button>
@@ -488,7 +488,7 @@ export default function AdminRolesPage() {
                 type="button"
                 onClick={handleRevokeAdmin}
                 disabled={isSubmittingRevoke}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                className="min-h-[44px] sm:min-h-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isSubmittingRevoke && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>Thu hồi quyền ngay</span>

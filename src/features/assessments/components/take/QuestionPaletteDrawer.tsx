@@ -53,8 +53,9 @@ export function QuestionPaletteDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             title="Đóng bảng câu hỏi"
+            aria-label="Đóng bảng câu hỏi"
           >
             <X className="w-5 h-5" />
           </button>
@@ -70,8 +71,8 @@ export function QuestionPaletteDrawer({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded-md bg-amber-500 shrink-0 flex items-center justify-center text-white text-[9px] font-bold">
-              🚩
+            <span className="w-3.5 h-3.5 rounded-md bg-amber-500 shrink-0 flex items-center justify-center text-white">
+              <Flag className="w-2 h-2 fill-white text-white" />
             </span>
             <span className="text-amber-800 dark:text-amber-400 font-semibold truncate">
               Xem lại ({flaggedCount})
@@ -125,8 +126,8 @@ export function QuestionPaletteDrawer({
                 >
                   <span>{i + 1}</span>
                   {isFlagged && (
-                    <span className="absolute -top-1 -right-1 text-[9px] drop-shadow-xs">
-                      🚩
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-600 text-white flex items-center justify-center">
+                      <Flag className="w-2 h-2 fill-white text-white" />
                     </span>
                   )}
                 </button>

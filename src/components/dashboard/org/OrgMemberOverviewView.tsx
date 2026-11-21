@@ -67,10 +67,10 @@ export function OrgMemberOverviewView({
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
             <Link
               href={`/org/${orgSlug}/my-results`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[44px] sm:min-h-0 w-full sm:w-auto rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
             >
               <Award className="w-3.5 h-3.5" strokeWidth={1.75} />
               <span>Xem kết quả và chứng chỉ</span>
@@ -153,7 +153,8 @@ export function OrgMemberOverviewView({
               </p>
             </div>
           ) : (
-            <table className="w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[580px] text-left">
               <thead>
                 <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                   <th className="py-2.5 px-4">Đợt đánh giá</th>
@@ -233,6 +234,7 @@ export function OrgMemberOverviewView({
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

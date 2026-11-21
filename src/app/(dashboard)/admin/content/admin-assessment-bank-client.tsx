@@ -1031,7 +1031,7 @@ export function AdminAssessmentBankClient({
             </button>
 
             {isDomainDropdownOpen && (
-              <div className="absolute left-0 top-full mt-1.5 z-50 w-72 p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl animate-in fade-in zoom-in-95 space-y-1">
+              <div className="absolute left-0 top-full mt-1.5 z-50 w-72 max-w-[calc(100vw-2.5rem)] p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl animate-in fade-in zoom-in-95 space-y-1">
                 {/* Tùy chọn 1: Tất cả miền năng lực (Radio) */}
                 <button
                   type="button"
@@ -1054,7 +1054,7 @@ export function AdminAssessmentBankClient({
                   </div>
                 </button>
 
-                <div className="my-1 border-t border-slate-100 dark:border-zinc-800/80" />
+                <div className="my-1" />
 
                 {/* Danh sách các miền năng lực cụ thể (Tích chọn tùy thích) */}
                 <div className="max-h-60 overflow-y-auto space-y-0.5">
@@ -1091,7 +1091,7 @@ export function AdminAssessmentBankClient({
                 </div>
 
                 {selectedDomainCodes.length > 0 && (
-                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between px-2">
+                  <div className="pt-2 flex items-center justify-between px-2">
                     <span className="text-[11px] text-slate-400">
                       Đã chọn {selectedDomainCodes.length} miền
                     </span>
@@ -1479,7 +1479,7 @@ export function AdminAssessmentBankClient({
             <span>Sửa trong Studio</span>
           </Link>
 
-          <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+          <div className="my-1" />
 
           {Boolean(dropdownMenu.exam.id === 'a0000000-0000-0000-0000-000000000001' || dropdownMenu.exam.title?.toLowerCase().includes('đầu vào')) ? (
             <div className="px-3 py-2 text-[11px] text-slate-400 italic">
@@ -1587,7 +1587,7 @@ export function AdminAssessmentBankClient({
                   </div>
 
                   {formTargetDomain !== 'ALL' && (
-                    <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {domains.map((d) => {
                         const isChecked = formSelectedDomains.includes(d.code);
                         const num = parseInt(d.code.replace(/\D/g, ''), 10);
@@ -1698,7 +1698,7 @@ export function AdminAssessmentBankClient({
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-zinc-800">
+            <div className="px-6 py-4 flex items-center justify-between shrink-0 bg-slate-50/60 dark:bg-zinc-900/60">
               <div>
                 <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
@@ -1711,7 +1711,8 @@ export function AdminAssessmentBankClient({
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+                aria-label="Đóng"
               >
                 <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
@@ -1813,9 +1814,9 @@ export function AdminAssessmentBankClient({
                     </span>
                   </div>
 
-                  <div className="max-h-56 overflow-y-auto border border-slate-200 dark:border-zinc-800 rounded-xl">
+                  <div className="max-h-56 overflow-x-auto overflow-y-auto border border-slate-200 dark:border-zinc-800 rounded-xl">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 dark:bg-zinc-850 font-semibold text-slate-500 dark:text-neutral-400 sticky top-0 border-b border-slate-200 dark:border-zinc-800">
+                      <thead className="bg-slate-50 dark:bg-zinc-850 font-semibold text-slate-500 dark:text-neutral-400 sticky top-0">
                         <tr>
                           <th className="py-2 px-3">STT</th>
                           <th className="py-2 px-3">Nội dung câu hỏi</th>
@@ -1824,7 +1825,7 @@ export function AdminAssessmentBankClient({
                           <th className="py-2 px-3 text-right">Điểm</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
+                      <tbody className="space-y-0.5">
                         {importParsedItems.slice(0, 15).map((row, idx) => (
                           <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-zinc-900/60">
                             <td className="py-2 px-3 font-mono text-slate-400">{idx + 1}</td>
@@ -1856,11 +1857,11 @@ export function AdminAssessmentBankClient({
               )}
             </div>
 
-            <div className="px-6 py-4 flex items-center justify-end gap-2.5 shrink-0 bg-slate-50/60 dark:bg-zinc-900/60 border-t border-slate-100 dark:border-zinc-800">
+            <div className="px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 shrink-0 bg-slate-50/60 dark:bg-zinc-900/60">
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer transition-colors"
+                className="min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center"
               >
                 Hủy bỏ
               </button>
@@ -1868,7 +1869,7 @@ export function AdminAssessmentBankClient({
                 type="button"
                 onClick={handleExecuteImport}
                 disabled={isSubmittingImport || importParsedItems.length === 0}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-2xs disabled:opacity-40 inline-flex items-center gap-2 cursor-pointer"
+                className="min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-2xs disabled:opacity-40 inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmittingImport ? (
                   <>
@@ -2077,7 +2078,7 @@ export function AdminAssessmentBankClient({
                       </div>
 
                       {settingsTargetDomain !== 'ALL' && (
-                        <div className="pt-2 border-t border-slate-200/80 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                           {domains.map((d) => {
                             const isChecked = settingsSelectedDomains.includes(d.code);
                             const num = parseInt(d.code.replace(/\D/g, ''), 10);

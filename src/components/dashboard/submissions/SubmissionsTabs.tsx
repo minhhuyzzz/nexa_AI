@@ -29,7 +29,7 @@ export function SubmissionsTabs({ activeTab, onTabChange, counts }: SubmissionsT
             key={t.key}
             type="button"
             onClick={() => onTabChange(t.key)}
-            className={`flex items-center gap-2 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-2 min-h-[40px] py-2 px-3.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               isActive
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-zinc-200'

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Target, Check, Sparkles, Clock, Compass } from 'lucide-react';
 
 export interface UserLearningGoal {
@@ -50,6 +50,17 @@ export function EditGoalModal({
     !PRESET_GOALS.includes(currentGoal.title)
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,8 +83,14 @@ export function EditGoalModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-xl space-y-5 text-xs text-neutral-800 dark:text-zinc-200">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-xl space-y-5 text-xs text-neutral-800 dark:text-zinc-200"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-center gap-2">
@@ -92,7 +109,8 @@ export function EditGoalModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 p-1 rounded-md transition-colors cursor-pointer"
+            aria-label="Đóng hộp thoại mục tiêu"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 p-2 rounded-xl transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" strokeWidth={1.75} />
           </button>
@@ -207,14 +225,14 @@ export function EditGoalModal({
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium transition-colors cursor-pointer"
+              className="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium transition-colors cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSaving || !title.trim()}
-              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
             >
               {isSaving ? 'Đang lưu...' : 'Lưu mục tiêu'}
             </button>

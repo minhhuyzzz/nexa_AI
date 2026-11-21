@@ -88,7 +88,7 @@ export function OrgCampaignsClientView({
         {isManager && (
           <Link
             href={`/org/${slug}/campaigns/new`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
           >
             <Plus className="w-3.5 h-3.5" strokeWidth={2} />
             <span>Tạo đợt đánh giá mới</span>

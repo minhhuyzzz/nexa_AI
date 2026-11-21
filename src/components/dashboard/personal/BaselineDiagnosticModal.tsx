@@ -433,7 +433,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-center transition-colors cursor-pointer"
+                    className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 font-semibold text-center transition-colors cursor-pointer"
                   >
                     Để sau, về Bảng điều khiển
                   </button>
@@ -441,7 +441,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   <button
                     type="button"
                     onClick={() => setStep('EXAM')}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-center inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer shadow-blue-500/20"
+                    className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-center inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer shadow-blue-500/20"
                   >
                     <span>Bắt đầu làm bài khảo sát ngay</span>
                     <ArrowRight className="w-4 h-4" />
@@ -538,7 +538,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                 type="button"
                 disabled={currentIndex === 0}
                 onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                className="px-4 py-2.5 rounded-xl text-neutral-600 dark:text-zinc-400 font-semibold disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center gap-1.5 transition-colors cursor-pointer hover:bg-slate-200/60 dark:hover:bg-zinc-800"
+                className="min-h-[44px] px-4 py-2.5 rounded-xl text-neutral-600 dark:text-zinc-400 font-semibold disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center gap-1.5 transition-colors cursor-pointer hover:bg-slate-200/60 dark:hover:bg-zinc-800"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Quay lại</span>
@@ -549,7 +549,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   <button
                     type="button"
                     onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
-                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer shadow-blue-500/20"
+                    className="min-h-[44px] px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer shadow-blue-500/20"
                   >
                     <span>Tiếp tục</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -559,7 +559,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                     type="button"
                     disabled={isSubmitting}
                     onClick={handleSubmitExam}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-2 transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
+                    className="min-h-[44px] px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-2 transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
@@ -935,7 +935,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   onClose();
                   router.refresh();
                 }}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 font-semibold hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-center"
+                className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 font-semibold hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-center"
               >
                 Về Bảng Điều Khiển
               </button>
@@ -943,7 +943,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
               <button
                 type="button"
                 onClick={handleGoToLearningPath}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold inline-flex items-center justify-center gap-2 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer text-center"
+                className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold inline-flex items-center justify-center gap-2 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer text-center"
               >
                 <span>Vào Lộ Trình Học Tập (Miền Đã Mở Khóa)</span>
                 <ArrowRight className="w-4 h-4" />

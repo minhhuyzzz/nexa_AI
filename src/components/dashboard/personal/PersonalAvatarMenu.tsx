@@ -123,23 +123,25 @@ export function PersonalAvatarMenu() {
         {/* Avatar ONLY - Pure Circle with zero adjacent text */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all focus:outline-none overflow-hidden font-mono cursor-pointer"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center p-0.5 rounded-full transition-all focus:outline-none cursor-pointer"
           title="Tài khoản cá nhân"
           aria-label="Tài khoản cá nhân"
           aria-expanded={isOpen}
         >
-          {avatarUrl && !imgError ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              referrerPolicy="no-referrer"
-              onError={() => setImgError(true)}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            displayInitials
-          )}
+          <div className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all overflow-hidden font-mono">
+            {avatarUrl && !imgError ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              displayInitials
+            )}
+          </div>
         </button>
 
         {isOpen && (
@@ -150,7 +152,7 @@ export function PersonalAvatarMenu() {
               onClick={() => setIsOpen(false)}
             />
 
-            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-slate-800 dark:text-zinc-200 text-xs">
               {/* User Header */}
               <div className="px-4 py-3 bg-slate-50/60 dark:bg-zinc-900/60 rounded-t-xl">
                 <div className="flex items-center gap-3">

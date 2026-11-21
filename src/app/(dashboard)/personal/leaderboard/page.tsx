@@ -164,7 +164,7 @@ function LeaderboardContent() {
                       key={tab.id}
                       type="button"
                       onClick={() => handlePeriodChange(tab.id)}
-                      className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none ${
+                      className={`inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none ${
                         isActive
                           ? 'bg-white dark:bg-black text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/60 dark:border-zinc-800'
                           : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-slate-200/50 dark:hover:bg-zinc-800/60'
@@ -183,7 +183,7 @@ function LeaderboardContent() {
                 disabled={loading}
                 title="Làm mới dữ liệu"
                 aria-label="Làm mới bảng xếp hạng"
-                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-850 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-50 dark:hover:bg-zinc-850 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`}
@@ -551,7 +551,7 @@ function LeaderboardContent() {
                     disabled={validCurrentPage <= 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     aria-label="Trang trước"
-                    className="p-1.5 rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="min-w-[40px] min-h-[40px] flex items-center justify-center p-2 rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
                   </button>
@@ -581,7 +581,7 @@ function LeaderboardContent() {
                           type="button"
                           onClick={() => setCurrentPage(pageNum)}
                           aria-current={isActive ? 'page' : undefined}
-                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                          className={`min-w-[36px] min-h-[36px] px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center ${
                             isActive
                               ? 'bg-blue-600 text-white shadow-2xs'
                               : 'border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
@@ -598,7 +598,7 @@ function LeaderboardContent() {
                     disabled={validCurrentPage >= totalPages}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     aria-label="Trang tiếp theo"
-                    className="p-1.5 rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="min-w-[40px] min-h-[40px] flex items-center justify-center p-2 rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     <ChevronRight className="w-4 h-4" strokeWidth={1.75} />
                   </button>

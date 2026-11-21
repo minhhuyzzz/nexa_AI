@@ -546,8 +546,8 @@ function EvaluatorGradingContent() {
                     }}
                     className={`w-full text-left p-3 rounded-md border transition-all text-xs ${
                       isSelected
-                        ? 'bg-blue-50 dark:bg-blue-950/60/50 border-sky-300 shadow-xs'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-700 shadow-xs'
+                        : 'bg-white dark:bg-[#111114] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -696,15 +696,15 @@ function EvaluatorGradingContent() {
 
               {/* Items Tabs (if more than 1 practical/scenario item) */}
               {activeSubmission.items.length > 1 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-full pb-1">
                   {activeSubmission.items.map((item, idx) => (
                     <button
                       key={item.id}
                       onClick={() => setSelectedItemIndex(idx)}
-                      className={`px-3 py-1.5 text-xs rounded-md border transition-colors ${
+                      className={`px-3 py-1.5 text-xs rounded-md border shrink-0 transition-colors ${
                         idx === selectedItemIndex
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white text-slate-600 dark:text-neutral-400 border-slate-200 hover:bg-slate-50'
+                          ? 'bg-slate-900 text-white border-slate-900 dark:bg-neutral-100 dark:text-neutral-900 dark:border-neutral-100'
+                          : 'bg-white text-slate-600 dark:text-neutral-400 border-slate-200 dark:border-zinc-800 dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-800'
                       }`}
                     >
                       Câu {item.orderIndex || idx + 1}: {item.itemType} ({item.maxPoints} đ)
@@ -972,8 +972,8 @@ function EvaluatorGradingContent() {
                                   onClick={() => handleSelectLevel(crit, level)}
                                   className={`p-2 rounded border text-left transition-all ${
                                     isSelected
-                                      ? 'bg-blue-50 dark:bg-blue-950/60 border-sky-600 ring-1 ring-sky-600 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                                      : 'bg-white border-slate-200 hover:border-slate-300 text-neutral-700 dark:text-zinc-300'
+                                      ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 ring-1 ring-blue-600 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                                      : 'bg-white dark:bg-[#111114] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between mb-1">

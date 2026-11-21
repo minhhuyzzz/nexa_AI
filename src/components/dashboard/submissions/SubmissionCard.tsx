@@ -153,11 +153,11 @@ export function SubmissionCard({ item, onSelect }: SubmissionCardProps) {
         </div>
 
         {/* CTA Button */}
-        <div className="shrink-0">
+        <div className="shrink-0 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => onSelect(item, targetView)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto ${
               isPrimaryCta
                 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xs'
                 : 'border border-slate-200/90 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-800 dark:text-zinc-200 shadow-2xs'

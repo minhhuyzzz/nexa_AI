@@ -371,7 +371,7 @@ function UsersContent() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs cursor-pointer"
           >
             <option value="ALL">Trạng thái: Tất cả</option>
             <option value="ACTIVE">Hoạt động</option>
@@ -381,7 +381,7 @@ function UsersContent() {
           <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs cursor-pointer"
           >
             <option value="ALL">Gói: Tất cả</option>
             <option value="BASIC">Gói Cơ Bản</option>
@@ -392,7 +392,7 @@ function UsersContent() {
 
           <button
             onClick={() => alert('Chức năng Mời người dùng vào nền tảng đã sẵn sàng.')}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-xs inline-flex items-center gap-1.5 transition-colors shrink-0"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-xs inline-flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Mời người dùng</span>
@@ -571,7 +571,8 @@ function UsersContent() {
                       <td className="py-3 px-4 text-right relative">
                         <button
                           onClick={() => setActiveMenuId(isMenuOpen ? null : u.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                          className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-zinc-200 dark:hover:bg-zinc-850 transition-colors inline-flex items-center justify-center cursor-pointer"
+                          aria-label="Tùy chọn thao tác"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -630,7 +631,8 @@ function UsersContent() {
               </h3>
               <button
                 onClick={() => setEditingUser(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+                aria-label="Đóng"
               >
                 <X className="w-4 h-4" />
               </button>

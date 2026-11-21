@@ -210,10 +210,10 @@ export default function AdminContributionsPage() {
 
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
-        <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`min-h-[40px] sm:min-h-0 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'pending'
                 ? 'bg-amber-600 text-white'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -225,7 +225,7 @@ export default function AdminContributionsPage() {
 
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+            className={`min-h-[40px] sm:min-h-0 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center cursor-pointer ${
               activeTab === 'all'
                 ? 'bg-slate-900 text-white'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -236,7 +236,7 @@ export default function AdminContributionsPage() {
 
           <button
             onClick={() => setActiveTab('approved')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`min-h-[40px] sm:min-h-0 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'approved'
                 ? 'bg-slate-900 text-white'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -248,7 +248,7 @@ export default function AdminContributionsPage() {
 
           <button
             onClick={() => setActiveTab('rejected')}
-            className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`min-h-[40px] sm:min-h-0 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'rejected'
                 ? 'bg-rose-700 text-white'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -260,7 +260,7 @@ export default function AdminContributionsPage() {
         </div>
 
         {/* Search */}
-        <div className="relative text-xs min-w-[240px]">
+        <div className="relative text-xs w-full sm:w-72">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -497,20 +497,20 @@ export default function AdminContributionsPage() {
             </div>
 
             {/* Actions */}
-            <div className="pt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="pt-3 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
                 onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
+                className="min-h-[44px] sm:min-h-0 px-4 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors flex items-center justify-center cursor-pointer"
               >
                 Đóng
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <button
                   type="button"
                   disabled={actionSubmitting}
                   onClick={handleReject}
-                  className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-0 px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>{actionSubmitting ? 'Đang xử lý...' : 'Từ chối đề xuất'}</span>
@@ -520,7 +520,7 @@ export default function AdminContributionsPage() {
                   type="button"
                   disabled={actionSubmitting}
                   onClick={handleApprove}
-                  className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-0 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{actionSubmitting ? 'Đang duyệt...' : `Phê duyệt (+${customPoints} PTS)`}</span>

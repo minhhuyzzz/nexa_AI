@@ -836,7 +836,7 @@ export function OrgSettingsView({
       {/* ============================================================ */}
       {/* 6. BOTTOM ACTION BAR (Sticky on scroll when dirty)          */}
       {/* ============================================================ */}
-      <div className="pt-2 flex items-center justify-between">
+      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="text-xs text-slate-500 dark:text-neutral-400">
           {isDirty ? (
             <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
@@ -848,12 +848,12 @@ export function OrgSettingsView({
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleReset}
             disabled={!isDirty || isSaving}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Hoàn tác</span>
@@ -863,7 +863,7 @@ export function OrgSettingsView({
             type="button"
             onClick={() => handleSave()}
             disabled={!isDirty || isSaving || !isManager}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>

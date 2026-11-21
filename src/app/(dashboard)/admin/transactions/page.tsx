@@ -331,7 +331,7 @@ export default function AdminTransactionsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs ${
+              className={`min-h-[40px] sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs cursor-pointer ${
                 statusFilter === 'ALL'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50'
@@ -343,7 +343,7 @@ export default function AdminTransactionsPage() {
 
             <button
               onClick={() => setStatusFilter('PENDING')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs ${
+              className={`min-h-[40px] sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs cursor-pointer ${
                 statusFilter === 'PENDING'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50'
@@ -355,7 +355,7 @@ export default function AdminTransactionsPage() {
 
             <button
               onClick={() => setStatusFilter('RECONCILED')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs ${
+              className={`min-h-[40px] sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs cursor-pointer ${
                 statusFilter === 'RECONCILED'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50'
@@ -367,7 +367,7 @@ export default function AdminTransactionsPage() {
 
             <button
               onClick={() => setStatusFilter('ACTION_REQUIRED')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs ${
+              className={`min-h-[40px] sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-xs cursor-pointer ${
                 statusFilter === 'ACTION_REQUIRED'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50'
@@ -392,11 +392,11 @@ export default function AdminTransactionsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-initial">
                 <select
                   value={timeFilter}
                   onChange={(e) => setTimeFilter(e.target.value)}
-                  className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-xs"
+                  className="w-full sm:w-auto px-3 py-2 min-h-[44px] sm:min-h-0 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-xs cursor-pointer"
                 >
                   <option value="ALL">Tất cả thời gian</option>
                   <option value="TODAY">Hôm nay</option>
@@ -405,11 +405,11 @@ export default function AdminTransactionsPage() {
                 </select>
               </div>
 
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-initial">
                 <select
                   value={planFilter}
                   onChange={(e) => setPlanFilter(e.target.value)}
-                  className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-xs"
+                  className="w-full sm:w-auto px-3 py-2 min-h-[44px] sm:min-h-0 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-xs cursor-pointer"
                 >
                   <option value="ALL">Tất cả gói dịch vụ</option>
                   <option value="FREE">Gói FREE</option>
@@ -418,11 +418,11 @@ export default function AdminTransactionsPage() {
                 </select>
               </div>
 
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-initial">
                 <select
                   value={customerTypeFilter}
                   onChange={(e) => setCustomerTypeFilter(e.target.value)}
-                  className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-xs"
+                  className="w-full sm:w-auto px-3 py-2 min-h-[44px] sm:min-h-0 text-xs rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-xs cursor-pointer"
                 >
                   <option value="ALL">Tất cả loại khách hàng</option>
                   <option value="PERSONAL">Cá nhân</option>

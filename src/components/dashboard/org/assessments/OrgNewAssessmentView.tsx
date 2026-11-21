@@ -167,7 +167,7 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
                   <div
                     key={dm.id}
                     onClick={() => toggleDomain(dm.id)}
-                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
+                    className={`p-3 min-h-[44px] rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
                       checked
                         ? 'border-blue-500/70 bg-blue-50/50 dark:bg-blue-950/30'
                         : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300'
@@ -198,10 +198,10 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
           </div>
 
           {/* Submit Action */}
-          <div className="pt-4 flex items-center justify-between">
+          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <Link
               href={`/org/${slug}/assessments`}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:text-neutral-900 transition-colors"
+              className="px-4 py-2 min-h-[44px] sm:min-h-0 inline-flex items-center justify-center text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:text-neutral-900 transition-colors"
             >
               Hủy bỏ
             </Link>
@@ -209,7 +209,7 @@ export function OrgNewAssessmentView({ orgId, orgName, slug }: Props) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold inline-flex items-center gap-2 shadow-2xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
             >
               {isSubmitting ? (
                 <>

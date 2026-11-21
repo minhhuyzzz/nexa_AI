@@ -327,7 +327,7 @@ export function AdminSidebar() {
             <button
               type="button"
               onClick={closeMobile}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
               title="Đóng menu"
               aria-label="Đóng menu"
             >
@@ -354,7 +354,7 @@ export function AdminSidebar() {
                         key={item.href}
                         href={item.href}
                         onClick={closeMobile}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
+                        className={`min-h-[44px] flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
                           isActive
                             ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
                             : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'

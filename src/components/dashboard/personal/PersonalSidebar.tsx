@@ -70,6 +70,15 @@ export function PersonalSidebar() {
   }, []);
 
   useEffect(() => {
+    if (!isMobileOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMobile();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, closeMobile]);
+
+  useEffect(() => {
     let isMounted = true;
     fetch('/api/personal/evaluator-check')
       .then((res) => (res.ok ? res.json() : null))
@@ -153,7 +162,7 @@ export function PersonalSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={onItemClick}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
+                className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] md:min-h-0 md:py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
                   active
                     ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
                     : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
@@ -282,7 +291,7 @@ export function PersonalSidebar() {
               <button
                 type="button"
                 onClick={closeMobile}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
                 title="Đóng menu"
                 aria-label="Đóng menu"
               >

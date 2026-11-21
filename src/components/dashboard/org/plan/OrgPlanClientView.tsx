@@ -206,11 +206,11 @@ export function OrgPlanClientView({
             )}
 
             {isManager && (
-              <>
+              <div className="w-full sm:w-auto flex">
                 {pendingRenewal ? (
                   <button
                     disabled
-                    className="h-9 px-4 rounded-md border border-amber-400/40 bg-amber-500/20 text-amber-300 text-xs font-semibold flex items-center gap-2 cursor-not-allowed"
+                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 h-9 px-4 rounded-md border border-amber-400/40 bg-amber-500/20 text-amber-300 text-xs font-semibold flex items-center justify-center gap-2 cursor-not-allowed"
                   >
                     <Clock className="w-3.5 h-3.5 animate-pulse" />
                     <span>Đang chờ gia hạn</span>
@@ -218,13 +218,13 @@ export function OrgPlanClientView({
                 ) : (
                   <button
                     onClick={() => setIsRenewOpen(true)}
-                    className="h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Gia hạn gói</span>
                   </button>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>

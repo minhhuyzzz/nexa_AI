@@ -149,7 +149,7 @@ export default function AdminCommunicationsPage() {
         {activeTab === 'feedback' && (
           <button
             onClick={fetchFeedbacks}
-            className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-1.5 self-start sm:self-auto"
+            className="min-h-[44px] sm:min-h-0 px-3 py-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-medium text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 ${loadingFeedbacks ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
@@ -183,10 +183,10 @@ export default function AdminCommunicationsPage() {
 
       {/* Tabs (Pill Tabs, không gạch chân) */}
       <div>
-        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
+        <div className="flex flex-wrap sm:inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
           <button
             onClick={() => setActiveTab('feedback')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`min-h-[40px] sm:min-h-0 flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
               activeTab === 'feedback'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
@@ -198,7 +198,7 @@ export default function AdminCommunicationsPage() {
 
           <button
             onClick={() => setActiveTab('broadcast')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`min-h-[40px] sm:min-h-0 flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
               activeTab === 'broadcast'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
@@ -210,7 +210,7 @@ export default function AdminCommunicationsPage() {
 
           <button
             onClick={() => setActiveTab('email')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`min-h-[40px] sm:min-h-0 flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
               activeTab === 'email'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
@@ -395,7 +395,7 @@ export default function AdminCommunicationsPage() {
               <button
                 type="submit"
                 disabled={broadcasting}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" strokeWidth={1.75} />
                 <span>{broadcasting ? 'Đang phát sóng...' : 'Phát sóng thông báo'}</span>

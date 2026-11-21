@@ -86,7 +86,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
   return (
     <div className="space-y-6">
       {/* 1. Overview Summary Card */}
-      <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-6 shadow-2xs">
+      <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -95,15 +95,15 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
                 HỒ SƠ 5 MIỀN NĂNG LỰC SỐ CÔNG DÂN
               </span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
               Điểm Đánh Giá 5 Miền và Bằng Chứng Khảo Thí
             </h2>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-2xl">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-2xl leading-relaxed">
               Hồ sơ ghi nhận minh chứng khảo thí thực tế từ các bài đánh giá chuẩn hóa. Không suy đoán hoặc giả lập điểm số khi chưa có bài làm hợp lệ.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 sm:border-l border-slate-200/60 dark:border-zinc-800 pt-3 sm:pt-0 sm:pl-6 shrink-0">
+          <div className="flex items-center justify-around sm:justify-start gap-4 sm:border-l sm:border-slate-200/60 dark:sm:border-zinc-800 pt-2 sm:pt-0 sm:pl-6 shrink-0">
             <div className="text-center">
               <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">
                 Điểm trung bình
@@ -133,7 +133,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
           <div className="mt-4 p-3 rounded-xl bg-slate-50/70 dark:bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600 dark:text-zinc-400">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.75} />
-              <span>
+              <span className="leading-snug">
                 So với bài khảo thí đầu vào ({baselineSnapshot.overallScore}đ vào ngày{' '}
                 {new Date(baselineSnapshot.createdAt).toLocaleDateString('vi-VN')}):{' '}
                 <strong className="text-emerald-600 dark:text-emerald-400 font-mono">
@@ -143,7 +143,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
             </div>
             <Link
               href="/personal/learning-path"
-              className="text-blue-600 dark:text-blue-400 hover:underline font-semibold inline-flex items-center gap-1"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-semibold inline-flex items-center gap-1 self-start sm:self-auto shrink-0"
             >
               <span>Xem lộ trình phát triển</span>
               <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -153,8 +153,8 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
       </div>
 
       {/* 2. 5 DigComp Domains Bar Breakdown */}
-      <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-md p-6 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between pb-1">
+      <div className="bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1">
           <h3 className="font-bold text-slate-900 dark:text-zinc-100 uppercase text-xs tracking-wide">
             Chi tiết 5 miền năng lực số chuẩn hóa
           </h3>
@@ -163,7 +163,7 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
           </span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {domains.map((dom) => {
             const hasScore = dom.score !== null;
             const scoreVal = dom.score ?? 0;
@@ -172,19 +172,19 @@ export function CompetencyProfileTab({ userId }: CompetencyProfileTabProps) {
             return (
               <div
                 key={dom.domainCode}
-                className="p-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-950/60 space-y-2.5 transition-colors"
+                className="p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-950/60 space-y-2.5 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 shrink-0">
                       Miền {dom.domainCode}
                     </span>
-                    <span className="font-semibold text-slate-900 dark:text-zinc-100">
+                    <span className="font-semibold text-slate-900 dark:text-zinc-100 break-words">
                       {dom.name}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     {hasScore ? (
                       <>
                         <span

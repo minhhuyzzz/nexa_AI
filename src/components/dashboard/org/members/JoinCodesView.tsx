@@ -254,7 +254,7 @@ export function JoinCodesView({
               />
             </div>
 
-            <div className="flex items-center gap-1 w-full sm:w-auto">
+            <div className="flex items-center gap-1 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
               {(
                 [
                   { id: 'ALL', label: 'Tất cả' },
@@ -266,7 +266,7 @@ export function JoinCodesView({
                 <button
                   key={tab.id}
                   onClick={() => setStatusFilter(tab.id)}
-                  className={`px-2 py-1 text-xs rounded font-medium transition ${
+                  className={`px-2.5 py-1.5 min-h-[36px] text-xs rounded font-medium transition cursor-pointer whitespace-nowrap ${
                     statusFilter === tab.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800'
@@ -281,7 +281,7 @@ export function JoinCodesView({
           {/* Table */}
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full min-w-[500px] text-left">
                 <thead>
                   <tr className="bg-slate-50/70 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                     <th className="py-2.5 px-3">Mã tham gia</th>

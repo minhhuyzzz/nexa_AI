@@ -120,23 +120,24 @@ export function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-850 transition-colors focus:outline-none"
+        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-850 transition-colors focus:outline-none cursor-pointer"
         title="Thông báo"
+        aria-label="Thông báo"
       >
         <Bell className="w-4 h-4" strokeWidth={1.75} />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sky-600 ring-2 ring-white dark:ring-black" />
+          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-black" />
         )}
       </button>
 
       {/* Dropdown Menu (No horizontal borders, clean card style) */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-2 space-y-1">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-2 space-y-1">
           <div className="p-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">Thông báo</span>
               {unreadCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-semibold border border-sky-200/50 dark:border-sky-800/50">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200/50 dark:border-blue-800/50">
                   {unreadCount} mới
                 </span>
               )}
@@ -145,7 +146,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-[11px] text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium inline-flex items-center gap-1 cursor-pointer"
+                className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium inline-flex items-center gap-1 cursor-pointer"
               >
                 <CheckCheck className="w-3 h-3" />
                 <span>Đã đọc tất cả</span>

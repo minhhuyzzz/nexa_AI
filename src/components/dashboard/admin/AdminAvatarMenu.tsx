@@ -79,7 +79,7 @@ export function AdminAvatarMenu() {
         {/* Avatar ONLY - Pure Circle with ZERO adjacent text */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-9 h-9 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all focus:outline-none font-mono"
+          className="w-10 h-10 sm:w-9 sm:h-9 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-semibold shadow-xs ring-2 ring-transparent hover:ring-slate-300 transition-all focus:outline-none font-mono"
           title="Tài khoản Quản trị viên"
         >
           {displayInitials}
@@ -143,7 +143,7 @@ export function AdminAvatarMenu() {
                 <Link
                   href="/admin/frameworks"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                  className="min-h-[44px] flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   <FolderLock className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
                   <span>Quản trị khung năng lực</span>
@@ -153,7 +153,7 @@ export function AdminAvatarMenu() {
                   <Link
                     href="/admin/ai-gateway"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
+                    className="min-h-[44px] flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                   >
                     <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
                     <span>Cổng kết nối AI</span>
@@ -161,7 +161,7 @@ export function AdminAvatarMenu() {
                 )}
 
                 {/* Dark/Light mode toggle switch */}
-                <div className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
+                <div className="min-h-[44px] flex items-center justify-between px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
                   <div className="flex items-center gap-2.5">
                     {isDarkMode ? (
                       <Moon className="w-4 h-4 text-sky-400" strokeWidth={1.75} />
@@ -195,7 +195,7 @@ export function AdminAvatarMenu() {
               <div className="pt-1 mt-1">
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium"
+                  className="w-full min-h-[44px] flex items-center gap-2.5 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left font-medium cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 text-rose-600" strokeWidth={1.75} />
                   <span>Đăng xuất</span>

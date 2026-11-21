@@ -181,7 +181,7 @@ export function AddOrganizationModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng hộp thoại"
-            className="text-slate-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+            className="text-slate-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-slate-200/50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none cursor-pointer"
           >
             <X className="w-4 h-4" strokeWidth={1.75} />
           </button>

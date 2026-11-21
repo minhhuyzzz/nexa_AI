@@ -43,7 +43,7 @@ export function OrgTopbar({ orgName, orgSlug, userRole }: OrgTopbarProps) {
           <button
             type="button"
             onClick={toggleMobile}
-            className="p-2 -ml-1 rounded-lg text-neutral-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center -ml-1 rounded-xl text-neutral-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
             aria-label="Mở menu điều hướng"
           >
             <Menu className="w-5 h-5" strokeWidth={2} />

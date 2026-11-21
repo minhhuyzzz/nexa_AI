@@ -191,13 +191,13 @@ export function CompetencyRadarChart({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center select-none w-full">
+    <div className="flex flex-col items-center justify-center select-none w-full overflow-hidden">
       <svg
         viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
         className={
           isHero
-            ? 'w-full max-w-[540px] xl:max-w-[600px] h-auto overflow-visible'
-            : 'w-full max-w-[420px] h-auto overflow-visible'
+            ? 'w-full max-w-[330px] sm:max-w-[540px] xl:max-w-[600px] h-auto overflow-visible'
+            : 'w-full max-w-[330px] sm:max-w-[420px] h-auto overflow-visible'
         }
       >
         <defs>
@@ -447,20 +447,24 @@ export function CompetencyRadarChart({
 
       {/* Legend */}
       {showLegend && (
-        <div className="flex items-center gap-4 sm:gap-6 mt-3 text-xs text-slate-500 dark:text-zinc-400 flex-wrap justify-center">
+        <div className="flex items-center gap-3 sm:gap-6 mt-3 text-xs text-slate-500 dark:text-zinc-400 flex-wrap justify-center px-2">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
-            <span className="text-slate-700 dark:text-zinc-200 font-medium">Năng lực thực tế</span>
+            <span className="text-slate-700 dark:text-zinc-200 font-medium text-[11px] sm:text-xs">Năng lực thực tế</span>
           </div>
           {hasBaseline && (
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 border-t border-dashed border-slate-400" />
-              <span className="text-slate-600 dark:text-zinc-300 font-medium">Vạch xuất phát</span>
+              <svg className="w-3.5 h-1 text-slate-400 shrink-0" viewBox="0 0 14 2">
+                <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3,2" />
+              </svg>
+              <span className="text-slate-600 dark:text-zinc-300 font-medium text-[11px] sm:text-xs">Vạch xuất phát</span>
             </div>
           )}
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 border-t border-dashed border-slate-400 dark:border-zinc-600" />
-            <span className="text-slate-500 dark:text-zinc-400">Chuẩn mục tiêu (70%)</span>
+            <svg className="w-3.5 h-1 text-slate-400 dark:text-zinc-500 shrink-0" viewBox="0 0 14 2">
+              <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3,2" />
+            </svg>
+            <span className="text-slate-500 dark:text-zinc-400 text-[11px] sm:text-xs">Chuẩn mục tiêu (70%)</span>
           </div>
         </div>
       )}

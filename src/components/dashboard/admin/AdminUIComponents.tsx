@@ -255,50 +255,52 @@ export function AdminFunnelChart({ steps }: { steps: FunnelStep[] }) {
           Chưa ghi nhận đủ dữ liệu hành trình để tính toán phễu chuyển đổi.
         </div>
       ) : (
-        <div className="grid grid-cols-5 gap-2 items-end pt-6 pb-2">
-          {steps.map((step, idx) => {
-            const heightPercent = Math.max(20, Math.round((step.value / maxValue) * 100));
-            return (
-              <div key={idx} className="flex flex-col items-center">
-                {/* Value on top */}
-                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 tabular-nums mb-1">
-                  {step.value.toLocaleString('vi-VN')}
-                </div>
-
-                {/* Bar */}
-                <div className="w-full flex items-center justify-center">
-                  <div
-                    className="w-full rounded-t-md transition-all duration-500"
-                    style={{
-                      height: `${heightPercent}px`,
-                      backgroundColor:
-                        idx === 0
-                          ? '#DBEAFE'
-                          : idx === 1
-                          ? '#BFDBFE'
-                          : idx === 2
-                          ? '#93C5FD'
-                          : idx === 3
-                          ? '#60A5FA'
-                          : '#2563EB',
-                    }}
-                  />
-                </div>
-
-                {/* Conversion rate indicator */}
-                {step.conversionRate && idx < steps.length - 1 && (
-                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono font-medium mt-1">
-                    {step.conversionRate} →
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-5 gap-2 items-end pt-6 pb-2 min-w-[280px]">
+            {steps.map((step, idx) => {
+              const heightPercent = Math.max(20, Math.round((step.value / maxValue) * 100));
+              return (
+                <div key={idx} className="flex flex-col items-center">
+                  {/* Value on top */}
+                  <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 tabular-nums mb-1">
+                    {step.value.toLocaleString('vi-VN')}
                   </div>
-                )}
 
-                {/* Label below */}
-                <div className="text-[10px] sm:text-[11px] text-center text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-tight">
-                  {step.label}
+                  {/* Bar */}
+                  <div className="w-full flex items-center justify-center">
+                    <div
+                      className="w-full rounded-t-md transition-all duration-500"
+                      style={{
+                        height: `${heightPercent}px`,
+                        backgroundColor:
+                          idx === 0
+                            ? '#DBEAFE'
+                            : idx === 1
+                            ? '#BFDBFE'
+                            : idx === 2
+                            ? '#93C5FD'
+                            : idx === 3
+                            ? '#60A5FA'
+                            : '#2563EB',
+                      }}
+                    />
+                  </div>
+
+                  {/* Conversion rate indicator */}
+                  {step.conversionRate && idx < steps.length - 1 && (
+                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono font-medium mt-1">
+                      {step.conversionRate} →
+                    </div>
+                  )}
+
+                  {/* Label below */}
+                  <div className="text-[10px] sm:text-[11px] text-center text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-tight">
+                    {step.label}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -407,18 +409,18 @@ export function AdminPagination({
             aria-label="Trang trước"
             onClick={() => onPageChange && onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="px-2.5 py-1 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+            className="px-2.5 py-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none cursor-pointer"
           >
             &lt;
           </button>
-          <span className="px-3 py-1 rounded-md bg-blue-600 text-white font-bold">
+          <span className="px-3 py-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center rounded-md bg-blue-600 text-white font-bold">
             {currentPage}
           </span>
           {totalPages > 1 && (
             <button
               type="button"
               onClick={() => onPageChange && onPageChange(currentPage + 1)}
-              className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+              className="px-2.5 py-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none cursor-pointer"
             >
               {Math.min(currentPage + 1, totalPages)}
             </button>
@@ -428,7 +430,7 @@ export function AdminPagination({
             <button
               type="button"
               onClick={() => onPageChange && onPageChange(totalPages)}
-              className="px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+              className="px-2.5 py-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none cursor-pointer"
             >
               {totalPages}
             </button>
@@ -438,7 +440,7 @@ export function AdminPagination({
             aria-label="Trang sau"
             onClick={() => onPageChange && onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="px-2.5 py-1 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+            className="px-2.5 py-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none cursor-pointer"
           >
             &gt;
           </button>
@@ -602,17 +604,17 @@ export function AdminPlatformHealthCard({
           </div>
         </div>
 
-        <div className="pt-2 flex items-center gap-2">
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Link
             href="/admin/baseline"
-            className="flex-1 py-2 px-3 rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors text-center inline-flex items-center justify-center gap-1"
+            className="flex-1 min-h-[44px] py-2 px-3 rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors text-center inline-flex items-center justify-center gap-1"
           >
             <span>Khảo thí chuẩn</span>
             <ChevronRight className="w-3 h-3 text-slate-400" />
           </Link>
           <Link
             href="/admin/organizations"
-            className="flex-1 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors text-center inline-flex items-center justify-center gap-1"
+            className="flex-1 min-h-[44px] py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors text-center inline-flex items-center justify-center gap-1"
           >
             <span>Duyệt B2B</span>
             <ChevronRight className="w-3 h-3 text-white/80" />

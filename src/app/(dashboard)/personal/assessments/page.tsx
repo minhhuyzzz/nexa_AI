@@ -169,7 +169,7 @@ export default function LearnerAssessmentsPage() {
           {/* Search Input */}
           <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
             <Search
-              className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-neutral-500 pointer-events-none"
               strokeWidth={1.75}
             />
             <input
@@ -177,7 +177,7 @@ export default function LearnerAssessmentsPage() {
               placeholder="Tìm theo tên bài kiểm tra..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl focus:bg-white dark:focus:bg-zinc-900 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
             />
           </div>
 
@@ -189,10 +189,10 @@ export default function LearnerAssessmentsPage() {
                 setIsDomainMenuOpen((prev) => !prev);
                 setIsTierMenuOpen(false);
               }}
-              className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2 transition-colors ${
+              className={`px-3.5 py-2 min-h-[40px] rounded-xl border text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer ${
                 selectedDomains.length > 0
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                  : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200'
               }`}
             >
               <Filter className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
@@ -224,7 +224,7 @@ export default function LearnerAssessmentsPage() {
                     <button
                       type="button"
                       onClick={selectedDomains.length > 0 ? clearDomains : selectAllDomains}
-                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold"
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-semibold cursor-pointer"
                     >
                       {selectedDomains.length > 0 ? 'Bỏ chọn hết' : 'Chọn tất cả'}
                     </button>
@@ -238,20 +238,20 @@ export default function LearnerAssessmentsPage() {
                           key={d.code}
                           type="button"
                           onClick={() => toggleDomain(d.code)}
-                          className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer"
+                          className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                         >
                           <div
                             className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
                               isChecked
                                 ? 'bg-blue-600 border-blue-600 text-white'
-                                : 'border-slate-300 bg-white'
+                                : 'border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900'
                             }`}
                           >
                             {isChecked && <Check className="w-3 h-3 stroke-[2.5]" />}
                           </div>
                           <span
                             className={`truncate ${
-                              isChecked ? 'font-semibold text-slate-900' : 'text-slate-700'
+                              isChecked ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-zinc-300'
                             }`}
                           >
                             {d.label}
@@ -262,7 +262,7 @@ export default function LearnerAssessmentsPage() {
                   </div>
 
                   <div className="px-3 pt-2 pb-1 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-500">
+                    <span className="text-slate-500 dark:text-zinc-400">
                       {selectedDomains.length === 0
                         ? 'Đang hiển thị tất cả'
                         : `Đã chọn ${selectedDomains.length}/5 miền`}
@@ -270,7 +270,7 @@ export default function LearnerAssessmentsPage() {
                     <button
                       type="button"
                       onClick={() => setIsDomainMenuOpen(false)}
-                      className="px-2.5 py-1 rounded bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
+                      className="px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-zinc-800 text-white text-[11px] font-semibold hover:bg-slate-800 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
                     >
                       Đóng
                     </button>
@@ -288,7 +288,7 @@ export default function LearnerAssessmentsPage() {
                 setIsTierMenuOpen((prev) => !prev);
                 setIsDomainMenuOpen(false);
               }}
-              className={`px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              className={`px-3.5 py-2 min-h-[40px] rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                 tierFilter !== 'ALL'
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-semibold shadow-xs'
                   : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200'
@@ -389,12 +389,12 @@ export default function LearnerAssessmentsPage() {
           ))}
         </div>
       ) : filteredTests.length === 0 ? (
-        <div className="p-12 text-center rounded-md border border-slate-200 bg-white">
-          <HelpCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.75} />
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">
+        <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114]">
+          <HelpCircle className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" strokeWidth={1.75} />
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 mb-1">
             {searchQuery ? 'Không tìm thấy bài khảo thí phù hợp' : 'Chưa có bài khảo thí nào'}
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mb-4">
             {searchQuery
               ? 'Hãy thử thay đổi từ khóa hoặc bộ lọc miền năng lực.'
               : 'Hiện chưa có bài thi nào được mở công khai.'}

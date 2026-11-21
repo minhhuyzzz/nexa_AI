@@ -820,8 +820,9 @@ function LearningPathContent() {
               <button
                 type="button"
                 onClick={() => setSelectedSubdomain(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer shrink-0"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer shrink-0"
                 title="Đóng bảng (ESC)"
+                aria-label="Đóng bảng chi tiết"
               >
                 <X className="w-5 h-5" />
               </button>

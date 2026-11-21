@@ -98,7 +98,7 @@ export function MasterCertificateCard({
               <a
                 href={`/api/credentials/${credentialCode}/pdf`}
                 download={`NEXA-Certificate-${credentialCode}.pdf`}
-                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                className="min-h-[44px] px-4 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 Tải chứng chỉ (PDF)
@@ -108,7 +108,7 @@ export function MasterCertificateCard({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3.5 py-2 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+              className="min-h-[44px] px-3.5 py-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 text-slate-500" />
               In chứng chỉ
@@ -119,7 +119,7 @@ export function MasterCertificateCard({
                 href={`/verify/${credentialCode}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3.5 py-2 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                className="min-h-[44px] px-3.5 py-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
                 Tra cứu trực tuyến

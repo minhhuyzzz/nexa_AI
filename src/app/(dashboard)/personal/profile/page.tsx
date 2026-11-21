@@ -508,8 +508,9 @@ function LearnerProfileContent() {
                 <button
                   type="button"
                   onClick={() => setShowEditNicknameModal(true)}
-                  className="p-1 rounded text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-blue-100/60 dark:hover:bg-zinc-800 transition-colors"
+                  className="min-h-[36px] min-w-[36px] flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-blue-100/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   title="Chỉnh sửa biệt danh"
+                  aria-label="Chỉnh sửa biệt danh"
                 >
                   <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
                 </button>
@@ -627,14 +628,14 @@ function LearnerProfileContent() {
 
       {/* TOP NAVIGATION TABS (Modern Pill Tabs, không gạch chân) */}
       <div>
-        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold">
+        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => {
               setActiveTab('PROFILE');
               router.replace('/personal/profile');
             }}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-h-[40px] px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
               activeTab === 'PROFILE'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200'
@@ -650,7 +651,7 @@ function LearnerProfileContent() {
               setActiveTab('CREDENTIALS');
               router.replace('/personal/profile?tab=credentials');
             }}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-h-[40px] px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
               activeTab === 'CREDENTIALS'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200'
@@ -676,7 +677,7 @@ function LearnerProfileContent() {
               <button
                 type="button"
                 onClick={() => scrollToSection('section-privacy', 'privacy')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                className={`flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
                   activeSection === 'privacy'
                     ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
                     : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
@@ -689,7 +690,7 @@ function LearnerProfileContent() {
               <button
                 type="button"
                 onClick={() => scrollToSection('section-notifications', 'notifications')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                className={`flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
                   activeSection === 'notifications'
                     ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
                     : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
@@ -702,7 +703,7 @@ function LearnerProfileContent() {
               <button
                 type="button"
                 onClick={() => scrollToSection('section-appearance', 'appearance')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                className={`flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
                   activeSection === 'appearance'
                     ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
                     : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
@@ -715,7 +716,7 @@ function LearnerProfileContent() {
               <button
                 type="button"
                 onClick={() => scrollToSection('section-billing', 'billing')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                className={`flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
                   activeSection === 'billing'
                     ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
                     : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'
@@ -728,7 +729,7 @@ function LearnerProfileContent() {
               <button
                 type="button"
                 onClick={() => scrollToSection('section-account', 'account')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
+                className={`flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg text-xs transition-colors shrink-0 text-left cursor-pointer ${
                   activeSection === 'account'
                     ? 'bg-blue-50/90 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold lg:border-l-2 lg:border-blue-600 dark:lg:border-blue-400 ring-1 ring-blue-500/20 lg:ring-0'
                     : 'text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:text-neutral-900 dark:hover:text-zinc-100 bg-slate-100/60 lg:bg-transparent dark:bg-zinc-900/40 lg:dark:bg-transparent'

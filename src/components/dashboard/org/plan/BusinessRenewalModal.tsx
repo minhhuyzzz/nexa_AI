@@ -95,7 +95,7 @@ export function BusinessRenewalModal({
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1 rounded-md text-slate-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
@@ -200,14 +200,14 @@ export function BusinessRenewalModal({
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="h-8.5 px-3.5 rounded-md border border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
+                className="px-3.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-md border border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-8.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-60"
+                className="px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>

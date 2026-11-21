@@ -42,17 +42,17 @@ export function OrgPageHeader({
         </div>
 
         {canManage && (
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto shrink-0">
             <Link
               href={`/org/${orgSlug}/campaigns/new`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] sm:min-h-0 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs"
             >
               <Calendar className="w-3.5 h-3.5" strokeWidth={1.75} />
               <span>Tạo đợt đánh giá</span>
             </Link>
             <Link
               href={`/org/${orgSlug}/members`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-700 dark:text-zinc-300 text-xs font-semibold transition-colors shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] sm:min-h-0 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 text-neutral-700 dark:text-zinc-300 text-xs font-semibold transition-colors shadow-xs"
             >
               <Users className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" strokeWidth={1.75} />
               <span>Mời thành viên</span>

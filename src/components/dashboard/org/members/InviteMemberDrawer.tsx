@@ -150,12 +150,12 @@ export function InviteMemberDrawer({
         onClick={onClose}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
         <div className="w-screen max-w-2xl bg-white dark:bg-[#111114] shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col justify-between">
           {/* Header */}
-          <div className="p-5 flex items-center justify-between">
+          <div className="p-4 sm:p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                 <Users className="w-4 h-4" strokeWidth={1.75} />
               </div>
               <div>
@@ -169,14 +169,15 @@ export function InviteMemberDrawer({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer shrink-0"
+              aria-label="Đóng"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
             {/* Quota Banner */}
             <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
@@ -201,11 +202,11 @@ export function InviteMemberDrawer({
               <label className="block text-xs font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-mono mb-2.5">
                 1. Phương thức mời
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setMethod('email')}
-                  className={`p-3 rounded-md border text-left transition-all ${
+                  className={`p-3 min-h-[44px] rounded-md border text-left transition-all cursor-pointer ${
                     method === 'email'
                       ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 ring-1 ring-blue-600'
                       : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-700 dark:text-zinc-300 hover:border-slate-300'
@@ -224,7 +225,7 @@ export function InviteMemberDrawer({
                     onClose();
                     onOpenBulkImport();
                   }}
-                  className="p-3 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left hover:border-slate-300 text-neutral-700 dark:text-zinc-300 transition-all"
+                  className="p-3 min-h-[44px] rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left hover:border-slate-300 text-neutral-700 dark:text-zinc-300 transition-all cursor-pointer"
                 >
                   <FileSpreadsheet className="w-4 h-4 mb-1.5 text-emerald-600" />
                   <div className="text-xs font-bold">Hàng loạt (CSV)</div>
@@ -239,7 +240,7 @@ export function InviteMemberDrawer({
                     onClose();
                     onSelectJoinCodesTab();
                   }}
-                  className="p-3 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left hover:border-slate-300 text-neutral-700 dark:text-zinc-300 transition-all"
+                  className="p-3 min-h-[44px] rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left hover:border-slate-300 text-neutral-700 dark:text-zinc-300 transition-all cursor-pointer"
                 >
                   <LinkIcon className="w-4 h-4 mb-1.5 text-indigo-600" />
                   <div className="text-xs font-bold">Mã gia nhập</div>

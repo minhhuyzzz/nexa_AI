@@ -91,7 +91,7 @@ export function OrgAssignmentsWidget({
 
                   <Link
                     href={task.actionUrl}
-                    className="h-8 px-3.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 self-start sm:self-auto shadow-xs"
+                    className="min-h-[44px] px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors shrink-0 w-full sm:w-auto shadow-xs"
                   >
                     <span>Bắt đầu làm bài</span>
                     <ArrowRight className="w-3.5 h-3.5" />

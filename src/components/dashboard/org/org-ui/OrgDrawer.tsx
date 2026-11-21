@@ -67,10 +67,10 @@ export function OrgDrawer({
       {/* Drawer Container */}
       <div
         ref={drawerRef}
-        className={`relative z-10 w-full ${WIDTH_CLASSES[width]} bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col h-full transform transition-transform duration-180 ease-out animate-in slide-in-from-right`}
+        className={`relative z-10 w-full max-w-full sm:${WIDTH_CLASSES[width]} bg-white dark:bg-[#111114] border-l border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col h-full transform transition-transform duration-180 ease-out animate-in slide-in-from-right`}
       >
         {/* Header */}
-        <div className="p-5 flex items-start justify-between gap-4 shrink-0">
+        <div className="p-4 sm:p-5 flex items-start justify-between gap-4 shrink-0">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 tracking-tight">
               {title}
@@ -84,15 +84,15 @@ export function OrgDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
             aria-label="Đóng bảng chi tiết"
           >
-            <X className="w-4 h-4" strokeWidth={1.75} />
+            <X className="w-5 h-5" strokeWidth={1.75} />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
           {children}
         </div>
       </div>

@@ -68,7 +68,7 @@ export function OrgDomainBars({ domains, orgSlug, hasAnyData }: OrgDomainBarsPro
               return (
                 <div key={d.domainCode} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-neutral-800 dark:text-zinc-200 truncate max-w-[240px]">
+                    <span className="font-semibold text-neutral-800 dark:text-zinc-200 truncate max-w-[180px] sm:max-w-[240px]">
                       {d.name}
                     </span>
                     <span className="font-mono text-xs tabular-nums text-neutral-900 dark:text-neutral-100 font-bold shrink-0">
@@ -94,7 +94,7 @@ export function OrgDomainBars({ domains, orgSlug, hasAnyData }: OrgDomainBarsPro
         )}
       </div>
 
-      <div className="p-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
+      <div className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-500 dark:text-neutral-400">
         <span>&bull; Điểm trung bình các bài đã duyệt</span>
         <span className="font-mono">Mục tiêu tham chiếu: 70%</span>
       </div>

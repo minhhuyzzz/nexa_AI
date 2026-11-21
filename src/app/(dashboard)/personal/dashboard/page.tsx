@@ -512,7 +512,7 @@ export default function LearnerDashboardPage() {
         </div>
 
         {/* Quick Indicators: Streak & Level (Borderless, Background-transparent, seamlessly blending with page) */}
-        <div className="flex items-center gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-4 sm:gap-8 text-xs text-neutral-700 dark:text-zinc-300 shrink-0 flex-wrap sm:flex-nowrap">
           {/* Streak Days Tracker (Hòa vào nền, không viền, không rớt dòng) */}
           <div className="p-0 bg-transparent shadow-none">
             <div className="flex items-center justify-between gap-3 text-[11px] mb-1.5">
@@ -861,19 +861,23 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-center gap-4 sm:gap-6 text-[11px] text-slate-600 dark:text-neutral-400 font-medium flex-wrap">
+          <div className="pt-2 flex items-center justify-center gap-3 sm:gap-6 text-[11px] text-slate-600 dark:text-neutral-400 font-medium flex-wrap px-2">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-blue-600 dark:bg-blue-400" />
               <span>Năng lực tích lũy</span>
             </div>
             {competencyProfile?.baselineRadarData && (
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-0.5 border-t border-dashed border-slate-400" />
+                <svg className="w-3.5 h-1 text-slate-400 shrink-0" viewBox="0 0 14 2">
+                  <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3,2" />
+                </svg>
                 <span>Vạch xuất phát</span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 border-t border-dashed border-slate-400 dark:border-zinc-500" />
+              <svg className="w-3.5 h-1 text-slate-400 dark:text-zinc-500 shrink-0" viewBox="0 0 14 2">
+                <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3,2" />
+              </svg>
               <span>Chuẩn mục tiêu (70%)</span>
             </div>
           </div>
@@ -936,7 +940,7 @@ export default function LearnerDashboardPage() {
 
                 return (
                   <div key={d.code} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
+                    <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-xs">
                       <div className="flex items-center gap-2 truncate pr-2">
                         <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 w-6 shrink-0">
                           {d.code}
@@ -946,7 +950,7 @@ export default function LearnerDashboardPage() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 self-end xs:self-auto">
                         <span className="font-mono font-semibold text-xs text-neutral-900 dark:text-neutral-100 tabular-nums">
                           {hasAssessed ? `${scoreVal}%` : 'Chưa đánh giá'}
                         </span>

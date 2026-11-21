@@ -134,8 +134,8 @@ export function ApprovalQueueView({
         </div>
 
         {/* Requests Table */}
-        <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
-          <table className="w-full text-left">
+        <div className="rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden overflow-x-auto shadow-xs">
+          <table className="w-full min-w-[620px] text-left">
             <thead>
               <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                 <th className="py-2.5 px-4 w-10">
@@ -222,7 +222,7 @@ export function ApprovalQueueView({
 
           {/* Batch Actions Bar */}
           {selectedIds.length > 0 && (
-            <div className="p-3 bg-slate-50 dark:bg-zinc-900/60 flex items-center justify-between">
+            <div className="p-3 bg-slate-50 dark:bg-zinc-900/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
               <span className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
                 Đã chọn <strong className="font-mono text-blue-600">{selectedIds.length}</strong> yêu cầu
               </span>
@@ -230,7 +230,7 @@ export function ApprovalQueueView({
                 <button
                   onClick={() => handleBatchAction('APPROVED')}
                   disabled={processingId === 'batch'}
-                  className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs transition-colors"
+                  className="flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1 shadow-xs transition-colors"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Phê duyệt đồng loạt</span>
@@ -238,7 +238,7 @@ export function ApprovalQueueView({
                 <button
                   onClick={() => handleBatchAction('REJECTED')}
                   disabled={processingId === 'batch'}
-                  className="px-3 py-1.5 rounded border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-rose-600 transition-colors inline-flex items-center gap-1"
+                  className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-rose-600 transition-colors inline-flex items-center justify-center gap-1"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>Từ chối</span>
@@ -349,7 +349,7 @@ export function ApprovalQueueView({
               <button
                 onClick={() => handleAction(activeRequest.id, 'APPROVED')}
                 disabled={processingId === activeRequest.id}
-                className="flex-1 py-2 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                className="flex-1 py-2.5 px-3 min-h-[44px] rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
               >
                 {processingId === activeRequest.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -362,7 +362,7 @@ export function ApprovalQueueView({
               <button
                 onClick={() => handleAction(activeRequest.id, 'REJECTED')}
                 disabled={processingId === activeRequest.id}
-                className="py-2 px-3 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-rose-600 transition-colors inline-flex items-center justify-center gap-1"
+                className="py-2.5 px-3 min-h-[44px] rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 text-xs font-semibold text-rose-600 transition-colors inline-flex items-center justify-center gap-1"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Từ chối</span>

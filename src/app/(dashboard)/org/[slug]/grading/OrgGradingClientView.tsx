@@ -522,7 +522,7 @@ export function OrgGradingClientView({
         <button
           type="button"
           onClick={() => setMobileTab('queue')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition cursor-pointer ${
+          className={`flex-1 py-2.5 min-h-[44px] flex items-center justify-center rounded-lg text-center transition cursor-pointer ${
             mobileTab === 'queue'
               ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
               : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -533,7 +533,7 @@ export function OrgGradingClientView({
         <button
           type="button"
           onClick={() => setMobileTab('evidence')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition cursor-pointer ${
+          className={`flex-1 py-2.5 min-h-[44px] flex items-center justify-center rounded-lg text-center transition cursor-pointer ${
             mobileTab === 'evidence'
               ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
               : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -544,7 +544,7 @@ export function OrgGradingClientView({
         <button
           type="button"
           onClick={() => setMobileTab('rubric')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition cursor-pointer ${
+          className={`flex-1 py-2.5 min-h-[44px] flex items-center justify-center rounded-lg text-center transition cursor-pointer ${
             mobileTab === 'rubric'
               ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
               : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'

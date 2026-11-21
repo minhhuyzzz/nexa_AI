@@ -502,7 +502,7 @@ export default function AdminOrganizationsPage() {
               setCreateOrgError(null);
               setIsCreateOrgModalOpen(true);
             }}
-            className="px-3.5 py-2 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors shadow-xs inline-flex items-center gap-2"
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer"
           >
             <Building2 className="w-3.5 h-3.5 text-blue-600" />
             <span>Thêm tổ chức B2B</span>
@@ -516,7 +516,7 @@ export default function AdminOrganizationsPage() {
                 alert('Không có hồ sơ B2B nào đang chờ duyệt.');
               }
             }}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-2"
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer"
           >
             <FileCheck2 className="w-3.5 h-3.5" />
             <span>Duyệt hồ sơ B2B</span>
@@ -533,10 +533,10 @@ export default function AdminOrganizationsPage() {
 
       {/* 2. Tabs (Modern Pill Tabs, không gạch chân) */}
       <div>
-        <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold">
+        <div className="flex flex-wrap sm:inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl text-xs font-semibold overflow-x-auto">
           <button
             onClick={() => setActiveTab('requests')}
-            className={`px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-h-[40px] sm:min-h-0 px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'requests'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
@@ -547,7 +547,7 @@ export default function AdminOrganizationsPage() {
           </button>
           <button
             onClick={() => setActiveTab('organizations')}
-            className={`px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-h-[40px] sm:min-h-0 px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'organizations'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
@@ -558,7 +558,7 @@ export default function AdminOrganizationsPage() {
           </button>
           <button
             onClick={() => setActiveTab('renewals')}
-            className={`px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-h-[40px] sm:min-h-0 px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'renewals'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 font-bold shadow-2xs'
                 : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'

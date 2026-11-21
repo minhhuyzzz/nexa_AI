@@ -157,15 +157,15 @@ export function OrgClassesDirectoryView({
   return (
     <div className="space-y-4 font-sans">
       {/* 1. Top Status Tabs & View Toggle (Modern Pill Tabs, không gạch chân border-b) */}
-      <div className="flex items-center justify-between gap-3 overflow-x-auto">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => {
               setStatusFilter('ALL');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'ALL'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 shadow-2xs'
                 : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
@@ -179,7 +179,7 @@ export function OrgClassesDirectoryView({
               setStatusFilter('ACTIVE');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'ACTIVE'
                 ? 'bg-white dark:bg-[#111114] text-blue-600 dark:text-blue-400 shadow-2xs'
                 : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
@@ -190,7 +190,7 @@ export function OrgClassesDirectoryView({
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl p-1 shrink-0">
+        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-900/80 rounded-xl p-1 shrink-0 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setViewMode('card')}
@@ -231,7 +231,7 @@ export function OrgClassesDirectoryView({
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 transition shadow-2xs"
+            className="w-full pl-9 pr-3.5 py-2 min-h-[40px] rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 transition shadow-2xs"
           />
         </div>
 
@@ -243,7 +243,7 @@ export function OrgClassesDirectoryView({
               setGroupTypeFilter(e.target.value as any);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-blue-600 transition cursor-pointer shadow-2xs"
+            className="w-full sm:w-auto px-3 py-2 min-h-[40px] rounded-xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-blue-600 transition cursor-pointer shadow-2xs"
           >
             <option value="ALL">Loại không gian: Tất cả</option>
             <option value="CLASS">Lớp học</option>
@@ -297,18 +297,18 @@ export function OrgClassesDirectoryView({
                                   e.stopPropagation();
                                   setOpenMenuId(isMenuOpen ? null : cls.id);
                                 }}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                                 title="Tùy chọn lớp học"
                               >
                                 <MoreHorizontal className="w-4 h-4" />
                               </button>
 
                               {isMenuOpen && (
-                                <div className="absolute right-0 top-8 z-30 w-44 rounded-xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
+                                <div className="absolute right-0 top-11 z-30 w-48 rounded-xl bg-white dark:bg-[#18181B] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
                                   <button
                                     type="button"
                                     onClick={(e) => handleCopyCode(cls.classCode, cls.id, e)}
-                                    className="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-700 dark:text-neutral-200 flex items-center gap-2 transition cursor-pointer"
+                                    className="w-full px-3 py-2.5 min-h-[44px] text-left hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-700 dark:text-neutral-200 flex items-center gap-2 transition cursor-pointer"
                                   >
                                     {copiedCodeId === cls.id ? (
                                       <>
@@ -330,7 +330,7 @@ export function OrgClassesDirectoryView({
                                       setOpenMenuId(null);
                                       setEditingClass(cls);
                                     }}
-                                    className="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-700 dark:text-neutral-200 flex items-center gap-2 transition cursor-pointer"
+                                    className="w-full px-3 py-2.5 min-h-[44px] text-left hover:bg-slate-50 dark:hover:bg-zinc-800 text-neutral-700 dark:text-neutral-200 flex items-center gap-2 transition cursor-pointer"
                                   >
                                     <Edit className="w-3.5 h-3.5 text-slate-400" />
                                     <span>Chỉnh sửa thông tin</span>
@@ -345,7 +345,7 @@ export function OrgClassesDirectoryView({
                                       setOpenMenuId(null);
                                       setDeletingClass(cls);
                                     }}
-                                    className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 transition cursor-pointer"
+                                    className="w-full px-3 py-2.5 min-h-[44px] text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 transition cursor-pointer"
                                   >
                                     <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                                     <span>Xóa lớp / nhóm</span>
@@ -410,7 +410,7 @@ export function OrgClassesDirectoryView({
       {viewMode === 'table' && (
         <div className="border border-slate-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr className="bg-slate-50/60 dark:bg-zinc-900/40 text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                   <th className="py-3 px-4">Tên lớp / Không gian</th>
@@ -457,20 +457,19 @@ export function OrgClassesDirectoryView({
                           <button
                             type="button"
                             onClick={() => setEditingClass(cls)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                            className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                             title="Sửa thông tin"
                           >
-                            <Edit className="w-3.5 h-3.5" />
+                            <Edit className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeletingClass(cls)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                            className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
                             title="Xóa lớp"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
-
                         </div>
                       </td>
                     </tr>
@@ -484,7 +483,7 @@ export function OrgClassesDirectoryView({
 
       {/* 5. Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs">
           <span className="text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
             Hiển thị {paginatedClasses.length} trên {filtered.length} lớp và nhóm
           </span>
@@ -493,15 +492,15 @@ export function OrgClassesDirectoryView({
             <button
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
+              className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-7 h-7 rounded-lg text-xs font-medium transition cursor-pointer ${
+                className={`w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-xs font-medium transition cursor-pointer ${
                   currentPage === page
                     ? 'bg-blue-600 text-white font-bold'
                     : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800'
@@ -513,9 +512,9 @@ export function OrgClassesDirectoryView({
             <button
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
+              className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

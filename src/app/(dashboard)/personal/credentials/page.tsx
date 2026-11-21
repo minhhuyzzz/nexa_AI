@@ -79,7 +79,7 @@ export default function LearnerCredentialsPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 border border-slate-200 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium inline-flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 border border-slate-200 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-medium inline-flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`}
@@ -91,14 +91,14 @@ export default function LearnerCredentialsPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+        <div className="p-4 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
           {error}
         </div>
       )}
 
       {/* 2. Thanh tiến độ tách riêng ở trên */}
-      <div className="p-4 sm:p-5 rounded-md bg-white border border-slate-200 shadow-xs space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 font-medium gap-1">
+      <div className="p-4 sm:p-5 rounded-md bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xs space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 dark:text-neutral-400 font-medium gap-1">
           <span>
             Tiến độ mở khóa: <strong className="text-slate-900 dark:text-neutral-100 font-mono">{points} / {targetPoints.toLocaleString('vi-VN')} điểm</strong> ({progressPercent}%)
           </span>
@@ -106,10 +106,10 @@ export default function LearnerCredentialsPage() {
             Tính năng tạm khóa (còn thiếu {pointsRemaining.toLocaleString('vi-VN')} điểm)
           </span>
         </div>
-        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200/60">
+        <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden border border-slate-200/60 dark:border-zinc-700">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              isUnlocked ? 'bg-emerald-600' : 'bg-sky-600'
+              isUnlocked ? 'bg-emerald-600' : 'bg-blue-600'
             }`}
             style={{ width: `${progressPercent}%` }}
           />
@@ -118,8 +118,8 @@ export default function LearnerCredentialsPage() {
 
       {/* 3. Phôi chứng chỉ (Mờ khi khóa, Rõ khi mở khóa) */}
       {loading ? (
-        <div className="p-16 text-center bg-white rounded-md border border-slate-200 text-xs text-slate-500">
-          <RefreshCw className="w-6 h-6 text-sky-600 animate-spin mx-auto mb-2" strokeWidth={1.75} />
+        <div className="p-16 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200 dark:border-zinc-800 text-xs text-slate-500 dark:text-neutral-400">
+          <RefreshCw className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-2" strokeWidth={1.75} />
           Đang tải dữ liệu chứng nhận...
         </div>
       ) : (

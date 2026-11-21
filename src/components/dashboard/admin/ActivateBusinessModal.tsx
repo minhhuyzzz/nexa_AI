@@ -112,7 +112,7 @@ export function ActivateBusinessModal({
           <button
             onClick={onClose}
             disabled={submitting}
-            className="p-1 rounded-md text-slate-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md text-slate-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
@@ -297,19 +297,19 @@ export function ActivateBusinessModal({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="h-8.5 px-3.5 rounded-md border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
+                className="min-h-[44px] sm:min-h-0 sm:h-8.5 px-3.5 rounded-md border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors flex items-center justify-center cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="h-8.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-60"
+                className="min-h-[44px] sm:min-h-0 sm:h-8.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60 cursor-pointer"
               >
                 {submitting ? 'Đang kích hoạt...' : 'Kích hoạt và tạo lời mời'}
               </button>

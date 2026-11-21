@@ -243,7 +243,7 @@ export function CampaignWizardClient({
                       key={sug}
                       type="button"
                       onClick={() => setTitle(sug)}
-                      className="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-300 transition"
+                      className="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-300 transition"
                     >
                       {sug}
                     </button>
@@ -551,7 +551,7 @@ export function CampaignWizardClient({
                 type="button"
                 disabled={submitting || !title.trim() || !selectedAssessmentId || selectedClassIds.length === 0}
                 onClick={handleCreateCampaign}
-                className="w-full h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                className="w-full min-h-[44px] px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 {submitting ? (
                   <>

@@ -86,7 +86,7 @@ export function OrgCampaignProgressTable({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full min-w-[500px] text-left">
               <thead>
                 <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                   <th className="py-2.5 px-4">Tên đợt</th>
@@ -141,7 +141,7 @@ export function OrgCampaignProgressTable({
                       <td className="py-3 px-4 text-right">
                         <Link
                           href={`/org/${orgSlug}/campaigns/${c.id}`}
-                          className="inline-flex items-center gap-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                          className="inline-flex items-center gap-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors py-1.5 min-h-[44px]"
                         >
                           <span>Chi tiết</span>
                           <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />

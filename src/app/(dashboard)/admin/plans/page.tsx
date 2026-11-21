@@ -486,21 +486,21 @@ export default function AdminPlansPage() {
               </h2>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Tìm theo tên trường, mã đơn vị..."
                   value={b2bSearch}
                   onChange={(e) => setB2bSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs rounded-xl ring-1 ring-slate-200 dark:ring-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 w-64 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+                  className="pl-8 pr-3 py-2 sm:py-1.5 text-xs rounded-xl ring-1 ring-slate-200 dark:ring-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 w-full focus:outline-hidden focus:ring-2 focus:ring-blue-600"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1.5 text-xs rounded-xl ring-1 ring-slate-200 dark:ring-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 focus:outline-hidden"
+                className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs rounded-xl ring-1 ring-slate-200 dark:ring-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 focus:outline-hidden cursor-pointer"
               >
                 <option value="ALL">Tất cả trạng thái</option>
                 <option value="ACTIVE">Đang hoạt động</option>

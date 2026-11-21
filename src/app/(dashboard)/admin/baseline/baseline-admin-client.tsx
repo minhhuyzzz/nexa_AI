@@ -466,10 +466,10 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
           <Link
             href={`/admin/content/assessments/${assessment.id}/preview`}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5"
           >
             <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
             <span>Xem trước</span>
@@ -481,7 +481,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                 setClearInputText('');
                 setShowClearConfirm(true);
               }}
-              className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-400 hover:text-red-600 transition-colors shadow-xs"
+              className="min-w-[44px] min-h-[44px] sm:min-h-0 p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-400 hover:text-red-600 transition-colors shadow-xs flex items-center justify-center cursor-pointer"
               title="Xóa trắng bài thi (Thao tác nguy hiểm)"
             >
               <Trash2 className="w-4 h-4" />
@@ -495,7 +495,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
               }
               setIsAddingNew(true);
             }}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>

@@ -133,10 +133,10 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Link
             href="/admin/content"
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Ngân hàng đề</span>
@@ -144,7 +144,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
 
           <Link
             href={`/admin/content/assessments/${assessment.id}`}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5 shadow-xs"
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5 shadow-xs"
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>Mở Trong Studio</span>
@@ -229,7 +229,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
                   setSelectedDomainFilter(code);
                   setActiveQuestionIndex(0);
                 }}
-                className={`px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                className={`min-h-[36px] sm:min-h-0 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer flex items-center justify-center ${
                   isSelected
                     ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
                     : 'border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-zinc-850'
@@ -245,7 +245,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
         <button
           type="button"
           onClick={() => setShowAnswerKeys(!showAnswerKeys)}
-          className={`px-3.5 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer ${
+          className={`min-h-[44px] sm:min-h-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors cursor-pointer ${
             showAnswerKeys
               ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
               : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-neutral-400'
@@ -420,7 +420,7 @@ export function AdminAssessmentPreviewClient({ assessmentId }: AdminPreviewClien
                   key={it.id}
                   type="button"
                   onClick={() => setActiveQuestionIndex(idx)}
-                  className={`h-9 rounded-xl font-mono text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
+                  className={`min-h-[40px] sm:min-h-0 h-10 sm:h-9 rounded-xl font-mono text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
                     isSelected
                       ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
                       : hasCorrectOpt && showAnswerKeys

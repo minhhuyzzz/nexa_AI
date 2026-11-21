@@ -167,7 +167,7 @@ export function QuestionReviewSection({
         </div>
 
         {/* Filter Pills */}
-        <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/70 dark:border-zinc-800 self-start sm:self-auto text-xs font-semibold">
+        <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/70 dark:border-zinc-800 self-start sm:self-auto text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setFilter('ALL')}
@@ -360,12 +360,12 @@ export function QuestionReviewSection({
               {/* AI Explanation Action & Expandable Panel */}
               {allowAIExplanation && (
                 <div className="mt-3.5 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 items-start">
                     <button
                       type="button"
                       onClick={() => handleRequestAIExplanation(item)}
                       disabled={aiState?.loading}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 hover:bg-blue-100/80 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 hover:bg-blue-100/80 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {aiState?.loading ? (
                         <>

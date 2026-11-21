@@ -137,7 +137,7 @@ function FilterDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer min-w-[155px]"
+        className="px-3 py-2 min-h-[44px] sm:min-h-0 text-xs rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-800 dark:text-zinc-200 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer min-w-[155px]"
       >
         <span className="truncate">{activeOption?.label || label}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
@@ -145,7 +145,7 @@ function FilterDropdown({
 
       {open && (
         <div
-          className={`absolute top-full mt-1.5 left-0 ${width} max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100`}
+          className={`absolute top-full mt-1.5 left-0 ${width} max-w-[calc(100vw-2.5rem)] max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100`}
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;
@@ -496,13 +496,14 @@ function AdminComplianceContent() {
               <button
                 type="button"
                 onClick={() => setSelectedLog(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                aria-label="Đóng"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
               <div>
                 <span className="text-slate-400">Quản trị viên:</span>
                 <p className="font-semibold text-neutral-900 dark:text-neutral-100">{selectedLog.admin_email || 'System'}</p>

@@ -226,11 +226,11 @@ export function MemberDirectoryTable({
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
           {isManager && onOpenBulkImport && (
             <button
               onClick={onOpenBulkImport}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
               <span>Nhập danh sách (.CSV)</span>
@@ -238,12 +238,12 @@ export function MemberDirectoryTable({
           )}
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] sm:min-h-0 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-850 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors shadow-2xs cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
             <span>Xuất danh sách</span>
           </button>
-          <span className="text-[11px] font-mono text-slate-400 dark:text-neutral-500">
+          <span className="text-[11px] font-mono text-slate-400 dark:text-neutral-500 shrink-0">
             {filtered.length} bản ghi
           </span>
         </div>
@@ -252,7 +252,7 @@ export function MemberDirectoryTable({
       {/* Main Table */}
       <div className="rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full min-w-[680px] text-left">
             <thead>
               <tr className="bg-slate-50/75 dark:bg-zinc-900/60 text-[10px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider font-mono">
                 <th className="py-2.5 px-4 w-10">
@@ -377,7 +377,7 @@ export function MemberDirectoryTable({
                         <button
                           type="button"
                           onClick={(e) => handleOpenDropdown(e, m)}
-                          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center ml-auto rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
                           title="Tùy chọn thao tác"
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -392,7 +392,7 @@ export function MemberDirectoryTable({
         </div>
 
         {/* Pagination Footer */}
-        <div className="p-3 flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
+        <div className="p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-neutral-400">
           <div className="flex items-center gap-2">
             <span>Hiển thị</span>
             <select
@@ -401,7 +401,7 @@ export function MemberDirectoryTable({
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 border border-slate-200 dark:border-zinc-800 rounded bg-white dark:bg-[#111114] text-xs cursor-pointer"
+              className="px-2 py-1.5 min-h-[36px] border border-slate-200 dark:border-zinc-800 rounded bg-white dark:bg-[#111114] text-xs cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -414,7 +414,7 @@ export function MemberDirectoryTable({
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1 rounded border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -424,7 +424,7 @@ export function MemberDirectoryTable({
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1 rounded border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

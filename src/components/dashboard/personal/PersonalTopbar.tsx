@@ -55,13 +55,13 @@ export function PersonalTopbar() {
       }`}
     >
       {/* Left: Mobile Hamburger & Search Input */}
-      <div className="flex items-center gap-2.5 sm:gap-4 flex-1 min-w-0 max-w-xl">
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 max-w-xl">
         {/* Mobile Hamburger & Logo */}
-        <div className="flex items-center gap-1.5 md:hidden shrink-0">
+        <div className="flex items-center gap-1 md:hidden shrink-0">
           <button
             type="button"
             onClick={toggleMobile}
-            className="p-2 -ml-1 rounded-lg text-neutral-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2 rounded-xl text-neutral-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             aria-label="Mở menu điều hướng"
           >
             <Menu className="w-5 h-5" strokeWidth={2} />
@@ -72,24 +72,24 @@ export function PersonalTopbar() {
         </div>
 
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md min-w-0">
-          <Search className="w-4 h-4 text-slate-400 dark:text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+        <div className="relative flex-1 max-w-md min-w-[120px]">
+          <Search className="w-4 h-4 text-slate-400 dark:text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" strokeWidth={1.75} />
           <input
             type="text"
-            placeholder="Tìm kiếm bài đánh giá, lớp học..."
-            className="w-full bg-slate-50/90 dark:bg-zinc-900/90 hover:bg-slate-100 dark:hover:bg-zinc-850 focus:bg-white dark:focus:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 pl-9 pr-3 py-1.5 sm:py-2 rounded-md border border-slate-200/80 dark:border-zinc-800 focus:border-blue-600 dark:focus:border-blue-400 focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-neutral-500 shadow-2xs truncate"
+            placeholder="Tìm kiếm..."
+            className="w-full bg-slate-50/90 dark:bg-zinc-900/90 hover:bg-slate-100 dark:hover:bg-zinc-850 focus:bg-white dark:focus:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 focus:border-blue-600 dark:focus:border-blue-400 focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-neutral-500 shadow-2xs truncate"
           />
         </div>
       </div>
 
       {/* Right: Points, Notification Bell & Avatar */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Points Display */}
-        <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs rounded-md bg-slate-50/60 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60 group">
+        <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs rounded-xl bg-slate-50/60 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60 group">
           <span className="w-1.5 h-1.5 rounded-full bg-volt ring-2 ring-volt/40 shrink-0" />
           <Trophy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
           <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums text-[11px] sm:text-xs">
-            {animatedPoints} PTS
+            {animatedPoints}<span className="hidden sm:inline"> PTS</span>
           </span>
         </div>
 

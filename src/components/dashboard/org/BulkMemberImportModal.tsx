@@ -242,7 +242,8 @@ export function BulkMemberImportModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+            aria-label="Đóng cửa sổ"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -385,7 +386,7 @@ export function BulkMemberImportModal({
           {/* STEP 2: Configure & Field Mapping */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-zinc-800/40 p-4 rounded-md border border-slate-200 dark:border-zinc-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-zinc-800/40 p-4 rounded-md border border-slate-200 dark:border-zinc-800">
                 <div>
                   <label htmlFor={defaultRoleSelectId} className="block font-medium text-neutral-800 dark:text-neutral-200 mb-1">
                     Vai trò áp dụng mặc định
@@ -396,7 +397,7 @@ export function BulkMemberImportModal({
                     onChange={(e) =>
                       setDefaultRole(e.target.value as 'MEMBER' | 'ORG_ADMIN' | 'ASSESSOR')
                     }
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded text-neutral-900 dark:text-neutral-100"
+                    className="w-full min-h-[40px] px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded text-neutral-900 dark:text-neutral-100"
                   >
                     <option value="MEMBER">Thành viên (Mặc định)</option>
                     <option value="ASSESSOR">Khảo thí viên</option>
@@ -415,7 +416,7 @@ export function BulkMemberImportModal({
                     id={assignClassSelectId}
                     value={targetClassId}
                     onChange={(e) => setTargetClassId(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded text-neutral-900 dark:text-neutral-100"
+                    className="w-full min-h-[40px] px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded text-neutral-900 dark:text-neutral-100"
                   >
                     <option value="">Không gán lớp học</option>
                     {classes.map((cls) => (
@@ -497,8 +498,8 @@ export function BulkMemberImportModal({
               </div>
 
               {/* Preview table */}
-              <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden max-h-56 overflow-y-auto">
-                <table className="w-full text-left text-xs">
+              <div className="border border-slate-200 dark:border-zinc-800 rounded-md overflow-hidden max-h-56 overflow-y-auto overflow-x-auto">
+                <table className="w-full min-w-[500px] text-left text-xs">
                   <thead className="bg-slate-50 dark:bg-zinc-800/80 text-slate-500 dark:text-neutral-400 font-semibold sticky top-0">
                     <tr>
                       <th className="py-2 px-3">Email</th>
@@ -568,7 +569,7 @@ export function BulkMemberImportModal({
         <div className="px-5 py-3 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-900/50">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-md border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 font-medium transition"
+            className="px-3.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs text-slate-600 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-md border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 font-medium transition"
           >
             Đóng
           </button>
@@ -577,7 +578,7 @@ export function BulkMemberImportModal({
             {step > 1 && (
               <button
                 onClick={() => setStep((s) => (s - 1) as 1 | 2)}
-                className="px-3 py-1.5 text-xs text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md hover:bg-slate-50 font-medium transition"
+                className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md hover:bg-slate-50 font-medium transition"
               >
                 Quay lại
               </button>
@@ -587,7 +588,7 @@ export function BulkMemberImportModal({
               <button
                 disabled={parsedRows.length === 0}
                 onClick={() => setStep((s) => (s + 1) as 2 | 3)}
-                className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition"
+                className="px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition"
               >
                 Tiếp tục
               </button>
@@ -595,7 +596,7 @@ export function BulkMemberImportModal({
               <button
                 onClick={handleSubmit}
                 disabled={validRows.length === 0 || exceedsSeats || isPending}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition shadow-xs"
+                className="flex items-center gap-1.5 px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition shadow-xs"
               >
                 {isPending ? (
                   <>

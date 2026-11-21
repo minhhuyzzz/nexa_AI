@@ -111,7 +111,7 @@ export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
           aria-label="Menu tài khoản tổ chức"
-          className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+          className="flex items-center justify-center min-w-[44px] min-h-[44px] p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/20"
         >
           {avatarUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -134,7 +134,7 @@ export function OrgAvatarMenu({ orgSlug, orgName, userRole }: OrgAvatarMenuProps
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
-            <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-xl py-2 z-50 text-xs text-slate-700 dark:text-zinc-200 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-24px)] rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-xl py-2 z-50 text-xs text-slate-700 dark:text-zinc-200 animate-in fade-in zoom-in-95 duration-100">
               {/* Profile Header */}
               <div className="px-4 py-3 flex items-center gap-3">
                 {avatarUrl ? (

@@ -635,7 +635,7 @@ export default function AdminLearningPathsPage() {
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white dark:bg-[#111114] w-full max-w-xl h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 dark:border-zinc-800 animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
-            <div className="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+            <div className="p-5 flex items-center justify-between bg-slate-50/60 dark:bg-zinc-900/60">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
@@ -656,7 +656,8 @@ export default function AdminLearningPathsPage() {
               <button
                 type="button"
                 onClick={() => setIsStationDrawerOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-850 transition cursor-pointer"
+                aria-label="Đóng"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -934,18 +935,18 @@ export default function AdminLearningPathsPage() {
               </div>
 
               {/* Drawer Footer Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2.5">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsStationDrawerOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-0 px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-neutral-800 dark:text-zinc-200 hover:bg-slate-50 flex items-center justify-center cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={savingStation}
-                  className="px-6 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="min-h-[44px] sm:min-h-0 px-6 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {savingStation && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{savingStation ? 'Đang lưu...' : 'Lưu cấu hình trạm'}</span>
