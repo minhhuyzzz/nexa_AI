@@ -191,11 +191,11 @@ export async function GET(request: NextRequest) {
         // Suggestions: Active classes in org
         const { data: activeClasses } = await adminSupabase
           .from('evaluator_classes')
-          .select('id, name, class_code, max_students')
+          .select('id, name, class_code, status')
           .eq('organization_id', orgId)
-          .eq('is_active', true)
+          .neq('status', 'ARCHIVED')
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(4);
 
         (activeClasses || []).forEach((c) => {
           results.push({
@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
             title: c.name,
             subtitle: `Mã lớp: ${c.class_code}`,
             category: 'class',
-            categoryLabel: 'Lớp Học Đang Mở',
+            categoryLabel: 'Lớp Học',
             href: `/org/${orgSlug}/classes/${c.id}`,
             badge: c.class_code,
           });
