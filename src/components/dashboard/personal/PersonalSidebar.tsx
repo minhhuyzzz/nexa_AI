@@ -117,7 +117,7 @@ export function PersonalSidebar() {
     return (
       <div className="space-y-1">
         {!collapsed ? (
-          <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+          <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
             {title}
           </div>
         ) : (
@@ -189,7 +189,7 @@ export function PersonalSidebar() {
               >
                 <Icon
                   className={`w-4 h-4 shrink-0 transition-colors ${
-                    active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                    active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400'
                   }`}
                   strokeWidth={1.75}
                 />
@@ -238,7 +238,7 @@ export function PersonalSidebar() {
                   setHoveredTooltip({ name: 'Mở rộng menu', top: rect.top + rect.height / 2 });
                 }}
                 onMouseLeave={() => setHoveredTooltip(null)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
                 title="Mở rộng menu"
                 aria-label="Mở rộng menu"
               >
@@ -258,7 +258,7 @@ export function PersonalSidebar() {
               <button
                 type="button"
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
                 title="Thu nhỏ menu"
                 aria-label="Thu nhỏ menu"
               >
@@ -274,7 +274,7 @@ export function PersonalSidebar() {
           >
             {renderNavGroup('Học tập và phát triển', learningNavItems)}
             {renderNavGroup('Nhóm và công việc', workNavItems)}
-            {renderNavGroup('Công cụ tạo và tổ chức', creatorNavItems)}
+            {renderNavGroup('Công cụ tạo', creatorNavItems)}
           </nav>
 
           {/* Blue Feedback Box at bottom */}
@@ -338,7 +338,7 @@ export function PersonalSidebar() {
             <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-3">
               {renderNavGroup('Học tập và phát triển', learningNavItems, closeMobile, false)}
               {renderNavGroup('Nhóm và công việc', workNavItems, closeMobile, false)}
-              {renderNavGroup('Công cụ tạo và tổ chức', creatorNavItems, closeMobile, false)}
+              {renderNavGroup('Công cụ tạo', creatorNavItems, closeMobile, false)}
             </nav>
 
             {/* Mobile Feedback Card */}

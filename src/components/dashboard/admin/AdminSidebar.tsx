@@ -144,7 +144,7 @@ export function AdminSidebar() {
                 setHoveredTooltip({ name: 'Mở rộng menu', top: rect.top + rect.height / 2 });
               }}
               onMouseLeave={() => setHoveredTooltip(null)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
               title="Mở rộng menu"
               aria-label="Mở rộng menu"
             >
@@ -164,7 +164,7 @@ export function AdminSidebar() {
             <button
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
               title="Thu nhỏ menu"
               aria-label="Thu nhỏ menu"
             >
@@ -181,7 +181,7 @@ export function AdminSidebar() {
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-1">
               {!isCollapsed ? (
-                <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                   {section.label}
                 </div>
               ) : (
@@ -235,7 +235,7 @@ export function AdminSidebar() {
                     >
                       <ItemIcon
                         className={`w-4 h-4 shrink-0 transition-colors ${
-                          isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                          isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400'
                         }`}
                         strokeWidth={1.75}
                       />
@@ -327,7 +327,7 @@ export function AdminSidebar() {
             <button
               type="button"
               onClick={closeMobile}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
               title="Đóng menu"
               aria-label="Đóng menu"
             >
@@ -339,7 +339,7 @@ export function AdminSidebar() {
           <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-4">
             {visibleSections.map((section) => (
               <div key={section.id} className="space-y-1">
-                <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                   {section.label}
                 </div>
                 <div className="space-y-1">
@@ -362,7 +362,7 @@ export function AdminSidebar() {
                       >
                         <ItemIcon
                           className={`w-4 h-4 shrink-0 transition-colors ${
-                            isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                            isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400'
                           }`}
                           strokeWidth={1.75}
                         />

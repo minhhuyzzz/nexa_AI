@@ -233,7 +233,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
                   setHoveredTooltip({ name: 'Mở rộng Sidebar chính', top: rect.top + rect.height / 2 });
                 }}
                 onMouseLeave={() => setHoveredTooltip(null)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
                 title="Mở rộng Sidebar chính"
                 aria-label="Mở rộng Sidebar chính"
               >
@@ -253,7 +253,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
               <button
                 type="button"
                 onClick={() => setIsPrimaryCollapsed(!isPrimaryCollapsed)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
                 title="Thu gọn Sidebar chính"
                 aria-label="Thu gọn Sidebar chính"
               >
@@ -294,7 +294,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
             {navGroups.map((group, groupIdx) => (
               <div key={groupIdx} className="space-y-1">
                 {!isPrimaryCollapsed && group.label ? (
-                  <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                  <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                     {group.label}
                   </div>
                 ) : (
@@ -345,7 +345,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
                       >
                         <Icon
                           className={`w-4 h-4 shrink-0 transition-colors ${
-                            active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                            active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400'
                           }`}
                           strokeWidth={1.75}
                         />
@@ -385,7 +385,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
 
             {/* Menu dọc gồm các tab khảo thí (Hidden scrollbar) */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-1.5">
-              <div className="px-2 pt-1 pb-1.5 text-[10px] font-semibold tracking-wider text-slate-400 dark:text-zinc-500 uppercase">
+              <div className="px-2 pt-1 pb-1.5 text-[10px] font-semibold tracking-wider text-slate-600 dark:text-zinc-400 uppercase">
                 Danh mục khảo thí
               </div>
 
@@ -461,7 +461,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
               <button
                 type="button"
                 onClick={closeMobile}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-500 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
                 title="Đóng menu"
                 aria-label="Đóng menu"
               >
@@ -496,7 +496,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
               {navGroups.map((group, groupIdx) => (
                 <div key={groupIdx} className="space-y-1">
                   {group.label && (
-                    <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                    <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                       {group.label}
                     </div>
                   )}
@@ -519,7 +519,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
                           >
                             <Icon
                               className={`w-4 h-4 shrink-0 transition-colors ${
-                                active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-400'
+                                active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-zinc-400'
                               }`}
                               strokeWidth={1.75}
                             />
