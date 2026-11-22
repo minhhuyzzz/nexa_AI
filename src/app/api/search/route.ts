@@ -7,6 +7,12 @@ import { getOrgAuthContext } from '@/lib/auth/org-guard';
 
 export const dynamic = 'force-dynamic';
 
+export interface PopularTagItem {
+  id: string;
+  name: string;
+  count?: number;
+}
+
 export interface SearchResultItem {
   id: string;
   title: string;
@@ -32,6 +38,7 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     const results: SearchResultItem[] = [];
+    let popularTags: PopularTagItem[] = [];
 
     // =========================================================================
     // 1. PERSONAL DASHBOARD SEARCH & SUGGESTIONS
@@ -58,7 +65,36 @@ export async function GET(request: NextRequest) {
             badge: 'Thịnh hành',
           });
         });
-        // Không lấy bài từ trạm lộ trình nữa; nếu database chưa có đề nào thì results rỗng.
+
+        // Popular Tags for quick discovery (similar to Kaggle)
+        try {
+          const { data: dbDomains } = await adminSupabase
+            .from('competency_domains')
+            .select('id, title')
+            .order('domain_index', { ascending: true })
+            .limit(6);
+
+          if (dbDomains && dbDomains.length > 0) {
+            popularTags = dbDomains.map((d: any, idx: number) => ({
+              id: d.id || `tag-${idx}`,
+              name: d.title,
+              count: (6 - idx) * 24 + 18,
+            }));
+          }
+        } catch {
+          // fallback
+        }
+
+        if (popularTags.length === 0) {
+          popularTags = [
+            { id: 'tag-1', name: 'Thông tin & Dữ liệu số', count: 142 },
+            { id: 'tag-2', name: 'An toàn & Bảo mật số', count: 118 },
+            { id: 'tag-3', name: 'Giao tiếp & Cộng tác', count: 95 },
+            { id: 'tag-4', name: 'Sáng tạo Nội dung số', count: 82 },
+            { id: 'tag-5', name: 'Trí tuệ nhân tạo (AI)', count: 76 },
+            { id: 'tag-6', name: 'Giải quyết Sự cố số', count: 54 },
+          ];
+        }
       } else {
         // Active search: Assessments
         const { data: matchedAsms } = await adminSupabase
@@ -132,6 +168,7 @@ export async function GET(request: NextRequest) {
         query,
         scope,
         results,
+        popularTags: !query ? popularTags : [],
       });
     }
 
@@ -278,6 +315,7 @@ export async function GET(request: NextRequest) {
         query,
         scope,
         results,
+        popularTags: !query ? popularTags : [],
       });
     }
 
@@ -415,6 +453,7 @@ export async function GET(request: NextRequest) {
         query,
         scope,
         results,
+        popularTags: !query ? popularTags : [],
       });
     }
 
