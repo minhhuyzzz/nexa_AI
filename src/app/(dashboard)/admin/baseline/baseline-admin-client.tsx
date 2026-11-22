@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Save,
-  Layers,
   Sparkles,
   RefreshCw,
   Edit2,
@@ -18,8 +17,14 @@ import {
   Search,
   SlidersHorizontal,
   ShieldAlert,
-  Info,
+  FileSpreadsheet,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  FolderPlus,
 } from 'lucide-react';
+import { BaselinePreviewModal } from './BaselinePreviewModal';
 
 interface Option {
   id?: string;
@@ -67,10 +72,20 @@ interface Competency {
   domain_id: string;
 }
 
+interface BaselineSetSummary {
+  id: string;
+  title: string;
+  isPublished: boolean;
+  isActive: boolean;
+  questionCount: number;
+  createdAt: string;
+}
+
 interface Props {
   assessment: Assessment | null;
   domains: Domain[];
   competencies: Competency[];
+  baselineSets?: BaselineSetSummary[];
 }
 
 // Bộ lọc kiểm duyệt nội dung, chặn triệt để dữ liệu rác / dữ liệu giả
@@ -112,8 +127,15 @@ function validateQuestionContent(
   return null;
 }
 
-export function BaselineAdminClient({ assessment, domains, competencies }: Props) {
+export function BaselineAdminClient({ assessment, domains, competencies, baselineSets = [] }: Props) {
   const router = useRouter();
+
+  // State Quản lý bộ khảo sát
+  const [showSetDropdown, setShowSetDropdown] = useState(false);
+  const [isCreatingSet, setIsCreatingSet] = useState(false);
+  const [newSetTitle, setNewSetTitle] = useState('');
+  const [isSubmittingSet, setIsSubmittingSet] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
   // State danh sách câu hỏi
   const [items, setItems] = useState<Item[]>(assessment?.assessment_items || []);
@@ -131,6 +153,39 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   // State Modal Xóa 1 câu
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // State Xuất Báo Cáo Khảo Sát
+  const [isExportingSurvey, setIsExportingSurvey] = useState(false);
+
+  // State Modal Xem Trước (Mô phỏng người học)
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+  // State Thu gọn / Mở rộng câu hỏi
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(new Set());
+  const [isExpandAll, setIsExpandAll] = useState(false);
+
+  const toggleExpandItem = (id: string) => {
+    setExpandedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleExpandAll = () => {
+    if (isExpandAll) {
+      setExpandedItemIds(new Set());
+      setIsExpandAll(false);
+    } else {
+      setExpandedItemIds(new Set(items.map((i) => i.id)));
+      setIsExpandAll(true);
+    }
+  };
 
   // State Thêm câu mới
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -395,6 +450,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   // Xóa 1 câu hỏi
   const handleDeleteItem = async (itemId: string) => {
     setIsDeletingItem(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/admin/assessments/${assessment.id}/items/${itemId}`, {
         method: 'DELETE',
@@ -405,11 +461,166 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
 
       setItems((prev) => prev.filter((i) => i.id !== itemId));
       setDeletingItemId(null);
+      setDeleteError(null);
       showToast('success', 'Đã xóa câu hỏi khỏi bài khảo thí!');
     } catch (err: any) {
+      setDeleteError(err.message || 'Lỗi xóa câu hỏi');
       showToast('error', err.message || 'Lỗi xóa câu hỏi');
     } finally {
       setIsDeletingItem(false);
+    }
+  };
+
+  // Xuất Báo Cáo Phân Tích Khảo Sát ra File Excel
+  const handleExportSurveyExcel = async () => {
+    if (isExportingSurvey) return;
+    setIsExportingSurvey(true);
+    try {
+      const res = await fetch(`/api/admin/assessments/${assessment.id}/survey-export`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi tải dữ liệu khảo sát');
+
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'NEXA AI Platform';
+      workbook.created = new Date();
+
+      // Sheet 1: Kết quả khảo sát học viên
+      const ws1 = workbook.addWorksheet('Ket_Qua_Khao_Sat', {
+        views: [{ showGridLines: true }],
+      });
+
+      ws1.columns = [
+        { header: 'STT', key: 'stt', width: 8 },
+        { header: 'Họ và tên', key: 'name', width: 26 },
+        { header: 'Email', key: 'email', width: 32 },
+        { header: 'Thời gian nộp', key: 'submittedAt', width: 20 },
+        { header: 'Tổng điểm (%)', key: 'totalScore', width: 16 },
+        { header: 'M1: Dữ liệu (%)', key: 'd1', width: 16 },
+        { header: 'M2: Giao tiếp (%)', key: 'd2', width: 16 },
+        { header: 'M3: Sáng tạo (%)', key: 'd3', width: 16 },
+        { header: 'M4: An toàn (%)', key: 'd4', width: 16 },
+        { header: 'M5: Vấn đề số (%)', key: 'd5', width: 16 },
+        { header: 'Miền cần bồi dưỡng', key: 'weakest', width: 22 },
+      ];
+
+      const headerRow1 = ws1.getRow(1);
+      headerRow1.height = 28;
+      headerRow1.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF2563EB' },
+        };
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      });
+
+      (data.participants || []).forEach((p: any) => {
+        ws1.addRow({
+          stt: p.stt,
+          name: p.fullName,
+          email: p.email,
+          submittedAt: p.submittedAt,
+          totalScore: `${p.totalScorePercent}%`,
+          d1: `${p.domainScores?.['01'] ?? 0}%`,
+          d2: `${p.domainScores?.['02'] ?? 0}%`,
+          d3: `${p.domainScores?.['03'] ?? 0}%`,
+          d4: `${p.domainScores?.['04'] ?? 0}%`,
+          d5: `${p.domainScores?.['05'] ?? 0}%`,
+          weakest: `Miền ${p.weakestDomain}`,
+        });
+      });
+
+      // Sheet 2: Thống kê từng câu hỏi khảo sát
+      const ws2 = workbook.addWorksheet('Thong_Ke_Cau_Hoi', {
+        views: [{ showGridLines: true }],
+      });
+
+      ws2.columns = [
+        { header: 'Câu số', key: 'num', width: 10 },
+        { header: 'Miền năng lực', key: 'domain', width: 22 },
+        { header: 'Nội dung câu hỏi', key: 'prompt', width: 45 },
+        { header: 'Đáp án chuẩn', key: 'correctKey', width: 14 },
+        { header: 'Tổng lượt trả lời', key: 'total', width: 16 },
+        { header: 'Số lượt đúng', key: 'correct', width: 14 },
+        { header: 'Tỷ lệ đúng (%)', key: 'rate', width: 16 },
+        { header: 'Lựa chọn A (Nội dung)', key: 'optA_content', width: 28 },
+        { header: 'Lựa chọn A (Số lượt)', key: 'optA_count', width: 18 },
+        { header: 'Lựa chọn A (Tỷ lệ)', key: 'optA_pct', width: 16 },
+        { header: 'Lựa chọn B (Nội dung)', key: 'optB_content', width: 28 },
+        { header: 'Lựa chọn B (Số lượt)', key: 'optB_count', width: 18 },
+        { header: 'Lựa chọn B (Tỷ lệ)', key: 'optB_pct', width: 16 },
+        { header: 'Lựa chọn C (Nội dung)', key: 'optC_content', width: 28 },
+        { header: 'Lựa chọn C (Số lượt)', key: 'optC_count', width: 18 },
+        { header: 'Lựa chọn C (Tỷ lệ)', key: 'optC_pct', width: 16 },
+        { header: 'Lựa chọn D (Nội dung)', key: 'optD_content', width: 28 },
+        { header: 'Lựa chọn D (Số lượt)', key: 'optD_count', width: 18 },
+        { header: 'Lựa chọn D (Tỷ lệ)', key: 'optD_pct', width: 16 },
+      ];
+
+      const headerRow2 = ws2.getRow(1);
+      headerRow2.height = 28;
+      headerRow2.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF1E40AF' },
+        };
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      });
+
+      (data.questionAnalytics || []).forEach((q: any) => {
+        const optA = q.optionStats?.[0];
+        const optB = q.optionStats?.[1];
+        const optC = q.optionStats?.[2];
+        const optD = q.optionStats?.[3];
+        const correctOpt = q.optionStats?.find((o: any) => o.isCorrect);
+
+        ws2.addRow({
+          num: q.questionNumber,
+          domain: `${q.domainCode} - ${q.domainTitle}`,
+          prompt: q.prompt,
+          correctKey: correctOpt ? `Đáp án ${correctOpt.label}` : 'N/A',
+          total: q.totalAnswers,
+          correct: q.correctAnswers,
+          rate: `${q.correctRate}%`,
+          optA_content: optA?.content || '-',
+          optA_count: optA?.count ?? 0,
+          optA_pct: `${optA?.percent ?? 0}%`,
+          optB_content: optB?.content || '-',
+          optB_count: optB?.count ?? 0,
+          optB_pct: `${optB?.percent ?? 0}%`,
+          optC_content: optC?.content || '-',
+          optC_count: optC?.count ?? 0,
+          optC_pct: `${optC?.percent ?? 0}%`,
+          optD_content: optD?.content || '-',
+          optD_count: optD?.count ?? 0,
+          optD_pct: `${optD?.percent ?? 0}%`,
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `NEXA_Khao_Sat_Nang_Luc_So_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(url);
+
+      showToast('success', 'Đã tải xuống file Excel phân tích khảo sát!');
+    } catch (err: any) {
+      showToast('error', err.message || 'Lỗi khi xuất file Excel');
+    } finally {
+      setIsExportingSurvey(false);
     }
   };
 
@@ -444,12 +655,73 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
   // Tên miền hiện tại đang được chọn ở tab
   const activeDomain = domains.find((d) => d.id === activeTab);
 
+  // Kiểm tra bộ hiện tại có phải đang kích hoạt không
+  const currentSet = baselineSets.find((s) => s.id === assessment?.id);
+  const isCurrentActive = currentSet?.isActive ?? true;
+
+  // Tạo bộ khảo sát mới
+  const handleCreateSet = async () => {
+    if (!newSetTitle.trim() || newSetTitle.trim().length < 3) {
+      showToast('error', 'Tên bộ khảo sát phải có ít nhất 3 ký tự');
+      return;
+    }
+    setIsSubmittingSet(true);
+    try {
+      const res = await fetch('/api/admin/baseline-sets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title: newSetTitle.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi tạo bộ khảo sát');
+      showToast('success', `Đã tạo "${newSetTitle.trim()}". Đang chuyển...`);
+      setNewSetTitle('');
+      setIsCreatingSet(false);
+      // Navigate to the new set by reloading
+      router.refresh();
+    } catch (err: any) {
+      showToast('error', err.message || 'Lỗi tạo bộ khảo sát');
+    } finally {
+      setIsSubmittingSet(false);
+    }
+  };
+
+  // Kích hoạt bộ khảo sát
+  const handleActivateSet = async (setId: string) => {
+    setIsActivating(true);
+    try {
+      const res = await fetch(`/api/admin/baseline-sets/${setId}/activate`, {
+        method: 'PUT',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi kích hoạt');
+      showToast('success', data.message || 'Đã kích hoạt bộ khảo sát!');
+      router.refresh();
+    } catch (err: any) {
+      showToast('error', err.message || 'Lỗi kích hoạt');
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
+  // Chuyển sang xem bộ khảo sát khác (reload page với bộ khác)
+  const handleSwitchSet = async (setId: string) => {
+    setShowSetDropdown(false);
+    if (setId === assessment?.id) return;
+    // Navigate to the same page — server will render the selected set
+    // For now, we use a query param approach; page.tsx will read it
+    router.push(`/admin/baseline?set=${setId}`);
+    router.refresh();
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-24">
       {/* 1. Header Tinh Gọn — Tone Trắng / Đen chuẩn SaaS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide uppercase bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/40">
               Khảo Thí Đầu Vào Hệ Thống
             </span>
@@ -459,21 +731,153 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                 {items.length}
               </strong>
             </span>
+            {isCurrentActive ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/40">
+                ● Đang kích hoạt
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/40">
+                Chưa kích hoạt (Nháp)
+              </span>
+            )}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            {assessment.title}
-          </h1>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Đánh giá đầu vào
+            </h1>
+
+            {/* Dropdown Bộ Đề Khảo Sát */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowSetDropdown((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs cursor-pointer"
+                title="Chuyển đổi giữa các bộ đề khảo sát"
+              >
+                <span className="max-w-[200px] sm:max-w-[260px] truncate text-blue-600 dark:text-blue-400 font-medium">
+                  {assessment?.title || 'Chọn bộ đề'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              </button>
+
+              {showSetDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowSetDropdown(false)}
+                  />
+                  <div className="absolute left-0 top-full mt-1.5 w-80 sm:w-96 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                      Danh sách bộ khảo sát ({baselineSets.length})
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
+                      {baselineSets.map((s) => {
+                        const isCurrent = s.id === assessment?.id;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => handleSwitchSet(s.id)}
+                            className={`w-full text-left p-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                              isCurrent
+                                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold'
+                                : 'hover:bg-slate-50 dark:hover:bg-zinc-900 text-neutral-800 dark:text-zinc-200'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs truncate">{s.title}</div>
+                              <div className="text-[11px] text-slate-400 dark:text-neutral-500 flex items-center gap-2 mt-0.5">
+                                <span>{s.questionCount} câu hỏi</span>
+                                <span>&bull;</span>
+                                <span>{new Date(s.createdAt).toLocaleDateString('vi-VN')}</span>
+                              </div>
+                            </div>
+                            <div className="shrink-0 flex items-center gap-1">
+                              {s.isActive && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                  Đang dùng
+                                </span>
+                              )}
+                              {isCurrent && <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="pt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSetDropdown(false);
+                          setIsCreatingSet(true);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <FolderPlus className="w-4 h-4" />
+                        <span>+ Tạo bộ khảo sát mới</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Nút Kích Hoạt nếu bộ này chưa được kích hoạt */}
+            {!isCurrentActive && assessment && (
+              <button
+                type="button"
+                onClick={() => handleActivateSet(assessment.id)}
+                disabled={isActivating || items.length === 0}
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                title={items.length === 0 ? 'Cần có ít nhất 1 câu hỏi để kích hoạt' : 'Đặt bộ đề này làm khảo thí đầu vào chính thức'}
+              >
+                {isActivating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                <span>{isActivating ? 'Đang kích hoạt...' : 'Kích hoạt bộ đề này'}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
-          <Link
-            href={`/admin/content/assessments/${assessment.id}/preview`}
-            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5"
+          {/* Nút Tạo Bộ Khảo Sát Mới */}
+          <button
+            type="button"
+            onClick={() => setIsCreatingSet(true)}
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Tạo thêm một bộ khảo sát đầu vào mới (trạng thái Nháp)"
           >
-            <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
+            <FolderPlus className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Tạo bộ mới</span>
+          </button>
+
+          {/* Nút Xem Trước Nhanh (Modal Popup mô phỏng người học) */}
+          <button
+            type="button"
+            onClick={() => setShowPreviewModal(true)}
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Xem trước giao diện làm khảo sát của người học"
+          >
+            <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Xem trước</span>
-          </Link>
+          </button>
+
+          {/* Nút Xuất Dữ Liệu Khảo Sát ra Excel */}
+          <button
+            type="button"
+            onClick={handleExportSurveyExcel}
+            disabled={isExportingSurvey}
+            className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-800 dark:text-zinc-200 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Tải bảng dữ liệu phân tích khảo sát ra file Excel (.xlsx)"
+          >
+            {isExportingSurvey ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span>{isExportingSurvey ? 'Đang xuất...' : 'Xuất Excel'}</span>
+          </button>
 
           {items.length > 0 && (
             <button
@@ -502,64 +906,6 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
               {activeDomain ? `Thêm câu (${activeDomain.code})` : 'Thêm câu hỏi mới'}
             </span>
           </button>
-        </div>
-      </div>
-
-      {/* 2. Tổng quan 5 Miền Năng Lực & Thang Đo Độc Lập */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
-            <span className="font-bold text-neutral-900 dark:text-neutral-100">
-              Phân bổ câu hỏi theo 5 miền năng lực số
-            </span>
-          </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-            <Info className="w-3.5 h-3.5" />
-            <span>Thang đo độc lập: Mỗi miền tính 0–100% theo số câu thực tế của miền đó, tự động chuẩn hóa kể cả khi phân bổ số câu không đều giữa các miền</span>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-          {domains.map((dom) => {
-            const count = domainItemCounts[dom.code] || 0;
-            const isTabActive = activeTab === dom.id;
-            return (
-              <button
-                key={dom.id}
-                type="button"
-                onClick={() => setActiveTab(dom.id)}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  isTabActive
-                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 hover:border-slate-300 dark:hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-neutral-400">
-                    {dom.code}
-                  </span>
-                  <span
-                    className={`font-mono font-bold text-xs tabular-nums ${
-                      count === 0
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : isTabActive
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-neutral-900 dark:text-neutral-100'
-                    }`}
-                  >
-                    {count} câu
-                  </span>
-                </div>
-                <div className="text-[11px] font-medium text-neutral-800 dark:text-zinc-200 truncate">
-                  {dom.title.split('&')[0].trim()}
-                </div>
-                <div className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">
-                  Thang đo: 100% độc lập
-                </div>
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -773,23 +1119,36 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
           })}
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo nội dung câu hỏi..."
-            className="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Nút Thu gọn / Mở rộng tất cả đáp án */}
+          <button
+            type="button"
+            onClick={toggleExpandAll}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-xs font-semibold text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-850 inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+            title={isExpandAll ? 'Thu gọn đáp án của tất cả câu hỏi' : 'Mở rộng đáp án của tất cả câu hỏi'}
+          >
+            {isExpandAll ? <ChevronUp className="w-3.5 h-3.5 text-blue-600" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+            <span>{isExpandAll ? 'Thu gọn đáp án' : 'Xem hết đáp án'}</span>
+          </button>
+
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm theo nội dung câu hỏi..."
+              className="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -974,17 +1333,19 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
               );
             }
 
+            const isExpanded = expandedItemIds.has(item.id) || isExpandAll;
+
             return (
               <div
                 key={item.id}
                 className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all space-y-3"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
                     <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-zinc-800 text-neutral-800 dark:text-zinc-200 font-mono font-bold text-xs flex items-center justify-center shrink-0 tabular-nums">
                       {localIdx + 1}
                     </span>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         {dom?.code && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/40">
@@ -1001,11 +1362,25 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                     </div>
                   </div>
 
-                  {/* Hành động sửa / xóa */}
+                  {/* Hành động xem đáp án / sửa / xóa */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      type="button"
+                      onClick={() => toggleExpandItem(item.id)}
+                      className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer ${
+                        isExpanded
+                          ? 'border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                          : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-600 dark:text-zinc-400'
+                      }`}
+                      title={isExpanded ? 'Thu gọn đáp án' : 'Xem chi tiết 4 đáp án'}
+                    >
+                      <span>{item.item_options?.length || 4} đáp án</span>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+
+                    <button
                       onClick={() => handleStartEdit(item)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1"
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900 text-xs font-semibold text-neutral-700 dark:text-zinc-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                       <span>Sửa</span>
@@ -1013,7 +1388,7 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
 
                     <button
                       onClick={() => setDeletingItemId(item.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                       title="Xóa câu hỏi này"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1021,9 +1396,9 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                   </div>
                 </div>
 
-                {/* Danh sách 4 đáp án */}
-                {item.item_options && item.item_options.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-9 pt-1">
+                {/* Danh sách 4 đáp án (Chỉ mở ra khi toggle) */}
+                {isExpanded && item.item_options && item.item_options.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-9 pt-1 animate-in fade-in duration-150">
                     {item.item_options.map((opt, oIdx) => (
                       <div
                         key={opt.id || oIdx}
@@ -1072,19 +1447,27 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
             <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 flex items-center justify-center">
               <Trash2 className="w-5 h-5" strokeWidth={1.75} />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                Xóa câu hỏi này khỏi đề thi?
+                Xóa câu hỏi khỏi bài khảo sát?
               </h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Câu hỏi sẽ bị xóa vĩnh viễn khỏi bài khảo thí đầu vào. Tỷ lệ chuẩn hóa của miền tương ứng sẽ tự động cập nhật theo số câu còn lại.
+                Câu hỏi và dữ liệu trả lời liên quan sẽ được dọn sạch khỏi đề thi.
               </p>
+              {deleteError && (
+                <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400">
+                  {deleteError}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setDeletingItemId(null)}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-850"
+                onClick={() => {
+                  setDeletingItemId(null);
+                  setDeleteError(null);
+                }}
+                className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-850 cursor-pointer"
               >
                 Hủy
               </button>
@@ -1092,9 +1475,10 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                 type="button"
                 disabled={isDeletingItem}
                 onClick={() => handleDeleteItem(deletingItemId)}
-                className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                {isDeletingItem ? 'Đang xóa...' : 'Xác nhận xóa'}
+                {isDeletingItem && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isDeletingItem ? 'Đang xóa...' : 'Xác nhận xóa'}</span>
               </button>
             </div>
           </div>
@@ -1145,6 +1529,90 @@ export function BaselineAdminClient({ assessment, domains, competencies }: Props
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-opacity"
               >
                 {isClearing ? 'Đang xóa...' : 'Xác nhận xóa trắng'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 8. Modal Xem Trước Khảo Sát (Mô phỏng người học) */}
+      <BaselinePreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        items={items}
+        assessmentTitle={assessment.title}
+      />
+
+      {/* 9. Modal Tạo Bộ Khảo Sát Mới */}
+      {isCreatingSet && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <FolderPlus className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                    Tạo bộ khảo sát đầu vào mới
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                    Khảo thí chuẩn hóa đo lường năng lực số
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreatingSet(false);
+                  setNewSetTitle('');
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-neutral-800 dark:text-zinc-200">
+                Tên bộ khảo sát
+              </label>
+              <input
+                type="text"
+                value={newSetTitle}
+                onChange={(e) => setNewSetTitle(e.target.value)}
+                placeholder="Ví dụ: Đánh Giá Năng Lực Số (Đợt 2 - 2026)..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/60 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/30"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newSetTitle.trim().length >= 3 && !isSubmittingSet) {
+                    handleCreateSet();
+                  }
+                }}
+              />
+              <p className="text-[11px] text-slate-400 dark:text-neutral-500">
+                Bộ khảo sát mới sẽ ở trạng thái <strong>Nháp</strong>. Bạn có thể soạn câu hỏi hoàn chỉnh rồi bấm <strong>Kích hoạt</strong> để áp dụng cho người học.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreatingSet(false);
+                  setNewSetTitle('');
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-semibold text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-850 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateSet}
+                disabled={isSubmittingSet || newSetTitle.trim().length < 3}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingSet && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isSubmittingSet ? 'Đang tạo...' : 'Tạo bộ khảo sát'}</span>
               </button>
             </div>
           </div>

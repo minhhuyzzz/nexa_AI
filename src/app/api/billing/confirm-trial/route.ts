@@ -119,13 +119,16 @@ export async function POST(request: NextRequest) {
         reason: 'Tặng 100 AI credits kích hoạt 30 ngày dùng thử Gói Tiêu Chuẩn',
         created_at: now.toISOString(),
       });
-    } catch (_) {
+    } catch (ledgerErr) {
+      console.error('[API_ROUTE_ERROR] Trial ledger credit insert error:', ledgerErr);
       try {
         await adminSupabase.rpc('increment_user_points', {
           p_user_id: user.id,
           p_points: creditsIncluded,
         });
-      } catch (_) {}
+      } catch (rpcErr) {
+        console.error('[API_ROUTE_ERROR] Trial increment_user_points fallback error:', rpcErr);
+      }
     }
 
     return NextResponse.json({
@@ -141,6 +144,7 @@ export async function POST(request: NextRequest) {
       transactionId: tx?.id,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/confirm-trial:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

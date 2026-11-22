@@ -101,58 +101,59 @@ export async function POST(request: Request) {
 
 
 
-    // 3. Verify submission existence and learner ownership
-
+    // 3. Verify submission existence and resource-level authorization
     const { data: submission, error: subError } = await supabase
-
       .from('assessment_submissions')
-
       .select(`
-
         id,
-
         user_id,
-
         assessment_id,
-
         total_score,
-
         max_score,
-
         percentage,
-
         assessments (
-
-          title
-
+          title,
+          created_by,
+          owner_user_id,
+          organization_id
         )
-
       `)
-
       .eq('id', submissionId)
-
       .single();
 
-
-
     if (subError || !submission) {
-
       return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
-
     }
 
+    if (submission.user_id !== user.id) {
+      const isPlatformAdmin = profile.role === 'ADMIN' || profile.role === 'SUPERADMIN';
+      let isAuthorized = isPlatformAdmin;
 
+      if (!isAuthorized && submission.assessments) {
+        const asm = Array.isArray(submission.assessments) ? submission.assessments[0] : submission.assessments;
+        if (asm && (asm.created_by === user.id || asm.owner_user_id === user.id)) {
+          isAuthorized = true;
+        } else if (asm?.organization_id) {
+          const { data: membership } = await supabase
+            .from('user_organizations')
+            .select('org_role')
+            .eq('organization_id', asm.organization_id)
+            .eq('user_id', user.id)
+            .eq('status', 'ACTIVE')
+            .maybeSingle();
 
-    if (profile.role === 'LEARNER' && submission.user_id !== user.id) {
+          if (membership && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(membership.org_role)) {
+            isAuthorized = true;
+          }
+        }
+      }
 
-      return NextResponse.json(
-
-        { error: 'Bạn không có quyền phân tích bài thi của học viên khác' },
-
-        { status: 403 }
-
-      );
-
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { error: 'Bạn không có quyền phân tích bài thi của học viên khác' },
+          { status: 403 }
+        );
+      }
     }
 
 
@@ -215,24 +216,19 @@ export async function POST(request: Request) {
 
 
 
-    // 4. Verify AI credits for Learner (Evaluators & Admins bypass)
-
-    if (profile.role === 'LEARNER' && (profile.credits ?? 0) <= 0) {
-
-      return NextResponse.json(
-
-        {
-
-          error: 'Bạn đã hết AI credits. Vui lòng nâng cấp gói để nhận thêm credits.',
-
-          code: 'OUT_OF_CREDITS',
-
-        },
-
-        { status: 403 }
-
-      );
-
+    // 4. Verify AI credits based on submission payer and user entitlement (Platform Admins bypass)
+    const isPlatformAdmin = profile.role === 'ADMIN' || profile.role === 'SUPERADMIN';
+    if (!isPlatformAdmin) {
+      const payer = await QuotaEnforcementService.resolveSubmissionPayer(supabase, submissionId);
+      if (!payer.isOrg && (profile.credits ?? 0) <= 0) {
+        return NextResponse.json(
+          {
+            error: 'Bạn đã hết AI credits. Vui lòng nâng cấp gói để nhận thêm credits.',
+            code: 'OUT_OF_CREDITS',
+          },
+          { status: 403 }
+        );
+      }
     }
 
 
@@ -743,7 +739,7 @@ export async function POST(request: Request) {
 
   } catch (err) {
 
-    console.error('Unexpected error in analyze-competency endpoint:', err);
+    console.error('[API_ROUTE_ERROR] /api/ai/analyze-competency POST:', err);
 
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống khi phân tích năng lực';
 
@@ -793,42 +789,56 @@ export async function GET(request: Request) {
 
 
 
-    // Verify learner ownership of the submission
-
+    // Verify resource authorization of the submission
     const { data: userProfile } = await supabase
-
       .from('profiles')
-
       .select('role')
-
       .eq('id', user.id)
-
       .single();
-
-
 
     const { data: subData } = await supabase
-
       .from('assessment_submissions')
-
-      .select('user_id')
-
+      .select(`
+        user_id,
+        assessment_id,
+        assessments (
+          created_by,
+          owner_user_id,
+          organization_id
+        )
+      `)
       .eq('id', submissionId)
-
       .single();
 
+    if (subData && subData.user_id !== user.id) {
+      const isPlatformAdmin = userProfile?.role === 'ADMIN' || userProfile?.role === 'SUPERADMIN';
+      let isAuthorized = isPlatformAdmin;
 
+      if (!isAuthorized && subData.assessments) {
+        const asm = Array.isArray(subData.assessments) ? subData.assessments[0] : subData.assessments;
+        if (asm && (asm.created_by === user.id || asm.owner_user_id === user.id)) {
+          isAuthorized = true;
+        } else if (asm?.organization_id) {
+          const { data: membership } = await supabase
+            .from('user_organizations')
+            .select('org_role')
+            .eq('organization_id', asm.organization_id)
+            .eq('user_id', user.id)
+            .eq('status', 'ACTIVE')
+            .maybeSingle();
 
-    if (userProfile?.role === 'LEARNER' && subData && subData.user_id !== user.id) {
+          if (membership && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR', 'EVALUATOR'].includes(membership.org_role)) {
+            isAuthorized = true;
+          }
+        }
+      }
 
-      return NextResponse.json(
-
-        { error: 'Bạn không có quyền xem phân tích bài thi này' },
-
-        { status: 403 }
-
-      );
-
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { error: 'Bạn không có quyền xem phân tích bài thi này' },
+          { status: 403 }
+        );
+      }
     }
 
 
@@ -888,11 +898,9 @@ export async function GET(request: Request) {
     });
 
   } catch (err) {
-
+    console.error('[API_ROUTE_ERROR] /api/ai/analyze-competency GET:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
-
     return NextResponse.json({ error: message }, { status: 500 });
-
   }
 
 }

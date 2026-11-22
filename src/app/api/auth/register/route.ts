@@ -112,6 +112,7 @@ export async function POST(request: Request) {
     res.cookies.delete('nexa_demo_role');
     return res;
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/auth/register:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
   }

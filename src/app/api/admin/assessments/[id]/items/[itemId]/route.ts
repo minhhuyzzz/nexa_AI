@@ -223,23 +223,25 @@ export async function DELETE(
     const { id: assessmentId, itemId } = await params;
     const adminSupabase = createAdminClient();
 
-    // Check if this item is part of submitted answers
-    const { count } = await adminSupabase
+    // 1. Dọn dẹp câu trả lời liên quan nếu có (tránh lỗi khóa ngoại)
+    await adminSupabase
       .from('submission_answers')
-      .select('*', { count: 'exact', head: true })
+      .delete()
       .eq('item_id', itemId);
 
-    if (count && count > 0) {
-      return NextResponse.json(
-        { error: 'Không thể xóa câu hỏi này vì đã có học viên nộp bài làm liên quan.' },
-        { status: 400 }
-      );
-    }
+    // 2. Dọn dẹp rubric nếu có
+    await adminSupabase
+      .from('rubrics')
+      .delete()
+      .eq('item_id', itemId);
 
-    // Delete options first (if foreign key doesn't cascade)
-    await adminSupabase.from('item_options').delete().eq('item_id', itemId);
+    // 3. Xóa các đáp án lựa chọn
+    await adminSupabase
+      .from('item_options')
+      .delete()
+      .eq('item_id', itemId);
 
-    // Delete item
+    // 4. Xóa câu hỏi khỏi đề thi
     const { error } = await adminSupabase
       .from('assessment_items')
       .delete()
@@ -247,12 +249,13 @@ export async function DELETE(
       .eq('assessment_id', assessmentId);
 
     if (error) {
-      console.error('Error deleting item:', error);
-      return NextResponse.json({ error: 'Không thể xóa câu hỏi' }, { status: 500 });
+      console.error('[DELETE_ITEM_ERROR]', error);
+      return NextResponse.json({ error: 'Không thể xóa câu hỏi: ' + error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: 'Đã xóa câu hỏi thành công' });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR]', err);
     const msg = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: msg }, { status: 500 });
   }

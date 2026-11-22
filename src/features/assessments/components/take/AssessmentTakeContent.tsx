@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, use, useRef, Suspense, useMemo } from 'react';
+import { useEffect, useState, use, useRef, Suspense, useMemo, useCallback } from 'react';
+import { ExamCountdownClock, formatTime } from './ExamCountdownClock';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -120,7 +121,10 @@ export function AssessmentTakeContent({
   const searchParams = useSearchParams();
   const roomId = searchParams.get('roomId');
   const pin = searchParams.get('pin');
+  const themeParam = searchParams.get('theme');
+  const [examTheme, setExamTheme] = useState<string>(themeParam || 'minimal_white');
   const assignmentId = searchParams.get('assignmentId');
+  const classId = searchParams.get('classId');
   const campaignId = searchParams.get('campaignId');
   const isPreview = isPreviewMode || searchParams.get('preview') === 'true';
   const returnUrlParam = searchParams.get('returnUrl');
@@ -149,11 +153,15 @@ export function AssessmentTakeContent({
   const [liveUrls, setLiveUrls] = useState<Record<string, string>>({});
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(2700);
+  const [initialTimeRemaining, setInitialTimeRemaining] = useState<number>(2700);
+  const [extendedSeconds, setExtendedSeconds] = useState<number>(0);
+  const timeRemainingRef = useRef<number>(2700);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRoomPaused, setIsRoomPaused] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [instantFeedbackEnabled, setInstantFeedbackEnabled] = useState(false);
+  const [tabSwitchAlertEnabled, setTabSwitchAlertEnabled] = useState(false);
   const [submittedResult, setSubmittedResult] = useState<any | null>(null);
   const [lastSaved, setLastSaved] = useState<string>('Vừa xong');
   const [analyzingState, setAnalyzingState] = useState<{
@@ -192,6 +200,14 @@ export function AssessmentTakeContent({
     });
   }, []);
 
+  const isBaseline = Boolean(
+    assessmentId === 'baseline' ||
+    assessmentId === 'a0000000-0000-0000-0000-000000000001' ||
+    assessment?.is_system_baseline ||
+    assessment?.title?.toLowerCase().includes('đầu vào') ||
+    assessment?.title?.toLowerCase().includes('khảo thí đầu vào')
+  );
+
   const effectiveSecuritySettings = assessment?.security_settings || DEFAULT_SECURITY_SETTINGS;
 
   const proctoring = useSmartProctoring({
@@ -201,10 +217,16 @@ export function AssessmentTakeContent({
       email: candidateUser.email,
       fullName: candidateUser.fullName,
     },
-    enabled: Boolean(assessment && !submittedResult && !isPreview),
+    enabled: Boolean(
+      assessment &&
+      !submittedResult &&
+      !isPreview &&
+      (roomId ? tabSwitchAlertEnabled : !isBaseline)
+    ),
     onViolation: (event) => {
-      // Nếu đang trong phòng thi Live trực tiếp, phát broadcast và ghi nhận sự kiện máy chủ
+      // Nếu đang trong phòng thi Live trực tiếp, chỉ phát broadcast và ghi nhận sự kiện nếu Host bật giám sát đổi tab
       if (roomId) {
+        if (!tabSwitchAlertEnabled) return;
         try {
           const supabase = createClient();
           supabase.channel(`room:${roomId}`).send({
@@ -310,28 +332,41 @@ export function AssessmentTakeContent({
   useEffect(() => {
     async function loadAssessment() {
       try {
-        setLoading(true);
         setError(null);
-        const qp = new URLSearchParams();
-        if (assignmentId) qp.set('assignmentId', assignmentId);
-        if (campaignId) qp.set('campaignId', campaignId);
-        if (roomId) qp.set('roomId', roomId);
-        if (pin) qp.set('pin', pin);
-        if (isPreview) qp.set('preview', 'true');
-        const qs = qp.toString() ? `?${qp.toString()}` : '';
 
-        const res = await fetch(`/api/assessments/${effectiveId}${qs}`);
-        const data = await res.json();
+        // 0s Delay check: Đọc dữ liệu đã prefetch từ sảnh chờ trong sessionStorage
+        let data: any = null;
+        try {
+          const cacheKeyRoom = roomId ? `prefetched_assessment_${effectiveId}_${roomId}` : null;
+          const cachedStr = (cacheKeyRoom && sessionStorage.getItem(cacheKeyRoom)) || sessionStorage.getItem(`prefetched_assessment_${effectiveId}`);
+          if (cachedStr) {
+            data = JSON.parse(cachedStr);
+          }
+        } catch {}
 
-        if (res.status === 401) {
-          setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để làm bài.');
-          return;
-        }
+        if (!data) {
+          setLoading(true);
+          const qp = new URLSearchParams();
+          if (assignmentId) qp.set('assignmentId', assignmentId);
+          if (campaignId) qp.set('campaignId', campaignId);
+          if (roomId) qp.set('roomId', roomId);
+          if (pin) qp.set('pin', pin);
+          if (isPreview) qp.set('preview', 'true');
+          const qs = qp.toString() ? `?${qp.toString()}` : '';
 
-        if (res.status === 403 && (data.code === 'UPGRADE_REQUIRED' || data.error?.includes('PRO') || data.error?.includes('VIP') || data.error?.includes('nâng cấp'))) {
-          setIsUpgradeRequired(true);
-          setError(data.error || 'Bài khảo thí này yêu cầu nâng cấp gói tài khoản PRO để tham gia.');
-          return;
+          const res = await fetch(`/api/assessments/${effectiveId}${qs}`);
+          data = await res.json();
+
+          if (res.status === 401) {
+            setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để làm bài.');
+            return;
+          }
+
+          if (res.status === 403 && (data.code === 'UPGRADE_REQUIRED' || data.error?.includes('PRO') || data.error?.includes('VIP') || data.error?.includes('nâng cấp'))) {
+            setIsUpgradeRequired(true);
+            setError(data.error || 'Bài khảo thí này yêu cầu nâng cấp gói tài khoản PRO để tham gia.');
+            return;
+          }
         }
 
         if (data.alreadyCompleted) {
@@ -346,7 +381,7 @@ export function AssessmentTakeContent({
 
         const isNewAttempt = searchParams.get('new') === '1';
 
-        if (res.ok && data.assessment && data.items && data.items.length > 0) {
+        if (data && data.assessment && data.items && data.items.length > 0) {
           let loadedItems: Question[] = data.items;
 
           // Hòa trộn câu hỏi (Shuffle Questions) cho bài khảo thí đầu vào hoặc khi cấu hình shuffle_questions = true
@@ -439,25 +474,43 @@ export function AssessmentTakeContent({
 
           setAssessment(data.assessment);
           setQuestions(loadedItems);
-          const totalSec = (data.assessment.duration_minutes || 45) * 60;
+          let totalSec = (data.assessment.duration_minutes || 45) * 60;
           let remainingSec = totalSec;
 
-          // Late joiner check: if joining an active live room, deduct elapsed time
+          // Late joiner check: if joining an active live room, deduct elapsed time & use custom room duration
           if (roomId || pin) {
             try {
               const roomRes = await fetch(`/api/rooms/status?roomId=${roomId || ''}&pin=${pin || ''}`);
               if (roomRes.ok) {
                 const roomData = await roomRes.json();
+                if (roomData.room?.durationMinutes) {
+                  totalSec = Number(roomData.room.durationMinutes) * 60;
+                }
                 if (roomData.room?.startedAt) {
                   const elapsed = Math.max(0, Math.floor((Date.now() - new Date(roomData.room.startedAt).getTime()) / 1000));
                   remainingSec = Math.max(0, totalSec - elapsed);
+                } else {
+                  remainingSec = totalSec;
+                }
+                if (roomData.room?.themeId) {
+                  setExamTheme(roomData.room.themeId);
+                }
+                if (roomData.room?.proctoringProfile && typeof roomData.room.proctoringProfile === 'object') {
+                  if ((roomData.room.proctoringProfile as any).instant_feedback) {
+                    setInstantFeedbackEnabled(true);
+                  }
+                  if ((roomData.room.proctoringProfile as any).tab_switch_alert) {
+                    setTabSwitchAlertEnabled(true);
+                  }
                 }
               }
             } catch {
               // fallback
             }
           }
-          setTimeRemaining(remainingSec);
+          setInitialTimeRemaining(remainingSec);
+          timeRemainingRef.current = remainingSec;
+          setLoading(false);
 
           // If no MCQ/Scenario exists in the exam, start directly in Stage 2
           const hasObjective = loadedItems.some(
@@ -532,31 +585,18 @@ export function AssessmentTakeContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load on assessmentId, roomId, pin change
   }, [assessmentId, roomId, pin]);
 
-  const isBaseline = Boolean(
-    assessmentId === 'baseline' ||
-    assessmentId === 'a0000000-0000-0000-0000-000000000001' ||
-    assessment?.is_system_baseline ||
-    assessment?.title?.toLowerCase().includes('đầu vào') ||
-    assessment?.title?.toLowerCase().includes('khảo thí đầu vào')
-  );
-
-  // 2. Countdown Timer (Only for Formal Time-Limited Exams, NEVER for Intake Assessment, NEVER for Preview Mode)
-  useEffect(() => {
-    if (isBaseline || loading || timeRemaining <= 0 || isSubmitting || submittedResult || isRoomPaused || isPreview) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleFinalSubmitRef.current(); // Auto submit when time expires
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isBaseline, loading, timeRemaining, isSubmitting, submittedResult, isRoomPaused, isPreview]);
+  // Callback when countdown timer expires
+  const handleTimeExpired = useCallback(() => {
+    // Thêm Random Jitter (0 - 2000ms) khi nộp bài tự động trong phòng Live để tránh dồn tải DB
+    const jitterMs = roomId ? Math.floor(Math.random() * 2000) : 0;
+    if (jitterMs > 0) {
+      setTimeout(() => {
+        handleFinalSubmitRef.current();
+      }, jitterMs);
+    } else {
+      handleFinalSubmitRef.current();
+    }
+  }, [roomId]);
 
   // 2.1 Live Room Realtime Sync (room:${roomId})
   useEffect(() => {
@@ -571,7 +611,7 @@ export function AssessmentTakeContent({
 
         if (action === 'EXTEND_TIME') {
           const additionalMinutes = Number(subPayload?.additionalMinutes || payload.payload?.additionalMinutes || 5);
-          setTimeRemaining((prev) => prev + additionalMinutes * 60);
+          setExtendedSeconds((prev) => prev + additionalMinutes * 60);
         } else if (action === 'FORCE_SUBMIT_ALL') {
           handleFinalSubmitRef.current?.();
         } else if (action === 'FORCE_SUBMIT') {
@@ -623,10 +663,19 @@ export function AssessmentTakeContent({
     return () => clearTimeout(debounceTimer);
   }, [roomId, candidateUser.id, selectedAnswers, textAnswers, questions.length]);
 
-  // 3. Smart Proctoring (Only for Formal Live Exam Rooms with PIN, NEVER for Intake Assessment)
+  // 3. Smart Proctoring (Only for Formal Live Exam Rooms with PIN when tab_switch_alert is enabled, NEVER for Intake Assessment)
   useEffect(() => {
-    // Khảo thí đầu vào hoàn toàn không cần cơ chế giám sát / chống gian lận
-    if (isBaseline || !roomId || loading || isSubmitting || submittedResult || isStage1Locked || activeStage !== 'STAGE_1_OBJECTIVE') {
+    // Khảo thí đầu vào hoặc phòng thi không bật giám sát tab -> hoàn toàn không kích hoạt bộ theo dõi
+    if (
+      isBaseline ||
+      !roomId ||
+      !tabSwitchAlertEnabled ||
+      loading ||
+      isSubmitting ||
+      submittedResult ||
+      isStage1Locked ||
+      activeStage !== 'STAGE_1_OBJECTIVE'
+    ) {
       return;
     }
 
@@ -714,7 +763,7 @@ export function AssessmentTakeContent({
       window.removeEventListener('focus', handleWindowFocus);
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
     };
-  }, [isBaseline, roomId, loading, isSubmitting, submittedResult, isStage1Locked, activeStage]);
+  }, [isBaseline, roomId, tabSwitchAlertEnabled, loading, isSubmitting, submittedResult, isStage1Locked, activeStage]);
 
   // Split questions into 2 sections
   const stage1Questions = questions.filter(
@@ -754,20 +803,37 @@ export function AssessmentTakeContent({
     return set;
   }, [activeQuestionsList, flaggedQuestions]);
 
-  // Auto-Save Draft every 15s
+  const answersRef = useRef({
+    selectedAnswers,
+    textAnswers,
+    evidenceUrls,
+    liveUrls,
+  });
+
+  useEffect(() => {
+    answersRef.current = {
+      selectedAnswers,
+      textAnswers,
+      evidenceUrls,
+      liveUrls,
+    };
+  }, [selectedAnswers, textAnswers, evidenceUrls, liveUrls]);
+
+  // Auto-Save Draft every 15s (without being torn down while user types)
   useEffect(() => {
     if (questions.length === 0) return;
 
     const saveTimer = setInterval(() => {
-      localStorage.setItem(`nexa_exam_draft_${effectiveId}`, JSON.stringify(selectedAnswers));
-      localStorage.setItem(`nexa_exam_draft_text_${effectiveId}`, JSON.stringify(textAnswers));
-      localStorage.setItem(`nexa_exam_draft_ev_${effectiveId}`, JSON.stringify(evidenceUrls));
-      localStorage.setItem(`nexa_exam_draft_live_${effectiveId}`, JSON.stringify(liveUrls));
+      const { selectedAnswers: sa, textAnswers: ta, evidenceUrls: ea, liveUrls: la } = answersRef.current;
+      localStorage.setItem(`nexa_exam_draft_${effectiveId}`, JSON.stringify(sa));
+      localStorage.setItem(`nexa_exam_draft_text_${effectiveId}`, JSON.stringify(ta));
+      localStorage.setItem(`nexa_exam_draft_ev_${effectiveId}`, JSON.stringify(ea));
+      localStorage.setItem(`nexa_exam_draft_live_${effectiveId}`, JSON.stringify(la));
       setLastSaved(new Date().toLocaleTimeString('vi-VN'));
     }, 15000);
 
     return () => clearInterval(saveTimer);
-  }, [effectiveId, selectedAnswers, textAnswers, evidenceUrls, liveUrls, questions]);
+  }, [effectiveId, questions.length]);
 
   const handleSelectOption = (questionId: string, optionId: string) => {
     if (isStage1Locked) return;
@@ -912,7 +978,7 @@ export function AssessmentTakeContent({
         }));
 
         const totalSec = (assessment?.duration_minutes || 45) * 60;
-        const timeSpent = Math.max(0, totalSec - timeRemaining);
+        const timeSpent = Math.max(0, totalSec - timeRemainingRef.current);
 
         const submitRes = await fetch(`/api/assessments/${effectiveId}/submit`, {
           method: 'POST',
@@ -945,8 +1011,6 @@ export function AssessmentTakeContent({
         assessmentTitle: assessment?.title || 'Bài Khảo Thí Năng Lực Số',
         objectiveScore: submitData.totalScore ?? submitData.objectiveScore ?? objectiveEarned,
         totalObjectiveScore: submitData.maxScore ?? totalObjectivePoints,
-        correctAnswersCount: submitData.correctAnswersCount ?? (submitData.evaluations ? submitData.evaluations.filter((e: any) => e.isCorrect).length : objectiveEarned),
-        totalQuestionsCount: submitData.totalQuestionsCount ?? questions.length,
         totalPracticalPoints,
         totalExamPoints: (submitData.maxScore ?? totalObjectivePoints) + totalPracticalPoints,
         hasPractical: stage2Questions.length > 0,
@@ -987,38 +1051,6 @@ export function AssessmentTakeContent({
         Object.values(scores).length >= 5 &&
         Object.values(scores).every((s: any) => typeof s === 'number' && s === 100)
       );
-
-      // Trigger AI Diagnostic Scanner Transition (3.1s)
-      setAnalyzingState({
-        isAnalyzing: true,
-        step: 1,
-        message: 'AI đang phân tích các câu trả lời và đối chiếu hồ sơ 5 miền năng lực số...',
-      });
-
-      setTimeout(() => {
-        setAnalyzingState((prev) => ({
-          ...prev,
-          step: 2,
-          message: isPerfectScore
-            ? 'Xuất sắc! Bạn đã đạt chuẩn tối đa cả 5 miền năng lực số...'
-            : 'Đang phát hiện khoảng trống năng lực & đề xuất lộ trình tối ưu...',
-        }));
-      }, 1100);
-
-      setTimeout(() => {
-        setAnalyzingState((prev) => ({
-          ...prev,
-          step: 3,
-          message: isPerfectScore
-            ? 'Kích hoạt quyền tự do lựa chọn 1 miền để bồi dưỡng nâng cao!'
-            : 'Đang mở khóa lộ trình bồi dưỡng cá nhân hóa...',
-        }));
-      }, 2100);
-
-      setTimeout(() => {
-        setAnalyzingState({ isAnalyzing: false, step: 3, message: '' });
-        setSubmittedResult(resultPayload);
-      }, 3100);
 
       // Handle Live Room Submission Sync
       if (roomId) {
@@ -1062,9 +1094,31 @@ export function AssessmentTakeContent({
           console.warn('Failed to update live room participant record:', e);
         }
 
-        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}&answered=${totalAnsCount}&total=${totalQCount}`);
+        router.push(`/live/submitted?roomId=${roomId}&pin=${pin || ''}&answered=${totalAnsCount}&total=${totalQCount}&theme=${examTheme}`);
         return;
       }
+
+      // Continuous experience: redirect seamlessly to the full-page result view
+      if (!isPreview && submitData?.submissionId) {
+        if (classId) {
+          if (submitData.immediateResults === false) {
+            setSubmittedResult({
+              ...resultPayload,
+              isClassSubmission: true,
+              classId,
+              hideDetailedScore: true,
+            });
+            return;
+          }
+          router.push(`/personal/assessments/${effectiveId}/result?submissionId=${submitData.submissionId}&classId=${classId}&assignmentId=${assignmentId || ''}`);
+          return;
+        }
+
+        router.push(`/personal/assessments/${effectiveId}/result?submissionId=${submitData.submissionId}`);
+        return;
+      }
+
+      setSubmittedResult(resultPayload);
     } catch (err: any) {
       console.error('[FINAL_SUBMIT_ERROR]:', err);
       alert(err.message || 'Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.');
@@ -1271,6 +1325,36 @@ export function AssessmentTakeContent({
 
   // Result Screen (After Final Submit)
   if (submittedResult) {
+    if (submittedResult.hideDetailedScore) {
+      return (
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#000000] flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl p-8 text-center space-y-5 shadow-lg">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                Đã nộp bài khảo thí thành công!
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+                Bài thi <strong className="text-neutral-800 dark:text-neutral-200">{submittedResult.assessmentTitle}</strong> đã được nộp vào lớp học.
+              </p>
+              <div className="p-3 bg-slate-50 dark:bg-zinc-900 rounded-lg text-[11px] text-slate-600 dark:text-neutral-400 text-left">
+                Người tổ chức/quản lý lớp đã tắt chế độ hiển thị điểm ngay. Kết quả bài thi sẽ được công bố sau khi người quản lý hoàn tất chấm điểm hoặc sau hạn chót nộp bài.
+              </div>
+            </div>
+            <Link
+              href={`/personal/groups/${submittedResult.classId}`}
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition shadow-xs"
+            >
+              <span>Quay về Lớp học</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     const domainScores: Record<string, number | null> = submittedResult.domainScores || {
       '01': 80,
       '02': 60,
@@ -1281,23 +1365,23 @@ export function AssessmentTakeContent({
 
     const DOMAIN_METADATA: Record<string, { title: string; desc: string }> = {
       '01': {
-        title: 'Tìm kiếm, đánh giá & quản lý thông tin',
+        title: 'Thông tin & Dữ liệu số',
         desc: 'Duyệt, tìm kiếm, đánh giá độ tin cậy và quản lý dữ liệu số an toàn.',
       },
       '02': {
-        title: 'Giao tiếp & hợp tác',
+        title: 'Giao tiếp & Cộng tác số',
         desc: 'Tương tác, chia sẻ, văn hóa số và danh tính số.',
       },
       '03': {
-        title: 'Sáng tạo nội dung số',
+        title: 'Sáng tạo Nội dung số & AI',
         desc: 'Phát triển nội dung đa phương tiện, tích hợp AI, bản quyền số và lập trình.',
       },
       '04': {
-        title: 'An toàn & trách nhiệm',
+        title: 'An toàn & Bảo mật số',
         desc: 'Bảo vệ thiết bị, dữ liệu cá nhân, sức khỏe thể chất/tâm lý và môi trường.',
       },
       '05': {
-        title: 'Nhận diện & giải quyết vấn đề',
+        title: 'Giải quyết Vấn đề số',
         desc: 'Xử lý sự cố kỹ thuật, ứng dụng công nghệ và tự bồi dưỡng liên tục.',
       },
     };
@@ -1371,24 +1455,24 @@ export function AssessmentTakeContent({
       const weakestMeta = DOMAIN_METADATA[submittedResult.weakestDomainCode || '01'] || DOMAIN_METADATA['01'];
 
       return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-md p-3 sm:p-6 md:p-8 flex justify-center items-center animate-in fade-in duration-200">
-          <div className="max-w-4xl w-full max-h-[94vh] overflow-y-auto p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-2xl space-y-6 my-auto">
-            {/* Header Kết Quả Chuẩn Hóa */}
+        <div className="min-h-screen bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 md:p-8 flex justify-center items-start animate-in fade-in duration-200">
+          <div className="max-w-4xl w-full p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-sm space-y-6">
+            {/* Header Kết Quả */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold font-mono tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                    BÁO CÁO ĐÁNH GIÁ NĂNG LỰC SỐ
+                    {effectiveReturnUrl ? 'KẾT QUẢ BÀI THI LỚP HỌC' : 'BÁO CÁO ĐÁNH GIÁ NĂNG LỰC SỐ'}
                   </span>
                   {isPassedExam ? (
                     <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      <span>ĐẠT CHUẨN NĂNG LỰC (≥ 70%)</span>
+                      <span>ĐẠT CHUẨN (≥ {assessment?.passing_score || 70}%)</span>
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      <span>CẦN TIẾP TỤC BỒI DƯỠNG (&lt; 70%)</span>
+                      <span>CẦN TIẾP TỤC BỒI DƯỠNG (&lt; {assessment?.passing_score || 70}%)</span>
                     </span>
                   )}
                 </div>
@@ -1412,7 +1496,7 @@ export function AssessmentTakeContent({
                   }`}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
-                  <span>Báo Cáo Năng Lực</span>
+                  <span>{effectiveReturnUrl ? 'Tổng Quan Điểm Số' : 'Báo Cáo Năng Lực'}</span>
                 </button>
                 <button
                   type="button"
@@ -1466,92 +1550,6 @@ export function AssessmentTakeContent({
                     <span className="text-[10px] text-slate-400">{isPassedExam ? 'Đã cộng vào hồ sơ' : 'Cần ≥ 70% để nhận'}</span>
                   </div>
                 </div>
-
-                {/* Thanh Tiến Độ Từng Miền Năng Lực Số (Thay thế biểu đồ Radar trùng lặp) */}
-                <div className="p-5 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        <span>Mức Độ Thành Thạo Các Miền Năng Lực Số</span>
-                      </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                        Điểm số từng miền được tính độc lập từ các câu hỏi tương ứng trong bài khảo thí
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono font-medium text-slate-400 dark:text-neutral-500 hidden sm:inline">
-                      Mốc chuẩn đạt: 70%
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 pt-1">
-                    {domainList.map((dom) => (
-                      <div key={dom.code} className="p-3 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800/80 shadow-xs space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
-                              {dom.code}
-                            </span>
-                            <span className="font-semibold text-neutral-800 dark:text-zinc-200 truncate">
-                              {dom.title}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {dom.isPassed ? (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
-                                Đạt chuẩn • +2% năng lực
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 text-[10px] font-semibold border border-amber-200 dark:border-amber-800">
-                                Cần bồi dưỡng
-                              </span>
-                            )}
-                            <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 text-xs w-9 text-right tabular-nums">
-                              {dom.score !== null ? `${dom.score}%` : 'Chưa thi'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Progress Bar with 70% target marker */}
-                        <div className="relative w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              dom.isPassed ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-amber-500 dark:bg-amber-400'
-                            }`}
-                            style={{ width: `${dom.score ?? 0}%` }}
-                          />
-                          <div
-                            className="absolute top-0 bottom-0 left-[70%] w-0.5 bg-neutral-400/80 dark:bg-neutral-500/80 z-10"
-                            title="Ngưỡng đạt chuẩn: 70%"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Thẻ Khoảng Trống Kiến Thức Trọng Tâm (Gap Diagnosis) */}
-                <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 space-y-2.5">
-                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider">
-                      Khoảng Trống Cần Bồi Dưỡng Trọng Tâm
-                    </h4>
-                  </div>
-                  <p className="text-xs text-slate-700 dark:text-neutral-300 leading-relaxed">
-                    Hệ thống nhận diện miền <strong>[{weakestMeta.title}]</strong> đang là điểm số cần được củng cố. Việc hoàn thành các bài học ngắn trên lộ trình sẽ giúp bạn gia tăng điểm số và tự tin đạt chuẩn trong lần khảo thí tới.
-                  </p>
-                  <div className="pt-1">
-                    <Link
-                      href={`/personal/learning-path?domain=${submittedResult.weakestDomainCode || '01'}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Bồi dưỡng miền [{weakestMeta.title}] trên Lộ trình của tôi</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
               </div>
             ) : (
               /* TAB 2: REVIEW MODE */
@@ -1600,8 +1598,8 @@ export function AssessmentTakeContent({
     }
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-md p-3 sm:p-6 md:p-8 flex justify-center items-center animate-in fade-in duration-200">
-        <div className="max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-2xl space-y-6 my-auto">
+      <div className="min-h-screen bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 md:p-8 flex justify-center items-start animate-in fade-in duration-200">
+        <div className="max-w-4xl w-full p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-sm space-y-6">
           {/* Header Kết Quả */}
           <div className="text-center space-y-2">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-2">
@@ -1646,9 +1644,9 @@ export function AssessmentTakeContent({
             {/* Right: Key Stats (5 cols) */}
             <div className="lg:col-span-5 flex flex-col justify-between gap-3">
               <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
-                <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">Số câu làm đúng:</span>
+                <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">Điểm trắc nghiệm:</span>
                 <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
-                  {submittedResult.correctAnswersCount ?? submittedResult.objectiveScore} / {submittedResult.totalQuestionsCount ?? submittedResult.totalObjectiveScore} câu
+                  {submittedResult.objectiveScore} / {submittedResult.totalObjectiveScore} đ
                 </div>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Chấm điểm tự động</span>
               </div>
@@ -1656,7 +1654,7 @@ export function AssessmentTakeContent({
               <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">
                 <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium block">Tỷ lệ đạt chuẩn:</span>
                 <div className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                  {submittedResult.percentage ?? Math.round(((submittedResult.correctAnswersCount ?? submittedResult.objectiveScore) / ((submittedResult.totalQuestionsCount ?? submittedResult.totalObjectiveScore) || 1)) * 100)}%
+                  {submittedResult.percentage ?? Math.round((submittedResult.objectiveScore / (submittedResult.totalObjectiveScore || 1)) * 100)}%
                 </div>
                 <span className="text-[10px] text-slate-500">Mục tiêu chuẩn hóa: 70%</span>
               </div>
@@ -1813,12 +1811,7 @@ export function AssessmentTakeContent({
               const correctOptId = evalData?.correctOptionId || q.options?.find((o: any) => o.is_correct)?.id || null;
               const isCorrect = evalData?.isCorrect ?? (selectedOptId && correctOptId ? selectedOptId === correctOptId : false);
               const scoreAwarded = evalData?.scoreAwarded ?? (isCorrect ? (q.points || 1) : 0);
-              const explanation =
-                evalData?.explanation ||
-                q.explanation ||
-                q.rubric_guide ||
-                q.options?.find((o: any) => o.id === correctOptId)?.explanation ||
-                null;
+              const explanation = evalData?.explanation || q.explanation || q.options?.find((o: any) => o.id === correctOptId)?.explanation || null;
               const domainCode = evalData?.domainCode || q.competencies?.competency_domains?.code || null;
               const domainTitle = evalData?.domainTitle || q.competencies?.competency_domains?.title || q.competencies?.title || null;
 
@@ -1955,39 +1948,64 @@ export function AssessmentTakeContent({
             {q.options?.map((opt, oIdx) => {
               const letter = String.fromCharCode(65 + oIdx);
               const isSelected = selectedAnswers[q.id] === opt.id;
+              const hasAnsweredCurrentQ = Boolean(selectedAnswers[q.id]);
+              const showInstant = instantFeedbackEnabled && hasAnsweredCurrentQ && opt.is_correct !== undefined;
+              const isCorrectOpt = Boolean(opt.is_correct);
+
+              let containerClasses = 'border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-blue-300 dark:hover:border-zinc-700 hover:bg-slate-50/60 dark:hover:bg-zinc-850/60';
+              let badgeClasses = 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 group-hover:text-blue-600 dark:group-hover:text-blue-400';
+              let indicatorContent = isSelected ? <Check className="w-3 h-3 stroke-[3]" /> : null;
+              let indicatorClasses = isSelected ? 'bg-blue-600 text-white shadow-xs' : 'border border-slate-300 dark:border-zinc-700 opacity-40 group-hover:opacity-80';
+
+              if (showInstant) {
+                if (isCorrectOpt) {
+                  containerClasses = 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/25 ring-2 ring-emerald-600/20';
+                  badgeClasses = 'bg-emerald-600 text-white shadow-xs';
+                  indicatorClasses = 'bg-emerald-600 text-white shadow-xs';
+                  indicatorContent = <Check className="w-3 h-3 stroke-[3]" />;
+                } else if (isSelected && !isCorrectOpt) {
+                  containerClasses = 'border-rose-600 dark:border-rose-500 bg-rose-50/60 dark:bg-rose-950/25 ring-2 ring-rose-600/20';
+                  badgeClasses = 'bg-rose-600 text-white shadow-xs';
+                  indicatorClasses = 'bg-rose-600 text-white shadow-xs';
+                  indicatorContent = <X className="w-3 h-3 stroke-[3]" />;
+                }
+              } else if (isSelected) {
+                containerClasses = 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/25 ring-2 ring-blue-600/20 dark:ring-blue-500/20 shadow-xs';
+                badgeClasses = 'bg-blue-600 text-white shadow-xs shadow-blue-500/30';
+              }
 
               return (
                 <button
                   key={opt.id}
                   type="button"
-                  disabled={isStage1Locked}
+                  disabled={isStage1Locked || (instantFeedbackEnabled && hasAnsweredCurrentQ)}
                   onClick={() => handleSelectOption(q.id, opt.id)}
-                  className={`w-full p-4 rounded-2xl border text-left flex items-center gap-3.5 sm:gap-4 transition-all duration-150 group cursor-pointer ${
-                    isSelected
-                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/25 ring-2 ring-blue-600/20 dark:ring-blue-500/20 shadow-xs'
-                      : 'border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-blue-300 dark:hover:border-zinc-700 hover:bg-slate-50/60 dark:hover:bg-zinc-850/60'
-                  } ${isStage1Locked ? 'cursor-not-allowed opacity-75' : ''}`}
+                  className={`w-full p-4 rounded-2xl border text-left flex items-center gap-3.5 sm:gap-4 transition-all duration-150 group cursor-pointer ${containerClasses} ${
+                    isStage1Locked || (instantFeedbackEnabled && hasAnsweredCurrentQ) ? 'cursor-not-allowed opacity-90' : ''
+                  }`}
                 >
                   <span
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/30'
-                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                    }`}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors ${badgeClasses}`}
                   >
                     {letter}
                   </span>
                   <span className="text-xs sm:text-sm font-medium flex-1 text-neutral-900 dark:text-neutral-100 leading-snug">
                     {opt.content}
                   </span>
+                  {showInstant && isCorrectOpt && (
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                      Chính xác
+                    </span>
+                  )}
+                  {showInstant && isSelected && !isCorrectOpt && (
+                    <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 shrink-0">
+                      Chưa đúng
+                    </span>
+                  )}
                   <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                      isSelected
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'border border-slate-300 dark:border-zinc-700 opacity-40 group-hover:opacity-80'
-                    }`}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${indicatorClasses}`}
                   >
-                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    {indicatorContent}
                   </div>
                 </button>
               );
@@ -2173,7 +2191,7 @@ export function AssessmentTakeContent({
                 {!isBaseline && (
                   <div className="flex justify-between">
                     <span>Thời gian còn lại:</span>
-                    <strong className="text-neutral-900 dark:text-neutral-100">{formatTime(timeRemaining)}</strong>
+                    <strong className="text-neutral-900 dark:text-neutral-100">{formatTime(timeRemainingRef.current)}</strong>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -2220,8 +2238,16 @@ export function AssessmentTakeContent({
   );
 
   // KHÔNG GIAN KHẢO THÍ TOÀN MÀN HÌNH (FULL-SCREEN EXAM CANVAS CHO TOÀN BỘ ĐỀ THI & ĐẦU VÀO)
+  const themeBgClasses: Record<string, string> = {
+    space_blue: 'bg-[#0a0f1d] text-sky-100',
+    aurora: 'bg-[#090b16] text-purple-100',
+    dark_professional: 'bg-[#09090b] text-neutral-100',
+    minimal_white: 'bg-[#F8FAFC] dark:bg-[#000000] text-neutral-900 dark:text-neutral-100',
+  };
+  const activeThemeClass = themeBgClasses[examTheme] || 'bg-[#F8FAFC] dark:bg-[#000000] text-neutral-900 dark:text-neutral-100';
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#F8FAFC] dark:bg-[#000000] flex flex-col text-neutral-900 dark:text-neutral-100 select-none overflow-hidden animate-in fade-in duration-200">
+    <div className={`fixed inset-0 z-50 flex flex-col select-none overflow-hidden animate-in fade-in duration-200 transition-colors ${activeThemeClass}`}>
       {/* 1. TOP HEADER (Transparent & Distraction-free) */}
       <header className="h-14 shrink-0 bg-transparent px-4 sm:px-6 flex items-center justify-between gap-4 z-20">
         {/* Left: Exit button & Autosave */}
@@ -2269,17 +2295,19 @@ export function AssessmentTakeContent({
             {proctoring.isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
 
-          {/* Countdown Clock */}
-          <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-mono text-xs font-bold tabular-nums transition-colors ${
-              timeRemaining < 300 && !isPreview
-                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 animate-pulse'
-                : 'bg-slate-100 dark:bg-zinc-800 border-slate-200/80 dark:border-zinc-700 text-slate-800 dark:text-neutral-200'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
-            <span>{isPreview ? `${assessment?.duration_minutes || 45} phút` : formatTime(timeRemaining)}</span>
-          </div>
+          {/* Countdown Clock (Self-contained to eliminate 1s re-renders) */}
+          <ExamCountdownClock
+            initialSeconds={initialTimeRemaining}
+            isDisabled={Boolean(isBaseline || loading || isSubmitting || submittedResult)}
+            isPaused={isRoomPaused}
+            isPreview={Boolean(isPreview)}
+            durationMinutes={assessment?.duration_minutes || 45}
+            extendedSeconds={extendedSeconds}
+            onTick={(sec) => {
+              timeRemainingRef.current = sec;
+            }}
+            onExpire={handleTimeExpired}
+          />
 
           {/* Mobile Palette Toggle Button */}
           <button
@@ -2556,4 +2584,3 @@ export function AssessmentTakeContent({
     </div>
   );
 }
-

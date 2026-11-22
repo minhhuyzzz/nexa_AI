@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       data: result,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/mock-pay:', err);
     const msg = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: msg }, { status: 500 });
   }

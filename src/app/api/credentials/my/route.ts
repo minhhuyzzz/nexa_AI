@@ -110,7 +110,7 @@ export async function GET() {
           masterCredential = newCred;
         }
       } catch (genErr) {
-        console.error('Error auto-generating master credential:', genErr);
+        console.error('[API_ROUTE_ERROR] Error auto-generating master credential:', genErr);
       }
     }
 
@@ -127,6 +127,7 @@ export async function GET() {
       masterCredential,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/credentials/my:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
   }

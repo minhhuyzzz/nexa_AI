@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       transaction: tx,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/status:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -22,6 +22,7 @@ export interface GeneratedCertificate {
   pdfHash: string;
   qrDataUrl: string;
   verificationUrl: string;
+  framework: string;
 }
 
 export class CertificateGeneratorService {
@@ -36,6 +37,7 @@ export class CertificateGeneratorService {
     const verificationUrl = `${baseUrl}/verify/${input.credentialId}`;
 
     // 1. Calculate Hash 1: Metadata Content Canonical SHA-256
+    const framework = 'Khung năng lực số / ND 13/2023/ND-CP';
     const metadataCanonical = JSON.stringify({
       credentialId: input.credentialId,
       credentialCode: input.credentialCode,
@@ -46,7 +48,7 @@ export class CertificateGeneratorService {
       maxScore: Number(input.maxScore.toFixed(2)),
       competencyLevel: input.competencyLevel,
       issuedAt: input.issuedAt.toISOString(),
-      framework: 'EU DigComp 3.0 / ND 13/2023/ND-CP',
+      framework,
     });
 
     const contentHash = crypto
@@ -139,7 +141,7 @@ export class CertificateGeneratorService {
     });
 
     const standardRef =
-      'Standardized under EU DigComp 3.0 Framework & Vietnam Decree 13/2023/ND-CP';
+      removeVietnameseTones('Standardized under Khung năng lực số Framework & Vietnam Decree 13/2023/ND-CP');
     page.drawText(standardRef, {
       x: width / 2 - (fontHelvetica.widthOfTextAtSize(standardRef, 9) / 2),
       y: height - 126,
@@ -343,6 +345,7 @@ export class CertificateGeneratorService {
       pdfHash,
       qrDataUrl,
       verificationUrl,
+      framework,
     };
   }
 }

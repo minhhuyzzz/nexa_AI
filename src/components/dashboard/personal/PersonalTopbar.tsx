@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PersonalAvatarMenu } from './PersonalAvatarMenu';
 import { NotificationBell } from '../NotificationBell';
 import { Trophy, Menu } from 'lucide-react';
-import { useCountUp } from '@/hooks/useCountUp';
+import { CountUpText } from '@/components/ui/CountUpText';
 import { useMobileNav } from '@/contexts/MobileNavContext';
 import { NexaLogo } from '@/components/brand/NexaLogo';
 import { GlobalSearchInput } from '@/components/dashboard/search/GlobalSearchInput';
@@ -13,7 +13,6 @@ import { GlobalSearchInput } from '@/components/dashboard/search/GlobalSearchInp
 export function PersonalTopbar() {
   const [scrolled, setScrolled] = useState(false);
   const [points, setPoints] = useState<number>(0);
-  const animatedPoints = useCountUp(points, 800);
   const { toggleMobile } = useMobileNav();
 
   useEffect(() => {
@@ -84,7 +83,7 @@ export function PersonalTopbar() {
           <span className="w-1.5 h-1.5 rounded-full bg-volt ring-2 ring-volt/40 shrink-0" />
           <Trophy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
           <span className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums text-[11px] sm:text-xs">
-            {animatedPoints}<span className="hidden sm:inline"> PTS</span>
+            <CountUpText value={points} duration={800} /><span className="hidden sm:inline"> PTS</span>
           </span>
         </div>
 

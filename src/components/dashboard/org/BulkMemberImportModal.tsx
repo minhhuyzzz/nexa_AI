@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useTransition, useId } from 'react';
-import ExcelJS from 'exceljs';
+import type ExcelJS from 'exceljs';
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -92,6 +92,7 @@ export function BulkMemberImportModal({
     if (isExcel) {
       try {
         const buffer = await file.arrayBuffer();
+        const ExcelJS = (await import('exceljs')).default;
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(buffer);
         const worksheet = workbook.worksheets[0];
@@ -285,6 +286,7 @@ export function BulkMemberImportModal({
 
   const handleDownloadSample = async () => {
     try {
+      const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
       workbook.creator = 'NEXA AI Platform';
       workbook.created = new Date();

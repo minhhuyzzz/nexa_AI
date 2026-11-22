@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { describe, it, expect } from 'vitest';
 import { CertificateGeneratorService } from './certificate-generator.service';
 
@@ -7,7 +8,7 @@ describe('CertificateGeneratorService (Dual SHA-256 & QR Vector PDF)', () => {
       credentialId: 'e0000000-0000-0000-0000-000000000001',
       credentialCode: 'NX-2024-TEST01',
       candidateName: 'Nguyễn Văn An',
-      assessmentTitle: 'Bài Đánh Giá Năng Lực Số Chuẩn Hóa DigComp 3.0',
+      assessmentTitle: 'Bài Đánh Giá Theo Khung Năng Lực Số Chuẩn Hóa',
       scorePercentage: 88.5,
       totalScore: 88.5,
       maxScore: 100,
@@ -26,7 +27,25 @@ describe('CertificateGeneratorService (Dual SHA-256 & QR Vector PDF)', () => {
     const headerString = String.fromCharCode(...result.pdfBytes.slice(0, 5));
     expect(headerString).toBe('%PDF-');
 
-    // 2. Verify Hash 1: Metadata Content Hash
+    // Standardized framing: no user-facing DigComp strings in framework and metadata
+    expect(result.framework).toContain('Khung năng lực số');
+    expect(result.framework).not.toContain('DigComp');
+
+    // 2. Verify Hash 1: Metadata Content Hash aligns with canonical metadata
+    const expectedCanonical = JSON.stringify({
+      credentialId: input.credentialId,
+      credentialCode: input.credentialCode,
+      candidateName: input.candidateName,
+      assessmentTitle: input.assessmentTitle,
+      scorePercentage: Number(input.scorePercentage.toFixed(2)),
+      totalScore: Number(input.totalScore.toFixed(2)),
+      maxScore: Number(input.maxScore.toFixed(2)),
+      competencyLevel: input.competencyLevel,
+      issuedAt: input.issuedAt.toISOString(),
+      framework: 'Khung năng lực số / ND 13/2023/ND-CP',
+    });
+    const expectedHash = crypto.createHash('sha256').update(expectedCanonical).digest('hex');
+    expect(result.contentHash).toBe(expectedHash);
     expect(result.contentHash).toMatch(/^[0-9a-f]{64}$/);
 
     // 3. Verify Hash 2: Document Integrity Hash

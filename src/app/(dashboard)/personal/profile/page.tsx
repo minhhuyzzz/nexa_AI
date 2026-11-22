@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useCountUp } from '@/hooks/useCountUp';
+import { CountUpText } from '@/components/ui/CountUpText';
 import {
   User,
   CheckCircle2,
@@ -428,7 +428,6 @@ function LearnerProfileContent() {
 
   // Level & XP math
   const rawPoints = profile?.points ?? 0;
-  const currentPoints = useCountUp(rawPoints, 900);
   const levelTarget = profile?.levelNextTarget ?? 150;
   const pointsRemaining = Math.max(0, levelTarget - rawPoints);
   const progressPercent = levelTarget > 0 ? Math.min(100, Math.max(0, Math.round((rawPoints / levelTarget) * 100))) : 0;
@@ -594,7 +593,9 @@ function LearnerProfileContent() {
                   <div className="w-8 h-8 rounded-full border border-blue-200 dark:border-blue-800 bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-2xs">
                     <Trophy className="w-4 h-4" strokeWidth={2} />
                   </div>
-                  <span className="text-base font-mono tabular-nums">{currentPoints} PTS</span>
+                  <span className="text-base font-mono tabular-nums">
+                    <CountUpText value={rawPoints} duration={900} /> PTS
+                  </span>
                 </div>
                 <div className="text-xs text-slate-500 dark:text-zinc-400 font-mono">
                   Lên Level 2 còn {pointsRemaining} PTS
@@ -610,7 +611,7 @@ function LearnerProfileContent() {
                   />
                 </div>
                 <span className="text-xs text-slate-600 dark:text-zinc-400 font-mono tabular-nums shrink-0 font-medium">
-                  {currentPoints} / {levelTarget} PTS
+                  <CountUpText value={rawPoints} duration={900} /> / {levelTarget} PTS
                 </span>
               </div>
             </div>

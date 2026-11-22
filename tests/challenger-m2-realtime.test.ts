@@ -118,7 +118,7 @@ describe('Challenger M2: Realtime Synchronization & Workflow Empirical Suite', (
     waitingRoom: path.join(rootDir, 'src/app/live/waiting-room/page.tsx'),
     host: path.join(rootDir, 'src/app/(dashboard)/personal/live-room/[id]/host/page.tsx'),
     control: path.join(rootDir, 'src/app/live/control/page.tsx'),
-    take: path.join(rootDir, 'src/app/(dashboard)/personal/take/[id]/page.tsx'),
+    take: path.join(rootDir, 'src/features/assessments/components/take/AssessmentTakeContent.tsx'),
     submitted: path.join(rootDir, 'src/app/live/submitted/page.tsx'),
     results: path.join(rootDir, 'src/app/(dashboard)/personal/live-room/[id]/results/page.tsx'),
     roomsRoute: path.join(rootDir, 'src/app/api/evaluator/rooms/route.ts'),
@@ -632,7 +632,10 @@ describe('Challenger M2: Realtime Synchronization & Workflow Empirical Suite', (
 
       // Verifies handling of EXTEND_TIME
       expect(takeContent.includes("if (action === 'EXTEND_TIME') {")).toBe(true);
-      expect(takeContent.includes('setTimeRemaining((prev) => prev + additionalMinutes * 60);')).toBe(true);
+      expect(
+        takeContent.includes('setExtendedSeconds((prev) => prev + additionalMinutes * 60);') ||
+        takeContent.includes('setTimeRemaining((prev) => prev + additionalMinutes * 60);')
+      ).toBe(true);
 
       // Verifies handling of FORCE_SUBMIT_ALL
       expect(takeContent.includes("else if (action === 'FORCE_SUBMIT_ALL') {")).toBe(true);

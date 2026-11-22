@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       data: result,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/coupon:', err);
     const message = err instanceof Error ? err.message : 'Server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

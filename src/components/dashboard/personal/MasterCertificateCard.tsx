@@ -317,11 +317,9 @@ export function MasterCertificateCard({
                 </div>
               </div>
 
-              {/* Elegant Underline Divider */}
-              <div className="flex items-center justify-center gap-2 max-w-md mx-auto py-1">
-                <div className="h-[1px] flex-1 bg-amber-300" />
+              {/* Center Motif (không dùng đường viền ngang theo AGENTS.md) */}
+              <div className="flex items-center justify-center max-w-md mx-auto py-1">
                 <div className="w-1.5 h-1.5 rotate-45 bg-amber-500" />
-                <div className="h-[1px] flex-1 bg-amber-300" />
               </div>
 
               {/* Commendation Paragraph */}
@@ -384,7 +382,6 @@ export function MasterCertificateCard({
                       Michael Henson
                     </span>
                   </div>
-                  <div className="w-28 sm:w-36 h-[1px] bg-slate-300 mx-auto" />
                   <div className="text-[11px] font-bold text-slate-900 font-sans">
                     TS. Michael Henson
                   </div>
@@ -404,7 +401,6 @@ export function MasterCertificateCard({
                       Thomas Ridley
                     </span>
                   </div>
-                  <div className="w-28 sm:w-36 h-[1px] bg-slate-300 mx-auto" />
                   <div className="text-[11px] font-bold text-slate-900 font-sans">
                     Thomas Ridley
                   </div>

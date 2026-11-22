@@ -173,7 +173,7 @@ export async function POST(request: Request) {
             .eq('id', authData.user.id);
         }
       } catch (err) {
-        console.error('Error in daily checkin during login:', err);
+        console.error('[API_ROUTE_ERROR] Daily checkin during login failed:', err);
       }
     }
 
@@ -211,6 +211,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/auth/login:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
   }

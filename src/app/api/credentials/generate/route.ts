@@ -81,11 +81,23 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (callerProfile?.role === 'LEARNER' && submission.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Bạn không có quyền yêu cầu cấp chứng chỉ cho bài thi của học viên khác' },
-        { status: 403 }
-      );
+    if (submission.user_id !== user.id) {
+      const isPlatformAdmin = callerProfile?.role === 'ADMIN' || callerProfile?.role === 'SUPERADMIN';
+      let isAuthorized = isPlatformAdmin;
+
+      if (!isAuthorized && submission.assessments) {
+        const asm = Array.isArray(submission.assessments) ? submission.assessments[0] : submission.assessments;
+        if (asm && ((asm as any).created_by === user.id || (asm as any).owner_user_id === user.id)) {
+          isAuthorized = true;
+        }
+      }
+
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { error: 'Bạn không có quyền yêu cầu cấp chứng chỉ cho bài thi của học viên khác' },
+          { status: 403 }
+        );
+      }
     }
 
     // Check pass requirement strictly (Must be passed AND percentage >= passingScore)
@@ -172,7 +184,7 @@ export async function POST(request: Request) {
       verificationUrl: generated.verificationUrl,
     });
   } catch (err) {
-    console.error('Error generating credential:', err);
+    console.error('[API_ROUTE_ERROR] /api/credentials/generate:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -130,7 +130,8 @@ export async function GET(request: NextRequest) {
           trialDiscount = baseMonthlyPrice;
           amount = 0;
         }
-      } catch (_) {
+      } catch (checkErr) {
+        console.error('[API_ROUTE_ERROR] Trial check fallback error in billing/preview:', checkErr);
         // Fallback: nếu lỗi kiểm tra, vẫn hiển thị ưu đãi
         isTrialEligible = true;
         trialDiscount = baseMonthlyPrice;
@@ -164,6 +165,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/preview:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import ExcelJS from 'exceljs';
 import {
   Search,
   Download,
@@ -158,6 +157,7 @@ export function MemberDirectoryTable({
     if (isExporting) return;
     setIsExporting(true);
     try {
+      const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
       workbook.creator = 'NEXA AI Platform';
       workbook.created = new Date();

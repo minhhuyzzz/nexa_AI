@@ -59,7 +59,7 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.error('Error streaming certificate PDF:', err);
+    console.error('[API_ROUTE_ERROR] /api/credentials/[id]/pdf:', err);
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return NextResponse.json({ error: message }, { status: 500 });
   }

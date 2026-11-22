@@ -71,6 +71,7 @@ export async function GET(
       },
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/ai/grading-jobs/[jobId]:', err);
     const message = err instanceof Error ? err.message : 'Lỗi kiểm tra tiến trình chấm bài';
     return NextResponse.json({ error: message }, { status: 500 });
   }

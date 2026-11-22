@@ -36,7 +36,7 @@ import {
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 import { SilkRibbonHeroIllustration } from '@/components/dashboard/personal/SilkRibbonHeroIllustration';
 import { BaselineDiagnosticModal } from '@/components/dashboard/personal/BaselineDiagnosticModal';
-import { useCountUp } from '@/hooks/useCountUp';
+import { CountUpText } from '@/components/ui/CountUpText';
 
 interface RealAssessment {
   id: string;
@@ -123,8 +123,6 @@ export default function LearnerDashboardPage() {
     unlockedFreeDomain: string | null;
     domainProgress: Record<string, { completed: number; total: number; percent: number }>;
   } | null>(null);
-
-  const animatedPoints = useCountUp(stats.points, 900);
 
   const [assessments, setAssessments] = useState<RealAssessment[]>([]);
   const [baselineTest, setBaselineTest] = useState<{ id: string; title: string; duration_minutes?: number } | null>(null);
@@ -517,7 +515,7 @@ export default function LearnerDashboardPage() {
           />
         </svg>
         <span className="absolute font-bold text-xs text-blue-700 dark:text-blue-300 font-mono tabular-nums">
-          {animatedPoints}
+          <CountUpText value={stats.points} duration={900} />
         </span>
       </div>
       <div className="min-w-0">
@@ -535,7 +533,7 @@ export default function LearnerDashboardPage() {
           </button>
         </div>
         <div className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">
-          <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums">{animatedPoints}</strong> / {stats.levelNextTarget} PTS
+          <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-mono tabular-nums"><CountUpText value={stats.points} duration={900} /></strong> / {stats.levelNextTarget} PTS
         </div>
       </div>
     </div>
@@ -767,7 +765,7 @@ export default function LearnerDashboardPage() {
               {loadingStats ? (
                 <span className="inline-block w-8 h-6 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
               ) : (
-                animatedPoints
+                <CountUpText value={stats.points} duration={900} />
               )}
             </div>
             <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Tích lũy</span>
@@ -867,7 +865,7 @@ export default function LearnerDashboardPage() {
             {loadingStats ? (
               <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
             ) : (
-              animatedPoints
+              <CountUpText value={stats.points} duration={900} />
             )}
           </div>
           <div className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">Tổng điểm hoạt động</div>

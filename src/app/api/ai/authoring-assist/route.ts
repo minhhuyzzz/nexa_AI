@@ -225,6 +225,7 @@ Yêu cầu định dạng đầu ra (JSON Object):
       latencyMs,
     });
   } catch (err: unknown) {
+    console.error('[API_ROUTE_ERROR] /api/ai/authoring-assist:', err);
     const latencyMs = Math.round(performance.now() - startTime);
     const errorMsg = err instanceof Error ? err.message : 'Lỗi hệ thống AI';
 
@@ -240,7 +241,9 @@ Yêu cầu định dạng đầu ra (JSON Object):
         status: 'FAILED',
         errorMessage: errorMsg,
       });
-    } catch {}
+    } catch (logErr) {
+      console.error('[API_ROUTE_ERROR] Failed to log AI usage in authoring-assist:', logErr);
+    }
 
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }

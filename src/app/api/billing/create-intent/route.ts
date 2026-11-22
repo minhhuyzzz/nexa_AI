@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
       intent,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/create-intent:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 400 });
   }

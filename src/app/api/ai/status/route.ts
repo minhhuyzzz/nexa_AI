@@ -29,7 +29,8 @@ export async function GET() {
         isAdmin = true;
       }
     }
-  } catch {
+  } catch (err) {
+    console.error('[API_ROUTE_ERROR] Auth check failed in ai/status:', err);
     // Treat as non-admin client
   }
 
@@ -74,6 +75,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/ai/status ping error:', err);
     const errorMessage = err instanceof Error ? err.message : 'Lỗi kết nối Gemini API';
     const isHighDemand =
       errorMessage.includes('503') ||

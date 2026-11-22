@@ -88,7 +88,8 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      if (profile.role === 'LEARNER') {
+      // In personal context, check AI credits quota for all non-admin users based on credits balance / entitlement
+      if (profile.role !== 'ADMIN' && profile.role !== 'SUPERADMIN') {
         const userQuota = await QuotaEnforcementService.checkAICreditsQuota(supabase, user.id, 1);
         if (!userQuota.allowed) {
           return NextResponse.json(
@@ -485,7 +486,7 @@ export async function POST(request: Request) {
       creditsRemaining: remainingCredits,
     });
   } catch (err) {
-    console.error('Error in AI grading endpoint:', err);
+    console.error('[API_ROUTE_ERROR] /api/ai/grade-submission:', err);
     const message = err instanceof Error ? err.message : 'Lỗi trong quá trình chấm AI';
     return NextResponse.json({ error: message }, { status: 500 });
   }

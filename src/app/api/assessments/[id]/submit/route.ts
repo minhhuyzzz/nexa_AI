@@ -58,7 +58,7 @@ export async function POST(
     ): Promise<{ data: T | null; error: any }> {
       const primary = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
       const res = await queryFn(primary);
-      if (res.error && (res.error.code === '42501' || res.error.message?.includes?.('row-level security'))) {
+      if (res && res.error && (res.error.code === '42501' || res.error.message?.includes?.('row-level security'))) {
         const secondary = (supabase && typeof supabase.from === 'function') ? supabase : adminSupabase;
         if (secondary && secondary !== primary) {
           return await queryFn(secondary);
@@ -77,14 +77,17 @@ export async function POST(
       return NextResponse.json({ error: 'Yêu cầu đăng nhập' }, { status: 401 });
     }
 
-    // 2. Fetch assessment settings
-    const { data: assessment, error: assessmentError } = await dbQuery((db) =>
-      db
-        .from('assessments')
-        .select('id, passing_score, point_reward, is_vip, access_tier, is_system_baseline, security_settings')
+    const candidateUserId = user.id;
+
+    // 2. Fetch assessment settings (single query including title, security settings, passing threshold)
+    const { data: assessment, error: assessmentError } = await dbQuery((db) => {
+      const table = db?.from?.('assessments');
+      if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+      return table
+        .select('id, title, passing_score, point_reward, is_vip, access_tier, is_system_baseline, security_settings')
         .eq('id', assessmentId)
-        .single()
-    );
+        .single();
+    });
 
     if (assessmentError || !assessment) {
       return NextResponse.json({ error: 'Bài đánh giá không tồn tại' }, { status: 404 });
@@ -100,13 +103,14 @@ export async function POST(
 
     // 3. SEC-03: Validate classAssignmentId if provided
     if (classAssignmentId) {
-      const { data: assignment, error: assignError } = await dbQuery((db) =>
-        db
-          .from('class_assignments')
+      const { data: assignment, error: assignError } = await dbQuery((db) => {
+        const table = db?.from?.('class_assignments');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return table
           .select('id, class_id, assessment_id, campaign_id, immediate_results')
           .eq('id', classAssignmentId)
-          .maybeSingle()
-      );
+          .maybeSingle();
+      });
 
       if (assignError || !assignment) {
         return NextResponse.json(
@@ -131,14 +135,15 @@ export async function POST(
       }
 
       // Check candidate is actively enrolled in the assigned class
-      const { data: isMember } = await dbQuery((db) =>
-        db
-          .from('class_members')
+      const { data: isMember } = await dbQuery((db) => {
+        const table = db?.from?.('class_members');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return table
           .select('id')
           .eq('class_id', assignment.class_id)
           .eq('user_id', user.id)
-          .maybeSingle()
-      );
+          .maybeSingle();
+      });
 
       if (!isMember) {
         return NextResponse.json(
@@ -152,13 +157,14 @@ export async function POST(
 
     // 4. SEC-03: Validate campaignId if provided
     if (campaignId) {
-      const { data: campaign, error: campError } = await dbQuery((db) =>
-        db
-          .from('assessment_campaigns')
+      const { data: campaign, error: campError } = await dbQuery((db) => {
+        const table = db?.from?.('assessment_campaigns');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return table
           .select('id, assessment_id, organization_id, status')
           .eq('id', campaignId)
-          .maybeSingle()
-      );
+          .maybeSingle();
+      });
 
       if (campError || !campaign) {
         return NextResponse.json(
@@ -175,26 +181,28 @@ export async function POST(
       }
 
       // Verify participant in campaign_participants or org membership
-      const { data: participant } = await dbQuery((db) =>
-        db
-          .from('campaign_participants')
+      const { data: participant } = await dbQuery((db) => {
+        const table = db?.from?.('campaign_participants');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return table
           .select('id')
           .eq('campaign_id', campaignId)
           .eq('user_id', user.id)
-          .maybeSingle()
-      );
+          .maybeSingle();
+      });
 
       if (participant) {
         isAuthorizedCampaignParticipant = true;
       } else if (campaign.organization_id) {
-        const { data: orgMember } = await dbQuery((db) =>
-          db
-            .from('user_organizations')
+        const { data: orgMember } = await dbQuery((db) => {
+          const table = db?.from?.('user_organizations');
+          if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+          return table
             .select('id')
             .eq('organization_id', campaign.organization_id)
             .eq('user_id', user.id)
-            .maybeSingle()
-        );
+            .maybeSingle();
+        });
         if (orgMember) {
           isAuthorizedCampaignParticipant = true;
         }
@@ -216,13 +224,14 @@ export async function POST(
     // 5. SEC-03: Validate Access Tier on Submit (VIP / Premium paywall & entitlement expiry)
     const isVipAssessment = Boolean(assessment.is_vip || assessment.access_tier === 'VIP');
     if (isVipAssessment) {
-      const { data: profile } = await dbQuery((db) =>
-        db
-          .from('profiles')
+      const { data: profile } = await dbQuery((db) => {
+        const table = db?.from?.('profiles');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return table
           .select('plan_tier, role, admin_role, subscription_status, current_period_end')
           .eq('id', user.id)
-          .maybeSingle()
-      );
+          .maybeSingle();
+      });
 
       const isPaidTier = Boolean(profile?.plan_tier && profile.plan_tier !== 'FREE');
       const isPeriodActive = !profile?.current_period_end || new Date(profile.current_period_end).getTime() > Date.now();
@@ -240,8 +249,7 @@ export async function POST(
       }
     }
 
-    // 4. SEC-03: Verify active submission with strict state & anti-resubmission checks
-    // Rule: Intake/baseline assessment can only be completed ONCE per learner account
+    // 6. Anti-duplicate check for intake/baseline assessments
     const isBaselineExam = Boolean(
       assessment.is_system_baseline ||
       assessmentId === 'a0000000-0000-0000-0000-000000000001' ||
@@ -251,10 +259,10 @@ export async function POST(
     if (isBaselineExam) {
       try {
         const { data: priorBaseline } = await dbQuery((db) => {
-          const table = db.from('assessment_submissions');
-          if (!table || typeof table.select !== 'function') return { data: null };
+          const table = db?.from?.('assessment_submissions');
+          if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
           const selectResult = table.select('id, status');
-          if (!selectResult || typeof selectResult.eq !== 'function') return { data: null };
+          if (!selectResult || typeof selectResult.eq !== 'function') return Promise.resolve({ data: null, error: null });
           return selectResult
             .eq('user_id', user.id)
             .or(`assessment_id.eq.${assessmentId},assessment_id.eq.a0000000-0000-0000-0000-000000000001`)
@@ -277,120 +285,35 @@ export async function POST(
       }
     }
 
-    let activeSubmissionId: string;
+    // Calculate smart proctoring summary & trust score ahead of execution
+    const effectiveSecuritySettings = assessment.security_settings || {};
+    const proctoringEvents = validated.data.proctoringEvents || [];
+    const trustResult = calculateTrustScore(proctoringEvents, effectiveSecuritySettings);
 
-    if (submissionId) {
-      activeSubmissionId = submissionId;
-      const { data: existingSub, error: existingSubError } = await dbQuery((db) =>
-        db
-          .from('assessment_submissions')
-          .select('id, user_id, status')
-          .eq('id', activeSubmissionId)
-          .maybeSingle()
-      );
+    const proctoringSummary: ProctoringSummary = {
+      trustScore: trustResult.trustScore,
+      integrityFlag: trustResult.integrityFlag,
+      totalViolations: proctoringEvents.length,
+      tabSwitchesCount: trustResult.tabSwitchesCount,
+      fullscreenExitsCount: trustResult.fullscreenExitsCount,
+      copyAttemptsCount: trustResult.copyAttemptsCount,
+      devtoolsAttemptsCount: trustResult.devtoolsAttemptsCount,
+      totalTimeOutOfFocusSeconds: trustResult.totalTimeOutOfFocusSeconds,
+      events: proctoringEvents,
+      activeWarningMode: effectiveSecuritySettings.active_warning ?? true,
+      submittedAt: new Date().toISOString(),
+    };
 
-      if (existingSubError || !existingSub) {
-        return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
-      }
-
-      if (existingSub.user_id !== user.id) {
-        return NextResponse.json({ error: 'Bạn không có quyền nộp bài thi này' }, { status: 403 });
-      }
-
-      // Block resubmission of already submitted or evaluated attempts
-      if (existingSub.status === 'SUBMITTED' || existingSub.status === 'EVALUATED') {
-        return NextResponse.json(
-          {
-            error: 'Bài thi này đã được nộp hoặc đã hoàn thành đánh giá, không thể nộp lại',
-            code: 'ALREADY_SUBMITTED',
-          },
-          { status: 409 }
-        );
-      }
-    } else {
-      // Create new submission record
-      const { data: newSub, error: subError } = await dbQuery((db) =>
-        db
-          .from('assessment_submissions')
-          .insert({
-            assessment_id: assessmentId,
-            user_id: user.id,
-            class_assignment_id: classAssignmentId || null,
-            status: 'IN_PROGRESS',
-          })
-          .select('id')
-          .single()
-      );
-
-      if (subError || !newSub) {
-        console.error('[SUBMIT_ERROR_CREATE_SUBMISSION]:', subError);
-        return NextResponse.json({ error: subError?.message || 'Không thể tạo bản ghi nộp bài' }, { status: 500 });
-      }
-      activeSubmissionId = newSub.id;
-    }
-
-    // 5. Fetch all correct options via secure RPC with fallback
-    let items: any[] | null = null;
-    let rpcError: any = null;
-
-    // First try adminSupabase (used in unit test mocks and production)
-    if (adminSupabase && typeof adminSupabase.rpc === 'function') {
-      const res = await adminSupabase.rpc('get_assessment_answer_keys_for_submission', {
-        p_assessment_id: assessmentId,
-        p_submission_id: activeSubmissionId,
-      });
-      if (!res.error && res.data && res.data.length > 0) {
-        items = res.data;
-      } else {
-        rpcError = res.error;
-      }
-    }
-
-    // If RLS error or missing, try authenticated user client (auth.uid() = user.id)
-    if ((!items || items.length === 0) && supabase && typeof supabase.rpc === 'function') {
-      const res = await supabase.rpc('get_assessment_answer_keys_for_submission', {
-        p_assessment_id: assessmentId,
-        p_submission_id: activeSubmissionId,
-      });
-      if (!res.error && res.data && res.data.length > 0) {
-        items = res.data;
-      }
-    }
-
-    // Direct query fallback for dev or mocks without RPC
-    if (!items || items.length === 0) {
-      const { data: directItems, error: directErr } = await dbQuery((db) =>
-        db
-          .from('assessment_items')
-          .select('id, points, item_options(id, is_correct)')
-          .eq('assessment_id', assessmentId)
-      );
-
-      if (!directErr && directItems && directItems.length > 0) {
-        items = directItems.map((it: any) => {
-          const correctOpt = (it.item_options || []).find((opt: any) => opt.is_correct === true);
-          return {
-            item_id: it.id,
-            points: Number(it.points) || 1,
-            correct_option_id: correctOpt ? correctOpt.id : null,
-          };
-        });
-      }
-    }
-
-    if (!items || items.length === 0) {
-      console.error('[SUBMIT_ERROR_RPC_ANSWER_KEYS]:', rpcError);
-      return NextResponse.json({ error: rpcError?.message || 'Không thể tải đáp án kiểm tra' }, { status: 500 });
-    }
-
-    // 5b. Fetch item domain mappings for 5-domain evaluation
-    let itemMetaList: any[] | null = null;
-    try {
-      const { data, error: itmErr } = await dbQuery((db) =>
-        db
-          .from('assessment_items')
-          .select(`
+    // Helper: Single combined query to fetch item structure, domain mappings, and explanations
+    // Eliminates redundant separate queries to assessment_items
+    async function fetchItemMetadataList() {
+      try {
+        const { data } = await dbQuery((db) => {
+          const table = db?.from?.('assessment_items');
+          if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+          const s = table.select(`
             id,
+            points,
             rubric_guide,
             competencies (
               id,
@@ -407,15 +330,408 @@ export async function POST(
               explanation,
               is_correct
             )
-          `)
-          .eq('assessment_id', assessmentId)
-      );
-      if (itmErr) {
-        console.warn('[SUBMIT_WARN_ITEM_META]:', itmErr);
+          `);
+          if (!s || typeof s.eq !== 'function') return Promise.resolve({ data: null, error: null });
+          return s.eq('assessment_id', assessmentId);
+        });
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
       }
-      itemMetaList = data;
-    } catch (metaErr) {
-      console.warn('[SUBMIT_CATCH_ITEM_META]:', metaErr);
+    }
+
+    // Helper: Progressive competency snapshot recording
+    async function recordCompetencySnapshot({
+      isBaseline,
+      meetsPassingStandard,
+      percentage,
+      domainScores,
+      domainCodes,
+      domainMax,
+    }: {
+      isBaseline: boolean;
+      meetsPassingStandard: boolean;
+      percentage: number | null;
+      domainScores: Record<string, number | null>;
+      domainCodes: string[];
+      domainMax: Record<string, number>;
+    }) {
+      const clientForSnapshot = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
+      if (isBaseline) {
+        try {
+          const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
+          if (snapTable && typeof snapTable.insert === 'function') {
+            await snapTable.insert({
+              user_id: candidateUserId,
+              overall_score: percentage !== null ? Number(percentage.toFixed(2)) : 0,
+              domain_scores: domainScores,
+              skill_scores: {},
+              snapshot_trigger: 'BASELINE_ASSESSMENT',
+            });
+          }
+        } catch (snapErr) {
+          console.warn('Could not insert baseline competency snapshot:', snapErr);
+        }
+      } else if (meetsPassingStandard) {
+        try {
+          let latestSnapshot: any = null;
+          try {
+            const queryRes = await dbQuery((db) => {
+              const table = db?.from?.('learner_competency_snapshots');
+              if (table && typeof table.select === 'function') {
+                const s = table.select('domain_scores, overall_score');
+                if (s && typeof s.eq === 'function') {
+                  const e = s.eq('user_id', candidateUserId);
+                  if (e && typeof e.order === 'function') {
+                    return e.order('created_at', { ascending: false }).limit(1).maybeSingle();
+                  }
+                  if (e && typeof e.limit === 'function') {
+                    return e.limit(1).maybeSingle();
+                  }
+                }
+              }
+              return Promise.resolve({ data: null, error: null });
+            });
+            latestSnapshot = queryRes?.data;
+          } catch {
+            latestSnapshot = null;
+          }
+
+          const previousDomains = (latestSnapshot?.domain_scores as Record<string, number>) || {};
+          const updatedDomainScores: Record<string, number | null> = {};
+
+          domainCodes.forEach((code) => {
+            const prevScore = previousDomains[code] ?? domainScores[code] ?? 50;
+            const testDomainScore = domainScores[code];
+            const max = domainMax[code] || 0;
+
+            if (max > 0 && testDomainScore !== null) {
+              if (testDomainScore >= 70) {
+                const delta = testDomainScore >= 90 ? 3 : 2;
+                updatedDomainScores[code] = Math.min(100, prevScore + delta);
+              } else {
+                updatedDomainScores[code] = prevScore;
+              }
+            } else {
+              updatedDomainScores[code] = prevScore;
+            }
+          });
+
+          const validScores = Object.values(updatedDomainScores).filter((v): v is number => v !== null);
+          const newOverallScore = validScores.length > 0
+            ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+            : (percentage !== null ? Number(percentage.toFixed(2)) : 0);
+
+          const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
+          if (snapTable && typeof snapTable.insert === 'function') {
+            await snapTable.insert({
+              user_id: candidateUserId,
+              overall_score: newOverallScore,
+              domain_scores: updatedDomainScores,
+              skill_scores: {},
+              snapshot_trigger: 'ASSESSMENT_PASSED',
+            });
+          }
+        } catch (snapErr) {
+          console.warn('Could not insert incremental competency snapshot:', snapErr);
+        }
+      }
+    }
+
+    // =========================================================================
+    // 7. ATOMIC RPC EXECUTION ATTEMPT (Fast-path: 1 ACID database transaction)
+    // =========================================================================
+    let atomicSuccess = false;
+    let atomicResult: any = null;
+
+    const primaryClient = (adminSupabase && typeof adminSupabase.rpc === 'function') ? adminSupabase : supabase;
+    if (primaryClient && typeof primaryClient.rpc === 'function') {
+      try {
+        const { data: rpcRes, error: rpcErr } = await primaryClient.rpc('submit_assessment_atomic', {
+          p_assessment_id: assessmentId,
+          p_submission_id: submissionId || null,
+          p_user_id: user.id,
+          p_answers: answers,
+          p_time_spent_seconds: timeSpentSeconds,
+          p_proctoring_summary: proctoringSummary,
+          p_class_assignment_id: classAssignmentId || null,
+          p_campaign_id: resolvedCampaignId || null,
+        });
+
+        if (!rpcErr && rpcRes && typeof rpcRes === 'object' && !Array.isArray(rpcRes)) {
+          if (rpcRes.success === true) {
+            atomicSuccess = true;
+            atomicResult = rpcRes;
+          } else if (rpcRes.success === false) {
+            // Explicit rejection from stored procedure
+            const status = rpcRes.code === 'ALREADY_SUBMITTED' ? 409 : 400;
+            return NextResponse.json(
+              { error: rpcRes.error || 'Lỗi nộp bài', code: rpcRes.code },
+              { status }
+            );
+          }
+        }
+      } catch {
+        // Fallback silently to sequential logic
+        atomicSuccess = false;
+      }
+    }
+
+    // Fast-path: Handle successful atomic submission
+    if (atomicSuccess && atomicResult) {
+      const activeSubmissionId = atomicResult.submission_id;
+      const totalScore = atomicResult.total_score;
+      const maxScore = Number(atomicResult.max_score) || 0;
+      const percentage = atomicResult.percentage !== null && atomicResult.percentage !== undefined ? Number(atomicResult.percentage) : null;
+      const isPassed = atomicResult.is_passed;
+      const pointsAwarded = Number(atomicResult.points_awarded) || 0;
+      const hasOpenResponse = Boolean(atomicResult.has_open_response);
+      const correctAnswersCount = Number(atomicResult.correct_count) || 0;
+
+      // Atomic Point Ledger Grant
+      if (pointsAwarded > 0) {
+        await PointLedgerService.grantPoints(supabase, {
+          userId: user.id,
+          delta: pointsAwarded,
+          eventType: 'ASSESSMENT_PASSED',
+          sourceType: 'ASSESSMENT',
+          sourceId: assessmentId,
+          idempotencyKey: `SUBMISSION_REWARD_${activeSubmissionId}`,
+          metadata: {
+            assessment_id: assessmentId,
+            submission_id: activeSubmissionId,
+            score_percentage: percentage !== null ? Number(percentage.toFixed(2)) : 0,
+          },
+        });
+      }
+
+      // Fetch metadata in 1 single query for evaluations and domain scores
+      const itemMetaList = await fetchItemMetadataList();
+      const itemDomainMap = new Map<string, string>();
+      const itemMetaMap = new Map<string, { explanation: string | null; domainCode: string; domainTitle: string }>();
+      const itemCorrectOptMap = new Map<string, { points: number; correctOptionId: string | null }>();
+
+      const domainEarned: Record<string, number> = { '01': 0, '02': 0, '03': 0, '04': 0, '05': 0 };
+      const domainMax: Record<string, number> = { '01': 0, '02': 0, '03': 0, '04': 0, '05': 0 };
+
+      itemMetaList.forEach((it: any) => {
+        const comp = it.competencies;
+        const dom = comp?.competency_domains;
+        const rawCode = dom?.code ? String(dom.code).padStart(2, '0') : (dom?.domain_index ? String(dom.domain_index).padStart(2, '0') : '01');
+        const domainTitle = dom?.title || comp?.title || '';
+        const correctOpt = (it.item_options || []).find((opt: any) => opt.is_correct === true);
+        const optExplanation = correctOpt?.explanation || null;
+        const finalExplanation = it.rubric_guide || optExplanation || null;
+
+        itemDomainMap.set(it.id, rawCode);
+        itemMetaMap.set(it.id, {
+          explanation: finalExplanation,
+          domainCode: rawCode,
+          domainTitle,
+        });
+        itemCorrectOptMap.set(it.id, {
+          points: Number(it.points) || 1,
+          correctOptionId: correctOpt ? correctOpt.id : null,
+        });
+
+        const pts = Number(it.points) || 1;
+        if (domainMax[rawCode] !== undefined) {
+          domainMax[rawCode] += pts;
+        }
+      });
+
+      const answerMap = new Map(answers.map((a) => [a.itemId, a]));
+      for (const [itemId, info] of itemCorrectOptMap.entries()) {
+        const candidateAns = answerMap.get(itemId);
+        const selectedOptionId = candidateAns?.selectedOptionId || null;
+        const domCode = itemDomainMap.get(itemId) || '01';
+        if (info.correctOptionId !== null && selectedOptionId === info.correctOptionId) {
+          if (domainEarned[domCode] !== undefined) {
+            domainEarned[domCode] += info.points;
+          }
+        }
+      }
+
+      const domainScores: Record<string, number | null> = {};
+      const domainCodes = ['01', '02', '03', '04', '05'];
+      domainCodes.forEach((code) => {
+        const max = domainMax[code] || 0;
+        const earned = domainEarned[code] || 0;
+        domainScores[code] = max > 0 ? Math.round((earned / max) * 100) : null;
+      });
+
+      let weakestDomainCode = '01';
+      let lowestScore = 999;
+      domainCodes.forEach((code) => {
+        const score = domainScores[code];
+        if (score !== null && score < lowestScore) {
+          lowestScore = score;
+          weakestDomainCode = code;
+        }
+      });
+
+      const isBaseline = Boolean(
+        assessment.is_system_baseline ||
+        assessment.id === 'a0000000-0000-0000-0000-000000000001'
+      );
+      const meetsPassingStandard = Boolean(isPassed === true && percentage !== null && percentage >= 70);
+
+      if (!hasOpenResponse && Object.values(domainScores).some((s) => s !== null)) {
+        await recordCompetencySnapshot({
+          isBaseline,
+          meetsPassingStandard,
+          percentage,
+          domainScores,
+          domainCodes,
+          domainMax,
+        });
+      }
+
+      const executionTimeMs = (performance.now() - startTime).toFixed(2);
+      const scoreOn10 = percentage !== null ? Math.round(percentage) / 10 : null;
+
+      const evaluations = (answers || []).map((ans) => {
+        const itemInfo = itemCorrectOptMap.get(ans.itemId);
+        const meta = itemMetaMap.get(ans.itemId);
+        const isCorrect = itemInfo?.correctOptionId !== null && ans.selectedOptionId === itemInfo?.correctOptionId;
+        return {
+          itemId: ans.itemId,
+          selectedOptionId: ans.selectedOptionId || null,
+          correctOptionId: itemInfo?.correctOptionId || null,
+          isCorrect,
+          scoreAwarded: isCorrect ? (itemInfo?.points || 1) : 0,
+          maxPoints: itemInfo?.points || 0,
+          textResponse: ans.textResponse || null,
+          explanation: meta?.explanation || null,
+          domainCode: meta?.domainCode || '01',
+          domainTitle: meta?.domainTitle || '',
+        };
+      });
+
+      const totalQuestionsCount = Number(atomicResult.total_questions_count) || (itemMetaList.length > 0 ? itemMetaList.length : answers.length);
+
+      return NextResponse.json({
+        success: true,
+        submissionId: activeSubmissionId,
+        immediateResults: assignmentImmediateResults,
+        totalScore: hasOpenResponse ? null : totalScore,
+        maxScore,
+        correctAnswersCount,
+        totalQuestionsCount,
+        scoreOn10,
+        percentage: percentage !== null ? Number(percentage.toFixed(1)) : null,
+        pointsAwarded,
+        isPassed,
+        passingScore,
+        hasOpenResponse,
+        executionTimeMs: `${executionTimeMs}ms`,
+        domainScores,
+        weakestDomainCode,
+        unlockedFreeDomain: weakestDomainCode,
+        proctoringSummary,
+        evaluations,
+      });
+    }
+
+    // =========================================================================
+    // 8. SEQUENTIAL FALLBACK FLOW (For mock environments & prior DB migrations)
+    // =========================================================================
+    let activeSubmissionId: string;
+
+    if (submissionId) {
+      activeSubmissionId = submissionId;
+      const { data: existingSub, error: existingSubError } = await dbQuery((db) => {
+        const table = db?.from?.('assessment_submissions');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return table
+          .select('id, user_id, status')
+          .eq('id', activeSubmissionId)
+          .maybeSingle();
+      });
+
+      if (existingSubError || !existingSub) {
+        return NextResponse.json({ error: 'Bài nộp không tồn tại' }, { status: 404 });
+      }
+
+      if (existingSub.user_id !== user.id) {
+        return NextResponse.json({ error: 'Bạn không có quyền nộp bài thi này' }, { status: 403 });
+      }
+
+      if (existingSub.status === 'SUBMITTED' || existingSub.status === 'EVALUATED') {
+        return NextResponse.json(
+          {
+            error: 'Bài thi này đã được nộp hoặc đã hoàn thành đánh giá, không thể nộp lại',
+            code: 'ALREADY_SUBMITTED',
+          },
+          { status: 409 }
+        );
+      }
+    } else {
+      const { data: newSub, error: subError } = await dbQuery((db) => {
+        const table = db?.from?.('assessment_submissions');
+        if (!table || typeof table.insert !== 'function') return Promise.resolve({ data: null, error: null });
+        const ins = table.insert({
+          assessment_id: assessmentId,
+          user_id: user.id,
+          class_assignment_id: classAssignmentId || null,
+          status: 'IN_PROGRESS',
+        });
+        if (!ins || typeof ins.select !== 'function') return Promise.resolve({ data: null, error: null });
+        return ins.select('id').single();
+      });
+
+      if (subError || !newSub) {
+        console.error('[SUBMIT_ERROR_CREATE_SUBMISSION]:', subError);
+        return NextResponse.json({ error: subError?.message || 'Không thể tạo bản ghi nộp bài' }, { status: 500 });
+      }
+      activeSubmissionId = newSub.id;
+    }
+
+    // Single unified query to load item metadata, structure and options
+    const itemMetaList = await fetchItemMetadataList();
+
+    let items: any[] | null = null;
+    let rpcError: any = null;
+
+    // First try adminSupabase answer keys RPC (used in vitest unit mocks and production)
+    if (adminSupabase && typeof adminSupabase.rpc === 'function') {
+      const res = await adminSupabase.rpc('get_assessment_answer_keys_for_submission', {
+        p_assessment_id: assessmentId,
+        p_submission_id: activeSubmissionId,
+      });
+      if (!res.error && res.data && res.data.length > 0) {
+        items = res.data;
+      } else {
+        rpcError = res.error;
+      }
+    }
+
+    // Try authenticated user client if needed
+    if ((!items || items.length === 0) && supabase && typeof supabase.rpc === 'function') {
+      const res = await supabase.rpc('get_assessment_answer_keys_for_submission', {
+        p_assessment_id: assessmentId,
+        p_submission_id: activeSubmissionId,
+      });
+      if (!res.error && res.data && res.data.length > 0) {
+        items = res.data;
+      }
+    }
+
+    // If RPC was not available, extract from itemMetaList without firing an extra database query
+    if ((!items || items.length === 0) && itemMetaList.length > 0) {
+      items = itemMetaList.map((it: any) => {
+        const correctOpt = (it.item_options || []).find((opt: any) => opt.is_correct === true);
+        return {
+          item_id: it.id,
+          points: Number(it.points) || 1,
+          correct_option_id: correctOpt ? correctOpt.id : null,
+        };
+      });
+    }
+
+    if (!items || items.length === 0) {
+      console.error('[SUBMIT_ERROR_RPC_ANSWER_KEYS]:', rpcError);
+      return NextResponse.json({ error: rpcError?.message || 'Không thể tải đáp án kiểm tra' }, { status: 500 });
     }
 
     const itemDomainMap = new Map<string, string>();
@@ -442,7 +758,6 @@ export async function POST(
     const domainEarned: Record<string, number> = { '01': 0, '02': 0, '03': 0, '04': 0, '05': 0 };
     const domainMax: Record<string, number> = { '01': 0, '02': 0, '03': 0, '04': 0, '05': 0 };
 
-    // Map correct option ids
     const itemMap = new Map<string, { points: number; correctOptionId: string | null }>();
     let maxScore = 0;
 
@@ -455,7 +770,6 @@ export async function POST(
       });
     }
 
-    // 6. Evaluate each answer using pure algorithmic code
     let totalScore = 0;
     let hasOpenResponse = false;
     const answerRecords: {
@@ -485,7 +799,6 @@ export async function POST(
       }
 
       if (info.correctOptionId !== null) {
-        // Choice/MCQ: auto-graded immediately
         const isCorrect = selectedOptionId !== null && selectedOptionId === info.correctOptionId;
         const scoreAwarded = isCorrect ? info.points : 0;
         totalScore += scoreAwarded;
@@ -505,7 +818,6 @@ export async function POST(
           auto_graded: true,
         });
       } else {
-        // Open Response / Practical: pending manual Rubric grading
         hasOpenResponse = true;
         answerRecords.push({
           submission_id: activeSubmissionId,
@@ -521,7 +833,6 @@ export async function POST(
       }
     }
 
-    // 6b. Compute Domain Scores & Balanced Equal Weighting Percentage
     const domainScores: Record<string, number | null> = {};
     const domainCodes = ['01', '02', '03', '04', '05'];
     domainCodes.forEach((code) => {
@@ -545,13 +856,10 @@ export async function POST(
       assessment.id === 'a0000000-0000-0000-0000-000000000001'
     );
 
-    // Raw question-weighted percentage
     const rawPercentage = hasOpenResponse
       ? null
       : maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
-    // For baseline assessments: overall percentage is equal-weighted across the 5 domains (20% per domain)
-    // regardless of question count differences across domains
     const assessedDomainScores = domainCodes
       .map((code) => domainScores[code])
       .filter((s): s is number => s !== null);
@@ -569,71 +877,54 @@ export async function POST(
       ? null
       : percentage !== null && percentage >= passingScore;
 
-    // 7. Anti-farming check: Each passed assessment only awards points once per candidate
+    // Anti-farming check
     let pointsAwarded = 0;
     if (isPassed === true && pointReward > 0) {
-      const { data: previousPassed } = await dbQuery((db) =>
-        db
-          .from('assessment_submissions')
-          .select('id')
+      const { data: previousPassed } = await dbQuery((db) => {
+        const table = db?.from?.('assessment_submissions');
+        if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+        const s = table.select('id');
+        if (!s || typeof s.eq !== 'function') return Promise.resolve({ data: null, error: null });
+        return s
           .eq('assessment_id', assessmentId)
           .eq('user_id', user.id)
           .eq('is_passed', true)
           .neq('id', activeSubmissionId)
-          .limit(1)
-      );
+          .limit(1);
+      });
 
       if (!previousPassed || previousPassed.length === 0) {
         pointsAwarded = pointReward;
       }
     }
 
-    // 8. Atomic transition: Clean previous draft answers, insert evaluated answers, finalize submission
+    // Atomic update of draft answers and submission state
     try {
-      await dbQuery((db) =>
-        db
-          .from('submission_answers')
-          .delete()
-          .eq('submission_id', activeSubmissionId)
-      );
+      await dbQuery((db) => {
+        const table = db?.from?.('submission_answers');
+        if (!table || typeof table.delete !== 'function') return Promise.resolve({ error: null });
+        return table.delete().eq('submission_id', activeSubmissionId);
+      });
     } catch {
       // Non-blocking cleanup
     }
 
     if (answerRecords.length > 0) {
-      const { error: insertAnsErr } = await dbQuery((db) =>
-        db
-          .from('submission_answers')
-          .insert(answerRecords)
-      );
+      const { error: insertAnsErr } = await dbQuery((db) => {
+        const table = db?.from?.('submission_answers');
+        if (!table || typeof table.insert !== 'function') return Promise.resolve({ error: null });
+        return table.insert(answerRecords);
+      });
 
       if (insertAnsErr) {
         console.warn('[SUBMIT_WARN_INSERT_ANSWERS]:', insertAnsErr);
       }
     }
 
-    // Calculate smart proctoring summary & trust score
-    const effectiveSecuritySettings = assessment.security_settings || {};
-    const proctoringEvents = validated.data.proctoringEvents || [];
-    const trustResult = calculateTrustScore(proctoringEvents, effectiveSecuritySettings);
-
-    const proctoringSummary: ProctoringSummary = {
-      trustScore: trustResult.trustScore,
-      integrityFlag: trustResult.integrityFlag,
-      totalViolations: proctoringEvents.length,
-      tabSwitchesCount: trustResult.tabSwitchesCount,
-      fullscreenExitsCount: trustResult.fullscreenExitsCount,
-      copyAttemptsCount: trustResult.copyAttemptsCount,
-      devtoolsAttemptsCount: trustResult.devtoolsAttemptsCount,
-      totalTimeOutOfFocusSeconds: trustResult.totalTimeOutOfFocusSeconds,
-      events: proctoringEvents,
-      activeWarningMode: effectiveSecuritySettings.active_warning ?? true,
-      submittedAt: new Date().toISOString(),
-    };
-
-    const { error: updateSubErr } = await dbQuery((db) =>
-      db
-        .from('assessment_submissions')
+    const { error: updateSubErr } = await dbQuery((db) => {
+      const table = db?.from?.('assessment_submissions');
+      if (!table || typeof table.update !== 'function') return Promise.resolve({ error: null });
+      return table
         .update({
           status: hasOpenResponse ? 'SUBMITTED' : 'EVALUATED',
           grading_status: hasOpenResponse ? 'PENDING_REVIEW' : 'COMPLETED',
@@ -648,15 +939,15 @@ export async function POST(
           proctoring_summary: proctoringSummary,
           submitted_at: new Date().toISOString(),
         })
-        .eq('id', activeSubmissionId)
-    );
+        .eq('id', activeSubmissionId);
+    });
 
     if (updateSubErr) {
       console.error('[SUBMIT_ERROR_UPDATE_SUBMISSION]:', updateSubErr);
       return NextResponse.json({ error: updateSubErr?.message || 'Không thể cập nhật kết quả nộp bài' }, { status: 500 });
     }
 
-    // 9. Atomic Point Ledger Grant
+    // Grant points if passed
     if (pointsAwarded > 0) {
       await PointLedgerService.grantPoints(supabase, {
         userId: user.id,
@@ -673,99 +964,17 @@ export async function POST(
       });
     }
 
-    // 10. Progressive Competency Snapshot (NEXA Standard)
     const meetsPassingStandard = Boolean(isPassed === true && percentage !== null && percentage >= 70);
 
-    // CƠ CHẾ TÍCH LŨY HỒ SƠ NĂNG LỰC LÂU DÀI:
-    // Chỉ lưu snapshot khi: (1) là khảo sát đầu vào Baseline; HOẶC (2) bài thi đạt chuẩn >= 70%
     if (!hasOpenResponse && Object.values(domainScores).some((s) => s !== null)) {
-      if (isBaseline) {
-        // Thiết lập mốc xuất phát ban đầu cho học viên
-        try {
-          const clientForSnapshot = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
-          const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
-          if (snapTable && typeof snapTable.insert === 'function') {
-            await snapTable.insert({
-              user_id: user.id,
-              overall_score: percentage !== null ? Number(percentage.toFixed(2)) : 0,
-              domain_scores: domainScores,
-              skill_scores: {},
-              snapshot_trigger: 'BASELINE_ASSESSMENT',
-            });
-          }
-        } catch (snapErr) {
-          console.warn('Could not insert baseline competency snapshot:', snapErr);
-        }
-      } else if (meetsPassingStandard) {
-        // Tăng lũy tiến từng nấc nhỏ 1-2% (hoặc 3% nếu xuất sắc >= 90%) dựa trên bằng chứng đạt chuẩn
-        try {
-          const clientForSnapshot = (adminSupabase && typeof adminSupabase.from === 'function') ? adminSupabase : supabase;
-          
-          let latestSnapshot: any = null;
-          try {
-            const queryRes = await dbQuery((db) => {
-              const table = db?.from?.('learner_competency_snapshots');
-              if (table && typeof table.select === 'function') {
-                const s = table.select('domain_scores, overall_score');
-                if (s && typeof s.eq === 'function') {
-                  const e = s.eq('user_id', user.id);
-                  if (e && typeof e.order === 'function') {
-                    return e.order('created_at', { ascending: false }).limit(1).maybeSingle();
-                  }
-                  if (e && typeof e.limit === 'function') {
-                    return e.limit(1).maybeSingle();
-                  }
-                }
-              }
-              return Promise.resolve({ data: null, error: null });
-            });
-            latestSnapshot = queryRes?.data;
-          } catch {
-            latestSnapshot = null;
-          }
-
-          const previousDomains = (latestSnapshot?.domain_scores as Record<string, number>) || {};
-          const updatedDomainScores: Record<string, number | null> = {};
-
-          domainCodes.forEach((code) => {
-            const prevScore = previousDomains[code] ?? domainScores[code] ?? 50;
-            const testDomainScore = domainScores[code];
-            const max = domainMax[code] || 0;
-
-            if (max > 0 && testDomainScore !== null) {
-              if (testDomainScore >= 70) {
-                // Tăng lũy tiến 2% (hoặc 3% nếu đạt >= 90%)
-                const delta = testDomainScore >= 90 ? 3 : 2;
-                updatedDomainScores[code] = Math.min(100, prevScore + delta);
-              } else {
-                // Không đạt miền này: giữ nguyên điểm cũ, không trừ điểm
-                updatedDomainScores[code] = prevScore;
-              }
-            } else {
-              // Miền không có câu hỏi trong đề này: giữ nguyên điểm cũ
-              updatedDomainScores[code] = prevScore;
-            }
-          });
-
-          const validScores = Object.values(updatedDomainScores).filter((v): v is number => v !== null);
-          const newOverallScore = validScores.length > 0
-            ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-            : percentage !== null ? Number(percentage.toFixed(2)) : 0;
-
-          const snapTable = clientForSnapshot?.from?.('learner_competency_snapshots');
-          if (snapTable && typeof snapTable.insert === 'function') {
-            await snapTable.insert({
-              user_id: user.id,
-              overall_score: newOverallScore,
-              domain_scores: updatedDomainScores,
-              skill_scores: {},
-              snapshot_trigger: 'ASSESSMENT_PASSED',
-            });
-          }
-        } catch (snapErr) {
-          console.warn('Could not insert incremental competency snapshot:', snapErr);
-        }
-      }
+      await recordCompetencySnapshot({
+        isBaseline,
+        meetsPassingStandard,
+        percentage,
+        domainScores,
+        domainCodes,
+        domainMax,
+      });
     }
 
     const executionTimeMs = (performance.now() - startTime).toFixed(2);

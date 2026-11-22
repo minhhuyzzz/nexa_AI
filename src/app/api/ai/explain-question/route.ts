@@ -324,13 +324,13 @@ Hãy cung cấp lời giải thích toàn diện, chi tiết theo định hướ
       createdAt: insertedExplanation.created_at,
     });
   } catch (err: any) {
-    console.error('[explain-question] Internal server error:', err);
+    console.error('[API_ROUTE_ERROR] /api/ai/explain-question:', err);
     if (reservationId) {
       try {
         const supabase = await createClient();
         await AiCreditsService.release(supabase, reservationId, err.message || 'Lỗi không xác định');
       } catch (releaseErr) {
-        console.error('[explain-question] Failed to release credit reservation:', releaseErr);
+        console.error('[API_ROUTE_ERROR] [explain-question] Failed to release credit reservation:', releaseErr);
       }
     }
 

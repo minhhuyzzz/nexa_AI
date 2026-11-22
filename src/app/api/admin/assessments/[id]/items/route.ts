@@ -253,6 +253,12 @@ export async function DELETE(
     if (items && items.length > 0) {
       const itemIds = items.map((i: any) => i.id);
 
+      // 1.5 Dọn dẹp câu trả lời liên quan (nếu có bài nộp thử nghiệm)
+      await adminSupabase
+        .from('submission_answers')
+        .delete()
+        .in('item_id', itemIds);
+
       // 2. Delete item options
       await adminSupabase
         .from('item_options')

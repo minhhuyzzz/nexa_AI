@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       subscription: sub,
     });
   } catch (err) {
+    console.error('[API_ROUTE_ERROR] /api/billing/cancel-auto-renew:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
