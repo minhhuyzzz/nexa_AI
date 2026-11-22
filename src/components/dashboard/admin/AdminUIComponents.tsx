@@ -566,7 +566,7 @@ export function AdminPlatformHealthCard({
           <div className="p-2.5 rounded-lg bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
               <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">Cơ sở dữ liệu Supabase</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">Cơ sở dữ liệu</span>
             </div>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
               Sẵn sàng (0ms)

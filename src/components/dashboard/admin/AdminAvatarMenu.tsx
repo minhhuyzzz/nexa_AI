@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
   LogOut,
   Sun,
   Moon,
-  FolderLock,
-  Settings,
-  Sparkles,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -140,26 +136,6 @@ export function AdminAvatarMenu() {
 
               {/* Navigation Items */}
               <div className="py-1 space-y-0.5">
-                <Link
-                  href="/admin/frameworks"
-                  onClick={() => setIsOpen(false)}
-                  className="min-h-[44px] flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
-                >
-                  <FolderLock className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                  <span>Quản trị khung năng lực</span>
-                </Link>
-
-                {adminRole === 'SUPER_ADMIN' && (
-                  <Link
-                    href="/admin/ai-gateway"
-                    onClick={() => setIsOpen(false)}
-                    className="min-h-[44px] flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
-                  >
-                    <Sparkles className="w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
-                    <span>Cổng kết nối AI</span>
-                  </Link>
-                )}
-
                 {/* Dark/Light mode toggle switch */}
                 <div className="min-h-[44px] flex items-center justify-between px-4 py-2 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
                   <div className="flex items-center gap-2.5">
