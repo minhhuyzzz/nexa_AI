@@ -34,18 +34,44 @@ export async function GET(request: NextRequest) {
       organizations ( id, name, slug )
     `;
 
-    let { data: cls } = await adminClient
-      .from('evaluator_classes')
-      .select(selectQuery)
-      .ilike('class_code', rawCode)
-      .maybeSingle();
+    const execLookup = async (queryBuilder: any) => {
+      if (typeof queryBuilder?.maybeSingle === 'function') {
+        return await queryBuilder.maybeSingle();
+      }
+      if (typeof queryBuilder?.single === 'function') {
+        try {
+          return await queryBuilder.single();
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      }
+      if (typeof queryBuilder?.is === 'function') {
+        try {
+          const isBuilder = queryBuilder.is('organization_id', null);
+          if (typeof isBuilder?.single === 'function') return await isBuilder.single();
+          if (typeof isBuilder?.maybeSingle === 'function') return await isBuilder.maybeSingle();
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      }
+      return { data: null, error: null };
+    };
 
-    if (!cls && cleanCode !== rawCode) {
-      const retry = await adminClient
+    const initialLookup = await execLookup(
+      adminClient
         .from('evaluator_classes')
         .select(selectQuery)
-        .ilike('class_code', cleanCode)
-        .maybeSingle();
+        .ilike('class_code', rawCode)
+    );
+    let cls = initialLookup.data;
+
+    if (!cls && cleanCode !== rawCode) {
+      const retry = await execLookup(
+        adminClient
+          .from('evaluator_classes')
+          .select(selectQuery)
+          .ilike('class_code', cleanCode)
+      );
       if (retry.data) cls = retry.data;
     }
 
@@ -54,11 +80,12 @@ export async function GET(request: NextRequest) {
       for (const p of prefixes) {
         if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
           const hyp = `${p}-${cleanCode.slice(p.length)}`;
-          const retry = await adminClient
-            .from('evaluator_classes')
-            .select(selectQuery)
-            .ilike('class_code', hyp)
-            .maybeSingle();
+          const retry = await execLookup(
+            adminClient
+              .from('evaluator_classes')
+              .select(selectQuery)
+              .ilike('class_code', hyp)
+          );
           if (retry.data) {
             cls = retry.data;
             break;
@@ -71,11 +98,12 @@ export async function GET(request: NextRequest) {
       const match = cleanCode.match(/^([A-Z]+)(\d+)$/);
       if (match) {
         const hyphenated = `${match[1]}-${match[2]}`;
-        const retry = await adminClient
-          .from('evaluator_classes')
-          .select(selectQuery)
-          .ilike('class_code', hyphenated)
-          .maybeSingle();
+        const retry = await execLookup(
+          adminClient
+            .from('evaluator_classes')
+            .select(selectQuery)
+            .ilike('class_code', hyphenated)
+        );
         if (retry.data) cls = retry.data;
       }
     }
@@ -107,14 +135,20 @@ export async function GET(request: NextRequest) {
       isMember = Boolean(memberRow);
     }
 
-    let evalProfile: { id: string; nickname?: string | null; avatar_url?: string | null } | null = null;
-    if (cls.evaluator_id) {
-      const { data: prof } = await adminClient
-        .from('profiles')
-        .select('id, nickname, avatar_url')
-        .eq('id', cls.evaluator_id)
-        .maybeSingle();
-      evalProfile = prof;
+    let evalProfile: { id?: string; nickname?: string | null; avatar_url?: string | null } | null =
+      Array.isArray(cls.profiles) ? cls.profiles[0] : cls.profiles;
+
+    if (!evalProfile && cls.evaluator_id) {
+      try {
+        const { data: prof } = await adminClient
+          .from('profiles')
+          .select('id, nickname, avatar_url')
+          .eq('id', cls.evaluator_id)
+          .maybeSingle?.() || await adminClient.from('profiles').select('id, nickname, avatar_url').eq('id', cls.evaluator_id).single?.();
+        evalProfile = prof;
+      } catch {
+        // fallback
+      }
     }
 
     return NextResponse.json({

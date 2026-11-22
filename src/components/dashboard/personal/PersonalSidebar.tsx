@@ -44,6 +44,7 @@ const learningNavItems: NavItem[] = [
 const workNavItems: NavItem[] = [
   { name: 'Lớp và Nhóm', href: '/personal/groups', icon: Users },
   { name: 'Bài được giao', href: '/personal/submissions', icon: ListChecks },
+  { name: 'Bài cần chấm', href: '/personal/grading', icon: FileCheck },
 ];
 
 const creatorNavItems: NavItem[] = [
@@ -56,8 +57,8 @@ export function PersonalSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [canGrade, setCanGrade] = useState(false);
   const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState<number>(0);
+  const [pendingGradeCount, setPendingGradeCount] = useState<number>(0);
   const [hoveredTooltip, setHoveredTooltip] = useState<TooltipState | null>(null);
   const { isMobileOpen, closeMobile } = useMobileNav();
 
@@ -85,11 +86,11 @@ export function PersonalSidebar() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted) {
-          if (data?.canGrade) {
-            setCanGrade(true);
-          }
           if (typeof data?.pendingCount === 'number') {
             setPendingAssignmentsCount(data.pendingCount);
+          }
+          if (typeof data?.pendingGradeCount === 'number') {
+            setPendingGradeCount(data.pendingGradeCount);
           }
         }
       })
@@ -98,13 +99,6 @@ export function PersonalSidebar() {
       isMounted = false;
     };
   }, []);
-
-  const dynamicWorkNavItems = [
-    ...workNavItems,
-    ...(canGrade
-      ? [{ name: 'Bài cần chấm', href: '/personal/grading', icon: FileCheck }]
-      : []),
-  ];
 
   const isRouteActive = (href: string) => {
     if (href === '/personal/dashboard' || href === '/dashboard') {
@@ -135,10 +129,12 @@ export function PersonalSidebar() {
             const Icon = item.icon;
 
             if (collapsed) {
-              const tooltipLabel =
-                item.href === '/personal/submissions' && pendingAssignmentsCount > 0
-                  ? `${item.name} (${pendingAssignmentsCount} bài cần làm)`
-                  : item.name;
+              let tooltipLabel = item.name;
+              if (item.href === '/personal/submissions' && pendingAssignmentsCount > 0) {
+                tooltipLabel = `${item.name} (${pendingAssignmentsCount} bài cần làm)`;
+              } else if (item.href === '/personal/grading' && pendingGradeCount > 0) {
+                tooltipLabel = `${item.name} (${pendingGradeCount} bài cần chấm)`;
+              }
 
               return (
                 <Link
@@ -170,6 +166,12 @@ export function PersonalSidebar() {
                       className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#0A0A0B]"
                     />
                   )}
+                  {item.href === '/personal/grading' && pendingGradeCount > 0 && (
+                    <span
+                      aria-label={`${pendingGradeCount} bài cần chấm`}
+                      className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-[#0A0A0B]"
+                    />
+                  )}
                 </Link>
               );
             }
@@ -198,6 +200,14 @@ export function PersonalSidebar() {
                     className="ml-auto inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-600 text-white font-mono tabular-nums leading-none min-w-4"
                   >
                     {pendingAssignmentsCount}
+                  </span>
+                )}
+                {item.href === '/personal/grading' && pendingGradeCount > 0 && (
+                  <span
+                    aria-label={`${pendingGradeCount} bài cần chấm`}
+                    className="ml-auto inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white font-mono tabular-nums leading-none min-w-4"
+                  >
+                    {pendingGradeCount}
                   </span>
                 )}
               </Link>
@@ -263,7 +273,7 @@ export function PersonalSidebar() {
             className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2 space-y-3"
           >
             {renderNavGroup('Học tập và phát triển', learningNavItems)}
-            {renderNavGroup('Nhóm và công việc', dynamicWorkNavItems)}
+            {renderNavGroup('Nhóm và công việc', workNavItems)}
             {renderNavGroup('Công cụ tạo và tổ chức', creatorNavItems)}
           </nav>
 
@@ -327,7 +337,7 @@ export function PersonalSidebar() {
             {/* Mobile Nav Links: clicking any closes drawer */}
             <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-3">
               {renderNavGroup('Học tập và phát triển', learningNavItems, closeMobile, false)}
-              {renderNavGroup('Nhóm và công việc', dynamicWorkNavItems, closeMobile, false)}
+              {renderNavGroup('Nhóm và công việc', workNavItems, closeMobile, false)}
               {renderNavGroup('Công cụ tạo và tổ chức', creatorNavItems, closeMobile, false)}
             </nav>
 

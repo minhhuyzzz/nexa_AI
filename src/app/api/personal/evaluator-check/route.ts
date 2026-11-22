@@ -74,7 +74,39 @@ export async function GET() {
       // ignore
     }
 
-    return NextResponse.json({ canGrade, pendingCount });
+    // Compute pending submissions to grade for personal groups
+    let pendingGradeCount = 0;
+    try {
+      if (canGrade) {
+        const { data: managedClasses } = await supabase
+          .from('evaluator_classes')
+          .select('id, class_members ( user_id )')
+          .is('organization_id', null)
+          .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
+
+        const memberUserIds = Array.from(
+          new Set(
+            (managedClasses || []).flatMap((c: any) =>
+              (c.class_members || []).map((m: any) => m.user_id)
+            )
+          )
+        ).filter(Boolean);
+
+        if (memberUserIds.length > 0) {
+          const { count: pendingSubsCount } = await supabase
+            .from('assessment_submissions')
+            .select('id', { count: 'exact', head: true })
+            .in('user_id', memberUserIds)
+            .eq('status', 'SUBMITTED');
+
+          pendingGradeCount = pendingSubsCount || 0;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return NextResponse.json({ canGrade, pendingCount, pendingGradeCount });
   } catch {
     return NextResponse.json({ canGrade: false, pendingCount: 0 });
   }
