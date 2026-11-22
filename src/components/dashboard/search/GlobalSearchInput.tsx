@@ -8,6 +8,7 @@ import {
   Loader2,
   Clock,
   Sparkles,
+  TrendingUp,
   BookOpen,
   Award,
   Users,
@@ -51,7 +52,7 @@ export function GlobalSearchInput({
       ? 'Tìm người dùng, tổ chức, đề chuẩn...'
       : scope === 'org'
       ? 'Tìm học viên, lớp học, đợt khảo thí...'
-      : 'Tìm đề thi, trạm năng lực, lớp học...');
+      : 'Tìm kiếm đề khảo thí, bài thi...');
 
   // Detect platform for shortcut badge (⌘K vs Ctrl+K)
   useEffect(() => {
@@ -327,8 +328,17 @@ export function GlobalSearchInput({
             {results.length > 0 ? (
               <div className="space-y-1">
                 <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  <span>{!query ? 'Khảo thí & Năng lực tiêu biểu' : 'Kết quả tìm kiếm phù hợp'}</span>
+                  {!query ? (
+                    <>
+                      <TrendingUp className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      <span>Thịnh hành</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      <span>Kết quả tìm kiếm phù hợp</span>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-0.5">
@@ -379,11 +389,18 @@ export function GlobalSearchInput({
                   })}
                 </div>
               </div>
+            ) : !loading && !query && recentQueries.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 dark:text-zinc-500">
+                <p className="text-xs">Chưa có đề khảo thí thịnh hành</p>
+                <p className="text-[11px] mt-1 text-slate-400">
+                  Gõ từ khóa để bắt đầu tìm kiếm đề thi...
+                </p>
+              </div>
             ) : !loading && query ? (
               <div className="py-6 text-center text-slate-400 dark:text-zinc-500">
                 <p>Không tìm thấy kết quả nào phù hợp với &quot;{query}&quot;</p>
                 <p className="text-[11px] mt-1 text-slate-400">
-                  Thử tìm kiếm với tên đề thi, mã trạm số, hoặc lớp học...
+                  Thử tìm kiếm với tên đề thi, mã bài thi hoặc từ khóa khác...
                 </p>
               </div>
             ) : null}

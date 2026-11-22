@@ -38,14 +38,14 @@ export async function GET(request: NextRequest) {
     // =========================================================================
     if (scope === 'personal') {
       if (!query) {
-        // Suggestions: Top standard published assessments
+        // Suggestions: Top standard published assessments from Admin Bank (same as /personal/assessments)
         const { data: topAssessments } = await adminSupabase
           .from('assessments')
           .select('id, title, duration_minutes, total_questions, passing_score, created_at')
           .eq('is_published', true)
           .is('organization_id', null)
           .order('created_at', { ascending: false })
-          .limit(4);
+          .limit(5);
 
         (topAssessments || []).forEach((asm) => {
           results.push({
@@ -53,28 +53,12 @@ export async function GET(request: NextRequest) {
             title: asm.title,
             subtitle: `Thời lượng: ${asm.duration_minutes || 45} phút • Chuẩn đạt: ≥${asm.passing_score || 70}%`,
             category: 'assessment',
-            categoryLabel: 'Bài Khảo Thí Tiêu Biểu',
-            href: `/personal/take/${asm.id}`,
-            badge: `${asm.duration_minutes || 45}m`,
+            categoryLabel: 'Đề thịnh hành',
+            href: `/personal/assessments/${asm.id}`,
+            badge: 'Thịnh hành',
           });
         });
-
-        // Top featured competency stations
-        const featuredCodes = ['1.1', '4.1', '2.4'];
-        featuredCodes.forEach((code) => {
-          const doc = COMPETENCY_STATION_DOCS[code];
-          if (doc) {
-            results.push({
-              id: `station-${doc.skillCode}`,
-              title: doc.title,
-              subtitle: doc.domainTitle,
-              category: 'learning_station',
-              categoryLabel: 'Trạm Năng Lực Trọng Tâm',
-              href: `/personal/learning-path/docs/${encodeURIComponent(doc.skillCode)}`,
-              badge: `Trạm ${doc.skillCode}`,
-            });
-          }
-        });
+        // Không lấy bài từ trạm lộ trình nữa; nếu database chưa có đề nào thì results rỗng.
       } else {
         // Active search: Assessments
         const { data: matchedAsms } = await adminSupabase

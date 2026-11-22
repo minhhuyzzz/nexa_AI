@@ -1296,9 +1296,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/admin/AdminTopbar.tsx": {
-    "mtime": 1795256295.0512826,
-    "seen": 1795257976.036058,
-    "ast_hash": "65d2f27429191f5b4f6aa4c6d11a68ea",
+    "mtime": 1795338041.654401,
+    "seen": 1795338693.8701627,
+    "ast_hash": "1e4d29f831bde8ac3d02f55163629422",
     "semantic_hash": ""
   },
   "src/components/dashboard/classes/ClassAssignmentsTab.tsx": {
@@ -1374,9 +1374,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgTopbar.tsx": {
-    "mtime": 1795264438.3316634,
-    "seen": 1795266285.2130687,
-    "ast_hash": "1e6c2174184b1596a69e8678eb3fa273",
+    "mtime": 1795338019.2196133,
+    "seen": 1795338693.875462,
+    "ast_hash": "92f00b85ab4231eccad778b6165f9bc0",
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/CompetencyRadarChart.tsx": {
@@ -1404,9 +1404,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/PersonalTopbar.tsx": {
-    "mtime": 1795256530.7123475,
-    "seen": 1795257976.0670292,
-    "ast_hash": "12b3415ea1e436f03425e6992e4678c8",
+    "mtime": 1795338003.442633,
+    "seen": 1795338693.882307,
+    "ast_hash": "8a6323b85cf678816d01798f908d0802",
     "semantic_hash": ""
   },
   "src/components/landing/AiWorkflowSection.tsx": {
@@ -7851,6 +7851,24 @@
     "mtime": 1795335663.6241467,
     "seen": 1795336836.2268817,
     "ast_hash": "a3db63af0a97bbaa1e21d21a267f17fc",
+    "semantic_hash": ""
+  },
+  "src/app/api/search/route.test.ts": {
+    "mtime": 1795338133.3711379,
+    "seen": 1795338693.8647375,
+    "ast_hash": "235842454fde529fd8f90386bf5f5b5b",
+    "semantic_hash": ""
+  },
+  "src/app/api/search/route.ts": {
+    "mtime": 1795338111.186178,
+    "seen": 1795338693.8647416,
+    "ast_hash": "a7c1994980276ff7d8faf908a8adf205",
+    "semantic_hash": ""
+  },
+  "src/components/dashboard/search/GlobalSearchInput.tsx": {
+    "mtime": 1795337978.5984945,
+    "seen": 1795338693.8827438,
+    "ast_hash": "64c2aa185b26b9bea589bcc23b7b38ea",
     "semantic_hash": ""
   },
   ".agents/skills/stageshow/package-lock.json": {

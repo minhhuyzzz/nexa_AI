@@ -74,7 +74,38 @@ describe('Global Search API (/api/search)', () => {
       expect(json.isSuggestions).toBe(true);
       expect(json.results.length).toBeGreaterThan(0);
       expect(json.results.some((r: any) => r.category === 'assessment')).toBe(true);
-      expect(json.results.some((r: any) => r.category === 'learning_station')).toBe(true);
+      expect(json.results.some((r: any) => r.category === 'learning_station')).toBe(false);
+    });
+
+    it('trả về rỗng khi database chưa có đề khảo thí nào', async () => {
+      vi.mocked(createClient).mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+        },
+      } as any);
+
+      vi.mocked(createAdminClient).mockReturnValue({
+        from: vi.fn().mockImplementation(() => ({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              is: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({ data: [] }),
+                }),
+              }),
+            }),
+          }),
+        })),
+      } as any);
+
+      const req = new NextRequest('http://localhost:3000/api/search?scope=personal');
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.isSuggestions).toBe(true);
+      expect(json.results).toEqual([]);
     });
 
     it('tìm kiếm theo từ khóa q trên đề thi và trạm năng lực', async () => {
