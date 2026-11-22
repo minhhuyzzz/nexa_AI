@@ -99,32 +99,41 @@ export default async function OrgClassDetailPage({
       estimated_ai_credits,
       status,
       created_at,
-      assessments ( id, title, duration_minutes, passing_score )
+      assessments ( id, title, duration_minutes, passing_score, assessment_items ( id, type ) )
     `)
     .eq('class_id', realClassId)
     .order('created_at', { ascending: false });
 
-  const assignments: ClassAssignmentItem[] = (assignmentsRaw || []).map((a: any) => ({
-    id: a.id,
-    assessmentId: a.assessment_id,
-    title: a.assessments?.title || 'Đề khảo thí',
-    durationMinutes: a.assessments?.duration_minutes || 60,
-    passingScore: a.assessments?.passing_score || 70,
-    startTime: a.start_time,
-    deadline: a.deadline,
-    timezone: a.timezone || 'Asia/Ho_Chi_Minh',
-    allowLateSubmission: Boolean(a.allow_late_submission),
-    reminderBeforeHours: a.reminder_before_hours || 24,
-    aiGradingEnabled: Boolean(a.ai_grading_enabled),
-    shuffleQuestions: Boolean(a.shuffle_questions),
-    immediateResults: Boolean(a.immediate_results),
-    requireEvidence: Boolean(a.require_evidence),
-    allowedEvidenceTypes: a.allowed_evidence_types || ['PDF', 'DOCX'],
-    maxEvidenceMb: a.max_evidence_mb || 50,
-    estimatedAiCredits: a.estimated_ai_credits || 0,
-    status: a.status || 'PUBLISHED',
-    createdAt: a.created_at,
-  }));
+  const assignments: ClassAssignmentItem[] = (assignmentsRaw || []).map((a: any) => {
+    const rawItems = Array.isArray(a.assessments?.assessment_items) ? a.assessments.assessment_items : [];
+    const hasOpenQuestions = rawItems.some((item: any) =>
+      item.type && item.type !== 'MCQ' && item.type !== 'SCENARIO'
+    );
+    const hasManualGrading = Boolean(a.require_evidence || hasOpenQuestions);
+
+    return {
+      id: a.id,
+      assessmentId: a.assessment_id,
+      title: a.assessments?.title || 'Đề khảo thí',
+      durationMinutes: a.assessments?.duration_minutes || 60,
+      passingScore: a.assessments?.passing_score || 70,
+      startTime: a.start_time,
+      deadline: a.deadline,
+      timezone: a.timezone || 'Asia/Ho_Chi_Minh',
+      allowLateSubmission: Boolean(a.allow_late_submission),
+      reminderBeforeHours: a.reminder_before_hours || 24,
+      aiGradingEnabled: Boolean(a.ai_grading_enabled),
+      shuffleQuestions: Boolean(a.shuffle_questions),
+      immediateResults: Boolean(a.immediate_results),
+      requireEvidence: Boolean(a.require_evidence),
+      allowedEvidenceTypes: a.allowed_evidence_types || ['PDF', 'DOCX'],
+      maxEvidenceMb: a.max_evidence_mb || 50,
+      estimatedAiCredits: a.estimated_ai_credits || 0,
+      status: a.status || 'PUBLISHED',
+      createdAt: a.created_at,
+      hasManualGrading,
+    };
+  });
 
   // Real pending submissions count for this class (No fake numbers)
   const { count: pendingGradingCount } = await adminSupabase

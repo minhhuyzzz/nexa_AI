@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   FileCheck,
   Search,
@@ -10,16 +10,12 @@ import {
   AlertCircle,
   Clock,
   Loader2,
-  Award,
-  User,
   ExternalLink,
-  ChevronRight,
   FileText,
   Check,
   ArrowRight,
-  Filter,
+  ArrowLeft,
   X,
-  Layers,
   GraduationCap,
   Calendar,
   ShieldCheck,
@@ -28,7 +24,6 @@ import {
   ChevronDown,
   ChevronUp,
   Flag,
-  Shield,
 } from 'lucide-react';
 import { ProctoringSummary } from '@/features/assessments/types/security.types';
 
@@ -129,8 +124,8 @@ export function OrgGradingClientView({
   );
   const [search, setSearch] = useState('');
 
-  // Mobile segmented control: queue | evidence | rubric
-  const [mobileTab, setMobileTab] = useState<'queue' | 'evidence' | 'rubric'>('queue');
+  // Mobile segmented control: queue | detail
+  const [mobileTab, setMobileTab] = useState<'queue' | 'detail'>('queue');
 
   // Active selected submission
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -246,8 +241,7 @@ export function OrgGradingClientView({
       setGradeError(null);
       setGradeSuccess(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync fields when selected submission changes
-  }, [selectedSub?.id]);
+  }, [selectedSub]);
 
   // Total calculated score: MCQ auto score + sum of open item scores
   const calculatedTotalScore = useMemo(() => {
@@ -312,7 +306,6 @@ export function OrgGradingClientView({
         throw new Error('AI không thể tính điểm cho bài thi này. Vui lòng chấm điểm thủ công.');
       }
 
-      // P1-01 Fix: Hiển thị điểm đề xuất AI độc lập cho từng item_id theo Rubric thay vì cào bằng tỷ lệ
       if (openAnswers.length > 0) {
         const newScores: Record<string, number> = {};
         const criterionScores = data.evaluation?.criterionScores;
@@ -321,16 +314,13 @@ export function OrgGradingClientView({
           const rawItem = Array.isArray(ans.assessment_items) ? ans.assessment_items[0] : ans.assessment_items;
           const maxPts = Number(rawItem?.points) || 20;
 
-          // Nếu có điểm từ tiêu chí rubric tương ứng với item này
           if (Array.isArray(criterionScores) && criterionScores.length > 0) {
             const matchedCriterion = criterionScores.find((c: any) => c.criterionId === ans.item_id || c.itemId === ans.item_id);
             if (matchedCriterion && typeof matchedCriterion.score === 'number') {
               newScores[ans.item_id] = Math.min(maxPts, Math.max(0, matchedCriterion.score));
             } else if (openAnswers.length === 1 && typeof data.evaluation?.totalScore === 'number') {
-              // Nếu bài thi chỉ có 1 câu tự luận thì điểm câu đó chính là điểm AI chấm cho câu tự luận
               newScores[ans.item_id] = Math.min(maxPts, Math.max(0, data.evaluation.totalScore));
             } else {
-              // Phân bổ hợp lý hoặc giữ điểm đề xuất
               const openSuggested = Math.max(0, totalScore - mcqAutoPoints);
               const availableOpenMax = openAnswers.reduce((sum, a) => {
                 const itm = Array.isArray(a.assessment_items) ? a.assessment_items[0] : a.assessment_items;
@@ -362,7 +352,7 @@ export function OrgGradingClientView({
         evidenceQuote:
           data.evaluation?.evidenceQuote ||
           data.evidenceQuote ||
-          'Minh chứng bài làm được ghi nhận và phân tích phù hợp tiêu chí năng lực số.',
+          'Minh chứng bài làm được ghi nhận và phân tích phù hợp tiêu chí đánh giá.',
         confidence: normalizedConfidence,
         confidenceFlag: data.evaluation?.confidenceFlag || (normalizedConfidence >= 80 ? 'GREEN' : 'AMBER'),
         feedback: data.evaluation?.feedback || 'Bài làm đáp ứng đúng yêu cầu nhiệm vụ số.',
@@ -454,69 +444,6 @@ export function OrgGradingClientView({
 
   return (
     <div className="space-y-4">
-      {/* =========================================================================
-          THANH BỘ LỌC THEO NGỮ CẢNH (Lớp/Nhóm, Đợt thi, Trạng thái)
-          ========================================================================= */}
-      <div className="p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          {/* Lớp / Không gian học dropdown */}
-          <div className="relative min-w-[180px] sm:min-w-[220px]">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-neutral-500">
-              <GraduationCap className="w-3.5 h-3.5" />
-            </div>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full h-9 pl-9 pr-8 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 appearance-none cursor-pointer"
-            >
-              <option value="">Tất cả Lớp và Nhóm ({classes.length})</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.class_code})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Đợt khảo thí dropdown */}
-          <div className="relative min-w-[180px] sm:min-w-[220px]">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-neutral-500">
-              <Calendar className="w-3.5 h-3.5" />
-            </div>
-            <select
-              value={selectedCampaignId}
-              onChange={(e) => setSelectedCampaignId(e.target.value)}
-              className="w-full h-9 pl-9 pr-8 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 appearance-none cursor-pointer"
-            >
-              <option value="">Tất cả Đợt khảo thí ({campaigns.length})</option>
-              {campaigns.map((camp) => (
-                <option key={camp.id} value={camp.id}>
-                  {camp.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Reset button if active */}
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-750 text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
-              title="Xóa bộ lọc"
-            >
-              <X className="w-3.5 h-3.5" />
-              <span>Xóa bộ lọc</span>
-            </button>
-          )}
-        </div>
-
-        {/* Filter count summary */}
-        <div className="text-xs font-mono text-slate-500 dark:text-neutral-400 shrink-0">
-          Hiển thị <strong className="text-neutral-900 dark:text-neutral-100">{filteredSubmissions.length}</strong> / {submissions.length} bài
-        </div>
-      </div>
-
       {/* Mobile Segmented Navigation Bar (Visible only on < 1024px) */}
       <div className="lg:hidden flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-800 text-xs font-semibold">
         <button
@@ -532,32 +459,21 @@ export function OrgGradingClientView({
         </button>
         <button
           type="button"
-          onClick={() => setMobileTab('evidence')}
+          onClick={() => setMobileTab('detail')}
           className={`flex-1 py-2.5 min-h-[44px] flex items-center justify-center rounded-lg text-center transition cursor-pointer ${
-            mobileTab === 'evidence'
+            mobileTab === 'detail'
               ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
               : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          2. Bài làm {selectedSub ? `(${selectedSub.profiles?.nickname || 'Thành viên'})` : ''}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab('rubric')}
-          className={`flex-1 py-2.5 min-h-[44px] flex items-center justify-center rounded-lg text-center transition cursor-pointer ${
-            mobileTab === 'rubric'
-              ? 'bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 shadow-2xs'
-              : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          3. Chấm điểm
+          2. Thẩm định & Chấm điểm {selectedSub ? `(${selectedSub.profiles?.nickname || 'Thành viên'})` : ''}
         </button>
       </div>
 
-      {/* Main 3-Column Workbench */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-slate-200/90 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-h-[680px]">
+      {/* Main 2-Region Master-Detail Workbench (30% / 70%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 border border-slate-200/90 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-h-[750px]">
         {/* =========================================================================
-            CỘT 1: HÀNG ĐỢI NỘP BÀI (SUBMISSION QUEUE) - 3 cols
+            CỘT TRÁI (30%): HÀNG ĐỢI NỘP BÀI (Queue, Search, Class/Campaign Filters, Status)
             ========================================================================= */}
         <div
           className={`lg:col-span-3 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-slate-50/50 dark:bg-[#0d0d10] ${
@@ -571,8 +487,49 @@ export function OrgGradingClientView({
                 HÀNG ĐỢI NỘP BÀI
               </span>
               <span className="text-xs font-mono tabular-nums text-slate-600 dark:text-neutral-300">
-                {filteredSubmissions.length} bài
+                {filteredSubmissions.length} / {submissions.length} bài
               </span>
+            </div>
+
+            {/* Dropdown filters: Lớp & Đợt thi */}
+            <div className="space-y-2">
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-neutral-500">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                </div>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="w-full h-8 pl-8 pr-7 text-xs font-semibold rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 appearance-none cursor-pointer"
+                >
+                  <option value="">Tất cả Lớp và Nhóm ({classes.length})</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.class_code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {campaigns.length > 0 && (
+                <div className="relative">
+                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-neutral-500">
+                    <Calendar className="w-3.5 h-3.5" />
+                  </div>
+                  <select
+                    value={selectedCampaignId}
+                    onChange={(e) => setSelectedCampaignId(e.target.value)}
+                    className="w-full h-8 pl-8 pr-7 text-xs font-semibold rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-neutral-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-600 appearance-none cursor-pointer"
+                  >
+                    <option value="">Tất cả Đợt khảo thí ({campaigns.length})</option>
+                    {campaigns.map((camp) => (
+                      <option key={camp.id} value={camp.id}>
+                        {camp.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Search */}
@@ -585,7 +542,7 @@ export function OrgGradingClientView({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên thành viên, bài thi..."
+                placeholder="Tìm tên, email, bài thi..."
                 className="w-full h-8 pl-8 pr-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
@@ -612,7 +569,7 @@ export function OrgGradingClientView({
                     : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900'
                 }`}
               >
-                Chờ ({pendingCount})
+                Chờ chấm ({pendingCount})
               </button>
               <button
                 type="button"
@@ -623,13 +580,26 @@ export function OrgGradingClientView({
                     : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900'
                 }`}
               >
-                Duyệt ({evaluatedCount})
+                Đã chấm ({evaluatedCount})
               </button>
             </div>
+
+            {hasActiveFilter && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="px-2 py-0.5 rounded text-[10px] text-slate-500 hover:text-neutral-900 dark:hover:text-white transition inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  <span>Xóa bộ lọc</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Queue Items List */}
-          <div className="flex-1 overflow-y-auto max-h-[600px] lg:max-h-[calc(100vh-280px)]">
+          <div className="flex-1 overflow-y-auto max-h-[600px] lg:max-h-[calc(100vh-280px)] p-2 space-y-1">
             {filteredSubmissions.length === 0 ? (
               <div className="p-8 text-center space-y-2">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mx-auto text-slate-400">
@@ -641,7 +611,7 @@ export function OrgGradingClientView({
                 <p className="text-[11px] text-slate-400 dark:text-neutral-500 leading-relaxed max-w-xs mx-auto">
                   {hasActiveFilter
                     ? 'Không có bài nộp nào phù hợp với bộ lọc hiện tại.'
-                    : 'Chưa có bài thi nào đang chờ chấm. Khi thành viên nộp bài thực hành hoặc tự luận, bài làm sẽ tự động hiển thị tại đây để bạn thẩm định.'}
+                    : 'Chưa có bài thi nào đang chờ chấm.'}
                 </p>
               </div>
             ) : (
@@ -656,12 +626,12 @@ export function OrgGradingClientView({
                     type="button"
                     onClick={() => {
                       setSelectedId(sub.id);
-                      setMobileTab('evidence');
+                      setMobileTab('detail');
                     }}
-                    className={`w-full p-3.5 text-left transition-colors cursor-pointer flex items-start gap-2.5 ${
+                    className={`w-full p-3 rounded-xl text-left transition-colors cursor-pointer flex items-start gap-2.5 ${
                       isSelected
-                        ? 'bg-blue-50/80 dark:bg-blue-950/40 border-l-3 border-blue-600 dark:border-blue-400'
-                        : 'hover:bg-slate-100/60 dark:hover:bg-zinc-900/40'
+                        ? 'bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 shadow-2xs'
+                        : 'hover:bg-slate-100/60 dark:hover:bg-zinc-900/40 border border-transparent'
                     }`}
                   >
                     <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-neutral-300 text-xs font-bold shrink-0 mt-0.5">
@@ -707,7 +677,7 @@ export function OrgGradingClientView({
                                   ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
                                   : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
                               }`}
-                              title={`Trust Score: ${sub.proctoring_summary.trustScore}% - ${sub.proctoring_summary.totalViolations} vi phạm`}
+                              title={`Trust Score: ${sub.proctoring_summary.trustScore}%`}
                             >
                               {sub.proctoring_summary.integrityFlag !== 'HIGH_TRUST' && (
                                 <Flag className="w-2.5 h-2.5 fill-current" />
@@ -735,19 +705,30 @@ export function OrgGradingClientView({
         </div>
 
         {/* =========================================================================
-            CỘT 2: MINH CHỨNG BÀI LÀM (EVIDENCE & DOCUMENT VIEWER) - 5 cols
+            VÙNG PHẢI (70%): KHÔNG GIAN THẨM ĐỊNH CHUYÊN SÂU
+            - Nửa trên: Xem bài làm thực tế (Văn bản tự luận, file đính kèm, link)
+            - Nửa dưới: Bảng chấm điểm Rubric + ô nhận xét + nút 'Nhờ AI chấm gợi ý' + nút 'Phê duyệt điểm'
             ========================================================================= */}
         <div
-          className={`lg:col-span-5 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-white dark:bg-[#111114] ${
-            mobileTab === 'evidence' ? 'block' : 'hidden lg:flex'
+          className={`lg:col-span-7 flex flex-col bg-white dark:bg-[#111114] ${
+            mobileTab === 'detail' ? 'block' : 'hidden lg:flex'
           }`}
         >
           {selectedSub ? (
-            <>
-              {/* Candidate & Test Header */}
-              <div className="p-4 flex items-center justify-between gap-3">
-                <div>
+            <div className="flex-1 flex flex-col">
+              {/* Header: Candidate & Assessment Details */}
+              <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111114]">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
+                    {/* Mobile back button */}
+                    <button
+                      type="button"
+                      onClick={() => setMobileTab('queue')}
+                      className="lg:hidden p-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-500 hover:text-slate-800 transition"
+                      title="Quay lại hàng đợi"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
                       {selectedSub.profiles?.nickname || selectedSub.profiles?.full_name || 'Thành viên'}
                     </h3>
@@ -756,148 +737,100 @@ export function OrgGradingClientView({
                       {selectedSub.profiles?.email || 'N/A'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                    Bài thi:{' '}
+                  <p className="text-xs text-slate-500 dark:text-neutral-400">
+                    Bài khảo thí:{' '}
                     <strong className="text-slate-800 dark:text-neutral-200">
                       {selectedSub.assessments?.title}
                     </strong>
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400 font-mono shrink-0">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="tabular-nums">
-                    {selectedSub.time_spent_seconds
-                      ? `${Math.round(selectedSub.time_spent_seconds / 60)} phút`
-                      : '30 phút'}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400 font-mono">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="tabular-nums">
+                      {selectedSub.time_spent_seconds
+                        ? `${Math.round(selectedSub.time_spent_seconds / 60)} phút`
+                        : '30 phút'}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold ${
+                      selectedSub.status === 'EVALUATED'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                        : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                    }`}
+                  >
+                    {selectedSub.status === 'EVALUATED'
+                      ? `Đã phê duyệt (${selectedSub.total_score}đ)`
+                      : 'Chờ thẩm định'}
                   </span>
                 </div>
               </div>
 
-              {/* Evidence & Answers Content */}
-              <div className="flex-1 p-5 overflow-y-auto space-y-5 max-h-[600px] lg:max-h-[calc(100vh-280px)]">
-                {/* Smart Proctoring & Trust Dossier Card if present */}
+              {/* =====================================================================
+                  NỬA TRÊN: XEM BÀI LÀM THỰC TẾ (Actual Student Work)
+                  ===================================================================== */}
+              <div className="p-4 sm:p-5 overflow-y-auto max-h-[380px] xl:max-h-[420px] space-y-4 bg-slate-50/40 dark:bg-[#0e0e12]">
+                {/* Smart Proctoring Summary if available */}
                 {selectedSub.proctoring_summary && (
-                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#111114] space-y-3">
+                  <div className="p-3.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-2.5 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {selectedSub.proctoring_summary.integrityFlag === 'HIGH_TRUST' ? (
-                          <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                            <ShieldCheck className="w-4 h-4" />
+                          <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <ShieldCheck className="w-3.5 h-3.5" />
                           </div>
                         ) : selectedSub.proctoring_summary.integrityFlag === 'SUSPICIOUS' ? (
-                          <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                            <ShieldAlert className="w-4 h-4" />
+                          <div className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                            <ShieldAlert className="w-3.5 h-3.5" />
                           </div>
                         ) : (
-                          <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                            <AlertTriangle className="w-4 h-4" />
+                          <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-3.5 h-3.5" />
                           </div>
                         )}
-                        <div>
-                          <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                            <span>Bản Ghi Giám Sát Khảo Thí</span>
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                                selectedSub.proctoring_summary.integrityFlag === 'HIGH_TRUST'
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
-                                  : selectedSub.proctoring_summary.integrityFlag === 'SUSPICIOUS'
-                                  ? 'bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300'
-                                  : 'bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
-                              }`}
-                            >
-                              {selectedSub.proctoring_summary.integrityFlag === 'HIGH_TRUST'
-                                ? 'Độ tin cậy cao'
-                                : selectedSub.proctoring_summary.integrityFlag === 'SUSPICIOUS'
-                                ? 'Cần xem xét'
-                                : 'Cảnh báo vi phạm'}
-                            </span>
-                          </h4>
-                          <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                            Điểm tin cậy:{' '}
-                            <strong className="text-neutral-800 dark:text-neutral-200 font-mono">
-                              {selectedSub.proctoring_summary.trustScore}%
-                            </strong>
-                            {' '}&bull; {selectedSub.proctoring_summary.totalViolations} sự kiện vi phạm
-                          </p>
-                        </div>
+                        <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                          Giám sát khảo thí: Trust Score {selectedSub.proctoring_summary.trustScore}%
+                        </span>
+                        <span className="text-[11px] text-slate-400">&bull;</span>
+                        <span className="text-[11px] text-slate-500 dark:text-neutral-400">
+                          {selectedSub.proctoring_summary.totalViolations} sự kiện ghi nhận
+                        </span>
                       </div>
 
                       {selectedSub.proctoring_summary.events && selectedSub.proctoring_summary.events.length > 0 && (
                         <button
                           type="button"
                           onClick={() => setShowProctoringTimeline((prev) => !prev)}
-                          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors text-slate-600 dark:text-neutral-300 flex items-center gap-1 cursor-pointer"
+                          className="px-2 py-0.5 text-[10px] font-semibold rounded-md border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition text-slate-600 dark:text-neutral-300 flex items-center gap-1 cursor-pointer"
                         >
-                          <span>{showProctoringTimeline ? 'Thu gọn' : 'Chi tiết'}</span>
-                          {showProctoringTimeline ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          <span>{showProctoringTimeline ? 'Thu gọn' : 'Chi tiết sự kiện'}</span>
+                          {showProctoringTimeline ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
                       )}
                     </div>
 
-                    {/* Metric mini grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Rời tab/màn hình</span>
-                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
-                          {selectedSub.proctoring_summary.tabSwitchesCount} lần
-                        </strong>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Mất tiêu điểm</span>
-                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
-                          {selectedSub.proctoring_summary.totalTimeOutOfFocusSeconds}s
-                        </strong>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Thoát Fullscreen</span>
-                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
-                          {selectedSub.proctoring_summary.fullscreenExitsCount} lần
-                        </strong>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80">
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 block">Chặn Copy / F12</span>
-                        <strong className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
-                          {selectedSub.proctoring_summary.copyAttemptsCount + selectedSub.proctoring_summary.devtoolsAttemptsCount} lần
-                        </strong>
-                      </div>
-                    </div>
-
-                    {/* Timeline of violation events if expanded */}
-                    {showProctoringTimeline && selectedSub.proctoring_summary.events && selectedSub.proctoring_summary.events.length > 0 && (
-                      <div className="pt-2 space-y-1.5 max-h-48 overflow-y-auto">
-                        <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block mb-1">
-                          Nhật ký sự kiện vi phạm ({selectedSub.proctoring_summary.events.length})
-                        </span>
+                    {showProctoringTimeline && selectedSub.proctoring_summary.events && (
+                      <div className="pt-1.5 space-y-1 max-h-36 overflow-y-auto">
                         {selectedSub.proctoring_summary.events.map((ev, evIdx) => (
                           <div
                             key={ev.id || evIdx}
-                            className="flex items-start justify-between text-[11px] p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-850 gap-2"
+                            className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-850"
                           >
-                            <div className="space-y-0.5">
-                              <span className="font-mono font-semibold text-slate-700 dark:text-neutral-300">
-                                {ev.type === 'TAB_SWITCH'
-                                  ? 'Rời màn hình / Chuyển tab'
-                                  : ev.type === 'FULLSCREEN_EXIT'
-                                  ? 'Thoát chế độ toàn màn hình'
-                                  : ev.type === 'COPY_ATTEMPT'
-                                  ? 'Cố gắng sao chép nội dung'
-                                  : 'Thao tác kiểm tra mã nguồn (DevTools)'}
-                              </span>
-                              {ev.details && (
-                                <p className="text-[10px] text-slate-500 dark:text-neutral-400">{ev.details}</p>
-                              )}
-                            </div>
-                            <div className="text-right shrink-0 font-mono text-[10px] text-slate-400">
-                              <span>
-                                {new Date(ev.timestamp).toLocaleTimeString('vi-VN')}
-                              </span>
-                              {ev.durationSeconds ? (
-                                <span className="block text-amber-600 dark:text-amber-400 font-bold">
-                                  ({ev.durationSeconds}s)
-                                </span>
-                              ) : null}
-                            </div>
+                            <span className="font-semibold text-slate-700 dark:text-neutral-300">
+                              {ev.type === 'TAB_SWITCH'
+                                ? 'Rời màn hình / Chuyển tab'
+                                : ev.type === 'FULLSCREEN_EXIT'
+                                ? 'Thoát toàn màn hình'
+                                : ev.type === 'COPY_ATTEMPT'
+                                ? 'Cố gắng sao chép'
+                                : 'Thao tác kiểm tra mã nguồn'}
+                            </span>
+                            <span className="text-slate-400 font-mono text-[10px]">
+                              {new Date(ev.timestamp).toLocaleTimeString('vi-VN')}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -907,460 +840,328 @@ export function OrgGradingClientView({
 
                 {/* Auto-graded MCQ Banner if present */}
                 {autoMcqAnswers.length > 0 && (
-                  <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-850 bg-emerald-50/60 dark:bg-emerald-950/20 space-y-1">
-                    <div className="flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-200">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Phần Trắc Nghiệm ({autoMcqAnswers.length} câu)</span>
-                      </span>
-                      <span className="font-mono tabular-nums">
-                        Đạt {mcqAutoPoints} / {mcqMaxPoints} điểm
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80 leading-relaxed">
-                      Điểm trắc nghiệm được hệ thống tự động ghi nhận chính xác theo đáp án gốc và được bảo toàn nguyên vẹn khi bạn thẩm định các câu hỏi tự luận/thực hành.
-                    </p>
+                  <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-850 bg-emerald-50/60 dark:bg-emerald-950/20 flex items-center justify-between gap-3 text-xs">
+                    <span className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>Phần Trắc Nghiệm ({autoMcqAnswers.length} câu)</span>
+                    </span>
+                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                      Đạt {mcqAutoPoints} / {mcqMaxPoints} điểm (Hệ thống tự động chấm)
+                    </span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
-                    CÂU HỎI THỰC HÀNH VÀ TỰ LUẬN ({openAnswers.length} câu)
-                  </h4>
-                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
-                    {selectedSub.submission_answers?.length || 0} câu tổng cộng
-                  </span>
-                </div>
+                {/* Open/Practical Question Responses */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
+                      BÀI LÀM THỰC TẾ & TỰ LUẬN ({openAnswers.length} câu)
+                    </h4>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {openAnswers.length} nhiệm vụ cần thẩm định
+                    </span>
+                  </div>
 
-                {openAnswers.length > 0 ? (
-                  openAnswers.map((ans, idx) => {
-                    const rawItem = Array.isArray(ans.assessment_items)
-                      ? ans.assessment_items[0]
-                      : ans.assessment_items;
-                    const maxPts = Number(rawItem?.points) || 20;
+                  {openAnswers.length > 0 ? (
+                    openAnswers.map((ans, idx) => {
+                      const rawItem = Array.isArray(ans.assessment_items)
+                        ? ans.assessment_items[0]
+                        : ans.assessment_items;
+                      const maxPts = Number(rawItem?.points) || 20;
 
-                    return (
-                      <div
-                        key={ans.id}
-                        className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-3"
-                      >
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-neutral-300">
-                          <span className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono text-[10px]">
-                              Câu #{idx + 1}
+                      return (
+                        <div
+                          key={ans.id}
+                          className="p-4 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#111114] space-y-3 shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-neutral-300">
+                            <span className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono text-[10px]">
+                                Câu #{idx + 1}
+                              </span>
+                              <span>{rawItem?.prompt || 'Nhiệm vụ thực hành / tự luận'}</span>
                             </span>
-                            <span>{rawItem?.prompt || 'Nhiệm vụ thực hành / tự luận'}</span>
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500 shrink-0">
-                            Tối đa: {maxPts}đ
+                            <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                              Tối đa: {maxPts}đ
+                            </span>
+                          </div>
+
+                          {ans.text_response ? (
+                            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-xs text-slate-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed font-sans">
+                              {ans.text_response}
+                            </div>
+                          ) : (
+                            <p className="text-xs italic text-slate-400 dark:text-neutral-500">
+                              Thí sinh không nhập văn bản trả lời tự luận.
+                            </p>
+                          )}
+
+                          {ans.evidence_url && (
+                            <div className="pt-1">
+                              <a
+                                href={ans.evidence_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>Xem tệp đính kèm / Liên kết dự án minh chứng</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-6 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl space-y-1.5 bg-white dark:bg-[#111114]">
+                      <FileText className="w-6 h-6 text-slate-400 mx-auto" strokeWidth={1.5} />
+                      <p className="text-xs font-bold text-slate-700 dark:text-neutral-300">
+                        Bài khảo thí 100% trắc nghiệm khách quan
+                      </p>
+                      <p className="text-[11px] text-slate-400 dark:text-neutral-500 max-w-sm mx-auto leading-relaxed">
+                        Toàn bộ các câu hỏi đã được hệ thống tự động chấm điểm ({mcqAutoPoints} điểm). Bạn có thể kiểm tra và phê duyệt kết quả cuối cùng.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* =====================================================================
+                  NỬA DƯỚI: BẢNG CHẤM ĐIỂM RUBRIC + Ô NHẬN XÉT + NÚT AI + NÚT PHÊ DUYỆT
+                  ===================================================================== */}
+              <div className="p-4 sm:p-5 bg-white dark:bg-[#111114] flex-1 flex flex-col justify-between">
+                <form onSubmit={handleApproveGrade} className="space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Cột trái nửa dưới: Bảng điểm Rubric */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
+                          BẢNG ĐIỂM RUBRIC / 100
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-neutral-400 font-mono">
+                          Ngưỡng đạt:{' '}
+                          <strong className="text-slate-800 dark:text-neutral-200">
+                            {passingScoreThreshold}đ
+                          </strong>
+                        </span>
+                      </div>
+
+                      {/* Score Summary Box */}
+                      <div className="p-3.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-900 dark:text-neutral-100">
+                            Tổng điểm thẩm định
+                          </label>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                              isPassing
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                            }`}
+                          >
+                            {isPassing ? 'ĐẠT YÊU CẦU' : 'CHƯA ĐẠT'}
                           </span>
                         </div>
 
-                        {ans.text_response ? (
-                          <div className="p-3 rounded-lg bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 text-xs text-slate-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed font-sans">
-                            {ans.text_response}
-                          </div>
-                        ) : (
-                          <p className="text-xs italic text-slate-400 dark:text-neutral-500">
-                            Không có văn bản trả lời tự luận.
-                          </p>
-                        )}
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
+                            {calculatedTotalScore}
+                          </span>
+                          <span className="text-sm font-bold font-mono text-slate-400 dark:text-neutral-500">
+                            / 100 điểm
+                          </span>
+                        </div>
 
-                        {ans.evidence_url && (
-                          <div className="pt-1">
-                            <a
-                              href={ans.evidence_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>Mở tệp / liên kết minh chứng bài làm</span>
-                            </a>
+                        {autoMcqAnswers.length > 0 && (
+                          <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between pt-1">
+                            <span className="inline-flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>Điểm trắc nghiệm tự động:</span>
+                            </span>
+                            <span className="font-bold">+{mcqAutoPoints} điểm</span>
                           </div>
                         )}
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-8 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl space-y-2">
-                    <FileText
-                      className="w-8 h-8 text-slate-300 dark:text-zinc-600 mx-auto"
-                      strokeWidth={1.5}
-                    />
-                    <p className="text-xs font-bold text-slate-700 dark:text-neutral-300">
-                      Bài thi trắc nghiệm khách quan
-                    </p>
-                    <p className="text-[11px] text-slate-400 dark:text-neutral-500 max-w-xs mx-auto leading-relaxed">
-                      Bài thi này gồm các câu hỏi trắc nghiệm đã được hệ thống tự động chấm điểm ({mcqAutoPoints}đ). Bạn có thể đối soát và điều chỉnh tổng điểm nếu cần.
-                    </p>
-                  </div>
-                )}
 
-                {/* Mobile Next CTA */}
-                <div className="lg:hidden pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setMobileTab('rubric')}
-                    className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                  >
-                    <span>Tiếp tục sang Bảng điểm và Nhận xét</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            /* Workflow Interactive Explainer when no submission is currently chosen */
-            <div className="p-8 my-auto max-w-md mx-auto space-y-6 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 shadow-2xs">
-                <FileText className="w-7 h-7" strokeWidth={1.75} />
-              </div>
+                      {/* Open items scoring rows */}
+                      {openAnswers.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-neutral-500 block">
+                            Điểm từng câu thực hành / tự luận:
+                          </span>
+                          <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                            {openAnswers.map((ans, idx) => {
+                              const rawItem = Array.isArray(ans.assessment_items)
+                                ? ans.assessment_items[0]
+                                : ans.assessment_items;
+                              const maxPts = Number(rawItem?.points) || 20;
+                              const currentScore = openItemScores[ans.item_id] ?? 0;
 
-              <div className="space-y-1.5">
-                <h4 className="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-                  Quy trình thẩm định Bàn chấm bài
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Bàn chấm bài (Grading Workbench) là không gian để giám khảo kiểm tra sản phẩm thực hành số và tự luận của thí sinh theo chuẩn 5 miền.
-                </p>
-              </div>
+                              return (
+                                <div
+                                  key={ans.item_id}
+                                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800"
+                                >
+                                  <span className="text-xs font-semibold text-slate-700 dark:text-neutral-300 truncate">
+                                    Câu #{idx + 1}: {rawItem?.prompt?.slice(0, 32)}...
+                                  </span>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={maxPts}
+                                      step={1}
+                                      value={currentScore}
+                                      onChange={(e) => {
+                                        const val = Math.min(maxPts, Math.max(0, Number(e.target.value)));
+                                        setOpenItemScores((prev) => ({
+                                          ...prev,
+                                          [ans.item_id]: val,
+                                        }));
+                                      }}
+                                      className="w-14 h-7 text-center text-xs font-mono font-bold rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 tabular-nums"
+                                    />
+                                    <span className="text-xs font-mono text-slate-400">/ {maxPts}đ</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-              <div className="space-y-3 text-left pt-1">
-                <div className="p-3.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-md bg-blue-600 text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    1
-                  </span>
-                  <div className="text-xs">
-                    <span className="font-bold text-neutral-800 dark:text-zinc-200">
-                      Thành viên nộp sản phẩm thực hành
-                    </span>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
-                      Tải lên tệp đính kèm (Word, Excel, PDF...) hoặc chia sẻ liên kết trực tuyến (Drive, Figma, GitHub...).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-md bg-blue-600 text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    2
-                  </span>
-                  <div className="text-xs">
-                    <span className="font-bold text-neutral-800 dark:text-zinc-200">
-                      Tiếp nhận vào Hàng đợi tự động
-                    </span>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
-                      Trắc nghiệm được hệ thống tự động chấm 100%, câu thực hành chuyển về hàng đợi để giám khảo thẩm định.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-md bg-blue-600 text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    3
-                  </span>
-                  <div className="text-xs">
-                    <span className="font-bold text-neutral-800 dark:text-zinc-200">
-                      Đối soát Rubric và Phê duyệt điểm
-                    </span>
-                    <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
-                      Giám khảo mở xem file/link sản phẩm, đối chiếu barem hướng dẫn, nhập nhận xét và phê duyệt kết quả.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* =========================================================================
-            CỘT 3: BẢNG ĐIỂM RUBRIC & AI TRỢ LÝ (RUBRIC DESK) - 4 cols
-            ========================================================================= */}
-        <div
-          className={`lg:col-span-4 flex flex-col justify-between bg-slate-50/30 dark:bg-[#0d0d10] p-4 sm:p-5 ${
-            mobileTab === 'rubric' ? 'block' : 'hidden lg:flex'
-          }`}
-        >
-          {selectedSub ? (
-            <form onSubmit={handleApproveGrade} className="space-y-5 flex-1 flex flex-col justify-between">
-              <div className="space-y-4">
-                {/* Desk Header */}
-                <div className="flex items-center justify-between pb-3">
-                  <span className="text-[11px] font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
-                    BẢNG ĐIỂM RUBRIC /100
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-neutral-400 font-mono">
-                    Ngưỡng đạt:{' '}
-                    <strong className="text-slate-800 dark:text-neutral-200">
-                      {passingScoreThreshold}đ
-                    </strong>
-                  </span>
-                </div>
-
-                {/* Score Input Card with breakdown */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-900 dark:text-neutral-100">
-                      Điểm tổng kết cuối cùng
-                    </label>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                        isPassing
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                      }`}
-                    >
-                      {isPassing ? 'ĐẠT YÊU CẦU' : 'CHƯA ĐẠT'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                      {calculatedTotalScore}
-                    </span>
-                    <span className="text-base font-bold font-mono text-slate-400 dark:text-neutral-500">
-                      / 100 điểm
-                    </span>
-                  </div>
-
-                  {/* Score breakdown per question */}
-                  {openAnswers.length > 0 && (
-                    <div className="pt-2 space-y-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-neutral-500 block">
-                        Chấm điểm từng câu thực hành:
-                      </span>
-                      {openAnswers.map((ans, idx) => {
-                        const rawItem = Array.isArray(ans.assessment_items)
-                          ? ans.assessment_items[0]
-                          : ans.assessment_items;
-                        const maxPts = Number(rawItem?.points) || 20;
-                        const currentScore = openItemScores[ans.item_id] ?? 0;
-
-                        return (
-                          <div
-                            key={ans.item_id}
-                            className="flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800"
+                    {/* Cột phải nửa dưới: Trợ lý AI & Nhận xét của Giám khảo */}
+                    <div className="space-y-3">
+                      {/* AI Grading Assistant Box */}
+                      <div className="p-3 rounded-xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-200">
+                            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>Trợ lý AI chấm gợi ý</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleAiSuggest}
+                            disabled={isAiGrading}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-white dark:bg-zinc-900 hover:bg-blue-50 dark:hover:bg-zinc-800 border border-blue-300/80 dark:border-blue-800 rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
                           >
-                            <span className="text-xs font-semibold text-slate-700 dark:text-neutral-300 truncate">
-                              Câu #{idx + 1}
-                            </span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <input
-                                type="number"
-                                min={0}
-                                max={maxPts}
-                                step={1}
-                                value={currentScore}
-                                onChange={(e) => {
-                                  const val = Math.min(maxPts, Math.max(0, Number(e.target.value)));
-                                  setOpenItemScores((prev) => ({
-                                    ...prev,
-                                    [ans.item_id]: val,
-                                  }));
-                                }}
-                                className="w-14 h-8 text-center text-xs font-mono font-bold rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 tabular-nums"
-                              />
-                              <span className="text-xs font-mono text-slate-400">/ {maxPts}đ</span>
+                            {isAiGrading ? (
+                              <>
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <span>Đang phân tích...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3 h-3" />
+                                <span>Nhờ AI chấm gợi ý</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {aiSuggestion && (
+                          <div className="text-xs bg-white dark:bg-[#111114] p-2.5 rounded-lg border border-blue-200 dark:border-blue-900 space-y-2 shadow-2xs">
+                            <div className="flex items-center justify-between font-bold text-neutral-900 dark:text-neutral-100 flex-wrap gap-1">
+                              <span className="text-blue-600 dark:text-blue-400">
+                                AI đề xuất: {aiSuggestion.suggestedScore}/100đ
+                              </span>
+                              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                aiSuggestion.confidence >= 80
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                              }`}>
+                                Độ tin cậy: {aiSuggestion.confidence}%
+                              </span>
+                            </div>
+
+                            {aiSuggestion.feedback && (
+                              <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
+                                <strong className="text-slate-800 dark:text-neutral-200">Gợi ý:</strong> {aiSuggestion.feedback}
+                              </p>
+                            )}
+
+                            <div className="flex justify-end pt-0.5">
+                              <button
+                                type="button"
+                                onClick={handleApplyAiSuggestion}
+                                className="px-2 py-0.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded transition cursor-pointer flex items-center gap-1"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>Áp dụng gợi ý của AI</span>
+                              </button>
                             </div>
                           </div>
-                        );
-                      })}
+                        )}
+                      </div>
+
+                      {/* Feedback Notes */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800 dark:text-neutral-200">
+                          Nhận xét của Giám khảo
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={feedback}
+                          onChange={(e) => setFeedback(e.target.value)}
+                          placeholder="Nhập nhận xét về điểm mạnh hoặc khoảng trống năng lực của bài thi..."
+                          className="w-full p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 resize-none leading-relaxed"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Feedback / Error Alerts */}
+                  {gradeError && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{gradeError}</span>
                     </div>
                   )}
 
-                  {/* Locked MCQ points indicator if test is hybrid */}
-                  {autoMcqAnswers.length > 0 && (
-                    <div className="pt-1 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1">
-                        <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        <span>Đã bao gồm trắc nghiệm:</span>
-                      </span>
-                      <span className="font-bold">+{mcqAutoPoints} điểm</span>
+                  {gradeSuccess && (
+                    <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0" />
+                      <span>{gradeSuccess}</span>
                     </div>
                   )}
-                </div>
 
-                {/* AI Grading Assistant Section */}
-                <div className="p-3.5 rounded-xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-200">
-                      <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                      <span>Trợ lý AI chấm bài</span>
-                    </div>
+                  {/* Primary Approval Action Button */}
+                  <div className="pt-2">
                     <button
-                      type="button"
-                      onClick={handleAiSuggest}
-                      disabled={isAiGrading}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-white dark:bg-zinc-900 hover:bg-blue-100 dark:hover:bg-zinc-800 border border-blue-300/80 dark:border-blue-800 rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+                      type="submit"
+                      disabled={isSubmittingGrade}
+                      className="w-full h-11 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
                     >
-                      {isAiGrading ? (
+                      {isSubmittingGrade ? (
                         <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          <span>Đang phân tích...</span>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Đang lưu kết quả...</span>
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-3 h-3" />
-                          <span>Gợi ý điểm</span>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Phê duyệt điểm ({calculatedTotalScore}/100)</span>
                         </>
                       )}
                     </button>
                   </div>
-
-                  {aiSuggestion && (
-                    <div className="text-xs bg-white dark:bg-[#111114] p-3 rounded-xl border border-blue-200 dark:border-blue-900 space-y-2 shadow-2xs">
-                      {/* HITL Notice Banner */}
-                      <div className="px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[10px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
-                        <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                        <span>BẢN GỢI Ý CHẤM TỪ AI (DRAFT - CHƯA PHÊ DUYỆT)</span>
-                      </div>
-
-                      <div className="flex items-center justify-between font-bold text-neutral-900 dark:text-neutral-100 flex-wrap gap-1">
-                        <span className="text-blue-600 dark:text-blue-400">
-                          Điểm AI đề xuất: {aiSuggestion.suggestedScore} / 100đ
-                        </span>
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                          aiSuggestion.confidence >= 80
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                        }`}>
-                          Độ tin cậy: {aiSuggestion.confidence}%
-                        </span>
-                      </div>
-
-                      {aiSuggestion.evidenceQuote && (
-                        <div className="p-2.5 rounded-lg bg-blue-50/50 dark:bg-blue-950/30 border-l-2 border-blue-500 text-[11px] text-slate-700 dark:text-neutral-300 italic leading-relaxed">
-                          <span className="font-semibold not-italic text-blue-900 dark:text-blue-300 block mb-0.5">
-                            Căn cứ trích dẫn từ bài làm:
-                          </span>
-                          &ldquo;{aiSuggestion.evidenceQuote}&rdquo;
-                        </div>
-                      )}
-
-                      {aiSuggestion.feedback && (
-                        <p className="text-[11px] text-slate-600 dark:text-neutral-400 leading-relaxed">
-                          <strong className="text-slate-800 dark:text-neutral-200">Gợi ý sư phạm:</strong> {aiSuggestion.feedback}
-                        </p>
-                      )}
-
-                      <div className="pt-1 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={handleApplyAiSuggestion}
-                          className="px-2.5 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-lg transition cursor-pointer flex items-center gap-1"
-                        >
-                          <Check className="w-3 h-3" />
-                          <span>Áp dụng gợi ý của AI</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Feedback Notes */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800 dark:text-neutral-200">
-                    Nhận xét và Góp ý của Giám khảo
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    placeholder="Nhập nhận xét về điểm mạnh hoặc khoảng trống năng lực số của bài thi..."
-                    className="w-full p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600 resize-none leading-relaxed"
-                  />
-                </div>
-
-                {/* Error & Success Messages */}
-                {gradeError && (
-                  <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{gradeError}</span>
-                  </div>
-                )}
-
-                {gradeSuccess && (
-                  <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>{gradeSuccess}</span>
-                  </div>
-                )}
+                </form>
               </div>
-
-              {/* Bottom Primary Action Button */}
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={isSubmittingGrade}
-                  className="w-full h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
-                >
-                  {isSubmittingGrade ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang lưu kết quả...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Lưu và Phê Duyệt Kết Quả ({calculatedTotalScore}/100)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+            </div>
           ) : (
-            /* Skeleton Frame for Rubric Desk when no submission is chosen */
-            <div className="space-y-5 flex-1 flex flex-col justify-between">
-              <div className="space-y-5 opacity-70">
-                <div className="flex items-center justify-between pb-3">
-                  <span className="text-[11px] font-mono font-bold tracking-wider text-slate-500 dark:text-neutral-400 uppercase">
-                    BẢNG ĐIỂM RUBRIC /100
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    Ngưỡng đạt: <strong>70đ</strong>
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-500">
-                      Điểm số thẩm định
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-400">
-                      CHỜ CHỌN BÀI
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline gap-2">
-                    <span className="w-24 h-12 text-2xl font-bold font-mono text-center rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-slate-400 flex items-center justify-center">
-                      --
-                    </span>
-                    <span className="text-base font-bold font-mono text-slate-400">
-                      / 100 điểm
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 text-center space-y-1">
-                  <Sparkles className="w-4 h-4 text-slate-400 mx-auto" />
-                  <p className="text-xs font-medium text-slate-500">
-                    Trợ lý AI chấm bài tự động
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Sẵn sàng phân tích và đề xuất điểm số khi bạn chọn một bài nộp.
-                  </p>
-                </div>
+            /* Clean Empty State when no submission is chosen */
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-850 flex items-center justify-center text-slate-400">
+                <FileText className="w-6 h-6" strokeWidth={1.75} />
               </div>
-
-              <div className="pt-4">
-                <button
-                  type="button"
-                  disabled
-                  className="w-full h-10 px-4 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-400 font-semibold text-xs flex items-center justify-center gap-2 cursor-not-allowed"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Chọn một bài nộp để bắt đầu chấm</span>
-                </button>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                  Chưa chọn bài nộp
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm leading-relaxed">
+                  Vui lòng chọn một bài nộp từ hàng đợi bên trái để bắt đầu thẩm định và phê duyệt điểm.
+                </p>
               </div>
             </div>
           )}

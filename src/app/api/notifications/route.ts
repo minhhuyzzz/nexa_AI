@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -15,12 +15,16 @@ export async function GET() {
       return NextResponse.json({ notifications: [] });
     }
 
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam, 10))) : 50;
+
     const { data, error } = await supabase
       .from('user_notifications')
       .select('id, title, message, category, link_url, is_read, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(limit);
 
     if (error) {
       // Table may not exist yet in local mock environments

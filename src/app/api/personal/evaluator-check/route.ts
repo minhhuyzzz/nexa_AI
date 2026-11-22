@@ -12,7 +12,7 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ canGrade: false });
+      return NextResponse.json({ canGrade: false, pendingCount: 0 });
     }
 
     // Check if user owns or evaluates at least one personal group (organization_id IS NULL)
@@ -22,12 +22,60 @@ export async function GET() {
       .is('organization_id', null)
       .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
 
-    if (error) {
-      return NextResponse.json({ canGrade: false });
+    const canGrade = Boolean(!error && count && count > 0);
+
+    // Compute pending assignments count for the learner
+    let pendingCount = 0;
+    try {
+      const { data: memberRows } = await supabase
+        .from('class_members')
+        .select('class_id')
+        .eq('user_id', user.id);
+
+      const { data: managedRows } = await supabase
+        .from('evaluator_classes')
+        .select('id')
+        .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
+
+      const memberClassIds = (memberRows || []).map((m: any) => m.class_id).filter(Boolean);
+      const managedClassIds = (managedRows || []).map((c: any) => c.id).filter(Boolean);
+      const classIds = Array.from(new Set([...memberClassIds, ...managedClassIds]));
+
+      if (classIds.length > 0) {
+        const { data: assignments } = await supabase
+          .from('class_assignments')
+          .select('id, assessment_id')
+          .in('class_id', classIds);
+
+        const assignmentList = (assignments || []).filter((a: any) => Boolean(a.id));
+
+        if (assignmentList.length > 0) {
+          const { data: mySubmissions } = await supabase
+            .from('assessment_submissions')
+            .select('class_assignment_id, assessment_id')
+            .eq('user_id', user.id)
+            .in('status', ['SUBMITTED', 'EVALUATED']);
+
+          const submittedAssignmentIds = new Set(
+            (mySubmissions || []).map((s: any) => s.class_assignment_id).filter(Boolean)
+          );
+          const submittedAssessmentIds = new Set(
+            (mySubmissions || []).map((s: any) => s.assessment_id).filter(Boolean)
+          );
+
+          pendingCount = assignmentList.filter((a: any) => {
+            if (submittedAssignmentIds.has(a.id)) return false;
+            if (a.assessment_id && submittedAssessmentIds.has(a.assessment_id)) return false;
+            return true;
+          }).length;
+        }
+      }
+    } catch {
+      // ignore
     }
 
-    return NextResponse.json({ canGrade: Boolean(count && count > 0) });
+    return NextResponse.json({ canGrade, pendingCount });
   } catch {
-    return NextResponse.json({ canGrade: false });
+    return NextResponse.json({ canGrade: false, pendingCount: 0 });
   }
 }

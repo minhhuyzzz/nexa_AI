@@ -178,4 +178,83 @@ describe('Personal Submissions Workflow (UX v2 - 6 Screens)', () => {
       expect(totalAwarded >= passThreshold).toBe(true);
     });
   });
+
+  describe('Personal and Organization Assignments Mapping & Custom Title Support', () => {
+    it('bảo toàn nhiệm vụ nhóm cá nhân (organization_id = null) và ưu tiên custom_title khi có', () => {
+      const rawAssignments = [
+        {
+          id: 'asg-personal-1',
+          class_id: 'class-p-1',
+          assessment_id: 'asm-1',
+          deadline: '2026-12-01T23:59:00Z',
+          security_settings: { custom_title: 'Kiểm tra giữa kỳ - Kỹ năng số K48' },
+          evaluator_classes: {
+            id: 'class-p-1',
+            name: 'Nhóm Luyện tập Cá nhân A',
+            class_code: 'CLS1234',
+            evaluator_id: 'user-1',
+            organization_id: null,
+            profiles: { nickname: 'Thầy Hưng' },
+          },
+          assessments: {
+            id: 'asm-1',
+            title: 'Bài đánh giá năng lực số cơ bản',
+            passing_score: 70,
+            assessment_items: [{ id: 'item-1', prompt: 'Câu hỏi thực hành 1' }],
+          },
+        },
+        {
+          id: 'asg-org-1',
+          class_id: 'class-org-1',
+          assessment_id: 'asm-2',
+          deadline: '2026-12-05T23:59:00Z',
+          security_settings: {},
+          evaluator_classes: {
+            id: 'class-org-1',
+            name: 'Lớp Chuyên đề CNTT 01',
+            class_code: 'ORG5678',
+            evaluator_id: 'user-2',
+            organization_id: 'org-abc',
+            profiles: { nickname: 'Khoa CNTT' },
+          },
+          assessments: {
+            id: 'asm-2',
+            title: 'Khảo sát an toàn thông tin',
+            passing_score: 70,
+            assessment_items: [{ id: 'item-2', prompt: 'Câu hỏi an toàn thông tin' }],
+          },
+        },
+      ];
+
+      const orgMap = new Map([
+        ['org-abc', { id: 'org-abc', name: 'Đại học Quốc gia', code: 'VNU', slug: 'vnu' }],
+      ]);
+
+      const mapped = rawAssignments.map((ca) => {
+        const cls = ca.evaluator_classes;
+        const orgInfo = cls.organization_id ? orgMap.get(cls.organization_id) : null;
+        const customTitle = (ca.security_settings as any)?.custom_title;
+        return {
+          id: ca.id,
+          title: customTitle || ca.assessments.title,
+          className: cls.name,
+          organizationName: orgInfo?.name || null,
+          isPersonal: cls.organization_id === null,
+        };
+      });
+
+      expect(mapped.length).toBe(2);
+      // Personal class assignment
+      expect(mapped[0].isPersonal).toBe(true);
+      expect(mapped[0].title).toBe('Kiểm tra giữa kỳ - Kỹ năng số K48');
+      expect(mapped[0].className).toBe('Nhóm Luyện tập Cá nhân A');
+      expect(mapped[0].organizationName).toBeNull();
+
+      // Org class assignment
+      expect(mapped[1].isPersonal).toBe(false);
+      expect(mapped[1].title).toBe('Khảo sát an toàn thông tin');
+      expect(mapped[1].className).toBe('Lớp Chuyên đề CNTT 01');
+      expect(mapped[1].organizationName).toBe('Đại học Quốc gia');
+    });
+  });
 });

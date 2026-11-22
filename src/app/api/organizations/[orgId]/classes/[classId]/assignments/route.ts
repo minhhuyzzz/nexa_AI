@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const assignAssessmentSchema = z.object({
   assessmentId: z.string().uuid('ID bài đánh giá không hợp lệ'),
+  customTitle: z.string().optional(),
   startTime: z.string().optional(),
   deadline: z.string().optional(),
   timezone: z.string().default('Asia/Ho_Chi_Minh'),
@@ -144,6 +145,7 @@ export async function POST(
 
     const {
       assessmentId,
+      customTitle,
       startTime,
       deadline,
       timezone,
@@ -183,6 +185,11 @@ export async function POST(
       return NextResponse.json({ error: 'Không tìm thấy đề đánh giá của tổ chức' }, { status: 404 });
     }
 
+    const finalCustomTitle =
+      customTitle?.trim() ||
+      (securitySettings as Record<string, any> | undefined)?.custom_title ||
+      assessment.title;
+
     // Insert or update class assignment record without relying on dropped unique constraint
     const { data: existingAssignment } = await adminSupabase
       .from('class_assignments')
@@ -206,7 +213,10 @@ export async function POST(
       allowed_evidence_types: allowedEvidenceTypes,
       max_evidence_mb: maxEvidenceMb,
       estimated_ai_credits: estimatedAiCredits,
-      security_settings: securitySettings || {},
+      security_settings: {
+        ...(securitySettings || {}),
+        custom_title: finalCustomTitle,
+      },
       status: 'PUBLISHED',
     };
 
@@ -236,9 +246,53 @@ export async function POST(
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
+    // Notify class students about the new assignment
+    try {
+      const { data: members } = await adminSupabase
+        .from('class_members')
+        .select('user_id')
+        .eq('class_id', classId);
+
+      if (members && members.length > 0) {
+        const studentUserIds = members
+          .map((m: any) => m.user_id)
+          .filter((uid: string) => uid && uid !== user.id);
+
+        if (studentUserIds.length > 0) {
+          const deadlineText = deadline
+            ? new Date(deadline).toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : null;
+
+          const notifRecords = studentUserIds.map((uid: string) => ({
+            user_id: uid,
+            title: 'Bài khảo thí mới được giao',
+            message: `Lớp học của bạn có bài khảo thí mới: "${assessment.title}".${
+              deadlineText ? ` Hạn nộp: ${deadlineText}.` : ''
+            }`,
+            category: 'ASSIGNMENT',
+            link_url: `/personal/submissions`,
+            is_read: false,
+          }));
+
+          const notifTable = adminSupabase.from('user_notifications');
+          if (typeof notifTable?.insert === 'function') {
+            await notifTable.insert(notifRecords);
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.warn('Lỗi gửi thông báo giao đề cho học viên:', notifErr);
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Đã giao thành công bài "${assessment.title}" cho lớp học`,
+      message: `Đã giao thành công bài "${finalCustomTitle}" cho lớp học`,
       assignment,
     });
   } catch (err) {

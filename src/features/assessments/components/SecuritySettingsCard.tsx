@@ -21,6 +21,7 @@ interface SecuritySettingsCardProps {
   disabled?: boolean;
   className?: string;
   mode?: 'canonical' | 'proctored' | 'personal';
+  hideSystemNotice?: boolean;
 }
 
 export function SecuritySettingsCard({
@@ -29,6 +30,7 @@ export function SecuritySettingsCard({
   disabled = false,
   className = '',
   mode = 'proctored',
+  hideSystemNotice = false,
 }: SecuritySettingsCardProps) {
   const handleToggle = (key: keyof AssessmentSecuritySettings) => {
     if (disabled) return;
@@ -207,24 +209,26 @@ export function SecuritySettingsCard({
       </div>
 
       {/* 3. Ghi chú bảo mật hoặc cấu hình đề */}
-      <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
-        <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-        <div>
-          {mode === 'personal' ? (
-            <span>
-              <strong>Cài đặt đề thi cá nhân:</strong> Tùy chọn trộn câu hỏi, trộn đáp án và điều hướng làm bài sẽ áp dụng trực tiếp khi bạn tự luyện tập hoặc chia sẻ cho người khác cùng làm đề.
-            </span>
-          ) : mode === 'canonical' ? (
-            <span>
-              <strong>Chế độ khảo thí chuẩn hóa:</strong> Đề chuẩn được tối ưu cho việc tự đánh giá năng lực và học tập rèn luyện. Hệ thống tắt các chế độ giám sát khắt khe của phòng thi để người học có trải nghiệm tập trung, thoải mái nhất.
-            </span>
-          ) : (
-            <span>
-              <span className="font-semibold">Bảo mật tự động của hệ thống:</span> Hệ thống luôn mặc định chặn phím F12, chặn kiểm tra mã nguồn và vô hiệu hóa sao chép văn bản câu hỏi trong suốt thời gian làm bài để bảo vệ ngân hàng đề thi.
-            </span>
-          )}
+      {!hideSystemNotice && (
+        <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
+          <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+          <div>
+            {mode === 'personal' ? (
+              <span>
+                <strong>Cài đặt đề thi cá nhân:</strong> Tùy chọn trộn câu hỏi, trộn đáp án và điều hướng làm bài sẽ áp dụng trực tiếp khi bạn tự luyện tập hoặc chia sẻ cho người khác cùng làm đề.
+              </span>
+            ) : mode === 'canonical' ? (
+              <span>
+                <strong>Chế độ khảo thí chuẩn hóa:</strong> Đề chuẩn được tối ưu cho việc tự đánh giá năng lực và học tập rèn luyện. Hệ thống tắt các chế độ giám sát khắt khe của phòng thi để người học có trải nghiệm tập trung, thoải mái nhất.
+              </span>
+            ) : (
+              <span>
+                <span className="font-semibold">Bảo mật tự động của hệ thống:</span> Hệ thống luôn mặc định chặn phím F12, chặn kiểm tra mã nguồn và vô hiệu hóa sao chép văn bản câu hỏi trong suốt thời gian làm bài để bảo vệ ngân hàng đề thi.
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

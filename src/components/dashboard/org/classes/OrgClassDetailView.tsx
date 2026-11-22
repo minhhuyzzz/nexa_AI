@@ -553,6 +553,7 @@ export function OrgClassDetailView({
                   const totalCount = members.length;
                   const completionPercent = totalCount > 0 ? Math.round((submittedCount / totalCount) * 100) : 0;
                   const isExpanded = Boolean(expandedAssignments[a.id]);
+                  const needsGrading = Boolean(a.hasManualGrading ?? a.requireEvidence);
 
                   const mySub = asgSubmissions.find(
                     (s) => s.userId === currentUserId && s.status !== 'NOT_SUBMITTED'
@@ -572,6 +573,10 @@ export function OrgClassDetailView({
                             <span>Thời lượng: {a.durationMinutes} phút</span>
                             <span>&bull;</span>
                             <span>Điểm đạt: {a.passingScore}%</span>
+                            <span>&bull;</span>
+                            <span className={needsGrading ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-500 dark:text-neutral-400 font-medium'}>
+                              {needsGrading ? 'Tự luận / Thực hành' : '100% Trắc nghiệm'}
+                            </span>
                             <span>&bull;</span>
                             <span>
                               Hạn nộp: {a.deadline ? new Date(a.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
@@ -601,12 +606,21 @@ export function OrgClassDetailView({
                                 <span>Chi tiết đợt thi</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
                               </Link>
-                              <Link
-                                href={`/org/${slug}/grading?classId=${classData.id}`}
-                                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                              >
-                                Chấm bài
-                              </Link>
+                              {needsGrading ? (
+                                <Link
+                                  href={`/org/${slug}/grading?classId=${classData.id}`}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                >
+                                  Chấm bài
+                                </Link>
+                              ) : (
+                                <Link
+                                  href={`/org/${slug}/classes/${classData.id}/assignments/${a.id}`}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                >
+                                  Xem kết quả
+                                </Link>
+                              )}
                               {totalCount > 0 && (
                                 <button
                                   type="button"
@@ -675,11 +689,11 @@ export function OrgClassDetailView({
                             </span>
                           </div>
 
-                          <div className="rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 divide-y divide-slate-100 dark:divide-zinc-800/80 overflow-hidden">
+                          <div className="rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 p-1.5 space-y-1 overflow-hidden">
                             {studentList.map(({ member, submission, hasSubmitted, score, status, submittedAt }) => (
                               <div
                                 key={member.id}
-                                className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-white/70 dark:hover:bg-zinc-900/80 transition"
+                                className="p-2.5 rounded-md flex items-center justify-between gap-3 text-xs bg-white/60 dark:bg-zinc-900/60 hover:bg-white dark:hover:bg-zinc-900 transition"
                               >
                                 <div className="space-y-0.5 min-w-0">
                                   <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
@@ -713,14 +727,23 @@ export function OrgClassDetailView({
                                       >
                                         {status === 'EVALUATED' || (score !== undefined && score !== null)
                                           ? `Đã chấm (${score}%)`
-                                          : 'Chờ chấm'}
+                                          : (needsGrading ? 'Chờ chấm' : 'Đã nộp')}
                                       </span>
-                                      <Link
-                                        href={`/org/${slug}/grading?classId=${classData.id}`}
-                                        className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
-                                      >
-                                        Bàn chấm
-                                      </Link>
+                                      {needsGrading ? (
+                                        <Link
+                                          href={`/org/${slug}/grading?classId=${classData.id}`}
+                                          className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
+                                        >
+                                          Bàn chấm
+                                        </Link>
+                                      ) : (
+                                        <Link
+                                          href={`/org/${slug}/classes/${classData.id}/assignments/${a.id}`}
+                                          className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition"
+                                        >
+                                          Xem kết quả
+                                        </Link>
+                                      )}
                                     </>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded-md text-[10px] font-medium font-mono bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 border border-slate-200 dark:border-zinc-700">

@@ -22,6 +22,7 @@ const evaluatorGradeSchema = z.object({
 
 interface AssessmentJoin {
   id: string;
+  title?: string;
   created_by?: string | null;
   owner_user_id?: string | null;
   organization_id?: string | null;
@@ -78,6 +79,7 @@ export async function POST(request: Request) {
         max_score,
         assessments (
           id,
+          title,
           created_by,
           owner_user_id,
           organization_id,
@@ -287,6 +289,26 @@ export async function POST(request: Request) {
         verified_by: user.id,
         verified_at: new Date().toISOString(),
       });
+    }
+
+    // Notify student about official grade approval
+    if (submission.user_id) {
+      try {
+        const notifTable = adminSupabase.from('user_notifications');
+        if (typeof notifTable?.insert === 'function') {
+          const asmTitle = asm?.title || 'Bài khảo thí';
+          await notifTable.insert({
+            user_id: submission.user_id,
+            title: 'Kết quả khảo thí đã được phê duyệt',
+            message: `Bài thi "${asmTitle}" của bạn đã có kết quả chính thức: ${Number(percentage.toFixed(1))}% (${isPassed ? 'Đạt' : 'Chưa đạt'}).`,
+            category: 'GRADE',
+            link_url: `/personal/submissions?id=${submissionId}`,
+            is_read: false,
+          });
+        }
+      } catch (notifErr) {
+        console.warn('Lỗi ghi nhận thông báo phê duyệt điểm:', notifErr);
+      }
     }
 
     return NextResponse.json({

@@ -210,7 +210,7 @@ export async function POST(
     // 1. Fetch submission with assessment info
     const { data: sub, error: subErr } = await adminSupabase
       .from('assessment_submissions')
-      .select('id, assessment_id, max_score, class_assignment_id, assessments ( organization_id, passing_score )')
+      .select('id, user_id, assessment_id, max_score, class_assignment_id, assessments ( title, organization_id, passing_score )')
       .eq('id', submissionId)
       .single();
 
@@ -219,7 +219,9 @@ export async function POST(
     }
 
     interface SubWithOrg {
-      assessments: { organization_id?: string; passing_score?: number } | null;
+      id: string;
+      user_id?: string;
+      assessments: { title?: string; organization_id?: string; passing_score?: number } | null;
       max_score?: number;
       class_assignment_id?: string | null;
     }
@@ -359,6 +361,27 @@ export async function POST(
       }
     } catch {
       // Non-fatal if ai_evaluations audit update encounters an issue
+    }
+
+    // Insert grade result notification for the student
+    const studentUserId = (updated as any)?.user_id || typedSub.user_id;
+    if (studentUserId) {
+      try {
+        const notifTable = adminSupabase.from('user_notifications');
+        if (typeof notifTable?.insert === 'function') {
+          const assessTitle = typedSub.assessments?.title || 'Bài khảo thí';
+          await notifTable.insert({
+            user_id: studentUserId,
+            title: 'Kết quả khảo thí đã được phê duyệt',
+            message: `Bài thi "${assessTitle}" của bạn đã có kết quả chính thức: ${percentage}% (${isPassed ? 'Đạt' : 'Chưa đạt'}).`,
+            category: 'GRADE',
+            link_url: `/personal/submissions?id=${submissionId}`,
+            is_read: false,
+          });
+        }
+      } catch (notifErr) {
+        console.warn('Lỗi gửi thông báo phê duyệt điểm cho học viên:', notifErr);
+      }
     }
 
     return NextResponse.json({

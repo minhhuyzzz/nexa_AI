@@ -57,6 +57,7 @@ export function PersonalSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [canGrade, setCanGrade] = useState(false);
+  const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState<number>(0);
   const [hoveredTooltip, setHoveredTooltip] = useState<TooltipState | null>(null);
   const { isMobileOpen, closeMobile } = useMobileNav();
 
@@ -83,8 +84,13 @@ export function PersonalSidebar() {
     fetch('/api/personal/evaluator-check')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (isMounted && data?.canGrade) {
-          setCanGrade(true);
+        if (isMounted) {
+          if (data?.canGrade) {
+            setCanGrade(true);
+          }
+          if (typeof data?.pendingCount === 'number') {
+            setPendingAssignmentsCount(data.pendingCount);
+          }
         }
       })
       .catch(() => {});
@@ -129,16 +135,21 @@ export function PersonalSidebar() {
             const Icon = item.icon;
 
             if (collapsed) {
+              const tooltipLabel =
+                item.href === '/personal/submissions' && pendingAssignmentsCount > 0
+                  ? `${item.name} (${pendingAssignmentsCount} bài cần làm)`
+                  : item.name;
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  aria-label={item.name}
-                  title={item.name}
+                  aria-label={tooltipLabel}
+                  title={tooltipLabel}
                   onClick={onItemClick}
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
-                    setHoveredTooltip({ name: item.name, top: rect.top + rect.height / 2 });
+                    setHoveredTooltip({ name: tooltipLabel, top: rect.top + rect.height / 2 });
                   }}
                   onMouseLeave={() => setHoveredTooltip(null)}
                   className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-all duration-150 relative group ${
@@ -153,6 +164,12 @@ export function PersonalSidebar() {
                     }`}
                     strokeWidth={1.75}
                   />
+                  {item.href === '/personal/submissions' && pendingAssignmentsCount > 0 && (
+                    <span
+                      aria-label={`${pendingAssignmentsCount} bài cần làm`}
+                      className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#0A0A0B]"
+                    />
+                  )}
                 </Link>
               );
             }
@@ -175,6 +192,14 @@ export function PersonalSidebar() {
                   strokeWidth={1.75}
                 />
                 <span className="truncate">{item.name}</span>
+                {item.href === '/personal/submissions' && pendingAssignmentsCount > 0 && (
+                  <span
+                    aria-label={`${pendingAssignmentsCount} bài cần làm`}
+                    className="ml-auto inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-600 text-white font-mono tabular-nums leading-none min-w-4"
+                  >
+                    {pendingAssignmentsCount}
+                  </span>
+                )}
               </Link>
             );
           })}

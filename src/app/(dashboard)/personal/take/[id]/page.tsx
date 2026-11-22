@@ -918,7 +918,7 @@ function AssessmentTakeContent({
     setShowConfirmModal(false);
 
     try {
-      // 1. Compute objective score (0.01s instant)
+      // 1. Compute objective score
       let objectiveEarned = 0;
       let totalObjectivePoints = 0;
 
@@ -1523,7 +1523,7 @@ function AssessmentTakeContent({
                     <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
                       {correctCount} / {reviewItems.length}
                     </div>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tự động chấm 0.01s</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Chấm điểm tự động</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 space-y-1">
@@ -1640,7 +1640,7 @@ function AssessmentTakeContent({
                 <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
                   {submittedResult.objectiveScore} / {submittedResult.totalObjectiveScore} đ
                 </div>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tự động chấm 0.01s</span>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Chấm điểm tự động</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-white dark:bg-[#111114] border border-slate-100 dark:border-zinc-800 shadow-xs space-y-1">

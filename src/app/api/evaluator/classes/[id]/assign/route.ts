@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getEffectiveUser } from '@/lib/auth/getEffectiveUser';
 
 const assignAssessmentSchema = z.object({
   assessmentId: z.string().uuid('Mã bài khảo thí không hợp lệ'),
   deadline: z.string().datetime().optional().nullable(),
+  customTitle: z.string().optional().nullable(),
+  shuffleQuestions: z.boolean().optional(),
+  immediateResults: z.boolean().optional(),
+  allowLateSubmission: z.boolean().optional(),
+  securitySettings: z.record(z.any()).optional(),
 });
 
 export async function POST(
@@ -45,7 +51,28 @@ export async function POST(
       );
     }
 
-    const { assessmentId, deadline } = parsed.data;
+    const {
+      assessmentId,
+      deadline,
+      customTitle,
+      shuffleQuestions,
+      immediateResults,
+      allowLateSubmission,
+      securitySettings,
+    } = parsed.data;
+
+    // Fetch assessment title first
+    const { data: assessmentData } = await supabase
+      .from('assessments')
+      .select('title')
+      .eq('id', assessmentId)
+      .single();
+
+    const finalTitle = customTitle?.trim() || assessmentData?.title || 'Bài khảo thí mới';
+    const secSettings = {
+      ...(securitySettings || {}),
+      custom_title: finalTitle,
+    };
 
     // Check if assignment exists
     const { data: existingAssignment } = await supabase
@@ -58,10 +85,18 @@ export async function POST(
     let assignment;
     let assignError;
 
+    const assignmentPayload: Record<string, any> = {
+      deadline: deadline || null,
+      security_settings: secSettings,
+    };
+    if (shuffleQuestions !== undefined) assignmentPayload.shuffle_questions = Boolean(shuffleQuestions);
+    if (immediateResults !== undefined) assignmentPayload.immediate_results = Boolean(immediateResults);
+    if (allowLateSubmission !== undefined) assignmentPayload.allow_late_submission = Boolean(allowLateSubmission);
+
     if (existingAssignment) {
       const res = await supabase
         .from('class_assignments')
-        .update({ deadline: deadline || null })
+        .update(assignmentPayload)
         .eq('id', existingAssignment.id)
         .select()
         .single();
@@ -74,6 +109,10 @@ export async function POST(
           class_id: classId,
           assessment_id: assessmentId,
           deadline: deadline || null,
+          shuffle_questions: Boolean(shuffleQuestions),
+          immediate_results: Boolean(immediateResults),
+          allow_late_submission: Boolean(allowLateSubmission),
+          security_settings: secSettings,
         })
         .select()
         .single();
@@ -86,14 +125,6 @@ export async function POST(
       return NextResponse.json({ error: 'Không thể giao bài khảo thí' }, { status: 500 });
     }
 
-    // Fetch assessment title for notification
-    const { data: assessmentData } = await supabase
-      .from('assessments')
-      .select('title')
-      .eq('id', assessmentId)
-      .single();
-
-    const assessmentTitle = assessmentData?.title || 'Bài khảo thí mới';
     const deadlineText = deadline
       ? new Date(deadline).toLocaleDateString('vi-VN', {
           day: '2-digit',
@@ -110,9 +141,49 @@ export async function POST(
       author_id: currentUser.id,
       post_type: 'SYSTEM',
       title: 'Đã giao bài khảo thí mới',
-      content: `Đã giao bài khảo thí: "${assessmentTitle}". Hạn nộp: ${deadlineText}. Các bạn thành viên vui lòng hoàn thành đúng tiến độ.`,
+      content: `Đã giao bài khảo thí: "${finalTitle}". Hạn nộp: ${deadlineText}. Các bạn thành viên vui lòng hoàn thành đúng tiến độ.`,
       linked_assignment_id: assignment.id,
     });
+
+    // Notify all class members about the new assignment
+    try {
+      let adminClient: any = null;
+      try {
+        adminClient = createAdminClient();
+      } catch {
+        adminClient = supabase;
+      }
+      const db = adminClient || supabase;
+
+      const { data: members } = await db
+        .from('class_members')
+        .select('user_id')
+        .eq('class_id', classId);
+
+      if (members && members.length > 0) {
+        const studentUserIds = members
+          .map((m: any) => m.user_id)
+          .filter((uid: string) => uid && uid !== currentUser.id);
+
+        if (studentUserIds.length > 0) {
+          const notifRecords = studentUserIds.map((uid: string) => ({
+            user_id: uid,
+            title: 'Bài khảo thí mới được giao',
+            message: `Nhóm học của bạn có bài khảo thí mới: "${finalTitle}". Hạn nộp: ${deadlineText}.`,
+            category: 'ASSIGNMENT',
+            link_url: '/personal/submissions',
+            is_read: false,
+          }));
+
+          const notifTable = db.from('user_notifications');
+          if (typeof notifTable?.insert === 'function') {
+            await notifTable.insert(notifRecords);
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.warn('Lỗi ghi nhận thông báo bài tập mới cho nhóm:', notifErr);
+    }
 
     return NextResponse.json({ success: true, assignment });
   } catch (err: unknown) {

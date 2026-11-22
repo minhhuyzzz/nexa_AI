@@ -29,22 +29,38 @@ export async function POST(request: NextRequest) {
     const rawCode = parsed.data.classCode.trim().toUpperCase();
     const cleanCode = rawCode.replace(/[-\s]/g, '');
 
+    const execLookup = async (queryBuilder: any) => {
+      if (typeof queryBuilder?.maybeSingle === 'function') {
+        return await queryBuilder.maybeSingle();
+      }
+      if (typeof queryBuilder?.single === 'function') {
+        try {
+          return await queryBuilder.single();
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      }
+      return { data: null, error: null };
+    };
+
     // 1. Tìm lớp học theo mã class_code (resilient lookup: rawCode, cleanCode, prefixes, legacy hyphenated)
-    const initialLookup = await supabase
-      .from('evaluator_classes')
-      .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
-      .ilike('class_code', rawCode)
-      .maybeSingle();
+    const initialLookup = await execLookup(
+      supabase
+        .from('evaluator_classes')
+        .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
+        .ilike('class_code', rawCode)
+    );
 
     let cls = initialLookup.data;
     const findErr = initialLookup.error;
 
     if (!cls && cleanCode !== rawCode) {
-      const retry = await supabase
-        .from('evaluator_classes')
-        .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
-        .ilike('class_code', cleanCode)
-        .maybeSingle();
+      const retry = await execLookup(
+        supabase
+          .from('evaluator_classes')
+          .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
+          .ilike('class_code', cleanCode)
+      );
       if (retry.data) cls = retry.data;
     }
 
@@ -53,11 +69,12 @@ export async function POST(request: NextRequest) {
       for (const p of prefixes) {
         if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
           const hyp = `${p}-${cleanCode.slice(p.length)}`;
-          const retry = await supabase
-            .from('evaluator_classes')
-            .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
-            .ilike('class_code', hyp)
-            .maybeSingle();
+          const retry = await execLookup(
+            supabase
+              .from('evaluator_classes')
+              .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
+              .ilike('class_code', hyp)
+          );
           if (retry.data) {
             cls = retry.data;
             break;
@@ -70,11 +87,12 @@ export async function POST(request: NextRequest) {
       const match = cleanCode.match(/^([A-Z]+)(\d+)$/);
       if (match) {
         const hyphenated = `${match[1]}-${match[2]}`;
-        const retry = await supabase
-          .from('evaluator_classes')
-          .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
-          .ilike('class_code', hyphenated)
-          .maybeSingle();
+        const retry = await execLookup(
+          supabase
+            .from('evaluator_classes')
+            .select('id, name, class_code, evaluator_id, owner_user_id, organization_id')
+            .ilike('class_code', hyphenated)
+        );
         if (retry.data) {
           cls = retry.data;
         }
@@ -118,6 +136,7 @@ export async function POST(request: NextRequest) {
 
     // 4. Nếu lớp thuộc về một tổ chức (Organization), tự động liên kết thành viên tránh mồ côi vai trò
     let affiliatedOrgName: string | null = null;
+    let affiliatedOrgSlug: string | null = null;
     if (cls.organization_id) {
       try {
         let adminClient: any = null;
@@ -131,12 +150,13 @@ export async function POST(request: NextRequest) {
         if (typeof db.from === 'function') {
           const { data: orgData } = await db
             .from('organizations')
-            .select('id, name, status, max_seats')
+            .select('id, name, slug, status, max_seats')
             .eq('id', cls.organization_id)
-            .maybeSingle?.() || await db.from('organizations').select('id, name, status, max_seats').eq('id', cls.organization_id).single?.();
+            .maybeSingle?.() || await db.from('organizations').select('id, name, slug, status, max_seats').eq('id', cls.organization_id).single?.();
 
           if (orgData) {
             affiliatedOrgName = orgData.name;
+            affiliatedOrgSlug = orgData.slug;
             const uoQuery = db
               .from('user_organizations')
               .select('id, org_role, status')
@@ -183,6 +203,36 @@ export async function POST(request: NextRequest) {
         { error: `Không thể tham gia nhóm: ${insertErr.message}` },
         { status: 500 }
       );
+    }
+
+    // 6. Gửi thông báo cho chủ / quản lý lớp khi có học viên mới nhập mã tham gia
+    const ownerId = cls.owner_user_id || cls.evaluator_id;
+    if (ownerId && ownerId !== currentUser.id) {
+      try {
+        let adminClient: any = null;
+        try {
+          adminClient = createAdminClient();
+        } catch {
+          adminClient = supabase;
+        }
+        const db = adminClient || supabase;
+        if (typeof db?.from === 'function') {
+          const studentIdentifier = (currentUser as any).nickname || (currentUser as any).full_name || currentUser.email || 'Một học viên';
+          const notifTable = db.from('user_notifications');
+          if (typeof notifTable?.insert === 'function') {
+            await notifTable.insert({
+              user_id: ownerId,
+              title: 'Học viên mới tham gia lớp',
+              message: `${studentIdentifier} đã tham gia lớp "${cls.name}" bằng mã truy cập (${cls.class_code}).`,
+              category: 'CAMPAIGN',
+              link_url: cls.organization_id && affiliatedOrgSlug ? `/org/${affiliatedOrgSlug}/classes/${cls.id}` : `/personal/groups`,
+              is_read: false,
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.warn('Lỗi ghi thông báo học viên tham gia lớp:', notifErr);
+      }
     }
 
     const successMessage = affiliatedOrgName

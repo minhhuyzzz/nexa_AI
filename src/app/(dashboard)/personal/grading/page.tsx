@@ -452,10 +452,10 @@ function EvaluatorGradingContent() {
           </div>
         </div>
       ) : (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Left Submissions List Column */}
-        <div className="lg:col-span-1 space-y-3">
-          <div className="p-3 bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-10 border border-slate-200/90 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#111114] shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-h-[750px]">
+        {/* Left Submissions List Column (30%) */}
+        <div className="lg:col-span-3 lg:border-r border-slate-200 dark:border-zinc-800 flex flex-col bg-slate-50/50 dark:bg-[#0d0d10] p-3.5 space-y-3">
+          <div className="p-3 bg-white dark:bg-[#111114] rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-2xs space-y-2.5">
             <div className="relative">
               <Search
                 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -595,8 +595,8 @@ function EvaluatorGradingContent() {
           </div>
         </div>
 
-        {/* Right Split View Main Desk */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* Right Active Evaluation Workspace (70%) */}
+        <div className="lg:col-span-7 flex flex-col bg-white dark:bg-[#111114] p-4 sm:p-5 space-y-5 overflow-y-auto">
           {!activeSubmission ? (
             <div className="p-12 text-center bg-white dark:bg-[#111114] rounded-md border border-slate-200/80 dark:border-zinc-800">
               <CheckSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" strokeWidth={1.5} />
@@ -713,10 +713,10 @@ function EvaluatorGradingContent() {
                 </div>
               )}
 
-              {/* SPLIT VIEW WORKSPACE: 2 COLUMNS */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* UNIFIED WORKSPACE: SUBMISSION & EVIDENCE (TOP) -> RUBRIC & AI (BOTTOM) */}
+              <div className="space-y-5">
                 {/* ============================================================ */}
-                {/* LEFT COLUMN: CANDIDATE SUBMISSION & EVIDENCE */}
+                {/* PHẦN 1: BÀI LÀM VÀ MINH CHỨNG SỐ CỦA THÍ SINH */}
                 {/* ============================================================ */}
                 <div className="space-y-4">
                   {/* Item Prompt / Task Description */}
@@ -835,7 +835,7 @@ function EvaluatorGradingContent() {
                 </div>
 
                 {/* ============================================================ */}
-                {/* RIGHT COLUMN: RUBRIC SCORING & ON-DEMAND AI EVALUATION */}
+                {/* PHẦN 2: BẢNG CHẤM ĐIỂM RUBRIC & TRỢ LÝ KHẢO THÍ AI */}
                 {/* ============================================================ */}
                 <div className="space-y-4">
                   {/* On-Demand AI Assistance Card */}

@@ -51,21 +51,28 @@ function LearnerSubmissionsContent() {
         return;
       }
 
-      // Lấy danh sách lớp người dùng tham gia
+      // Lấy danh sách lớp người dùng tham gia (cả vai trò thành viên lẫn người tạo/quản lý)
       const { data: memberRows } = await supabase
         .from('class_members')
         .select('class_id')
         .eq('user_id', user.id);
 
-      const classIds = (memberRows || []).map((m: any) => m.class_id).filter(Boolean);
+      const { data: managedClasses } = await supabase
+        .from('evaluator_classes')
+        .select('id')
+        .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
 
-      // Nếu không tham gia lớp nào, danh sách trống
+      const memberClassIds = (memberRows || []).map((m: any) => m.class_id).filter(Boolean);
+      const managedClassIds = (managedClasses || []).map((c: any) => c.id).filter(Boolean);
+      const classIds = Array.from(new Set([...memberClassIds, ...managedClassIds]));
+
+      // Nếu không tham gia hoặc sở hữu lớp nào, danh sách trống
       if (classIds.length === 0) {
         setAssignments([]);
         return;
       }
 
-      // Lấy các bài tập được giao cho các lớp này
+      // Lấy các bài tập được giao cho các lớp này (không inner join organizations để bảo toàn bài nhóm cá nhân)
       const { data: assignmentsData } = await supabase
         .from('class_assignments')
         .select(`
@@ -74,14 +81,13 @@ function LearnerSubmissionsContent() {
           assessment_id,
           deadline,
           created_at,
+          security_settings,
           evaluator_classes (
             id,
             name,
             class_code,
             evaluator_id,
-            organization_id,
-            organizations ( id, name, code, slug ),
-            profiles:evaluator_id ( nickname )
+            organization_id
           ),
           assessments (
             id,
@@ -95,6 +101,52 @@ function LearnerSubmissionsContent() {
           )
         `)
         .in('class_id', classIds);
+
+      // Thu thập evaluator_id để lấy nickname người quản lý lớp mà không gặp lỗi schema cache PostgREST
+      const evaluatorIds = Array.from(
+        new Set(
+          (assignmentsData || [])
+            .map((ca: any) => {
+              const cls = Array.isArray(ca.evaluator_classes) ? ca.evaluator_classes[0] : ca.evaluator_classes;
+              return cls?.evaluator_id;
+            })
+            .filter(Boolean)
+        )
+      );
+
+      const evalMap = new Map<string, string>();
+      if (evaluatorIds.length > 0) {
+        const { data: profsData } = await supabase
+          .from('profiles')
+          .select('id, nickname')
+          .in('id', evaluatorIds);
+        (profsData || []).forEach((p: any) => {
+          if (p?.id && p?.nickname) evalMap.set(p.id, p.nickname);
+        });
+      }
+
+      // Thu thập organization_id nếu có để nạp tên tổ chức mà không làm mất bài nhóm cá nhân
+      const orgIds = Array.from(
+        new Set(
+          (assignmentsData || [])
+            .map((ca: any) => {
+              const cls = Array.isArray(ca.evaluator_classes) ? ca.evaluator_classes[0] : ca.evaluator_classes;
+              return cls?.organization_id;
+            })
+            .filter(Boolean)
+        )
+      );
+
+      const orgMap = new Map<string, any>();
+      if (orgIds.length > 0) {
+        const { data: orgsData } = await supabase
+          .from('organizations')
+          .select('id, name, code, slug')
+          .in('id', orgIds);
+        (orgsData || []).forEach((o: any) => {
+          if (o?.id) orgMap.set(o.id, o);
+        });
+      }
 
       // Lấy các đợt khảo thí (assessment_campaigns) được giao cho các lớp này
       const { data: campaignsData } = await supabase
@@ -165,12 +217,12 @@ function LearnerSubmissionsContent() {
 
       const mapped: PersonalSubmissionItem[] = (assignmentsData || []).map((ca: any) => {
         const cls = Array.isArray(ca.evaluator_classes) ? ca.evaluator_classes[0] : ca.evaluator_classes;
-        const orgInfo = Array.isArray(cls?.organizations) ? cls.organizations[0] : cls?.organizations;
+        const orgInfo = cls?.organization_id ? orgMap.get(cls.organization_id) : null;
         const asm = Array.isArray(ca.assessments) ? ca.assessments[0] : ca.assessments;
         const items = asm?.assessment_items || [];
         const firstItem = items[0];
 
-        const existingSub = subByAssignmentId.get(ca.id);
+        const existingSub = subByAssignmentId.get(ca.id) || subByAssessmentId.get(ca.assessment_id);
 
         const isGraded =
           existingSub &&
@@ -245,7 +297,7 @@ function LearnerSubmissionsContent() {
           submittedAtFormatted = `${d}/${m}/${y} · ${hr}:${min}`;
         }
 
-        const evaluatorNickname = orgInfo?.name || cls?.profiles?.nickname || 'Người phụ trách lớp';
+        const evaluatorNickname = (cls?.evaluator_id ? evalMap.get(cls.evaluator_id) : null) || orgInfo?.name || 'Người phụ trách lớp';
         const passingThreshold = Number(asm?.passing_score) || 70;
         const isPassed = existingSub?.is_passed !== null && existingSub?.is_passed !== undefined
           ? existingSub.is_passed
@@ -253,11 +305,13 @@ function LearnerSubmissionsContent() {
             ? Number(existingSub.total_score) >= passingThreshold
             : undefined);
 
+        const customTitle = (ca.security_settings as any)?.custom_title;
+
         return {
           id: ca.id,
           assessmentId: ca.assessment_id,
           itemId: firstItem?.id,
-          title: asm?.title || 'Nhiệm vụ thực hành',
+          title: customTitle || asm?.title || 'Nhiệm vụ thực hành',
           className: cls?.name || 'Lớp học',
           classCode: cls?.class_code || '',
           evaluatorName: evaluatorNickname,

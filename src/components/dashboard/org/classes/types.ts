@@ -62,6 +62,7 @@ export interface ClassAssignmentItem {
   estimatedAiCredits: number;
   status: 'PUBLISHED' | 'DRAFT' | 'CLOSED';
   createdAt: string;
+  hasManualGrading?: boolean;
 }
 
 export interface OrgClassSubmissionItem {

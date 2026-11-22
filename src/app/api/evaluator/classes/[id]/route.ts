@@ -42,6 +42,10 @@ export async function GET(
           assessment_id,
           deadline,
           created_at,
+          shuffle_questions,
+          immediate_results,
+          allow_late_submission,
+          security_settings,
           assessments ( id, title, duration_minutes, passing_score )
         )
       `)

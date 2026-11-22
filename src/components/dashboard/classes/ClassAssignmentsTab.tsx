@@ -60,6 +60,10 @@ interface AssignmentItem {
   assessment_id: string;
   deadline?: string | null;
   created_at?: string;
+  shuffle_questions?: boolean;
+  immediate_results?: boolean;
+  allow_late_submission?: boolean;
+  security_settings?: any;
   assessments?: {
     id: string;
     title: string;
@@ -114,7 +118,11 @@ export function ClassAssignmentsTab({
   // Assign Modal
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
+  const [customTitle, setCustomTitle] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [shuffleQuestions, setShuffleQuestions] = useState(true);
+  const [immediateResults, setImmediateResults] = useState(false);
+  const [allowLateSubmission, setAllowLateSubmission] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
 
@@ -174,7 +182,7 @@ export function ClassAssignmentsTab({
               score,
               submittedAt: matchedSub?.submitted_at || undefined,
               assignmentId: asg.id,
-              assignmentTitle: asg.assessments?.title || 'Bài khảo thí',
+              assignmentTitle: (asg.security_settings as any)?.custom_title || asg.assessments?.title || 'Bài khảo thí',
             });
           });
         });
@@ -200,6 +208,14 @@ export function ClassAssignmentsTab({
     fetchData();
   }, [fetchData]);
 
+  const handleSelectAssessment = (id: string) => {
+    setSelectedAssessmentId(id);
+    const chosen = availableAssessments.find((a) => a.id === id);
+    if (chosen) {
+      setCustomTitle(chosen.title);
+    }
+  };
+
   const handleAssignSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAssignError(null);
@@ -208,6 +224,9 @@ export function ClassAssignmentsTab({
       return;
     }
 
+    const chosen = availableAssessments.find((a) => a.id === selectedAssessmentId);
+    const finalTitle = customTitle.trim() || chosen?.title || 'Bài khảo thí';
+
     try {
       setIsAssigning(true);
       const res = await fetch(`/api/evaluator/classes/${classId}/assign`, {
@@ -215,14 +234,25 @@ export function ClassAssignmentsTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           assessmentId: selectedAssessmentId,
+          customTitle: finalTitle,
           deadline: deadline ? new Date(deadline).toISOString() : null,
+          shuffleQuestions,
+          immediateResults,
+          allowLateSubmission,
+          securitySettings: {
+            custom_title: finalTitle,
+          },
         }),
       });
 
       if (res.ok) {
         setShowAssignModal(false);
         setSelectedAssessmentId('');
+        setCustomTitle('');
         setDeadline('');
+        setShuffleQuestions(true);
+        setImmediateResults(false);
+        setAllowLateSubmission(true);
         setToastMessage('Đã giao bài khảo thí vào nhóm thành công!');
         setTimeout(() => setToastMessage(null), 3000);
         fetchData();
@@ -358,7 +388,7 @@ export function ClassAssignmentsTab({
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" strokeWidth={1.75} />
                       <h4 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 truncate">
-                        {asm?.title || 'Bài khảo thí'}
+                        {(asg.security_settings as any)?.custom_title || asm?.title || 'Bài khảo thí'}
                       </h4>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-neutral-400 flex-wrap">
@@ -547,12 +577,12 @@ export function ClassAssignmentsTab({
               <form onSubmit={handleAssignSubmit} className="space-y-4 text-xs">
                 <div>
                   <label className="font-semibold text-neutral-800 dark:text-zinc-200 block mb-1.5">
-                    Chọn bài khảo thí từ kho đề của bạn *
+                    Chọn bài khảo thí từ kho đề của bạn <span className="text-red-500">*</span>
                   </label>
                   <select
                     required
                     value={selectedAssessmentId}
-                    onChange={(e) => setSelectedAssessmentId(e.target.value)}
+                    onChange={(e) => handleSelectAssessment(e.target.value)}
                     className="w-full px-3 py-2.5 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 font-sans"
                   >
                     <option value="">-- Chọn đề từ kho cá nhân ({availableAssessments.length} đề) --</option>
@@ -569,6 +599,23 @@ export function ClassAssignmentsTab({
 
                 <div>
                   <label className="font-semibold text-neutral-800 dark:text-zinc-200 block mb-1.5">
+                    Tiêu đề đợt thi / Bài kiểm tra <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    placeholder="Nhập tiêu đề hiển thị cho đợt thi..."
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-blue-600 font-sans"
+                  />
+                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
+                    Tùy biến tiêu đề đợt thi để thành viên dễ nhận biết thay vì bắt buộc dùng tên gốc của đề.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-neutral-800 dark:text-zinc-200 block mb-1.5">
                     Hạn nộp bài (Tùy chọn)
                   </label>
                   <input
@@ -580,6 +627,65 @@ export function ClassAssignmentsTab({
                   <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
                     Để trống nếu không giới hạn thời gian nộp bài.
                   </span>
+                </div>
+
+                {/* Tùy chọn thi (đầy đủ như bên Org) */}
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                    Tùy chọn thi
+                  </div>
+                  <div className="space-y-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 p-3 bg-slate-50/50 dark:bg-zinc-900/60">
+                    <label className="flex items-center justify-between cursor-pointer py-0.5">
+                      <div>
+                        <div className="font-medium text-neutral-900 dark:text-neutral-100 text-xs">
+                          Xáo trộn thứ tự câu hỏi
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400">
+                          Tự động thay đổi thứ tự câu hỏi ngẫu nhiên cho từng thành viên
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={shuffleQuestions}
+                        onChange={(e) => setShuffleQuestions(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-zinc-700 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer py-0.5">
+                      <div>
+                        <div className="font-medium text-neutral-900 dark:text-neutral-100 text-xs">
+                          Hiển thị kết quả ngay sau khi nộp
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400">
+                          Cho phép thành viên xem điểm số và báo cáo ngay khi hoàn thành bài
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={immediateResults}
+                        onChange={(e) => setImmediateResults(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-zinc-700 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer py-0.5">
+                      <div>
+                        <div className="font-medium text-neutral-900 dark:text-neutral-100 text-xs">
+                          Cho phép nộp muộn
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-neutral-400">
+                          Chấp nhận bài nộp sau hạn chót (hệ thống sẽ tự động gắn nhãn &quot;Nộp muộn&quot;)
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={allowLateSubmission}
+                        onChange={(e) => setAllowLateSubmission(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-zinc-700 cursor-pointer"
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="pt-2 flex items-center justify-end gap-2.5">

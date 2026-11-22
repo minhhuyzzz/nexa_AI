@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Bell, CheckCheck, Award, MessageSquare, BookOpen, Clock, X } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Bell, CheckCheck, Award, MessageSquare, BookOpen, Clock, X, ArrowRight } from 'lucide-react';
 
 interface NotificationItem {
   id: string;
@@ -17,9 +17,15 @@ interface NotificationItem {
 
 export function NotificationBell() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const orgMatch = pathname ? pathname.match(/^\/org\/([^/]+)/) : null;
+  const allNotificationsHref = orgMatch
+    ? `/org/${orgMatch[1]}/notifications`
+    : '/personal/notifications';
 
   const fetchServerNotifications = async () => {
     try {
@@ -192,6 +198,18 @@ export function NotificationBell() {
                 </div>
               ))
             )}
+          </div>
+
+          {/* View all notifications link */}
+          <div className="p-1 pt-1.5">
+            <Link
+              href={allNotificationsHref}
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer text-center"
+            >
+              <span>Xem tất cả thông báo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       )}

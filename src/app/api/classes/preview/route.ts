@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
       evaluator_id,
       created_at,
       organization_id,
-      profiles:evaluator_id ( id, nickname, avatar_url ),
       organizations ( id, name, slug )
     `;
 
@@ -108,7 +107,15 @@ export async function GET(request: NextRequest) {
       isMember = Boolean(memberRow);
     }
 
-    const evalProfile = Array.isArray(cls.profiles) ? cls.profiles[0] : cls.profiles;
+    let evalProfile: { id: string; nickname?: string | null; avatar_url?: string | null } | null = null;
+    if (cls.evaluator_id) {
+      const { data: prof } = await adminClient
+        .from('profiles')
+        .select('id, nickname, avatar_url')
+        .eq('id', cls.evaluator_id)
+        .maybeSingle();
+      evalProfile = prof;
+    }
 
     return NextResponse.json({
       success: true,

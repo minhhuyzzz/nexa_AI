@@ -53,10 +53,12 @@ export function AssignAssessmentModal({
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
     assessmentsList[0]?.id || ''
   );
+  const [customTitle, setCustomTitle] = useState<string>('');
 
   useEffect(() => {
     if (!selectedAssessmentId && assessmentsList.length > 0) {
       setSelectedAssessmentId(assessmentsList[0].id);
+      setCustomTitle(assessmentsList[0].title);
     }
   }, [assessmentsList, selectedAssessmentId]);
 
@@ -83,10 +85,24 @@ export function AssignAssessmentModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const currentAssessment =
     assessmentsList.find((a) => a.id === selectedAssessmentId) || assessmentsList[0];
+
+  useEffect(() => {
+    if (isOpen && currentAssessment?.title && !customTitle) {
+      setCustomTitle(currentAssessment.title);
+    }
+  }, [isOpen, currentAssessment?.title, customTitle]);
+
+  if (!isOpen) return null;
+
+  const handleAssessmentChange = (newId: string) => {
+    setSelectedAssessmentId(newId);
+    const found = assessmentsList.find((a) => a.id === newId);
+    if (found) {
+      setCustomTitle(found.title);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!currentAssessment) {
@@ -105,9 +121,12 @@ export function AssignAssessmentModal({
       return;
     }
 
+    const finalTitle = customTitle.trim() || currentAssessment.title;
+
     try {
       const payload = {
         assessmentId: currentAssessment.id,
+        customTitle: finalTitle,
         startTime: startDateTime,
         deadline: deadlineDateTime,
         timezone: 'Asia/Ho_Chi_Minh',
@@ -120,7 +139,10 @@ export function AssignAssessmentModal({
         allowedEvidenceTypes: [],
         maxEvidenceMb: 10,
         estimatedAiCredits: 0,
-        securitySettings,
+        securitySettings: {
+          ...securitySettings,
+          custom_title: finalTitle,
+        },
       };
 
       const res = await fetch(
@@ -217,28 +239,47 @@ export function AssignAssessmentModal({
               </div>
             )}
 
-            {/* 1. Chọn đề */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                Đề khảo thí nội bộ <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedAssessmentId}
-                onChange={(e) => setSelectedAssessmentId(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md text-neutral-900 dark:text-neutral-100 text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-              >
-                {assessmentsList.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.title} ({a.durationMinutes} phút - {a.questionCount} câu)
-                  </option>
-                ))}
-              </select>
+            {/* 1. Chọn đề & Tiêu đề đợt thi */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+                  Đề khảo thí nội bộ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedAssessmentId}
+                  onChange={(e) => handleAssessmentChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md text-neutral-900 dark:text-neutral-100 text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                >
+                  {assessmentsList.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.title} ({a.durationMinutes} phút - {a.questionCount} câu)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+                  Tiêu đề đợt thi / Bài kiểm tra <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  placeholder="Nhập tiêu đề hiển thị cho đợt thi..."
+                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md text-neutral-900 dark:text-neutral-100 text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-sans"
+                />
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
+                  Bạn có thể tùy biến tiêu đề đợt thi để học viên dễ nhận biết thay vì bắt buộc dùng tên gốc của đề.
+                </p>
+              </div>
 
               {currentAssessment && (
                 <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs">
                   <div className="space-y-0.5">
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                      {currentAssessment.title}
+                      Đề gốc: {currentAssessment.title}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-neutral-400">
                       Thời lượng: <span className="font-mono tabular-nums">{currentAssessment.durationMinutes}</span> phút • Quy mô: <span className="font-mono tabular-nums">{currentAssessment.questionCount}</span> câu hỏi
@@ -393,6 +434,7 @@ export function AssignAssessmentModal({
                     value={securitySettings}
                     onChange={setSecuritySettings}
                     disabled={loading}
+                    hideSystemNotice={true}
                   />
                 </div>
               )}
