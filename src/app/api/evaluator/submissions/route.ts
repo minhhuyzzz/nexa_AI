@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function GET(req: Request) {
   try {
@@ -17,9 +18,12 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get('groupId') || searchParams.get('classId');
+    const assessmentId = searchParams.get('assessmentId');
+
+    const adminSupabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
 
     // 2. Fetch personal classes owned or evaluated by this user (strictly isolated from organization classes)
-    const { data: rawClasses } = await supabase
+    const { data: rawClasses } = await adminSupabase
       .from('evaluator_classes')
       .select(`
         id,
@@ -30,10 +34,17 @@ export async function GET(req: Request) {
       .is('organization_id', null)
       .or(`evaluator_id.eq.${user.id},owner_user_id.eq.${user.id}`);
 
+    const classesList = (rawClasses || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      code: c.class_code,
+    }));
+
     if (!rawClasses || rawClasses.length === 0) {
       return NextResponse.json({
         submissions: [],
         classes: [],
+        assessments: [],
       });
     }
 
@@ -59,16 +70,13 @@ export async function GET(req: Request) {
     if (filterUserIds.length === 0) {
       return NextResponse.json({
         submissions: [],
-        classes: (rawClasses || []).map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          code: c.class_code,
-        })),
+        classes: classesList,
+        assessments: [],
       });
     }
 
     // 4. Fetch submissions (latest first, strictly isolate personal from organization)
-    const subQuery = supabase
+    let subQuery = adminSupabase
       .from('assessment_submissions')
       .select(`
         id,
@@ -86,17 +94,20 @@ export async function GET(req: Request) {
         time_spent_seconds,
         submitted_at,
         created_at,
-        assessments!inner (
+        assessments (
           id,
           title,
           passing_score,
           organization_id
         )
       `)
-      .is('assessments.organization_id', null)
       .in('user_id', filterUserIds)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
+
+    if (assessmentId) {
+      subQuery = subQuery.eq('assessment_id', assessmentId);
+    }
 
     const { data: rawSubmissions, error: subError } = await subQuery;
 
@@ -105,14 +116,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Không thể tải danh sách bài làm' }, { status: 500 });
     }
 
+    // Collect unique assessments for filter dropdown
+    const asmMap = new Map<string, { id: string; title: string }>();
+    (rawSubmissions || []).forEach((s: any) => {
+      const asm = Array.isArray(s.assessments) ? s.assessments[0] : s.assessments;
+      if (asm?.id && asm?.title) {
+        asmMap.set(asm.id, { id: asm.id, title: asm.title });
+      }
+    });
+    const assessmentsList = Array.from(asmMap.values());
+
     if (!rawSubmissions || rawSubmissions.length === 0) {
       return NextResponse.json({
         submissions: [],
-        classes: (rawClasses || []).map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          code: c.class_code,
-        })),
+        classes: classesList,
+        assessments: assessmentsList,
       });
     }
 
@@ -319,6 +337,7 @@ export async function GET(req: Request) {
       return {
         id: sub.id,
         userId: sub.user_id,
+        assessmentId: sub.assessment_id,
         candidateName: candidateProfile?.full_name || 'Học viên ẩn danh',
         candidateEmail: candidateProfile?.email || 'N/A',
         assessmentTitle: rawAssessment?.title || 'Bài đánh giá năng lực số',
@@ -343,11 +362,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       submissions: formattedSubmissions,
-      classes: (rawClasses || []).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        code: c.class_code,
-      })),
+      classes: classesList,
+      assessments: assessmentsList,
     });
   } catch (err) {
     console.error('Unexpected error in evaluator submissions:', err);

@@ -91,6 +91,7 @@ interface SubmissionItem {
 interface CandidateSubmission {
   id: string;
   userId: string;
+  assessmentId: string;
   candidateName: string;
   candidateEmail: string;
   assessmentTitle: string;
@@ -126,12 +127,15 @@ interface SelectedCriterionScore {
 
 function EvaluatorGradingContent() {
   const searchParams = useSearchParams();
-  const initialGroupId = searchParams.get('groupId') || '';
+  const initialGroupId = searchParams.get('groupId') || searchParams.get('classId') || '';
+  const initialAssessmentId = searchParams.get('assessmentId') || '';
   const initialSubId = searchParams.get('submissionId') || null;
 
   const [submissions, setSubmissions] = useState<CandidateSubmission[]>([]);
   const [classes, setClasses] = useState<GroupOption[]>([]);
+  const [assessments, setAssessments] = useState<Array<{ id: string; title: string }>>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId);
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(initialAssessmentId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -181,14 +185,16 @@ function EvaluatorGradingContent() {
     }
   };
 
-  const fetchSubmissions = useCallback(async (grpId?: string) => {
+  const fetchSubmissions = useCallback(async (grpId?: string, asmId?: string) => {
     setLoading(true);
     setError(null);
     try {
       const activeGroup = grpId !== undefined ? grpId : selectedGroupId;
-      const url = activeGroup
-        ? `/api/evaluator/submissions?groupId=${encodeURIComponent(activeGroup)}`
-        : '/api/evaluator/submissions';
+      const activeAsm = asmId !== undefined ? asmId : selectedAssessmentId;
+      const params = new URLSearchParams();
+      if (activeGroup) params.set('groupId', activeGroup);
+      if (activeAsm) params.set('assessmentId', activeAsm);
+      const url = `/api/evaluator/submissions${params.toString() ? `?${params.toString()}` : ''}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -196,6 +202,9 @@ function EvaluatorGradingContent() {
         setSubmissions(list);
         if (data.classes) {
           setClasses(data.classes);
+        }
+        if (data.assessments) {
+          setAssessments(data.assessments);
         }
         if (list.length > 0) {
           if (!selectedSubId || !list.some((s) => s.id === selectedSubId)) {
@@ -212,12 +221,12 @@ function EvaluatorGradingContent() {
     } finally {
       setLoading(false);
     }
-  }, [selectedGroupId, selectedSubId]);
+  }, [selectedGroupId, selectedAssessmentId, selectedSubId]);
 
   useEffect(() => {
-    fetchSubmissions(selectedGroupId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch on group change
-  }, [selectedGroupId]);
+    fetchSubmissions(selectedGroupId, selectedAssessmentId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch on group or assessment change
+  }, [selectedGroupId, selectedAssessmentId]);
 
   // Current active submission and item
   const activeSubmission = submissions.find((s) => s.id === selectedSubId) || submissions[0];
@@ -377,7 +386,9 @@ function EvaluatorGradingContent() {
     const matchesSearch =
       sub.candidateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sub.candidateEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.assessmentTitle.toLowerCase().includes(searchQuery.toLowerCase());
+      sub.assessmentTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (sub.groupName && sub.groupName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (sub.groupCode && sub.groupCode.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -444,20 +455,39 @@ function EvaluatorGradingContent() {
             </div>
 
             {/* Group Selector Dropdown */}
-            {classes.length > 0 && (
+            <div>
+              <select
+                value={selectedGroupId}
+                onChange={(e) => {
+                  const newGrp = e.target.value;
+                  setSelectedGroupId(newGrp);
+                }}
+                className="w-full p-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl text-neutral-800 dark:text-zinc-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+              >
+                <option value="">Tất cả Lớp và Nhóm ({classes.length})</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name} ({cls.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Assessment Selector Dropdown */}
+            {assessments.length > 0 && (
               <div>
                 <select
-                  value={selectedGroupId}
+                  value={selectedAssessmentId}
                   onChange={(e) => {
-                    const newGrp = e.target.value;
-                    setSelectedGroupId(newGrp);
+                    const newAsm = e.target.value;
+                    setSelectedAssessmentId(newAsm);
                   }}
-                  className="w-full p-1.5 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-md text-neutral-800 dark:text-zinc-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  className="w-full p-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl text-neutral-800 dark:text-zinc-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium truncate"
                 >
-                  <option value="">-- Tất cả các nhóm --</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name} ({cls.code})
+                  <option value="">Tất cả Đề đánh giá ({assessments.length})</option>
+                  {assessments.map((asm) => (
+                    <option key={asm.id} value={asm.id}>
+                      {asm.title}
                     </option>
                   ))}
                 </select>
@@ -723,7 +753,65 @@ function EvaluatorGradingContent() {
               )}
 
               {/* UNIFIED WORKSPACE: SUBMISSION & EVIDENCE (TOP) -> RUBRIC & AI (BOTTOM) */}
-              <div className="space-y-5">
+              {activeSubmission.items.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-white dark:bg-[#111114] border border-slate-200/80 dark:border-zinc-800 shadow-2xs space-y-5">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                      <CheckCircle2 className="w-5 h-5" strokeWidth={1.75} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        Bài khảo thí trắc nghiệm đã được hệ thống tự động chấm điểm 100%
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+                        Đề thi sử dụng câu hỏi trắc nghiệm khách quan. Hệ thống đối soát đáp án chuẩn và tự động tính điểm ngay khi thí sinh hoàn thành, không có câu tự luận chờ chấm thủ công.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-slate-50/70 dark:bg-zinc-900/50 border border-slate-100 dark:border-zinc-800">
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-neutral-400">ĐIỂM ĐẠT ĐƯỢC</div>
+                      <div className="text-base font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-0.5">
+                        {activeSubmission.totalScore.toFixed(1)} / {activeSubmission.maxScore} đ
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-neutral-400">TỶ LỆ KẾT QUẢ</div>
+                      <div className="text-base font-bold font-mono text-blue-600 dark:text-blue-400 mt-0.5">
+                        {activeSubmission.percentage.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-neutral-400">KẾT QUẢ</div>
+                      <div className="text-xs font-bold mt-1">
+                        {activeSubmission.isPassed ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">Đạt chuẩn (≥ 70%)</span>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400">Cần bồi dưỡng (&lt; 70%)</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-neutral-400">THỜI GIAN LÀM</div>
+                      <div className="text-xs font-mono text-neutral-700 dark:text-zinc-300 mt-1">
+                        {Math.floor(activeSubmission.timeSpentSeconds / 60)} phút {activeSubmission.timeSpentSeconds % 60}s
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <Link
+                      href={`/personal/assessments/${activeSubmission.assessmentId}/result?submissionId=${activeSubmission.id}&classId=${activeSubmission.groupId || ''}`}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Xem toàn bộ câu hỏi và đáp án bài làm của thí sinh</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-5">
                 {/* ============================================================ */}
                 {/* PHẦN 1: BÀI LÀM VÀ MINH CHỨNG SỐ CỦA THÍ SINH */}
                 {/* ============================================================ */}
@@ -1053,12 +1141,13 @@ function EvaluatorGradingContent() {
                   </div>
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default function EvaluatorGradingPage() {

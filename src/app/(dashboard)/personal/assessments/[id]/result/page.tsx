@@ -2,6 +2,7 @@ import { use } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Clock, ArrowRight } from 'lucide-react';
 import {
   AssessmentResultClientView,
@@ -34,37 +35,99 @@ export default async function AssessmentResultPage({
   }
 
   // 1. Fetch submission data
-  let submissionQuery = supabase
-    .from('assessment_submissions')
-    .select(`
-      id,
-      total_score,
-      max_score,
-      percentage,
-      points_awarded,
-      is_passed,
-      time_spent_seconds,
-      submitted_at,
-      assessments (
-        id,
-        title,
-        passing_score,
-        duration_minutes
-      )
-    `)
-    .eq('user_id', user.id);
+  let submission: any = null;
+  let isEvaluatorView = false;
 
   if (submissionId) {
-    submissionQuery = submissionQuery.eq('id', submissionId);
+    const adminClient = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+    const { data: targetSub } = await adminClient
+      .from('assessment_submissions')
+      .select(`
+        id,
+        user_id,
+        total_score,
+        max_score,
+        percentage,
+        points_awarded,
+        is_passed,
+        time_spent_seconds,
+        submitted_at,
+        assessments (
+          id,
+          title,
+          passing_score,
+          duration_minutes,
+          created_by,
+          owner_user_id
+        )
+      `)
+      .eq('id', submissionId)
+      .maybeSingle();
+
+    if (targetSub) {
+      if (targetSub.user_id === user.id) {
+        submission = targetSub;
+      } else {
+        // Kiểm tra quyền quản trị/khảo thí viên của người xem
+        let hasAccess = false;
+        if (classId) {
+          const { data: cls } = await adminClient
+            .from('evaluator_classes')
+            .select('id, evaluator_id, owner_user_id, instructor_id, organization_id')
+            .eq('id', classId)
+            .maybeSingle();
+          if (cls && (cls.evaluator_id === user.id || cls.owner_user_id === user.id || cls.instructor_id === user.id)) {
+            hasAccess = true;
+          } else if (cls?.organization_id) {
+            const { data: orgMember } = await adminClient
+              .from('user_organizations')
+              .select('org_role')
+              .eq('organization_id', cls.organization_id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            if (orgMember && ['ORG_OWNER', 'ORG_ADMIN', 'ASSESSOR'].includes(orgMember.org_role)) {
+              hasAccess = true;
+            }
+          }
+        }
+        if (!hasAccess) {
+          const asm = targetSub.assessments as any;
+          if (asm && (asm.created_by === user.id || asm.owner_user_id === user.id)) {
+            hasAccess = true;
+          }
+        }
+        if (hasAccess) {
+          submission = targetSub;
+          isEvaluatorView = true;
+        }
+      }
+    }
   } else {
-    submissionQuery = submissionQuery
+    const { data: submissions } = await supabase
+      .from('assessment_submissions')
+      .select(`
+        id,
+        user_id,
+        total_score,
+        max_score,
+        percentage,
+        points_awarded,
+        is_passed,
+        time_spent_seconds,
+        submitted_at,
+        assessments (
+          id,
+          title,
+          passing_score,
+          duration_minutes
+        )
+      `)
+      .eq('user_id', user.id)
       .eq('assessment_id', assessmentId)
       .order('submitted_at', { ascending: false })
       .limit(1);
+    submission = submissions && submissions.length > 0 ? submissions[0] : null;
   }
-
-  const { data: submissions } = await submissionQuery;
-  const submission = submissions && submissions.length > 0 ? submissions[0] : null;
 
   if (!submission) {
     return (
@@ -91,8 +154,9 @@ export default async function AssessmentResultPage({
     );
   }
 
-  // 2. Fetch answer details with questions and options
-  const { data: dbAnswers } = await supabase
+  // 2. Fetch answer details with questions and options (dùng adminClient nếu xem với vai trò giám khảo)
+  const answersClient = isEvaluatorView && process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+  const { data: dbAnswers } = await answersClient
     .from('submission_answers')
     .select(`
       id,
@@ -160,7 +224,7 @@ export default async function AssessmentResultPage({
   });
 
   // 3. Fetch any existing AI evaluations for this submission
-  const { data: aiEvaluations } = await supabase
+  const { data: aiEvaluations } = await answersClient
     .from('ai_evaluations')
     .select(`
       id,

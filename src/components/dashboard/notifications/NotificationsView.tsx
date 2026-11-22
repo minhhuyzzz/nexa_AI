@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useTransition } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Bell,
@@ -10,18 +9,13 @@ import {
   Award,
   BookOpen,
   Building2,
-  ShieldCheck,
   Search,
-  Filter,
   ArrowRight,
   Clock,
-  Loader2,
   RefreshCw,
   Inbox,
-  ExternalLink,
+  Trash2,
 } from 'lucide-react';
-
-export type NotificationCategory = 'ALL' | 'ASSIGNMENT' | 'GRADE' | 'ORGANIZATION' | 'SYSTEM';
 
 export interface NotificationRecord {
   id: string;
@@ -39,6 +33,8 @@ interface NotificationsViewProps {
   orgName?: string;
 }
 
+type ReadFilterTab = 'ALL' | 'UNREAD' | 'READ';
+
 export function NotificationsView({
   workspaceType,
   orgSlug,
@@ -47,10 +43,8 @@ export function NotificationsView({
   const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<NotificationCategory>('ALL');
+  const [readFilter, setReadFilter] = useState<ReadFilterTab>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [unreadOnly, setUnreadOnly] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
@@ -78,44 +72,17 @@ export function NotificationsView({
     return notifications.filter((n) => !n.is_read).length;
   }, [notifications]);
 
-  // Tab counts
-  const tabCounts = useMemo(() => {
-    const counts: Record<NotificationCategory, { total: number; unread: number }> = {
-      ALL: { total: notifications.length, unread: unreadCount },
-      ASSIGNMENT: { total: 0, unread: 0 },
-      GRADE: { total: 0, unread: 0 },
-      ORGANIZATION: { total: 0, unread: 0 },
-      SYSTEM: { total: 0, unread: 0 },
-    };
-
-    for (const n of notifications) {
-      let cat: NotificationCategory = 'SYSTEM';
-      if (n.category === 'ASSIGNMENT') cat = 'ASSIGNMENT';
-      else if (n.category === 'GRADE') cat = 'GRADE';
-      else if (n.category === 'CAMPAIGN' || n.category === 'ORGANIZATION') cat = 'ORGANIZATION';
-      else cat = 'SYSTEM';
-
-      counts[cat].total += 1;
-      if (!n.is_read) {
-        counts[cat].unread += 1;
-      }
-    }
-
-    return counts;
-  }, [notifications, unreadCount]);
+  const readCount = useMemo(() => {
+    return notifications.filter((n) => n.is_read).length;
+  }, [notifications]);
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((n) => {
-      // Tab filter
-      if (activeTab === 'ASSIGNMENT' && n.category !== 'ASSIGNMENT') return false;
-      if (activeTab === 'GRADE' && n.category !== 'GRADE') return false;
-      if (activeTab === 'ORGANIZATION' && n.category !== 'ORGANIZATION' && n.category !== 'CAMPAIGN') return false;
-      if (activeTab === 'SYSTEM' && n.category !== 'SYSTEM' && n.category !== 'SECURITY') return false;
+      // 1. Lọc theo trạng thái đọc
+      if (readFilter === 'UNREAD' && n.is_read) return false;
+      if (readFilter === 'READ' && !n.is_read) return false;
 
-      // Unread only filter
-      if (unreadOnly && n.is_read) return false;
-
-      // Search keyword filter
+      // 2. Tìm kiếm theo từ khóa
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const titleMatch = n.title?.toLowerCase().includes(q);
@@ -125,7 +92,7 @@ export function NotificationsView({
 
       return true;
     });
-  }, [notifications, activeTab, unreadOnly, searchQuery]);
+  }, [notifications, readFilter, searchQuery]);
 
   const markAllAsRead = async () => {
     if (unreadCount === 0) return;
@@ -157,6 +124,26 @@ export function NotificationsView({
       console.warn('Lỗi đánh dấu đã đọc:', err);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const deleteNotification = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await fetch(`/api/notifications?id=${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.warn('Lỗi xóa thông báo:', err);
+    }
+  };
+
+  const clearReadNotifications = async () => {
+    if (readCount === 0) return;
+    setNotifications((prev) => prev.filter((n) => !n.is_read));
+    try {
+      await fetch('/api/notifications?clearRead=true', { method: 'DELETE' });
+    } catch (err) {
+      console.warn('Lỗi xóa thông báo đã đọc:', err);
     }
   };
 
@@ -199,25 +186,17 @@ export function NotificationsView({
       default:
         return {
           label: 'Hệ thống',
-          icon: ShieldCheck,
+          icon: Bell,
           badgeClass:
-            'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700',
-          iconContainerClass: 'bg-slate-100 text-slate-600 dark:bg-zinc-850 dark:text-zinc-400',
+            'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-neutral-300 border-slate-200 dark:border-zinc-700',
+          iconContainerClass: 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-neutral-400',
         };
     }
   };
 
-  const tabs: { key: NotificationCategory; label: string; icon: React.ElementType }[] = [
-    { key: 'ALL', label: 'Tất cả', icon: Bell },
-    { key: 'ASSIGNMENT', label: 'Bài thi', icon: BookOpen },
-    { key: 'GRADE', label: 'Điểm số', icon: Award },
-    { key: 'ORGANIZATION', label: 'Tổ chức', icon: Building2 },
-    { key: 'SYSTEM', label: 'Hệ thống', icon: ShieldCheck },
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 p-4 sm:p-6 md:p-8 animate-in fade-in duration-200">
+      {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -225,8 +204,8 @@ export function NotificationsView({
               Thông báo
             </h1>
             {unreadCount > 0 && (
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/40">
-                {unreadCount} mới
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-600 text-white font-mono tabular-nums">
+                {unreadCount} chưa đọc
               </span>
             )}
           </div>
@@ -241,7 +220,7 @@ export function NotificationsView({
           <button
             onClick={fetchNotifications}
             disabled={loading}
-            className="p-2 text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-neutral-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+            className="p-2 text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-neutral-200 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
             title="Làm mới danh sách"
             aria-label="Làm mới danh sách"
           >
@@ -251,89 +230,89 @@ export function NotificationsView({
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl transition-colors cursor-pointer"
             >
               <CheckCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
               <span>Đánh dấu tất cả đã đọc</span>
             </button>
           )}
+
+          {readCount > 0 && (
+            <button
+              onClick={clearReadNotifications}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 dark:text-neutral-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-100 dark:bg-zinc-850 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+              title="Xóa tất cả thông báo đã đọc"
+            >
+              <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>Xóa đã đọc</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          const count = tabCounts[tab.key];
-
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>{tab.label}</span>
-              {count.unread > 0 ? (
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                    isActive
-                      ? 'bg-white text-blue-600'
-                      : 'bg-blue-600 text-white'
-                  }`}
-                >
-                  {count.unread}
-                </span>
-              ) : count.total > 0 ? (
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isActive
-                      ? 'bg-blue-700 text-blue-100'
-                      : 'bg-slate-200 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400'
-                  }`}
-                >
-                  {count.total}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Search & Secondary Filter Toolbar */}
+      {/* 2. Filter Status Tabs (Tất cả / Chưa đọc / Đã đọc) & Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
+        {/* Status Tabs */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl shrink-0">
+          <button
+            onClick={() => setReadFilter('ALL')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              readFilter === 'ALL'
+                ? 'bg-white dark:bg-zinc-800 text-neutral-900 dark:text-neutral-100 shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+            }`}
+          >
+            <span>Tất cả</span>
+            <span className="ml-1.5 text-[11px] font-mono text-slate-400 dark:text-neutral-500">
+              ({notifications.length})
+            </span>
+          </button>
+
+          <button
+            onClick={() => setReadFilter('UNREAD')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              readFilter === 'UNREAD'
+                ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+            }`}
+          >
+            <span>Chưa đọc</span>
+            {unreadCount > 0 && (
+              <span className="ml-1.5 text-[11px] font-mono px-1.5 py-0.2 rounded-full bg-blue-600 text-white font-bold">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setReadFilter('READ')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              readFilter === 'READ'
+                ? 'bg-white dark:bg-zinc-800 text-neutral-900 dark:text-neutral-100 shadow-2xs'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+            }`}
+          >
+            <span>Đã đọc</span>
+            <span className="ml-1.5 text-[11px] font-mono text-slate-400 dark:text-neutral-500">
+              ({readCount})
+            </span>
+          </button>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-zinc-500" strokeWidth={1.75} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm nội dung thông báo..."
-            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-lg text-neutral-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 transition-colors"
+            placeholder="Tìm kiếm thông báo..."
+            className="w-full pl-9 pr-4 py-1.5 text-xs bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl text-neutral-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
           />
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={() => setUnreadOnly(!unreadOnly)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
-              unreadOnly
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-800'
-                : 'bg-white dark:bg-[#111114] text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900'
-            }`}
-          >
-            <Filter className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span>Chỉ chưa đọc</span>
-          </button>
         </div>
       </div>
 
-      {/* Notification List */}
+      {/* 3. Notification List */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
@@ -351,7 +330,7 @@ export function NotificationsView({
           ))}
         </div>
       ) : filteredNotifications.length === 0 ? (
-        <div className="p-12 text-center bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl space-y-3">
+        <div className="p-12 text-center bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl space-y-3 shadow-2xs">
           <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-900 flex items-center justify-center mx-auto text-slate-400 dark:text-zinc-500">
             <Inbox className="w-6 h-6" strokeWidth={1.5} />
           </div>
@@ -360,22 +339,21 @@ export function NotificationsView({
               Không có thông báo nào
             </h3>
             <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-sm mx-auto">
-              {unreadOnly
-                ? 'Bạn không có thông báo chưa đọc nào trong mục này.'
+              {readFilter === 'UNREAD'
+                ? 'Bạn đã đọc hết tất cả thông báo.'
+                : readFilter === 'READ'
+                ? 'Chưa có thông báo nào được đánh dấu đã đọc.'
                 : searchQuery
                 ? 'Không tìm thấy thông báo khớp với từ khóa tìm kiếm.'
                 : 'Các thông báo mới về bài khảo thí, điểm số và hoạt động sẽ hiển thị tại đây.'}
             </p>
           </div>
-          {(unreadOnly || searchQuery) && (
+          {searchQuery && (
             <button
-              onClick={() => {
-                setUnreadOnly(false);
-                setSearchQuery('');
-              }}
+              onClick={() => setSearchQuery('')}
               className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
             >
-              Xóa bộ lọc
+              Xóa từ khóa tìm kiếm
             </button>
           )}
         </div>
@@ -427,9 +405,22 @@ export function NotificationsView({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
-                        <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
-                        <span>{formattedDate}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
+                          <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
+                          <span>{formattedDate}</span>
+                        </div>
+
+                        {/* Nút Xóa thông báo */}
+                        <button
+                          type="button"
+                          onClick={(e) => deleteNotification(item.id, e)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                          title="Xóa thông báo này"
+                          aria-label="Xóa thông báo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        </button>
                       </div>
                     </div>
 

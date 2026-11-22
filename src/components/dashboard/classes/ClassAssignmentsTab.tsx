@@ -15,6 +15,10 @@ import {
   Loader2,
   Calendar,
   Layers,
+  Download,
+  MoreHorizontal,
+  ClipboardCheck,
+  Copy,
 } from 'lucide-react';
 import {
   InContextGradingDrawer,
@@ -130,6 +134,7 @@ export function ClassAssignmentsTab({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeSubmission, setActiveSubmission] = useState<InContextGradingSubmission | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -446,78 +451,71 @@ export function ClassAssignmentsTab({
                     })()
                   ) : (
                     <div className="flex items-center gap-2 shrink-0">
-                      <Link
-                        href={`/personal/grading?assessmentId=${asg.assessment_id}&classId=${classId}`}
-                        className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-zinc-850 hover:bg-slate-100 dark:hover:bg-zinc-800 text-neutral-800 dark:text-zinc-200 text-xs font-semibold border border-slate-200 dark:border-zinc-750 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                        title="Mở Bàn chấm bài cho bài khảo thí này"
-                      >
-                        <span>Bàn chấm</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                      </Link>
                       <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 font-mono text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
                         Đang mở
                       </span>
+
+                      <Link
+                        href={`/personal/groups/${classId}/assignments/${asg.id}`}
+                        className="px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <span>Chi tiết đợt thi</span>
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      </Link>
+
+                      {/* Icon tải Excel gọn gàng không chữ */}
+                      <a
+                        href={`/api/classes/${classId}/assignments/${asg.id}/export`}
+                        download
+                        className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                        title="Tải báo cáo Excel (.xlsx)"
+                        aria-label="Tải báo cáo Excel"
+                      >
+                        <Download className="w-4 h-4" strokeWidth={1.75} />
+                      </a>
+
+                      {/* Menu 3 chấm cho thao tác phụ */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenActionMenuId(openActionMenuId === asg.id ? null : asg.id)}
+                          className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                          title="Thao tác khác"
+                          aria-label="Thao tác khác"
+                        >
+                          <MoreHorizontal className="w-4 h-4" strokeWidth={1.75} />
+                        </button>
+                        {openActionMenuId === asg.id && (
+                          <div
+                            className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-lg py-1 z-20 text-xs animate-in fade-in zoom-in-95 duration-100"
+                            onMouseLeave={() => setOpenActionMenuId(null)}
+                          >
+                            <Link
+                              href={`/personal/grading?classId=${classId}&assessmentId=${asg.assessment_id}`}
+                              onClick={() => setOpenActionMenuId(null)}
+                              className="flex items-center gap-2 px-3 py-2 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800"
+                            >
+                              <ClipboardCheck className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Bàn thẩm định bài làm</span>
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = `${window.location.origin}/personal/groups/${classId}/assignments/${asg.id}`;
+                                navigator.clipboard.writeText(url);
+                                setOpenActionMenuId(null);
+                              }}
+                              className="w-full text-left flex items-center gap-2 px-3 py-2 text-neutral-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Sao chép liên kết</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {/* Evaluator: Submissions List for this assignment */}
-                {role === 'EVALUATOR' && asgSubmissions.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider block font-mono">
-                      Bài nộp của học viên ({asgSubmissions.length})
-                    </span>
-                    <div className="rounded-xl border border-slate-100 dark:border-zinc-850 overflow-hidden divide-y divide-slate-100 dark:divide-zinc-850">
-                      {asgSubmissions.slice(0, 5).map((sub) => (
-                        <div
-                          key={sub.id}
-                          className="p-3 flex items-center justify-between text-xs hover:bg-slate-50/70 dark:hover:bg-zinc-850/50 transition-colors"
-                        >
-                          <div>
-                            <span className="font-bold text-neutral-900 dark:text-neutral-100">{sub.studentName}</span>
-                            <span className="text-slate-400 dark:text-neutral-500 ml-2 text-[11px] font-mono">({sub.studentEmail})</span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${
-                                sub.status === 'GRADED'
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                  : sub.status === 'PENDING'
-                                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-neutral-400 border border-slate-200 dark:border-zinc-700'
-                              }`}
-                            >
-                              {sub.status === 'GRADED'
-                                ? `Đã chấm (${sub.score}đ)`
-                                : sub.status === 'PENDING'
-                                ? 'Chờ chấm'
-                                : 'Chưa nộp'}
-                            </span>
-
-                            {sub.status === 'NOT_SUBMITTED' ? (
-                              <button
-                                type="button"
-                                onClick={() => handleRemind(sub.studentName)}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer font-medium"
-                              >
-                                Nhắc nhở
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenGrading(sub)}
-                                className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-900 font-semibold cursor-pointer"
-                              >
-                                Chấm điểm
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}

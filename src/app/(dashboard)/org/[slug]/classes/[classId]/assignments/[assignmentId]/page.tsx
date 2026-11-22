@@ -168,14 +168,15 @@ export default async function OrgClassAssignmentDetailPage({ params }: PageProps
           <span>Quay lại Lớp: {classRecord.name}</span>
         </Link>
 
-        {/* Nút Tải Báo Cáo Excel */}
+        {/* Nút Tải Báo Cáo Excel - icon tải không cần chữ */}
         <a
           href={exportUrl}
           download
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 transition-colors shadow-2xs cursor-pointer"
+          title="Tải Báo Cáo Excel (.xlsx)"
+          aria-label="Tải Báo Cáo Excel"
         >
-          <Download className="w-4 h-4" />
-          <span>Tải Báo Cáo Excel (.xlsx)</span>
+          <Download className="w-4 h-4 text-slate-600 dark:text-zinc-300" />
         </a>
       </div>
 
@@ -382,7 +383,7 @@ export default async function OrgClassAssignmentDetailPage({ params }: PageProps
                       <td className="py-3.5 px-4 text-right">
                         {isSubmitted ? (
                           <Link
-                            href={`/org/${slug}/grading`}
+                            href={`/personal/assessments/${assignment.assessment_id}/result?submissionId=${sub.id}&classId=${classId}&assignmentId=${assignmentId}`}
                             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors"
                           >
                             <span>Xem bài</span>
