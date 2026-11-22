@@ -222,7 +222,7 @@ function LearnerSubmissionsContent() {
         const items = asm?.assessment_items || [];
         const firstItem = items[0];
 
-        const existingSub = subByAssignmentId.get(ca.id) || subByAssessmentId.get(ca.assessment_id);
+        const existingSub = subByAssignmentId.get(ca.id);
 
         const isGraded =
           existingSub &&

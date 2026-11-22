@@ -163,7 +163,7 @@ export function ClassAssignmentsTab({
         (data.group?.assignments || []).forEach((asg: AssignmentItem) => {
           members.forEach((m: { user_id: string; profiles?: { nickname?: string; email?: string } }) => {
             const matchedSub = realSubs.find(
-              (s) => s.user_id === m.user_id && (s.class_assignment_id === asg.id || s.assessment_id === asg.assessment_id)
+              (s) => s.user_id === m.user_id && s.class_assignment_id === asg.id
             );
 
             let status: 'PENDING' | 'GRADED' | 'NOT_SUBMITTED' = 'NOT_SUBMITTED';
@@ -426,7 +426,7 @@ export function ClassAssignmentsTab({
                         return (
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 font-mono text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
-                              Đã nộp{mySub.score !== undefined ? ` (${mySub.score}đ)` : ''}
+                              Đã làm
                             </span>
                             <Link
                               href={`/personal/assessments/${asg.assessment_id}/result?submissionId=${mySub.id}&classId=${classId}&assignmentId=${asg.id}`}

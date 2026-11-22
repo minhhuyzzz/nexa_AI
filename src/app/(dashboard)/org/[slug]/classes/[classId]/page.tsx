@@ -159,21 +159,12 @@ export default async function OrgClassDetailPage({
     submittedAt?: string | null;
   }> = [];
 
-  if (classMemberUserIds.length > 0 && (assignmentIds.length > 0 || assessmentIds.length > 0)) {
+  if (classMemberUserIds.length > 0 && assignmentIds.length > 0) {
     let subQuery = adminSupabase
       .from('assessment_submissions')
       .select('id, user_id, assessment_id, class_assignment_id, status, total_score, percentage, is_passed, submitted_at')
-      .in('user_id', classMemberUserIds);
-
-    if (assignmentIds.length > 0 && assessmentIds.length > 0) {
-      subQuery = subQuery.or(
-        `class_assignment_id.in.(${assignmentIds.join(',')}),assessment_id.in.(${assessmentIds.join(',')})`
-      );
-    } else if (assignmentIds.length > 0) {
-      subQuery = subQuery.in('class_assignment_id', assignmentIds);
-    } else if (assessmentIds.length > 0) {
-      subQuery = subQuery.in('assessment_id', assessmentIds);
-    }
+      .in('user_id', classMemberUserIds)
+      .in('class_assignment_id', assignmentIds);
 
     const { data: rawSubs } = await subQuery;
     classSubmissions = (rawSubs || []).map((s: any) => ({

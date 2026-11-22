@@ -119,7 +119,7 @@ export default async function OrgClassAssignmentDetailPage({ params }: PageProps
       .from('assessment_submissions')
       .select('id, user_id, status, total_score, max_score, percentage, is_passed, submitted_at')
       .in('user_id', memberUserIds)
-      .or(`class_assignment_id.eq.${assignmentId},assessment_id.eq.${assignment.assessment_id}`)
+      .eq('class_assignment_id', assignmentId)
       .order('submitted_at', { ascending: false });
 
     submissions = subsData || [];

@@ -532,7 +532,7 @@ export function OrgClassDetailView({
               <div className="space-y-3">
                 {assignments.map((a) => {
                   const asgSubmissions = submissions.filter(
-                    (s) => s.classAssignmentId === a.id || s.assessmentId === a.assessmentId
+                    (s) => s.classAssignmentId === a.id
                   );
 
                   const studentList = members.map((m) => {
@@ -659,7 +659,7 @@ export function OrgClassDetailView({
                             mySub ? (
                               <div className="flex items-center gap-2">
                                 <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold font-mono bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                  Đã nộp{mySub.percentage !== undefined && mySub.percentage !== null ? ` (${mySub.percentage}%)` : ''}
+                                  Đã làm
                                 </span>
                                 {a.immediateResults ? (
                                   <Link

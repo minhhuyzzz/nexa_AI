@@ -57,19 +57,21 @@ export function ClassMemberDashboardView({
   memberCount,
   evaluatorName,
 }: ClassMemberDashboardViewProps) {
-  // Map of assessment_id -> submission
+  // Map of class_assignment_id -> submission
   const subMap = new Map<string, SubmissionItem>();
   submissions.forEach((s) => {
-    subMap.set(s.assessment_id, s);
+    if (s.class_assignment_id) {
+      subMap.set(s.class_assignment_id, s);
+    }
   });
 
   const pendingAssignments = assignments.filter((a) => {
-    const sub = subMap.get(a.assessment_id);
+    const sub = subMap.get(a.id);
     return !sub || (sub.status !== 'SUBMITTED' && sub.status !== 'EVALUATED');
   });
 
   const nextAssignment = pendingAssignments[0] || assignments[0];
-  const nextSub = nextAssignment ? subMap.get(nextAssignment.assessment_id) : undefined;
+  const nextSub = nextAssignment ? subMap.get(nextAssignment.id) : undefined;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

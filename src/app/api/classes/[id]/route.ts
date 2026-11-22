@@ -74,7 +74,7 @@ export async function GET(
     });
 
     // Fetch real submissions for assignments in this cohort
-    const assessmentIds = (cls.class_assignments || []).map((a: { assessment_id: string }) => a.assessment_id);
+    const assignmentIds = (cls.class_assignments || []).map((a: { id: string }) => a.id);
     let realSubmissions: Array<{
       id: string;
       user_id: string;
@@ -87,11 +87,11 @@ export async function GET(
       submitted_at?: string | null;
     }> = [];
 
-    if (assessmentIds.length > 0) {
+    if (assignmentIds.length > 0) {
       let subQuery = supabase
         .from('assessment_submissions')
         .select('id, user_id, assessment_id, class_assignment_id, status, total_score, percentage, is_passed, submitted_at')
-        .in('assessment_id', assessmentIds);
+        .in('class_assignment_id', assignmentIds);
 
       if (!access.isEvaluator && currentUser.role !== 'ADMIN') {
         subQuery = subQuery.eq('user_id', currentUser.id);
