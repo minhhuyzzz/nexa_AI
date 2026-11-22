@@ -8,6 +8,7 @@ import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { Building2, Menu, FilePlus, CalendarRange, ClipboardCheck, Radio } from 'lucide-react';
 import { useMobileNav } from '@/contexts/MobileNavContext';
 import { NexaLogo } from '@/components/brand/NexaLogo';
+import { GlobalSearchInput } from '@/components/dashboard/search/GlobalSearchInput';
 
 interface OrgTopbarProps {
   orgName: string;
@@ -64,8 +65,13 @@ export function OrgTopbar({ orgName, orgSlug, userRole }: OrgTopbarProps) {
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-zinc-300 min-w-0">
             <Building2 className="w-4 h-4 text-slate-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
-            <span className="truncate max-w-[160px] sm:max-w-[260px] font-semibold text-slate-800 dark:text-neutral-200">{orgName}</span>
+            <span className="truncate max-w-[120px] sm:max-w-[200px] font-semibold text-slate-800 dark:text-neutral-200">{orgName}</span>
           </div>
+        </div>
+
+        {/* Center: Global Search Input (Centered Max-w-lg) */}
+        <div className="flex-1 flex justify-center max-w-lg mx-auto px-2 sm:px-4 min-w-0">
+          <GlobalSearchInput scope="org" orgSlug={orgSlug} />
         </div>
 
         {/* Right: Notification and Avatar */}

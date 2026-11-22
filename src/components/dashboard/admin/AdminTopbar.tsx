@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AdminAvatarMenu } from './AdminAvatarMenu';
 import { NotificationBell } from '../NotificationBell';
-import { Home, Search, Menu } from 'lucide-react';
+import { Home, Menu } from 'lucide-react';
 import { useMobileNav } from '@/contexts/MobileNavContext';
 import { NexaLogo } from '@/components/brand/NexaLogo';
+import { GlobalSearchInput } from '@/components/dashboard/search/GlobalSearchInput';
 
 const adminRouteTitleMap: Record<string, string> = {
   '/admin': 'Tổng quan',
@@ -56,7 +57,7 @@ export function AdminTopbar() {
       }`}
     >
       {/* Left: Mobile hamburger & breadcrumb navigation */}
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-center gap-2.5 shrink-0">
         <div className="flex items-center gap-1.5 md:hidden shrink-0">
           <button
             type="button"
@@ -83,24 +84,19 @@ export function AdminTopbar() {
             Quản trị hệ thống
           </span>
           <span className="hidden sm:inline text-slate-300 dark:text-zinc-700">/</span>
-          <span className="font-semibold text-neutral-900 dark:text-neutral-100 truncate max-w-[140px] sm:max-w-none">
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100 truncate max-w-[120px] sm:max-w-none">
             {currentTitle}
           </span>
         </nav>
       </div>
 
-      {/* Right Actions: Search Box + Bell + Avatar */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Global Search Input */}
-        <div className="relative hidden lg:block">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm người dùng, tổ chức, đề chuẩn..."
-            className="pl-9 pr-3 py-1.5 w-60 xl:w-80 rounded-lg text-xs border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-neutral-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white dark:focus:bg-black transition-all"
-          />
-        </div>
+      {/* Center: Global Search Input (Centered Max-w-lg) */}
+      <div className="flex-1 flex justify-center max-w-lg mx-auto px-2 sm:px-4 min-w-0">
+        <GlobalSearchInput scope="admin" />
+      </div>
 
+      {/* Right Actions: Bell + Avatar */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <NotificationBell />
         <AdminAvatarMenu />
       </div>

@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PersonalAvatarMenu } from './PersonalAvatarMenu';
 import { NotificationBell } from '../NotificationBell';
-import { Search, Trophy, Menu } from 'lucide-react';
+import { Trophy, Menu } from 'lucide-react';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useMobileNav } from '@/contexts/MobileNavContext';
 import { NexaLogo } from '@/components/brand/NexaLogo';
+import { GlobalSearchInput } from '@/components/dashboard/search/GlobalSearchInput';
 
 export function PersonalTopbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -54,10 +55,9 @@ export function PersonalTopbar() {
           : 'bg-transparent'
       }`}
     >
-      {/* Left: Mobile Hamburger & Search Input */}
-      <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 max-w-xl">
-        {/* Mobile Hamburger & Logo */}
-        <div className="flex items-center gap-1 md:hidden shrink-0">
+      {/* Left: Mobile Hamburger & Logo */}
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 md:hidden">
           <button
             type="button"
             onClick={toggleMobile}
@@ -70,16 +70,11 @@ export function PersonalTopbar() {
             <NexaLogo size={24} showText={false} />
           </Link>
         </div>
+      </div>
 
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md min-w-[120px]">
-          <Search className="w-4 h-4 text-slate-400 dark:text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" strokeWidth={1.75} />
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            className="w-full bg-slate-50/90 dark:bg-zinc-900/90 hover:bg-slate-100 dark:hover:bg-zinc-850 focus:bg-white dark:focus:bg-zinc-900 text-xs text-neutral-900 dark:text-neutral-100 pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 focus:border-blue-600 dark:focus:border-blue-400 focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-neutral-500 shadow-2xs truncate"
-          />
-        </div>
+      {/* Center: Global Search Input (Centered Max-w-lg) */}
+      <div className="flex-1 flex justify-center max-w-lg mx-auto px-2 sm:px-4 min-w-0">
+        <GlobalSearchInput scope="personal" />
       </div>
 
       {/* Right: Points, Notification Bell & Avatar */}
