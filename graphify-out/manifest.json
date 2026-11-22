@@ -456,9 +456,9 @@
     "semantic_hash": "e6c065097a985f5bead89f6235268ceb"
   },
   "src/app/(dashboard)/org/[slug]/classes/[classId]/page.tsx": {
-    "mtime": 1795279079.208542,
-    "seen": 1795279575.5456288,
-    "ast_hash": "234926041d095035caf68ce3a24c06c1",
+    "mtime": 1795316956.0900216,
+    "seen": 1795317389.3579547,
+    "ast_hash": "a2f14978b2eb336f14d33499728e3c90",
     "semantic_hash": ""
   },
   "src/app/(dashboard)/org/[slug]/classes/page.tsx": {
@@ -4320,9 +4320,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/org/classes/OrgClassDetailView.tsx": {
-    "mtime": 1795281643.7693028,
-    "seen": 1795282068.2774608,
-    "ast_hash": "10bd3467342740ddf9db0f4305c43981",
+    "mtime": 1795317039.922464,
+    "seen": 1795317389.3858452,
+    "ast_hash": "d346ac12548108e3944f90dcf9bf4643",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/classes/OrgClassesDashboardClient.tsx": {
@@ -4350,10 +4350,10 @@
     "semantic_hash": "7d186e0a115d3a98f58cef910cb896b3"
   },
   "src/components/dashboard/org/classes/types.ts": {
-    "mtime": 1793769602.1963005,
-    "seen": 1794532981.618849,
-    "ast_hash": "39b09a75c28d6759eed6f09efae7d5d5",
-    "semantic_hash": "39b09a75c28d6759eed6f09efae7d5d5"
+    "mtime": 1795316925.7794452,
+    "seen": 1795317389.386179,
+    "ast_hash": "924ca7938c56e053eb76df138266bfe3",
+    "semantic_hash": ""
   },
   "src/components/dashboard/org/members/ApprovalQueueView.tsx": {
     "mtime": 1795257424.176171,

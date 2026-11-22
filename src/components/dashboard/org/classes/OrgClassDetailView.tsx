@@ -26,13 +26,15 @@ import {
   AlertCircle,
   Maximize2,
   X,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ClassMemberRosterTable } from './ClassMemberRosterTable';
 import { AddClassMembersDrawer } from './AddClassMembersDrawer';
 import { AssignAssessmentModal } from './AssignAssessmentModal';
 import { ClassStreamTab } from '@/components/dashboard/classes/ClassStreamTab';
 import { ClassMaterialsTab } from '@/components/dashboard/classes/ClassMaterialsTab';
-import type { OrgClassItem, ClassMemberItem, ClassAssignmentItem, GroupType } from './types';
+import type { OrgClassItem, ClassMemberItem, ClassAssignmentItem, OrgClassSubmissionItem, GroupType } from './types';
 
 interface OrgClassDetailViewProps {
   slug: string;
@@ -41,6 +43,7 @@ interface OrgClassDetailViewProps {
   classData: OrgClassItem;
   members: ClassMemberItem[];
   assignments: ClassAssignmentItem[];
+  submissions?: OrgClassSubmissionItem[];
   orgCandidates?: Array<{
     userId: string;
     fullName: string;
@@ -75,6 +78,7 @@ export function OrgClassDetailView({
   classData,
   members: initialMembers,
   assignments: initialAssignments,
+  submissions = [],
   orgCandidates = [],
   availableAssessments = [],
   currentUserId = '',
@@ -84,6 +88,12 @@ export function OrgClassDetailView({
   const [activeTab, setActiveTab] = useState<TabType>('stream');
   const [members, setMembers] = useState<ClassMemberItem[]>(initialMembers);
   const [assignments, setAssignments] = useState<ClassAssignmentItem[]>(initialAssignments);
+  const [expandedAssignments, setExpandedAssignments] = useState<Record<string, boolean>>({});
+
+  const toggleExpandAssignment = (id: string) => {
+    setExpandedAssignments((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const [copiedCode, setCopiedCode] = useState(false);
 
   // Modals & Drawers
@@ -520,43 +530,192 @@ export function OrgClassDetailView({
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
-                {assignments.map((a) => (
-                  <div
-                    key={a.id}
-                    className="p-4 bg-white dark:bg-[#111114] hover:bg-slate-50 dark:hover:bg-zinc-900/60 rounded-xl border border-slate-200/70 dark:border-zinc-800 flex items-center justify-between gap-4 text-xs transition"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
-                        {a.title}
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
-                        Thời lượng: {a.durationMinutes} phút • Điểm đạt: {a.passingScore}% • Hạn nộp:{' '}
-                        {a.deadline ? new Date(a.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
-                        Đang mở
-                      </span>
-                      {isManager ? (
-                        <Link
-                          href={`/org/${slug}/grading?classId=${classData.id}`}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition"
-                        >
-                          Chấm bài
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/personal/take/${a.assessmentId}?classId=${classData.id}&assignmentId=${a.id}`}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-xs"
-                        >
-                          Vào làm bài
-                        </Link>
+              <div className="space-y-3">
+                {assignments.map((a) => {
+                  const asgSubmissions = submissions.filter(
+                    (s) => s.classAssignmentId === a.id || s.assessmentId === a.assessmentId
+                  );
+
+                  const studentList = members.map((m) => {
+                    const sub = asgSubmissions.find((s) => s.userId === m.userId);
+                    return {
+                      member: m,
+                      submission: sub,
+                      hasSubmitted: Boolean(sub && sub.status !== 'NOT_SUBMITTED'),
+                      score: sub?.percentage ?? sub?.totalScore,
+                      status: sub?.status || 'NOT_SUBMITTED',
+                      submittedAt: sub?.submittedAt,
+                    };
+                  });
+
+                  const submittedCount = studentList.filter((s) => s.hasSubmitted).length;
+                  const totalCount = members.length;
+                  const completionPercent = totalCount > 0 ? Math.round((submittedCount / totalCount) * 100) : 0;
+                  const isExpanded = Boolean(expandedAssignments[a.id]);
+
+                  const mySub = asgSubmissions.find(
+                    (s) => s.userId === currentUserId && s.status !== 'NOT_SUBMITTED'
+                  );
+
+                  return (
+                    <div
+                      key={a.id}
+                      className="p-4 bg-white dark:bg-[#111114] hover:border-slate-300 dark:hover:border-zinc-700 rounded-xl border border-slate-200/80 dark:border-zinc-800 transition shadow-2xs space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                        <div className="space-y-1.5 min-w-0">
+                          <p className="font-bold text-neutral-900 dark:text-neutral-100 text-sm truncate">
+                            {a.title}
+                          </p>
+                          <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-neutral-400 font-mono flex-wrap">
+                            <span>Thời lượng: {a.durationMinutes} phút</span>
+                            <span>&bull;</span>
+                            <span>Điểm đạt: {a.passingScore}%</span>
+                            <span>&bull;</span>
+                            <span>
+                              Hạn nộp: {a.deadline ? new Date(a.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
+                            </span>
+                            {isManager && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                  Tiến độ: {submittedCount}/{totalCount} đã nộp ({completionPercent}%)
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
+                            Đang mở
+                          </span>
+
+                          {isManager ? (
+                            <>
+                              <Link
+                                href={`/org/${slug}/grading?classId=${classData.id}`}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition"
+                              >
+                                Chấm bài
+                              </Link>
+                              {totalCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpandAssignment(a.id)}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition inline-flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>Chi tiết ({submittedCount}/{totalCount})</span>
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            mySub ? (
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold font-mono bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  Đã nộp{mySub.percentage !== undefined && mySub.percentage !== null ? ` (${mySub.percentage}%)` : ''}
+                                </span>
+                                {a.immediateResults ? (
+                                  <Link
+                                    href={`/personal/assessments/${a.assessmentId}/result?submissionId=${mySub.id}&classId=${classData.id}&assignmentId=${a.id}`}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-neutral-800 dark:text-neutral-200 transition"
+                                  >
+                                    Xem kết quả
+                                  </Link>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono">
+                                    (Chờ công bố điểm)
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <Link
+                                href={`/personal/take/${a.assessmentId}?classId=${classData.id}&assignmentId=${a.id}`}
+                                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-xs"
+                              >
+                                Vào làm bài
+                              </Link>
+                            )
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expandable student submission roster */}
+                      {isExpanded && isManager && (
+                        <div className="pt-2 space-y-2">
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400 font-medium px-1">
+                            <span>Danh sách học viên trong lớp ({members.length})</span>
+                            <span className="font-mono">
+                              Đã nộp: <strong className="text-neutral-900 dark:text-neutral-100 font-bold">{submittedCount}/{totalCount}</strong> ({completionPercent}%)
+                            </span>
+                          </div>
+
+                          <div className="rounded-lg border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 divide-y divide-slate-100 dark:divide-zinc-800/80 overflow-hidden">
+                            {studentList.map(({ member, submission, hasSubmitted, score, status, submittedAt }) => (
+                              <div
+                                key={member.id}
+                                className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-white/70 dark:hover:bg-zinc-900/80 transition"
+                              >
+                                <div className="space-y-0.5 min-w-0">
+                                  <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                                    {member.fullName}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 dark:text-neutral-500 font-mono truncate">
+                                    {member.email}
+                                    {submittedAt && (
+                                      <span className="ml-2">
+                                        • Nộp lúc: {new Date(submittedAt).toLocaleString('vi-VN', {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {hasSubmitted ? (
+                                    <>
+                                      <span
+                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${
+                                          status === 'EVALUATED' || (score !== undefined && score !== null)
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                        }`}
+                                      >
+                                        {status === 'EVALUATED' || (score !== undefined && score !== null)
+                                          ? `Đã chấm (${score}%)`
+                                          : 'Chờ chấm'}
+                                      </span>
+                                      <Link
+                                        href={`/org/${slug}/grading?classId=${classData.id}`}
+                                        className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
+                                      >
+                                        Bàn chấm
+                                      </Link>
+                                    </>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium font-mono bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-neutral-400 border border-slate-200 dark:border-zinc-700">
+                                      Chưa làm
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

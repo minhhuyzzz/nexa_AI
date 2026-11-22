@@ -64,6 +64,18 @@ export interface ClassAssignmentItem {
   createdAt: string;
 }
 
+export interface OrgClassSubmissionItem {
+  id: string;
+  userId: string;
+  assessmentId: string;
+  classAssignmentId?: string | null;
+  status: string;
+  totalScore?: number | null;
+  percentage?: number | null;
+  isPassed?: boolean | null;
+  submittedAt?: string | null;
+}
+
 export interface ClassScheduleItem {
   id: string;
   day: string;

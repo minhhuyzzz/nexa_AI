@@ -133,6 +133,53 @@ export default async function OrgClassDetailPage({
     .eq('class_id', realClassId)
     .eq('status', 'SUBMITTED');
 
+  // 3b. Fetch real submissions for these class assignments
+  const assignmentIds = (assignmentsRaw || []).map((a: any) => a.id);
+  const assessmentIds = (assignmentsRaw || []).map((a: any) => a.assessment_id);
+  const classMemberUserIds = members.map((m) => m.userId);
+
+  let classSubmissions: Array<{
+    id: string;
+    userId: string;
+    assessmentId: string;
+    classAssignmentId?: string | null;
+    status: string;
+    totalScore?: number | null;
+    percentage?: number | null;
+    isPassed?: boolean | null;
+    submittedAt?: string | null;
+  }> = [];
+
+  if (classMemberUserIds.length > 0 && (assignmentIds.length > 0 || assessmentIds.length > 0)) {
+    let subQuery = adminSupabase
+      .from('assessment_submissions')
+      .select('id, user_id, assessment_id, class_assignment_id, status, total_score, percentage, is_passed, submitted_at')
+      .in('user_id', classMemberUserIds);
+
+    if (assignmentIds.length > 0 && assessmentIds.length > 0) {
+      subQuery = subQuery.or(
+        `class_assignment_id.in.(${assignmentIds.join(',')}),assessment_id.in.(${assessmentIds.join(',')})`
+      );
+    } else if (assignmentIds.length > 0) {
+      subQuery = subQuery.in('class_assignment_id', assignmentIds);
+    } else if (assessmentIds.length > 0) {
+      subQuery = subQuery.in('assessment_id', assessmentIds);
+    }
+
+    const { data: rawSubs } = await subQuery;
+    classSubmissions = (rawSubs || []).map((s: any) => ({
+      id: s.id,
+      userId: s.user_id,
+      assessmentId: s.assessment_id,
+      classAssignmentId: s.class_assignment_id,
+      status: s.status,
+      totalScore: s.total_score,
+      percentage: s.percentage,
+      isPassed: s.is_passed,
+      submittedAt: s.submitted_at,
+    }));
+  }
+
   // 4. Fetch organization members to serve as candidates for drawer
   const { data: orgUsers } = await adminSupabase
     .from('user_organizations')
@@ -226,6 +273,7 @@ export default async function OrgClassDetailPage({
       classData={formattedClass}
       members={members}
       assignments={assignments}
+      submissions={classSubmissions}
       orgCandidates={orgCandidates}
       availableAssessments={availableAssessments}
       currentUserId={user.id}
