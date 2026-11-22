@@ -1,24 +1,31 @@
-import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonKpiCard, SkeletonTable } from '@/components/ui/Skeleton';
 
 export default function AdminUsersLoading() {
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fadeIn">
       {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div className="space-y-1.5">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-4 w-72 max-w-full" />
+      <div className="space-y-1.5 pb-1">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+      </div>
+
+      {/* 2. Top 3 KPI Cards */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <SkeletonKpiCard />
+        <SkeletonKpiCard />
+        <SkeletonKpiCard />
+      </div>
+
+      {/* 3. Toolbar Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Skeleton className="h-9 w-80 rounded-xl" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-32 rounded-xl" />
+          <Skeleton className="h-9 w-32 rounded-xl" />
         </div>
-        <Skeleton className="h-9 w-32 rounded-xl" />
       </div>
 
-      {/* 2. Search & Filter */}
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-64 rounded-xl" />
-        <Skeleton className="h-9 w-28 rounded-xl" />
-      </div>
-
-      {/* 3. Users Table */}
+      {/* 4. Users Table */}
       <SkeletonTable rows={7} columns={6} />
     </div>
   );

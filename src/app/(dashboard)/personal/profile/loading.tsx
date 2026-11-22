@@ -4,7 +4,7 @@ export default function PersonalProfileLoading() {
   return (
     <div className="max-w-6xl space-y-6 pb-16 animate-fadeIn">
       {/* 1. Profile Hero Card Skeleton */}
-      <div className="rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 sm:p-8 shadow-2xs">
+      <div className="rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] p-6 sm:p-8 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <Skeleton className="w-20 h-20 rounded-full shrink-0" />
@@ -17,13 +17,25 @@ export default function PersonalProfileLoading() {
               </div>
             </div>
           </div>
-          <Skeleton className="h-9 w-32 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-2 w-48 rounded-full" />
+          </div>
         </div>
       </div>
 
-      {/* 2. Profile Details Grid / Form Fields */}
+      {/* 2. Navigation Pill Tabs */}
+      <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/70 dark:bg-zinc-900 rounded-xl max-w-fit">
+        <Skeleton className="h-8 w-28 rounded-lg" />
+        <Skeleton className="h-8 w-36 rounded-lg" />
+        <Skeleton className="h-8 w-32 rounded-lg" />
+        <Skeleton className="h-8 w-28 rounded-lg" />
+        <Skeleton className="h-8 w-24 rounded-lg" />
+      </div>
+
+      {/* 3. Profile Details Grid / Form Fields */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 space-y-5">
+        <div className="lg:col-span-8 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] p-6 space-y-5 shadow-2xs">
           <Skeleton className="h-5 w-36" />
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
@@ -41,7 +53,7 @@ export default function PersonalProfileLoading() {
           </div>
         </div>
 
-        <div className="lg:col-span-4 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 space-y-4">
+        <div className="lg:col-span-4 rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-[#111114] p-6 space-y-4 shadow-2xs">
           <Skeleton className="h-5 w-28" />
           <SkeletonText lines={3} />
           <Skeleton className="h-9 w-full rounded-xl" />

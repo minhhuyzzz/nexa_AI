@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 export default function OrgCampaignsLoading() {
   return (
@@ -12,14 +12,19 @@ export default function OrgCampaignsLoading() {
         <Skeleton className="h-9 w-36 rounded-xl" />
       </div>
 
-      {/* 2. Filter Bar */}
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-64 rounded-xl" />
-        <Skeleton className="h-9 w-32 rounded-xl" />
+      {/* 2. Filter Bar: Tabs + Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/70 dark:bg-zinc-900 rounded-xl max-w-fit">
+          <Skeleton className="h-7 w-20 rounded-lg" />
+          <Skeleton className="h-7 w-24 rounded-lg" />
+          <Skeleton className="h-7 w-24 rounded-lg" />
+          <Skeleton className="h-7 w-24 rounded-lg" />
+        </div>
+        <Skeleton className="h-8 w-60 rounded-lg" />
       </div>
 
-      {/* 3. Campaigns Table */}
-      <SkeletonTable rows={6} columns={6} />
+      {/* 3. 3-Column Card Grid (khớp chuẩn hình mẫu thiết kế của nền tảng) */}
+      <SkeletonCardGrid count={6} columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-3" />
     </div>
   );
 }

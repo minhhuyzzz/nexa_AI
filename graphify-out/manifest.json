@@ -1284,15 +1284,15 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/admin/AdminAvatarMenu.tsx": {
-    "mtime": 1795256315.6180184,
-    "seen": 1795257976.0360408,
-    "ast_hash": "4b27257b129412d19b6b44ad51f61869",
+    "mtime": 1795340377.2078497,
+    "seen": 1795340516.7887816,
+    "ast_hash": "8bfa38199b42db84090a7d9ed3ddf5b8",
     "semantic_hash": ""
   },
   "src/components/dashboard/admin/AdminSidebar.tsx": {
-    "mtime": 1795256290.286497,
-    "seen": 1795257976.0360515,
-    "ast_hash": "989c57ca910457cf3b3d1db920339eeb",
+    "mtime": 1795340118.017386,
+    "seen": 1795340516.7887943,
+    "ast_hash": "465ce1467f3685c20510a97c1216481f",
     "semantic_hash": ""
   },
   "src/components/dashboard/admin/AdminTopbar.tsx": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgSidebar.tsx": {
-    "mtime": 1795264392.6408358,
-    "seen": 1795266285.2129352,
-    "ast_hash": "9e1f6bdb747e029dae63a6c7d18eceec",
+    "mtime": 1795340056.1238441,
+    "seen": 1795340064.4021776,
+    "ast_hash": "315b655587bd787dc522025da72d81ca",
     "semantic_hash": ""
   },
   "src/components/dashboard/org/OrgTopbar.tsx": {
@@ -1398,9 +1398,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/PersonalSidebar.tsx": {
-    "mtime": 1795336152.5413823,
-    "seen": 1795336836.1946328,
-    "ast_hash": "00c42cc94fe5d9306939a814099b6f5b",
+    "mtime": 1795339984.3433633,
+    "seen": 1795340064.4075804,
+    "ast_hash": "69153d6067240a7f51fe9c22a155e766",
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/PersonalTopbar.tsx": {
@@ -6282,9 +6282,9 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/admin/AdminUIComponents.tsx": {
-    "mtime": 1795260901.6409209,
-    "seen": 1795261259.5256577,
-    "ast_hash": "6ec86c0f84bf89fbc63000cd518388b0",
+    "mtime": 1795340394.380685,
+    "seen": 1795340516.7894166,
+    "ast_hash": "bd8f107c2947f352a9b9750209e63a31",
     "semantic_hash": ""
   },
   "src/components/dashboard/personal/live-room/PersonalLiveRoomDashboardView.tsx": {
@@ -7854,21 +7854,21 @@
     "semantic_hash": ""
   },
   "src/app/api/search/route.test.ts": {
-    "mtime": 1795338133.3711379,
-    "seen": 1795338693.8647375,
-    "ast_hash": "235842454fde529fd8f90386bf5f5b5b",
+    "mtime": 1795338822.497613,
+    "seen": 1795339338.5305338,
+    "ast_hash": "b86e0db023744d0d7a8f72f767877cb4",
     "semantic_hash": ""
   },
   "src/app/api/search/route.ts": {
-    "mtime": 1795338111.186178,
-    "seen": 1795338693.8647416,
-    "ast_hash": "a7c1994980276ff7d8faf908a8adf205",
+    "mtime": 1795339623.8913014,
+    "seen": 1795339690.466212,
+    "ast_hash": "bcdb95d7d0f38b8519ea32a5d6b2a2f8",
     "semantic_hash": ""
   },
   "src/components/dashboard/search/GlobalSearchInput.tsx": {
-    "mtime": 1795337978.5984945,
-    "seen": 1795338693.8827438,
-    "ast_hash": "64c2aa185b26b9bea589bcc23b7b38ea",
+    "mtime": 1795339676.94767,
+    "seen": 1795339690.6334295,
+    "ast_hash": "9ead2c9bf02fd694204c0f5142c5945f",
     "semantic_hash": ""
   },
   ".agents/skills/stageshow/package-lock.json": {

@@ -1,0 +1,28 @@
+import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton';
+
+export default function AdminContentLoading() {
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fadeIn">
+      {/* 1. Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+        <div className="space-y-1.5">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96 max-w-full" />
+        </div>
+        <Skeleton className="h-9 w-40 rounded-xl" />
+      </div>
+
+      {/* 2. Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Skeleton className="h-9 w-80 rounded-xl" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-32 rounded-xl" />
+          <Skeleton className="h-9 w-32 rounded-xl" />
+        </div>
+      </div>
+
+      {/* 3. Assessments Table */}
+      <SkeletonTable rows={8} columns={7} />
+    </div>
+  );
+}

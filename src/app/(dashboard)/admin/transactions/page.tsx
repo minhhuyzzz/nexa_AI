@@ -459,7 +459,17 @@ export default function AdminTransactionsPage() {
                   </tr>
                 </thead>
 
-                {filteredTransactions.length > 0 ? (
+                {loading ? (
+                  <tbody>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={8} className="py-4 px-4">
+                          <div className="h-4 bg-slate-200/70 dark:bg-zinc-800 rounded w-full" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                ) : filteredTransactions.length > 0 ? (
                   <tbody className="">
                     {filteredTransactions.map((tx) => {
                       const isSuccess = tx.status === 'SUCCESS' || tx.status === 'COMPLETED';
@@ -571,7 +581,7 @@ export default function AdminTransactionsPage() {
               </table>
 
               {/* Pixel-Perfect Empty State matching user's screenshot */}
-              {filteredTransactions.length === 0 && (
+              {!loading && filteredTransactions.length === 0 && (
                 <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
                   {/* Document with Magnifying Glass SVG Illustration */}
                   <div className="relative mb-5 w-24 h-24 flex items-center justify-center">

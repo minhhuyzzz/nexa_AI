@@ -71,7 +71,7 @@ export function SkeletonKpiCard({ className }: { className?: string }) {
 }
 
 /**
- * Khung Skeleton giả lập Thẻ nội dung (Card chung).
+ * Khung Skeleton giả lập Thẻ nội dung (Card chuẩn theo hình mẫu Grid).
  */
 export function SkeletonCard({
   className,
@@ -85,17 +85,17 @@ export function SkeletonCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 shadow-2xs space-y-4',
+        'rounded-2xl border border-slate-200/70 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-5 space-y-3.5 shadow-2xs',
         className
       )}
     >
       {hasHeader && (
-        <div className="flex items-center justify-between pb-3">
-          <div className="space-y-1.5">
-            <Skeleton className="h-5 w-36" />
-            <Skeleton className="h-3 w-24" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
           </div>
-          <Skeleton className="h-7 w-20 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full shrink-0" />
         </div>
       )}
       <SkeletonText lines={lines} />
@@ -104,7 +104,28 @@ export function SkeletonCard({
 }
 
 /**
- * Khung Skeleton giả lập Bảng dữ liệu (Table Skeleton).
+ * Khung Lưới Thẻ Skeleton (Card Grid chuẩn 3 cột theo mẫu thiết kế).
+ */
+export function SkeletonCardGrid({
+  count = 6,
+  columns = 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  className,
+}: {
+  count?: number;
+  columns?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn('grid gap-4 sm:gap-6', columns, className)} aria-hidden="true">
+      {Array.from({ length: count }).map((_, index) => (
+        <SkeletonCard key={index} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Khung Skeleton giả lập Bảng dữ liệu (Table Skeleton đáp ứng động mọi số cột).
  */
 export function SkeletonTable({
   rows = 5,
@@ -131,32 +152,38 @@ export function SkeletonTable({
         </div>
       </div>
 
-      {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50/60 dark:bg-zinc-900/60">
-        {Array.from({ length: columns }).map((_, i) => (
-          <div key={i} className="col-span-3">
-            <Skeleton className="h-3.5 w-20" />
-          </div>
-        ))}
-      </div>
-
-      {/* Table Rows */}
-      <div className="">
-        {Array.from({ length: rows }).map((_, rIdx) => (
-          <div key={rIdx} className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
-            {Array.from({ length: columns }).map((_, cIdx) => (
-              <div key={cIdx} className="col-span-3 flex items-center gap-3">
-                {cIdx === 0 && <Skeleton className="w-8 h-8 rounded-full shrink-0" />}
-                <Skeleton
-                  className={cn(
-                    'h-4',
-                    cIdx === 0 ? 'w-36' : cIdx === 1 ? 'w-24' : cIdx === 2 ? 'w-20' : 'w-16'
-                  )}
-                />
-              </div>
+      {/* Table Body using native table to adapt to any column count */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50/60 dark:bg-zinc-900/60">
+              {Array.from({ length: columns }).map((_, i) => (
+                <th key={i} className="px-6 py-3.5">
+                  <Skeleton className={cn('h-3.5', i === 0 ? 'w-28' : 'w-20')} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: rows }).map((_, rIdx) => (
+              <tr key={rIdx} className="hover:bg-slate-50/30 dark:hover:bg-zinc-900/30">
+                {Array.from({ length: columns }).map((_, cIdx) => (
+                  <td key={cIdx} className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      {cIdx === 0 && <Skeleton className="w-8 h-8 rounded-full shrink-0" />}
+                      <Skeleton
+                        className={cn(
+                          'h-4',
+                          cIdx === 0 ? 'w-36' : cIdx === 1 ? 'w-24' : cIdx === 2 ? 'w-20' : 'w-16'
+                        )}
+                      />
+                    </div>
+                  </td>
+                ))}
+              </tr>
             ))}
-          </div>
-        ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
