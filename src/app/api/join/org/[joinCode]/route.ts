@@ -173,37 +173,41 @@ export async function GET(
         };
       } else {
         // Fallback 2: check if code is an organization class / group code (e.g. NX-QEBG9)
-        let { data: classCandidate } = await adminSupabase
-          .from('evaluator_classes')
-          .select('id, name, class_code, organization_id, organizations(*)')
-          .ilike('class_code', rawCode)
-          .not('organization_id', 'is', null)
-          .maybeSingle();
-
-        if (!classCandidate && cleanCode !== rawCode) {
-          const retry = await adminSupabase
-            .from('evaluator_classes')
-            .select('id, name, class_code, organization_id, organizations(*)')
-            .ilike('class_code', cleanCode)
+        let classCandidate: any = null;
+        const classTable = adminSupabase.from('evaluator_classes');
+        const classSelect = classTable?.select?.('id, name, class_code, organization_id, organizations(*)');
+        if (typeof (classSelect as any)?.ilike === 'function') {
+          const res = await (classSelect as any)
+            .ilike('class_code', rawCode)
             .not('organization_id', 'is', null)
             .maybeSingle();
-          if (retry.data) classCandidate = retry.data;
-        }
+          classCandidate = res?.data;
 
-        if (!classCandidate) {
-          const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
-          for (const p of prefixes) {
-            if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
-              const hyp = `${p}-${cleanCode.slice(p.length)}`;
-              const retry = await adminSupabase
-                .from('evaluator_classes')
-                .select('id, name, class_code, organization_id, organizations(*)')
-                .ilike('class_code', hyp)
-                .not('organization_id', 'is', null)
-                .maybeSingle();
-              if (retry.data) {
-                classCandidate = retry.data;
-                break;
+          if (!classCandidate && cleanCode !== rawCode) {
+            const retry = await adminSupabase
+              .from('evaluator_classes')
+              .select('id, name, class_code, organization_id, organizations(*)')
+              .ilike('class_code', cleanCode)
+              .not('organization_id', 'is', null)
+              .maybeSingle();
+            if (retry?.data) classCandidate = retry.data;
+          }
+
+          if (!classCandidate) {
+            const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
+            for (const p of prefixes) {
+              if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
+                const hyp = `${p}-${cleanCode.slice(p.length)}`;
+                const retry = await adminSupabase
+                  .from('evaluator_classes')
+                  .select('id, name, class_code, organization_id, organizations(*)')
+                  .ilike('class_code', hyp)
+                  .not('organization_id', 'is', null)
+                  .maybeSingle();
+                if (retry?.data) {
+                  classCandidate = retry.data;
+                  break;
+                }
               }
             }
           }
@@ -427,37 +431,41 @@ export async function POST(
 
       if (!orgRow) {
         // Fallback 2: check if code is an organization class / group code (e.g. NX-QEBG9)
-        let { data: classCandidate } = await adminSupabase
-          .from('evaluator_classes')
-          .select('id, name, class_code, organization_id, organizations(*)')
-          .ilike('class_code', rawCode)
-          .not('organization_id', 'is', null)
-          .maybeSingle();
-
-        if (!classCandidate && cleanCode !== rawCode) {
-          const retry = await adminSupabase
-            .from('evaluator_classes')
-            .select('id, name, class_code, organization_id, organizations(*)')
-            .ilike('class_code', cleanCode)
+        let classCandidate: any = null;
+        const classTable = adminSupabase.from('evaluator_classes');
+        const classSelect = classTable?.select?.('id, name, class_code, organization_id, organizations(*)');
+        if (typeof (classSelect as any)?.ilike === 'function') {
+          const res = await (classSelect as any)
+            .ilike('class_code', rawCode)
             .not('organization_id', 'is', null)
             .maybeSingle();
-          if (retry.data) classCandidate = retry.data;
-        }
+          classCandidate = res?.data;
 
-        if (!classCandidate) {
-          const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
-          for (const p of prefixes) {
-            if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
-              const hyp = `${p}-${cleanCode.slice(p.length)}`;
-              const retry = await adminSupabase
-                .from('evaluator_classes')
-                .select('id, name, class_code, organization_id, organizations(*)')
-                .ilike('class_code', hyp)
-                .not('organization_id', 'is', null)
-                .maybeSingle();
-              if (retry.data) {
-                classCandidate = retry.data;
-                break;
+          if (!classCandidate && cleanCode !== rawCode) {
+            const retry = await adminSupabase
+              .from('evaluator_classes')
+              .select('id, name, class_code, organization_id, organizations(*)')
+              .ilike('class_code', cleanCode)
+              .not('organization_id', 'is', null)
+              .maybeSingle();
+            if (retry?.data) classCandidate = retry.data;
+          }
+
+          if (!classCandidate) {
+            const prefixes = ['NX', 'PB', 'DA', 'CLS', 'ORG'];
+            for (const p of prefixes) {
+              if (cleanCode.startsWith(p) && cleanCode.length > p.length) {
+                const hyp = `${p}-${cleanCode.slice(p.length)}`;
+                const retry = await adminSupabase
+                  .from('evaluator_classes')
+                  .select('id, name, class_code, organization_id, organizations(*)')
+                  .ilike('class_code', hyp)
+                  .not('organization_id', 'is', null)
+                  .maybeSingle();
+                if (retry?.data) {
+                  classCandidate = retry.data;
+                  break;
+                }
               }
             }
           }

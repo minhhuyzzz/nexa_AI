@@ -479,6 +479,145 @@
   animation-play-state: paused;
 }
 
+/* ==========================================================================
+   ANIMATE UI MOTION TOKENS & SYSTEM RECIPES (PERFORMANCE-OPTIMIZED, ZERO-JS)
+   Implements exact easing curves from Animate UI:
+   - ease.out: cubic-bezier(0.23, 1, 0.32, 1) (instant response)
+   - ease.soft: cubic-bezier(0.215, 0.61, 0.355, 1) (smooth unfold & dialogs)
+   - ease.away: cubic-bezier(0.33, 0.17, 0.67, 0.5) (clean dismissals)
+   - scale.press: 0.975 (tactile feedback)
+   - scale.dialog: 0.96 (dialogs)
+   - scale.menu: 0.95 (popovers, dropdowns)
+   ========================================================================== */
+
+:root {
+  --animate-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-ease-soft: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --animate-ease-away: cubic-bezier(0.33, 0.17, 0.67, 0.5);
+  --animate-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* 1. Modal / Dialog Entrance */
+@keyframes animate-ui-dialog {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-dialog {
+  animation: animate-ui-dialog 0.22s var(--animate-ease-soft) forwards;
+  will-change: transform, opacity;
+}
+
+/* 2. Menu / Popover / Dropdown Entrance */
+@keyframes animate-ui-menu {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-menu {
+  animation: animate-ui-menu 0.16s var(--animate-ease-out) forwards;
+  transform-origin: top right;
+  will-change: transform, opacity;
+}
+
+/* 3. Subtle Fade Entrance */
+@keyframes animate-ui-fade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: animate-ui-fade 0.2s var(--animate-ease-out) forwards;
+  will-change: transform, opacity;
+}
+
+/* 4. Global Tactile Press Feedback (Ponytail: 1 rule for all buttons) */
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+a.btn-press:active {
+  transform: scale(0.975);
+  transition: transform 0.08s var(--animate-ease-out);
+}
+
+/* 5. Smooth High-Performance Card Hover (GPU transform only) */
+.card-interactive {
+  transition: transform 0.2s var(--animate-ease-out), box-shadow 0.2s var(--animate-ease-out), border-color 0.2s var(--animate-ease-out);
+}
+.card-interactive:hover {
+  transform: translateY(-1.5px);
+}
+.card-interactive:active {
+  transform: scale(0.99);
+}
+
+/* 6. Universal Animate UI Drop-in Compatibility (Instant 120fps upgrade across codebase) */
+@keyframes animate-ui-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes animate-ui-slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-duration: 0.2s;
+  animation-timing-function: var(--animate-ease-out);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+
+.animate-in.fade-in {
+  animation-name: animate-ui-fade;
+}
+
+.animate-in.zoom-in-95 {
+  animation-name: animate-ui-dialog;
+  animation-timing-function: var(--animate-ease-soft);
+}
+
+.animate-in.slide-in-from-right {
+  animation-name: animate-ui-slide-in-right;
+  animation-timing-function: var(--animate-ease-soft);
+}
+
+.animate-in.slide-in-from-bottom,
+.animate-in.slide-in-from-bottom-2,
+.animate-in.slide-in-from-bottom-4 {
+  animation-name: animate-ui-slide-in-bottom;
+}
+
 /* Accessibility: WCAG 2.2 AA Reduced Motion Rule */
 @media (prefers-reduced-motion: reduce) {
   *,

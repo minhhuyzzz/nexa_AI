@@ -160,7 +160,7 @@ export default async function OrgClassDetailPage({
   }> = [];
 
   if (classMemberUserIds.length > 0 && assignmentIds.length > 0) {
-    let subQuery = adminSupabase
+    const subQuery = adminSupabase
       .from('assessment_submissions')
       .select('id, user_id, assessment_id, class_assignment_id, status, total_score, percentage, is_passed, submitted_at')
       .in('user_id', classMemberUserIds)

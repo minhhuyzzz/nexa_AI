@@ -102,6 +102,7 @@ export async function GET(req: Request) {
         )
       `)
       .in('user_id', filterUserIds)
+      .is('assessments.organization_id', null)
       .order('created_at', { ascending: false })
       .limit(100);
 

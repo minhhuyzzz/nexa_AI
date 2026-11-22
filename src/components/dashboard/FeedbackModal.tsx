@@ -67,7 +67,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#111114] rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 sm:p-7 text-neutral-900 dark:text-neutral-100">
+      <div className="bg-white dark:bg-[#111114] rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 sm:p-7 text-neutral-900 dark:text-neutral-100 animate-dialog">
         {/* Header Modal */}
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-center gap-3">

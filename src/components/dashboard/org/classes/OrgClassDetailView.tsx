@@ -628,7 +628,7 @@ export function OrgClassDetailView({
                                 </button>
                                 {openActionMenuId === a.id && (
                                   <div
-                                    className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-lg py-1 z-20 text-xs animate-in fade-in zoom-in-95 duration-100"
+                                    className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-lg py-1 z-20 text-xs animate-menu"
                                     onMouseLeave={() => setOpenActionMenuId(null)}
                                   >
                                     <Link

@@ -148,7 +148,7 @@ export function PersonalSidebar() {
                     setHoveredTooltip({ name: tooltipLabel, top: rect.top + rect.height / 2 });
                   }}
                   onMouseLeave={() => setHoveredTooltip(null)}
-                  className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-all duration-150 relative group ${
+                  className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-colors duration-150 relative group ${
                     active
                       ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs ring-1 ring-blue-500/25'
                       : 'text-slate-500 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'
@@ -181,7 +181,7 @@ export function PersonalSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={onItemClick}
-                className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] md:min-h-0 md:py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
+                className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] md:min-h-0 md:py-2 rounded-xl text-xs font-medium transition-colors duration-150 ${
                   active
                     ? 'bg-blue-50/90 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold shadow-2xs'
                     : 'text-neutral-700 dark:text-zinc-300 hover:text-neutral-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-850/60'

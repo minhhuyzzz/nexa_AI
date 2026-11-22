@@ -487,7 +487,7 @@ export function ClassAssignmentsTab({
                         </button>
                         {openActionMenuId === asg.id && (
                           <div
-                            className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-lg py-1 z-20 text-xs animate-in fade-in zoom-in-95 duration-100"
+                            className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 shadow-lg py-1 z-20 text-xs animate-menu"
                             onMouseLeave={() => setOpenActionMenuId(null)}
                           >
                             <Link
@@ -525,7 +525,7 @@ export function ClassAssignmentsTab({
       {/* Assign Modal */}
       {showAssignModal && (
         <div className="fixed inset-0 z-50 bg-neutral-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-5 animate-dialog">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">

@@ -1,11 +1,18 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
+    "animate-ui": {
+      "source": "imskyleen/animate-ui",
+      "commit": "9873c628afdcdb030e74dc2930774a2aa473bd39",
+      "sourceType": "github",
+      "skillPath": "skills/animate-ui/SKILL.md",
+      "computedHash": "44b0004328b1e03f9b6f03f0bef8f100c937b6858cfe893174c0da087fb97fa6"
+    },
     "stageshow": {
       "source": "benjitaylor/skills",
       "sourceType": "github",
       "skillPath": "stageshow/SKILL.md",
-      "computedHash": "ba928f2526ec0a7da76a0a7fe0f6b10d23b5a1bf1a292fd7f1001f4597521ad8"
+      "computedHash": "4069ec2864439c5d1be0efc97cf212884a1cb24494c2a036a76f6efa84c0f5e6"
     }
   }
 }

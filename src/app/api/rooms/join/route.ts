@@ -3,10 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 const joinSchema = z.object({
-  pin: z
-    .string()
-    .transform((val) => val.replace(/[-\s]/g, '').trim())
-    .pipe(z.string().regex(/^\d{6}$/, 'Mã PIN phòng thi phải gồm đúng 6 chữ số')),
+  pin: z.string().regex(/^\d{6}$/, 'Mã PIN phòng thi phải gồm đúng 6 chữ số'),
 });
 
 export async function POST(request: Request) {

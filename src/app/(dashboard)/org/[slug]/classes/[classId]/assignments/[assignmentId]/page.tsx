@@ -293,7 +293,7 @@ export default async function OrgClassAssignmentDetailPage({ params }: PageProps
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/60 dark:divide-zinc-800/60">
+            <tbody>
               {members.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-slate-400">
