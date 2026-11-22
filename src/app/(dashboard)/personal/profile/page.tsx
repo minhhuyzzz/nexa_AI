@@ -71,6 +71,44 @@ interface LearningStats {
   totalSubmissions: number;
 }
 
+function getPlanDisplayInfo(tier?: string) {
+  const norm = (tier || '').toUpperCase();
+  if (norm === 'STANDARD') {
+    return {
+      badge: 'TIÊU CHUẨN',
+      name: 'Gói Tiêu Chuẩn',
+      desc: 'Mở khóa trọn vẹn các miền năng lực số, lộ trình học tập cá nhân hóa và cấp chứng chỉ số.',
+      buttonText: 'Quản lý gói dịch vụ',
+      isPaid: true,
+    };
+  }
+  if (norm === 'ADVANCED' || norm === 'PRO') {
+    return {
+      badge: 'NÂNG CAO',
+      name: 'Gói Nâng Cao',
+      desc: 'Đầy đủ tính năng khảo thí nâng cao, phân tích năng lực số AI và tạo phòng thi trực tiếp không giới hạn.',
+      buttonText: 'Quản lý gói dịch vụ',
+      isPaid: true,
+    };
+  }
+  if (norm === 'ENTERPRISE' || norm === 'BUSINESS') {
+    return {
+      badge: 'TỔ CHỨC',
+      name: 'Gói Tổ Chức',
+      desc: 'Quyền lợi tổ chức B2B, quản lý đợt khảo thí diện rộng và báo cáo tập thể.',
+      buttonText: 'Quản lý gói dịch vụ',
+      isPaid: true,
+    };
+  }
+  return {
+    badge: 'CƠ BẢN',
+    name: 'Gói Cơ Bản',
+    desc: 'Trải nghiệm các tính năng học tập và đánh giá năng lực số cốt lõi trên NEXA.',
+    buttonText: 'Nâng cấp gói dịch vụ',
+    isPaid: false,
+  };
+}
+
 export default function LearnerProfilePage() {
   return (
     <Suspense
@@ -1117,38 +1155,41 @@ function LearnerProfileContent() {
               </div>
 
               {/* Inner Banner */}
-              <div className="p-5 bg-slate-50/80 dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="inline-block px-2 py-0.5 rounded text-[11px] font-bold font-mono bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300">
-                    {profile?.plan_tier === 'PRO' ? 'PRO' : 'FREE'}
-                  </div>
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Gói {profile?.plan_tier === 'PRO' ? 'PRO' : 'FREE'}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400">
-                    {profile?.plan_tier === 'PRO'
-                      ? 'Bạn đang sử dụng đầy đủ các tính năng khảo thí nâng cao và báo cáo AI chuyên sâu.'
-                      : 'Trải nghiệm các tính năng học tập và đánh giá cốt lõi trên NEXA.'}
-                  </p>
-                </div>
+              {(() => {
+                const planInfo = getPlanDisplayInfo(profile?.plan_tier);
+                return (
+                  <div className="p-5 bg-slate-50/80 dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="inline-block px-2 py-0.5 rounded text-[11px] font-bold font-mono bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300">
+                        {planInfo.badge}
+                      </div>
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        {planInfo.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        {planInfo.desc}
+                      </p>
+                    </div>
 
-                <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0 w-full md:w-auto">
-                  <Link
-                    href="/personal/billing"
-                    className="w-full md:w-auto px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                  >
-                    <Zap className="w-3.5 h-3.5" strokeWidth={2} />
-                    <span>Nâng cấp PRO</span>
-                  </Link>
-                  <Link
-                    href="/personal/billing"
-                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5 font-medium"
-                  >
-                    <span>So sánh các gói</span>
-                    <ArrowRight className="w-3 h-3" strokeWidth={2} />
-                  </Link>
-                </div>
-              </div>
+                    <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0 w-full md:w-auto">
+                      <Link
+                        href="/personal/billing"
+                        className="w-full md:w-auto px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                      >
+                        <Zap className="w-3.5 h-3.5" strokeWidth={2} />
+                        <span>{planInfo.buttonText}</span>
+                      </Link>
+                      <Link
+                        href="/personal/billing"
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5 font-medium"
+                      >
+                        <span>So sánh các gói dịch vụ</span>
+                        <ArrowRight className="w-3 h-3" strokeWidth={2} />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })()}
             </section>
 
             {/* CARD 5: Dữ liệu & tài khoản */}
