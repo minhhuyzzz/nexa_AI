@@ -155,13 +155,36 @@ export default function AssessmentBriefingPage() {
         }
       }
 
-      // Comprehensive 5-domain test
+      // Dynamic Domain Breakdown:
+      // If baseline, include all canonical 5 domains.
+      // For modular / normal assessments, ONLY include domains that actually have questions (> 0)
       if (breakdown.length === 0) {
-        breakdown = DOMAIN_CATALOG.map((d) => ({
-          domainIndex: d.domainIndex,
-          title: d.title,
-          questionCount: countByDomainIndex.get(d.domainIndex) || 0,
-        }));
+        if (asm.is_system_baseline) {
+          breakdown = DOMAIN_CATALOG.map((d) => ({
+            domainIndex: d.domainIndex,
+            title: d.title,
+            questionCount: countByDomainIndex.get(d.domainIndex) || 0,
+          }));
+        } else {
+          const activeDomains = DOMAIN_CATALOG.filter(
+            (d) => (countByDomainIndex.get(d.domainIndex) || 0) > 0
+          );
+          if (activeDomains.length > 0) {
+            breakdown = activeDomains.map((d) => ({
+              domainIndex: d.domainIndex,
+              title: d.title,
+              questionCount: countByDomainIndex.get(d.domainIndex) || 0,
+            }));
+          } else {
+            breakdown = [
+              {
+                domainIndex: 1,
+                title: 'Năng lực số ứng dụng chuyên đề',
+                questionCount,
+              },
+            ];
+          }
+        }
       }
 
       setAssessment({
@@ -454,14 +477,18 @@ export default function AssessmentBriefingPage() {
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-600" strokeWidth={2} />
               <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                {assessment.target_domain && assessment.target_domain !== 'ALL'
-                  ? 'Miền năng lực số được khảo thí trọng tâm'
+                {assessment.domain_breakdown.length === 1
+                  ? 'Chuyên đề năng lực số được khảo thí'
+                  : assessment.domain_breakdown.length < 5
+                  ? 'Các miền năng lực số được khảo thí trong đề'
                   : 'Cấu trúc các miền năng lực số được khảo thí'}
               </h3>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
               {assessment.question_count === 0
                 ? 'Đề thi hiện có 0 câu hỏi (đang được ban chuyên môn cập nhật nội dung khảo thí).'
+                : assessment.domain_breakdown.length < 5
+                ? 'Đề thi tập trung khảo sát và đánh giá kỹ năng chuyên sâu theo các miền dưới đây:'
                 : 'Đề thi được phân bổ câu hỏi chuẩn hóa nhằm phác thảo chính xác bản đồ năng lực số của bạn:'}
             </p>
 

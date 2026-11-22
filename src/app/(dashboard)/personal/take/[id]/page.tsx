@@ -1449,22 +1449,22 @@ function AssessmentTakeContent({
       return (
         <div className="min-h-screen bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 md:p-8 flex justify-center items-start animate-in fade-in duration-200">
           <div className="max-w-4xl w-full p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111114] shadow-sm space-y-6">
-            {/* Header Kết Quả Chuẩn Hóa */}
+            {/* Header Kết Quả */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold font-mono tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                    BÁO CÁO ĐÁNH GIÁ NĂNG LỰC SỐ
+                    {effectiveReturnUrl ? 'KẾT QUẢ BÀI THI LỚP HỌC' : 'BÁO CÁO ĐÁNH GIÁ NĂNG LỰC SỐ'}
                   </span>
                   {isPassedExam ? (
                     <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      <span>ĐẠT CHUẨN NĂNG LỰC (≥ 70%)</span>
+                      <span>ĐẠT CHUẨN (≥ {assessment?.passing_score || 70}%)</span>
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      <span>CẦN TIẾP TỤC BỒI DƯỠNG (&lt; 70%)</span>
+                      <span>CẦN TIẾP TỤC BỒI DƯỠNG (&lt; {assessment?.passing_score || 70}%)</span>
                     </span>
                   )}
                 </div>
@@ -1488,7 +1488,7 @@ function AssessmentTakeContent({
                   }`}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
-                  <span>Báo Cáo Năng Lực</span>
+                  <span>{effectiveReturnUrl ? 'Tổng Quan Điểm Số' : 'Báo Cáo Năng Lực'}</span>
                 </button>
                 <button
                   type="button"
@@ -1551,14 +1551,6 @@ function AssessmentTakeContent({
             {/* Bottom Actions Footer */}
             <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Link
-                  href={effectiveReturnUrl || "/personal/assessments"}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 font-semibold hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>{effectiveReturnUrl ? 'Quay lại' : 'Về Danh Sách Đề Thi'}</span>
-                </Link>
-
                 <button
                   type="button"
                   onClick={() => {
@@ -1573,14 +1565,24 @@ function AssessmentTakeContent({
                 </button>
               </div>
 
-              <Link
-                href="/personal/learning-path"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-xs"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Vào Lộ Trình Học Tập</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {effectiveReturnUrl ? (
+                <Link
+                  href={effectiveReturnUrl}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-xs"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay về Lớp học</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/personal/learning-path"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-xs"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Vào Lộ Trình Học Tập</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

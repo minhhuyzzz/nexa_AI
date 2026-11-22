@@ -1561,14 +1561,6 @@ export function AssessmentTakeContent({
             {/* Bottom Actions Footer */}
             <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Link
-                  href={effectiveReturnUrl || "/personal/dashboard"}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-neutral-300 font-semibold hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Về Bảng Điều Khiển</span>
-                </Link>
-
                 <button
                   type="button"
                   onClick={() => {
@@ -1583,14 +1575,24 @@ export function AssessmentTakeContent({
                 </button>
               </div>
 
-              <Link
-                href="/personal/learning-path"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-xs"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Vào Lộ Trình Học Tập</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {effectiveReturnUrl ? (
+                <Link
+                  href={effectiveReturnUrl}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-xs"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay về Lớp học</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/personal/learning-path"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-xs"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Vào Lộ Trình Học Tập</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
         </div>
