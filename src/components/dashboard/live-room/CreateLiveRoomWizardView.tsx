@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Lock,
   RefreshCw,
+  Plus,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -101,10 +102,14 @@ export function CreateLiveRoomWizardView({
     async function loadData() {
       setLoadingAssessments(true);
       try {
+        // Ở Không gian Cá nhân: CHỈ nạp đề do chính người dùng tự tạo (/api/personal/assessments)
+        // Ở Không gian Tổ chức: nạp kho đề tổ chức và đề chuẩn hóa hệ thống (/api/assessments?orgId=...)
         const promises: Promise<any>[] = [
-          fetch(`/api/assessments${isOrg && orgId ? `?orgId=${orgId}` : ''}`).then((r) =>
-            r.ok ? r.json() : null
-          ),
+          isOrg
+            ? fetch(`/api/assessments${orgId ? `?orgId=${orgId}` : ''}`).then((r) =>
+                r.ok ? r.json() : null
+              )
+            : Promise.resolve(null),
           !isOrg
             ? fetch('/api/personal/assessments').then((r) => (r.ok ? r.json() : null))
             : Promise.resolve(null),
@@ -115,20 +120,25 @@ export function CreateLiveRoomWizardView({
 
         const list: Assessment[] = [];
 
-        // 1. Process Personal Authored Assessments (Chỉ nạp khi ở ngữ cảnh Cá nhân)
+        // 1. Xử lý Đề do cá nhân tự tạo (CHỈ áp dụng cho Không gian Cá nhân)
         if (!isOrg && personalData && Array.isArray(personalData.assessments)) {
           personalData.assessments.forEach((pa: any) => {
+            let detectedDomain = 'Đề tự biên soạn';
+            if (Array.isArray(pa.assessment_items) && pa.assessment_items.length > 0) {
+              const firstDomain = pa.assessment_items[0]?.competencies?.competency_domains?.title;
+              if (firstDomain) detectedDomain = firstDomain;
+            }
             list.push({
               id: pa.id,
               title: pa.title,
-              domain: 'Đề tự biên soạn',
+              domain: detectedDomain,
               domainName: 'Đề của tôi',
-              description: pa.description || 'Bài đánh giá năng lực nội bộ.',
+              description: pa.description || 'Bài đánh giá năng lực cá nhân tự tạo.',
               duration_minutes: pa.duration_minutes || 45,
               passing_score: pa.passing_score || 70,
               questionCount: Array.isArray(pa.assessment_items)
                 ? pa.assessment_items.length
-                : pa.questionCount || 20,
+                : pa.questionCount || 0,
               typeLabel: 'Trắc nghiệm và Tự luận',
               types: ['MCQ'],
               origin: 'MY_ASSESSMENT',
@@ -137,12 +147,12 @@ export function CreateLiveRoomWizardView({
           });
         }
 
-        // 2. Process System & Organization Bank Assessments
-        if (sysData && Array.isArray(sysData.assessments)) {
+        // 2. Xử lý Đề hệ thống & Kho đề tổ chức (CHỈ áp dụng cho Không gian Tổ chức)
+        if (isOrg && sysData && Array.isArray(sysData.assessments)) {
           sysData.assessments.forEach((sa: any) => {
             if (!list.some((item) => item.id === sa.id)) {
               const isOrgTest = Boolean(
-                isOrg && (sa.isOrgBank || sa.organizationId === orgId || sa.organization_id === orgId)
+                sa.isOrgBank || sa.organizationId === orgId || sa.organization_id === orgId
               );
               list.push({
                 id: sa.id,
@@ -468,16 +478,27 @@ export function CreateLiveRoomWizardView({
               <span>Đang tải danh sách bài đánh giá...</span>
             </div>
           ) : filteredAssessments.length === 0 ? (
-            <div className="p-12 text-center bg-white dark:bg-black rounded-xl border border-slate-200 dark:border-zinc-800 text-xs text-slate-500 space-y-2">
-              <FileText className="w-6 h-6 text-slate-400 mx-auto" />
-              <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+            <div className="p-12 text-center bg-white dark:bg-black rounded-xl border border-slate-200 dark:border-zinc-800 text-xs text-slate-500 space-y-3">
+              <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+              <div className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
                 Không tìm thấy bài đánh giá phù hợp
               </div>
-              <p className="text-slate-400">
+              <p className="text-slate-400 max-w-md mx-auto">
                 {activeTab === 'MY' || !isOrg
-                  ? 'Bạn chưa có bài đánh giá nào trong danh mục Đề của tôi. Hãy biên soạn tại mục Đề đánh giá của tôi.'
+                  ? 'Bạn chưa có bài đánh giá nào trong danh mục Đề của tôi. Hãy biên soạn bộ đề mới tại mục Đề đánh giá của tôi.'
                   : 'Thử tìm kiếm với từ khóa khác hoặc chuyển sang xem Tất cả.'}
               </p>
+              {!isOrg && (
+                <div className="pt-2">
+                  <Link
+                    href="/personal/assessments"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Đến trang Đề đánh giá của tôi
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">
