@@ -273,12 +273,6 @@ export async function GET(
       assessment,
       items: responseItems,
     };
-    console.log('[GET_ASSESSMENT_API_SUCCESS]:', {
-      id,
-      assessmentId: assessment.id,
-      itemsCount: responseData.items.length,
-      isPreview,
-    });
     return NextResponse.json(responseData);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';

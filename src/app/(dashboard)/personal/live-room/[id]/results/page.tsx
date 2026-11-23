@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
-import { QuestionReviewSection, QuestionReviewItem } from '@/components/dashboard/personal/QuestionReviewSection';
+import { QuestionReviewSection, QuestionReviewItem } from '@/components/dashboard/assessments/QuestionReviewSection';
 import { RoomThemeId, ROOM_THEMES } from '@/types/live-room';
 
 interface CandidateResult {

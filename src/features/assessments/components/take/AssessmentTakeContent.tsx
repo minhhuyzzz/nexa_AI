@@ -40,7 +40,7 @@ import {
   ChevronRight,
   BarChart3,
 } from 'lucide-react';
-import { QuestionReviewSection, type QuestionReviewItem } from '@/components/dashboard/personal/QuestionReviewSection';
+import { QuestionReviewSection, type QuestionReviewItem } from '@/components/dashboard/assessments/QuestionReviewSection';
 import { NexaLogo } from '@/components/brand/NexaLogo';
 import { useSmartProctoring } from '@/features/assessments/hooks/useSmartProctoring';
 import { DynamicWatermark } from '@/features/assessments/components/take/DynamicWatermark';

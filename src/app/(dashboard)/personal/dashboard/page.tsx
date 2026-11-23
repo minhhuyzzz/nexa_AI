@@ -946,27 +946,6 @@ export default function LearnerDashboardPage() {
               )}
             </div>
           </div>
-
-          <div className="pt-2 flex items-center justify-center gap-3 sm:gap-6 text-[11px] text-slate-600 dark:text-neutral-400 font-medium flex-wrap px-2">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-blue-600 dark:bg-blue-400" />
-              <span>Năng lực tích lũy</span>
-            </div>
-            {competencyProfile?.baselineRadarData && (
-              <div className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-1 text-slate-400 shrink-0" viewBox="0 0 14 2">
-                  <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3,2" />
-                </svg>
-                <span>Vạch xuất phát</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-1 text-slate-400 dark:text-zinc-500 shrink-0" viewBox="0 0 14 2">
-                <line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3,2" />
-              </svg>
-              <span>Chuẩn mục tiêu (70%)</span>
-            </div>
-          </div>
         </div>
 
         {/* Right: Tiến độ theo các miền năng lực (Hòa vào nền, không viền, căn đều với radar) */}

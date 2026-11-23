@@ -57,7 +57,7 @@ BEGIN
         v_framework_id,
         30,
         70.00,
-        50,
+        0,
         TRUE,
         'PUBLISHED',
         1,

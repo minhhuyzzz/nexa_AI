@@ -94,7 +94,7 @@ export async function POST(
     }
 
     const passingScore = Number(assessment.passing_score) || 70.0;
-    const pointReward = Number(assessment.point_reward) || 10;
+    const pointReward = assessment.point_reward !== undefined && assessment.point_reward !== null ? Number(assessment.point_reward) : 10;
 
     let resolvedCampaignId = campaignId || null;
     let isAuthorizedClassAssignment = false;
@@ -484,9 +484,22 @@ export async function POST(
       const maxScore = Number(atomicResult.max_score) || 0;
       const percentage = atomicResult.percentage !== null && atomicResult.percentage !== undefined ? Number(atomicResult.percentage) : null;
       const isPassed = atomicResult.is_passed;
-      const pointsAwarded = Number(atomicResult.points_awarded) || 0;
+      const pointsAwarded = isBaselineExam ? 0 : (Number(atomicResult.points_awarded) || 0);
       const hasOpenResponse = Boolean(atomicResult.has_open_response);
       const correctAnswersCount = Number(atomicResult.correct_count) || 0;
+
+      // Ensure baseline survey records 0 points awarded in submission record
+      if (isBaselineExam) {
+        try {
+          await dbQuery((db) => {
+            const table = db?.from?.('assessment_submissions');
+            if (!table || typeof table.update !== 'function') return Promise.resolve({ error: null });
+            return table.update({ points_awarded: 0 }).eq('id', activeSubmissionId);
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
 
       // Atomic Point Ledger Grant
       if (pointsAwarded > 0) {
@@ -889,9 +902,9 @@ export async function POST(
       ? null
       : percentage !== null && percentage >= passingScore;
 
-    // Anti-farming check
+    // Anti-farming check (baseline surveys strictly grant 0 reward points)
     let pointsAwarded = 0;
-    if (isPassed === true && pointReward > 0) {
+    if (!isBaselineExam && isPassed === true && pointReward > 0) {
       const { data: previousPassed } = await dbQuery((db) => {
         const table = db?.from?.('assessment_submissions');
         if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });

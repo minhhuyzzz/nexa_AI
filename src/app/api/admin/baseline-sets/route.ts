@@ -92,7 +92,7 @@ export async function POST(req: Request) {
         description: body.description || 'Bộ khảo thí đánh giá đầu vào năng lực số',
         duration_minutes: 25,
         passing_score: 70,
-        point_reward: 50,
+        point_reward: 0,
         is_published: false,
         is_system_baseline: false,
         system_code: uniqueSystemCode,

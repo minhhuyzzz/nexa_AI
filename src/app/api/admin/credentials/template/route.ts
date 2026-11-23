@@ -6,8 +6,6 @@ import {
   DEFAULT_CERTIFICATE_TEMPLATE,
 } from '@/types/certificate-template';
 
-export { DEFAULT_CERTIFICATE_TEMPLATE, type CertificateTemplateConfig };
-
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
