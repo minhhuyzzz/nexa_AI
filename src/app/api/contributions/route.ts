@@ -92,8 +92,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Fetch configured contribution reward points from system_settings
+    let rewardPts = 20;
+    try {
+      const { data: settingRecord } = await adminSupabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'gamification_reward_policy')
+        .maybeSingle();
+
+      if (
+        settingRecord?.value &&
+        typeof (settingRecord.value as Record<string, unknown>).contributionApprovedPts === 'number'
+      ) {
+        rewardPts = (settingRecord.value as Record<string, unknown>).contributionApprovedPts as number;
+      }
+    } catch {
+      rewardPts = 20;
+    }
+
     return NextResponse.json({
       success: true,
+      rewardPts,
       contributions: (contributions || []).map((c: any) => ({
         id: c.id,
         code: c.code,

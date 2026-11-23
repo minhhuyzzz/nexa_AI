@@ -285,6 +285,26 @@ export async function POST(
       }
     }
 
+    // Dynamic reward policy for baseline survey from platform settings
+    let configuredBaselineReward = 0;
+    if (isBaselineExam) {
+      try {
+        const { data: settingRow } = await dbQuery((db) => {
+          const table = db?.from?.('system_settings');
+          if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
+          return table.select('value').eq('key', 'gamification_reward_policy').maybeSingle();
+        });
+        const gPolicy = (settingRow?.value as Record<string, unknown>) || {};
+        if (typeof gPolicy.baselineSurveyPts === 'number') {
+          configuredBaselineReward = Math.max(0, gPolicy.baselineSurveyPts);
+        } else if (assessment.point_reward !== undefined && assessment.point_reward !== null) {
+          configuredBaselineReward = Math.max(0, Number(assessment.point_reward));
+        }
+      } catch {
+        configuredBaselineReward = Number(assessment.point_reward) || 0;
+      }
+    }
+
     // Calculate smart proctoring summary & trust score ahead of execution
     const effectiveSecuritySettings = assessment.security_settings || {};
     const proctoringEvents = validated.data.proctoringEvents || [];
@@ -484,17 +504,17 @@ export async function POST(
       const maxScore = Number(atomicResult.max_score) || 0;
       const percentage = atomicResult.percentage !== null && atomicResult.percentage !== undefined ? Number(atomicResult.percentage) : null;
       const isPassed = atomicResult.is_passed;
-      const pointsAwarded = isBaselineExam ? 0 : (Number(atomicResult.points_awarded) || 0);
+      const pointsAwarded = isBaselineExam ? configuredBaselineReward : (Number(atomicResult.points_awarded) || 0);
       const hasOpenResponse = Boolean(atomicResult.has_open_response);
       const correctAnswersCount = Number(atomicResult.correct_count) || 0;
 
-      // Ensure baseline survey records 0 points awarded in submission record
+      // Sync baseline survey points awarded in submission record
       if (isBaselineExam) {
         try {
           await dbQuery((db) => {
             const table = db?.from?.('assessment_submissions');
             if (!table || typeof table.update !== 'function') return Promise.resolve({ error: null });
-            return table.update({ points_awarded: 0 }).eq('id', activeSubmissionId);
+            return table.update({ points_awarded: configuredBaselineReward }).eq('id', activeSubmissionId);
           });
         } catch {
           // Non-blocking
@@ -513,6 +533,7 @@ export async function POST(
           metadata: {
             assessment_id: assessmentId,
             submission_id: activeSubmissionId,
+            is_baseline: isBaselineExam,
             score_percentage: percentage !== null ? Number(percentage.toFixed(2)) : 0,
           },
         });
@@ -902,9 +923,11 @@ export async function POST(
       ? null
       : percentage !== null && percentage >= passingScore;
 
-    // Anti-farming check (baseline surveys strictly grant 0 reward points)
+    // Anti-farming check (baseline survey rewards follow admin configuration)
     let pointsAwarded = 0;
-    if (!isBaselineExam && isPassed === true && pointReward > 0) {
+    if (isBaselineExam) {
+      pointsAwarded = configuredBaselineReward;
+    } else if (isPassed === true && pointReward > 0) {
       const { data: previousPassed } = await dbQuery((db) => {
         const table = db?.from?.('assessment_submissions');
         if (!table || typeof table.select !== 'function') return Promise.resolve({ data: null, error: null });
@@ -972,7 +995,7 @@ export async function POST(
       return NextResponse.json({ error: updateSubErr?.message || 'Không thể cập nhật kết quả nộp bài' }, { status: 500 });
     }
 
-    // Grant points if passed
+    // Grant points if passed or baseline survey completed
     if (pointsAwarded > 0) {
       await PointLedgerService.grantPoints(supabase, {
         userId: user.id,
@@ -984,6 +1007,7 @@ export async function POST(
         metadata: {
           assessment_id: assessmentId,
           submission_id: activeSubmissionId,
+          is_baseline: isBaselineExam,
           score_percentage: percentage !== null ? Number(percentage.toFixed(2)) : 0,
         },
       });

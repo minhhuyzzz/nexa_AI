@@ -25,6 +25,7 @@ import type { ContributionItem } from '@/types/contributions';
 
 export default function LearnerContributeOverviewPage() {
   const [contributions, setContributions] = useState<ContributionItem[]>([]);
+  const [rewardPts, setRewardPts] = useState<number>(20);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +36,9 @@ export default function LearnerContributeOverviewPage() {
       setLoading(true);
       const res = await fetch('/api/contributions');
       const data = await res.json();
+      if (typeof data.rewardPts === 'number') {
+        setRewardPts(data.rewardPts);
+      }
       if (data.contributions) {
         setContributions(data.contributions);
       }
@@ -177,7 +181,7 @@ export default function LearnerContributeOverviewPage() {
               href="/personal/contribute/new"
               className="inline-flex items-center gap-1 text-sky-600 font-semibold hover:underline"
             >
-              <span>+ Đóng góp tình huống hoặc đề bài mới ngay (+100đ)</span>
+              <span>+ Đóng góp tình huống hoặc đề bài mới ngay{rewardPts > 0 ? ` (+${rewardPts} điểm)` : ''}</span>
             </Link>
           </div>
         ) : (
@@ -230,7 +234,7 @@ export default function LearnerContributeOverviewPage() {
                 {item.status === 'approved' ? (
                   <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-[11px] border border-emerald-200 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                    <span>Đã duyệt (+100đ)</span>
+                    <span>Đã duyệt (+{item.pointsRewarded !== undefined && item.pointsRewarded !== null ? item.pointsRewarded : rewardPts} điểm)</span>
                   </span>
                 ) : item.status === 'pending' ? (
                   <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-semibold text-[11px] border border-amber-200 flex items-center gap-1.5">
@@ -278,7 +282,7 @@ export default function LearnerContributeOverviewPage() {
                     <span>ĐÃ ĐƯỢC HỘI ĐỒNG THẨM ĐỊNH PHÊ DUYỆT</span>
                   </div>
                   <span className="text-emerald-700 font-bold text-[11px] font-mono">
-                    +{selectedItem.pointsRewarded || 100} ĐIỂM THƯỞNG
+                    +{selectedItem.pointsRewarded !== undefined && selectedItem.pointsRewarded !== null ? selectedItem.pointsRewarded : rewardPts} ĐIỂM THƯỞNG
                   </span>
                 </div>
                 <p className="text-emerald-900 leading-relaxed text-[11px]">

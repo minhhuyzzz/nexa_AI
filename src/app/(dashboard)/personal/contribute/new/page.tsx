@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -40,7 +40,19 @@ export default function NewContributionPage() {
   const [submissionCode, setSubmissionCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [rewardPts, setRewardPts] = useState<number>(20);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch('/api/contributions')
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.rewardPts === 'number') {
+          setRewardPts(data.rewardPts);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
@@ -148,7 +160,7 @@ export default function NewContributionPage() {
           Đóng góp đề bài mới
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-          Đóng góp câu hỏi và bài thực hành vào ngân hàng chung. Nhận ngay 100 điểm tích lũy khi đề được thẩm định đạt chuẩn.
+          Đóng góp câu hỏi và bài thực hành vào ngân hàng chung. Nhận ngay {rewardPts} điểm tích lũy khi đề được thẩm định đạt chuẩn.
         </p>
       </div>
 
@@ -435,7 +447,7 @@ export default function NewContributionPage() {
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  <span>Gửi đề xuất và nhận 100 điểm</span>
+                  <span>Gửi đề xuất{rewardPts > 0 ? ` và nhận ${rewardPts} điểm` : ''}</span>
                 </>
               )}
             </button>

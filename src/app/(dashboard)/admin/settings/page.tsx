@@ -24,10 +24,11 @@ function AdminSettingsContent() {
   const [supportEmail, setSupportEmail] = useState('support@nexa.edu.vn');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
-  // 2. Chính sách Điểm thưởng PTS & Chuyên cần
+  // 2. Chính sách Điểm thưởng & Chuyên cần
   const [dailyLoginPts, setDailyLoginPts] = useState(1);
   const [streakMilestonePts, setStreakMilestonePts] = useState(10);
   const [contributionApprovedPts, setContributionApprovedPts] = useState(20);
+  const [baselineSurveyPts, setBaselineSurveyPts] = useState(0);
 
   // 3. Múi giờ & Định dạng hiển thị
   const [systemTimezone, setSystemTimezone] = useState('Asia/Ho_Chi_Minh');
@@ -60,6 +61,9 @@ function AdminSettingsContent() {
           if (typeof gamification.streakMilestonePts === 'number') setStreakMilestonePts(gamification.streakMilestonePts);
           if (typeof gamification.contributionApprovedPts === 'number') {
             setContributionApprovedPts(gamification.contributionApprovedPts);
+          }
+          if (typeof gamification.baselineSurveyPts === 'number') {
+            setBaselineSurveyPts(gamification.baselineSurveyPts);
           }
         }
       } catch (err) {
@@ -99,6 +103,7 @@ function AdminSettingsContent() {
           dailyLoginPts: Number(dailyLoginPts) || 1,
           streakMilestonePts: Number(streakMilestonePts) || 10,
           contributionApprovedPts: Number(contributionApprovedPts) || 20,
+          baselineSurveyPts: Math.max(0, Number(baselineSurveyPts) || 0),
         }),
       });
 
@@ -125,6 +130,7 @@ function AdminSettingsContent() {
     setDailyLoginPts(1);
     setStreakMilestonePts(10);
     setContributionApprovedPts(20);
+    setBaselineSurveyPts(0);
   };
 
   return (
@@ -159,7 +165,7 @@ function AdminSettingsContent() {
             <span>Đã cập nhật và lưu cấu hình nền tảng thành công vào cơ sở dữ liệu.</span>
           </div>
           <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
-            AUDIT: LOGGED
+            ĐÃ GHI NHẬT KÝ
           </span>
         </div>
       )}
@@ -243,7 +249,7 @@ function AdminSettingsContent() {
                       )}
                     </div>
                     <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
-                      Khi bật, chỉ tài khoản Super Admin mới có quyền truy cập hệ thống. Toàn bộ người học và tổ chức sẽ nhận thông báo bảo trì định kỳ.
+                      Khi kích hoạt, chỉ tài khoản Quản trị viên cấp cao mới có quyền truy cập hệ thống. Toàn bộ người học và tổ chức sẽ nhận thông báo bảo trì định kỳ.
                     </p>
                   </div>
                   <button
@@ -264,7 +270,7 @@ function AdminSettingsContent() {
               </div>
             </div>
 
-            {/* Card 2: Chính sách Điểm thưởng PTS & Chuyên cần */}
+            {/* Card 2: Chính sách Điểm thưởng & Chuyên cần */}
             <div className="bg-white dark:bg-[#111114] border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-xs space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -276,7 +282,7 @@ function AdminSettingsContent() {
                       Điểm thưởng và Chuyên cần
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-neutral-400">
-                      Cấu hình mức điểm tích lũy (PTS) cho các hoạt động của người học
+                      Cấu hình định mức điểm tích lũy cho các hoạt động của người học
                     </p>
                   </div>
                 </div>
@@ -289,7 +295,7 @@ function AdminSettingsContent() {
                       Điểm danh đăng nhập hằng ngày
                     </label>
                     <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
-                      +{dailyLoginPts} PTS / ngày
+                      +{dailyLoginPts} điểm / ngày
                     </span>
                   </div>
                   <input
@@ -301,17 +307,17 @@ function AdminSettingsContent() {
                     className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition-colors tabular-nums"
                   />
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
-                    Cộng tự động vào sổ cái điểm (Point Ledger) khi người học truy cập hệ thống mỗi ngày.
+                    Tự động ghi nhận vào sổ cái điểm khi người học truy cập hệ thống mỗi ngày.
                   </p>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300">
-                      Thưởng chuỗi chuyên cần (Streak Milestone)
+                      Thưởng chuỗi chuyên cần
                     </label>
                     <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
-                      +{streakMilestonePts} PTS / chuỗi 7 ngày
+                      +{streakMilestonePts} điểm / chuỗi 7 ngày
                     </span>
                   </div>
                   <input
@@ -333,7 +339,7 @@ function AdminSettingsContent() {
                       Thưởng duyệt đề xuất đóng góp câu hỏi
                     </label>
                     <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
-                      +{contributionApprovedPts} PTS / đề xuất
+                      +{contributionApprovedPts} điểm / đề xuất
                     </span>
                   </div>
                   <input
@@ -345,7 +351,29 @@ function AdminSettingsContent() {
                     className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition-colors tabular-nums"
                   />
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
-                    Ghi nhận điểm cho người dùng khi đề xuất câu hỏi được duyệt làm tư liệu tham khảo.
+                    Ghi nhận điểm cho người dùng khi đề xuất câu hỏi được duyệt làm tài liệu tham khảo.
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-medium text-slate-600 dark:text-neutral-300">
+                      Thưởng hoàn thành khảo sát đầu vào
+                    </label>
+                    <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
+                      {baselineSurveyPts > 0 ? `+${baselineSurveyPts} điểm / lần` : '0 điểm (Không cộng điểm)'}
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={200}
+                    value={baselineSurveyPts}
+                    onChange={(e) => setBaselineSurveyPts(Math.max(0, Math.min(200, parseInt(e.target.value) || 0)))}
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition-colors tabular-nums"
+                  />
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">
+                    Mức điểm thưởng khi người học hoàn tất bài khảo sát năng lực số đầu vào (đặt 0 để không cộng điểm thưởng).
                   </p>
                 </div>
               </div>
@@ -379,13 +407,13 @@ function AdminSettingsContent() {
                     onChange={(e) => setSystemTimezone(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition-colors cursor-pointer"
                   >
-                    <option value="Asia/Ho_Chi_Minh">(GMT+07:00) Bangkok, Hà Nội, TP.HCM</option>
-                    <option value="Asia/Singapore">(GMT+08:00) Singapore, Kuala Lumpur</option>
-                    <option value="Asia/Tokyo">(GMT+09:00) Tokyo, Seoul</option>
-                    <option value="UTC">(GMT+00:00) Giờ phối hợp quốc tế (UTC)</option>
+                    <option value="Asia/Ho_Chi_Minh">GMT+07:00 — Bangkok, Hà Nội, TP.HCM</option>
+                    <option value="Asia/Singapore">GMT+08:00 — Singapore, Kuala Lumpur</option>
+                    <option value="Asia/Tokyo">GMT+09:00 — Tokyo, Seoul</option>
+                    <option value="UTC">GMT+00:00 — Giờ quốc tế UTC</option>
                   </select>
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5">
-                    Được áp dụng khi tính toán chu kỳ điểm danh, nộp bài thi và nhật ký kiểm toán.
+                    Áp dụng khi tính toán chu kỳ điểm danh, nộp bài thi và nhật ký kiểm toán.
                   </p>
                 </div>
 
@@ -398,9 +426,9 @@ function AdminSettingsContent() {
                     onChange={(e) => setDateTimeFormat(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 transition-colors cursor-pointer"
                   >
-                    <option value="DD/MM/YYYY HH:mm">DD/MM/YYYY HH:mm (Tiêu chuẩn Việt Nam — vd: 19/11/2026 15:30)</option>
-                    <option value="YYYY-MM-DD HH:mm">YYYY-MM-DD HH:mm (ISO Quốc tế — vd: 2026-11-19 15:30)</option>
-                    <option value="MM/DD/YYYY hh:mm A">MM/DD/YYYY hh:mm A (Mỹ — vd: 11/19/2026 03:30 PM)</option>
+                    <option value="DD/MM/YYYY HH:mm">DD/MM/YYYY HH:mm — ví dụ: 19/11/2026 15:30</option>
+                    <option value="YYYY-MM-DD HH:mm">YYYY-MM-DD HH:mm — ví dụ: 2026-11-19 15:30</option>
+                    <option value="MM/DD/YYYY hh:mm A">MM/DD/YYYY hh:mm A — ví dụ: 19/11/2026 03:30 CH</option>
                   </select>
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-1.5">
                     Quy chuẩn hiển thị ngày giờ trên chứng chỉ số và các bảng quản trị.

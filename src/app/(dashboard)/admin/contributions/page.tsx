@@ -36,11 +36,18 @@ export default function AdminContributionsPage() {
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
+  const [customPoints, setCustomPoints] = useState<number>(20);
+  const [defaultRewardPts, setDefaultRewardPts] = useState<number>(20);
+
   const fetchContributions = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/contributions');
       const data = await res.json();
+      if (typeof data.rewardPts === 'number') {
+        setDefaultRewardPts(data.rewardPts);
+        setCustomPoints(data.rewardPts);
+      }
       if (data.contributions) {
         setContributions(data.contributions);
       }
@@ -71,15 +78,14 @@ export default function AdminContributionsPage() {
   const countApproved = contributions.filter((c) => c.status === 'approved').length;
   const countRejected = contributions.filter((c) => c.status === 'rejected').length;
 
-  const [customPoints, setCustomPoints] = useState<number>(50);
-
   const handleOpenReview = (item: ContributionItem) => {
     setSelectedItem(item);
     setReviewFeedback(item.adminFeedback || '');
-    let defaultPts = 50;
-    if (item.questionType === 'PRACTICAL_FILE') defaultPts = 100;
-    else if (item.questionType === 'MCQ') defaultPts = 20;
-    setCustomPoints(item.pointsRewarded || defaultPts);
+    setCustomPoints(
+      item.pointsRewarded !== undefined && item.pointsRewarded !== null
+        ? item.pointsRewarded
+        : defaultRewardPts
+    );
     setActionSuccessMsg('');
   };
 

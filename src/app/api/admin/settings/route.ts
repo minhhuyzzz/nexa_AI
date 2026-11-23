@@ -17,6 +17,7 @@ const updateSettingsSchema = z.object({
   dailyLoginPts: z.number().int().min(1).max(50).default(1),
   streakMilestonePts: z.number().int().min(0).max(100).default(10),
   contributionApprovedPts: z.number().int().min(0).max(200).default(20),
+  baselineSurveyPts: z.number().int().min(0).max(500).default(0),
   // Backward compatibility fields (optional)
   sessionTimeout: z.string().optional().default('8h'),
   dataRetention: z.string().optional().default('36m'),
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
           dailyLoginPts: validatedData.dailyLoginPts,
           streakMilestonePts: validatedData.streakMilestonePts,
           contributionApprovedPts: validatedData.contributionApprovedPts,
+          baselineSurveyPts: validatedData.baselineSurveyPts,
           ...(validatedData.gamificationPolicy || {
             contributionMcqDefaultPts: 20,
             contributionScenarioDefaultPts: 50,
@@ -140,6 +142,16 @@ export async function POST(request: NextRequest) {
 
     if (upsertErr) {
       console.warn('Settings upsert warning:', upsertErr.message);
+    }
+
+    // Đồng bộ mức điểm thưởng khảo sát đầu vào vào các đề baseline chuẩn
+    try {
+      await supabase
+        .from('assessments')
+        .update({ point_reward: validatedData.baselineSurveyPts })
+        .or('is_system_baseline.eq.true,id.eq.a0000000-0000-0000-0000-000000000001,baseline_group.eq.INTAKE');
+    } catch (syncErr) {
+      console.warn('Baseline point_reward sync warning:', syncErr);
     }
 
     // Record privileged action audit log
