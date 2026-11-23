@@ -41,6 +41,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { QuestionReviewSection, type QuestionReviewItem } from '@/components/dashboard/personal/QuestionReviewSection';
+import { NexaLogo } from '@/components/brand/NexaLogo';
 import { useSmartProctoring } from '@/features/assessments/hooks/useSmartProctoring';
 import { DynamicWatermark } from '@/features/assessments/components/take/DynamicWatermark';
 import { QuestionPaletteDrawer } from '@/features/assessments/components/take/QuestionPaletteDrawer';
@@ -1149,7 +1150,7 @@ export function AssessmentTakeContent({
               ) : analyzingState.step === 2 ? (
                 <Compass className="w-8 h-8 animate-spin" strokeWidth={2} />
               ) : (
-                <Sparkles className="w-8 h-8 animate-pulse text-amber-300" strokeWidth={2} />
+                <NexaLogo variant="white" size={32} showText={false} className="animate-pulse" />
               )}
             </div>
           </div>
@@ -1365,19 +1366,19 @@ export function AssessmentTakeContent({
 
     const DOMAIN_METADATA: Record<string, { title: string; desc: string }> = {
       '01': {
-        title: 'Thông tin & Dữ liệu số',
+        title: 'Thông tin và Dữ liệu số',
         desc: 'Duyệt, tìm kiếm, đánh giá độ tin cậy và quản lý dữ liệu số an toàn.',
       },
       '02': {
-        title: 'Giao tiếp & Cộng tác số',
+        title: 'Giao tiếp và Hợp tác số',
         desc: 'Tương tác, chia sẻ, văn hóa số và danh tính số.',
       },
       '03': {
-        title: 'Sáng tạo Nội dung số & AI',
+        title: 'Sáng tạo Nội dung số và AI',
         desc: 'Phát triển nội dung đa phương tiện, tích hợp AI, bản quyền số và lập trình.',
       },
       '04': {
-        title: 'An toàn & Bảo mật số',
+        title: 'An toàn và Bảo mật số',
         desc: 'Bảo vệ thiết bị, dữ liệu cá nhân, sức khỏe thể chất/tâm lý và môi trường.',
       },
       '05': {

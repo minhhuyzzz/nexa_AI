@@ -1,17 +1,17 @@
 # Graph Report - nexa  (2026-11-23)
 
 ## Corpus Check
-- 1263 files · ~2,109,415 words
+- 1263 files · ~2,110,460 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 144 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
 ## Summary
-- 10597 nodes · 21217 edges · 537 communities (512 shown, 25 thin omitted)
+- 10597 nodes · 21223 edges · 537 communities (513 shown, 24 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 746 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `847442b6`
+- Built from commit: `b02bc8d8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -226,7 +226,7 @@
 - Spec-Driven Development
 - .agents/skills/impeccable/reference/generate.md
 - .github/skills/impeccable/reference/generate.md
-- [moduleId]/page.tsx
+- EditGoalModal.tsx
 - Imagery
 - The study
 - CORE DIRECTIVE: AWWWARDS-LEVEL IMAGE ART DIRECTION
@@ -542,6 +542,7 @@
 - Behavior
 - ClockControl
 - ai-insights/route.ts
+- ref_react
 - Reproduce an animation from a link or a video
 - animate-ui/NOTICE.md
 - animate-ui/references/review.md
@@ -575,7 +576,7 @@
 - 2-file cycle: `.agents/skills/stageshow/teaching/composition.tsx -> .agents/skills/stageshow/teaching/contrasts.tsx -> .agents/skills/stageshow/teaching/composition.tsx`
 - 2-file cycle: `.agents/skills/stageshow/teaching/contrasts.tsx -> .agents/skills/stageshow/teaching/relationships.tsx -> .agents/skills/stageshow/teaching/contrasts.tsx`
 
-## Communities (537 total, 25 thin omitted)
+## Communities (537 total, 24 thin omitted)
 
 ### Community 0 - "createClient"
 Cohesion: 0.04
@@ -687,7 +688,7 @@ Nodes (67): abortSvelteComponentInjection(), applyEditing(), beginNewLiveConfigu
 
 ### Community 27 - "AssessmentTakeContent.tsx"
 Cohesion: 0.04
-Nodes (56): 2. BẢNG MA TRẬN HIỆN TRẠNG 28 PHÁT HIỆN KỸ THUẬT (MASTER STATUS MATRIX), dynamic, metadata, OrgAssessmentPreviewPage(), AssessmentBriefingPage(), AssessmentMeta, DOMAIN_CATALOG, LeaderboardUser (+48 more)
+Nodes (66): 2. BẢNG MA TRẬN HIỆN TRẠNG 28 PHÁT HIỆN KỸ THUẬT (MASTER STATUS MATRIX), dynamic, metadata, OrgAssessmentPreviewPage(), AssessmentBriefingPage(), AssessmentMeta, DOMAIN_CATALOG, LeaderboardUser (+58 more)
 
 ### Community 28 - "org-competency-analytics.service.ts"
 Cohesion: 0.22
@@ -854,8 +855,8 @@ Cohesion: 0.09
 Nodes (22): AdminAssessmentDetailPage(), dynamic, metadata, dynamic, metadata, OrgAuthoringEditPage(), dynamic, metadata (+14 more)
 
 ### Community 69 - "[groupId]/page.tsx"
-Cohesion: 0.07
-Nodes (33): dynamic, GroupData, LearnerGroupDetailPage(), TabType, ClassHeader(), ClassHeaderProps, ClassFileItem, ClassMaterialsTab() (+25 more)
+Cohesion: 0.04
+Nodes (53): dynamic, GroupData, LearnerGroupDetailPage(), TabType, AssignmentItem, AvailableAssessmentItem, ClassAssignmentsTab(), ClassAssignmentsTabProps (+45 more)
 
 ### Community 70 - "calendar/index.tsx"
 Cohesion: 0.12
@@ -1417,9 +1418,9 @@ Nodes (11): Step 1: Parse the request, Step 2: Reuse the page, then start, Step 
 Cohesion: 0.15
 Nodes (11): Step 1: Parse the request, Step 2: Reuse the page, then start, Step 3: Generate, Step 4: Accept and close, append-arrays, append-string, Config drift, Consent prompt (use this phrasing) (+3 more)
 
-### Community 210 - "[moduleId]/page.tsx"
-Cohesion: 0.20
-Nodes (10): BreakdownItem, CandidateInfo, DonutScoreChart(), LearningPathAssessmentPage(), ModuleInfo, PracticalSubmission, QuestionItem, QuestionOption (+2 more)
+### Community 210 - "EditGoalModal.tsx"
+Cohesion: 0.29
+Nodes (5): EditGoalModalProps, PACE_OPTIONS, PRESET_GOALS, TRACK_OPTIONS, UserLearningGoal
 
 ### Community 211 - "Imagery"
 Cohesion: 0.14
@@ -2207,7 +2208,7 @@ Nodes (4): compat, __dirname, eslintConfig, __filename
 
 ### Community 411 - "ref_react"
 Cohesion: 0.02
-Nodes (70): FeedbackTicket, B2BOrganizationItem, ServicePlan, PlatformAdminItem, SuperAdminItem, AdminSettingsContent(), AdminSettingsPage(), TransactionItem (+62 more)
+Nodes (36): FeedbackTicket, B2BOrganizationItem, ServicePlan, TransactionItem, AttachedFile, PreviewClass, LivePinPage(), LivePinRedirectContent() (+28 more)
 
 ### Community 412 - "dependencies"
 Cohesion: 0.09
@@ -2494,8 +2495,8 @@ Cohesion: 0.17
 Nodes (11): 1. Tóm tắt điều hành & Phát hiện cốt lõi, 2. Sơ đồ đối chiếu luồng tải trang: Hiện tại vs Đề xuất Chuẩn hóa, 3. Bảng tổng hợp Hiện trạng Khung xương từng Route trong Platform Admin, 4.2. Phân tích chi tiết `/admin/organizations/loading.tsx` vs `page.tsx`, 4.3. Phân tích chi tiết `/admin/users/loading.tsx` vs `page.tsx`, 4.4. Phân tích lỗi vỡ cấu trúc của `SkeletonTable` trong `src/components/ui/Skeleton.tsx`, 4.5. Phân tích lỗi đảo chiều Icon trong `SkeletonKpiCard`, 4.6. Phân tích lỗi Flicker Empty State tại `/admin/transactions` (+3 more)
 
 ### Community 498 - "personal/grading/page.tsx"
-Cohesion: 0.06
-Nodes (38): AssessmentItemInfo, OrgCampaignOption, OrgClassOption, Props, SubmissionAnswer, SubmissionItem, AIEvaluationData, CandidateSubmission (+30 more)
+Cohesion: 0.12
+Nodes (18): AssessmentItemInfo, OrgCampaignOption, OrgClassOption, Props, SubmissionAnswer, SubmissionItem, AIEvaluationData, CandidateSubmission (+10 more)
 
 ### Community 499 - "13. COLOR & MATERIAL RULES"
 Cohesion: 0.29
@@ -2625,15 +2626,19 @@ Nodes (6): A12. Interruptible by default, A13. The library element stays the ani
 Cohesion: 0.33
 Nodes (4): AiInsightRequestBody, dynamic, generateFallbackInsights(), OrgAiInsightResult
 
+### Community 532 - "ref_react"
+Cohesion: 0.04
+Nodes (29): PlatformAdminItem, SuperAdminItem, AdminSettingsContent(), AdminSettingsPage(), DOMAIN_OPTIONS, CredentialData, LearnerCredentialsPage(), FaqLayout() (+21 more)
+
 ## Knowledge Gaps
 - **2 isolated node(s):** `SKILLS`, `RFC-4180`
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 5323 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **25 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `createClient`, `guest-use-cases.test.ts`, `app/page.tsx`, `BÁO CÁO KIỂM TOÁN KỸ THUẬT TOÀN DIỆN VỀ HIỆU NĂNG, PHI CHỨC NĂNG VÀ CHẤT LƯỢNG MÃ NGUỒN NỀN TẢNG NEXA AI`, `CreateLiveRoomWizardView.tsx`, `createClient`, `submissions/page.tsx`, `createAdminClient`, `classes/types.ts`, `live-room-analytics.test.ts`, `org-guard.ts`, `createAdminClient`, `learning-paths/page.tsx`, `feedback/route.ts`, `ai-insights/route.ts`, `vitest`, `security.types.ts`, `ref_react`, `org-competency-analytics.service.ts`, `dependencies`, `AssessmentTakeContent.tsx`, `requireOrgPagePermission`, `package.json`, `authoring/page.tsx`, `org-analytics.types.ts`, `rubric.types.ts`, `competency.types.ts`, `AdminUIComponents.tsx`, `admin-preview-client.tsx`, `OrgSidebar.tsx`, `csv-helper.ts`, `admin/organizations/page.tsx`, `admin-baseline-and-content-workflow.test.ts`, `SkeletonCard`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `[groupId]/page.tsx`, `[id]/result/page.tsx`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `join-codes/route.ts`, `[moduleId]/page.tsx`, `admin/analytics/page.tsx`, `live-room.ts`, `checkout/page.tsx`, `certificate-generator.service.ts`, `ref_node_fs`, `personal/grading/page.tsx`, `personal/live-room/page.tsx`, `OrgPlanClientView.tsx`, `excel-mcq-helper.ts`, `baseline-admin-client.tsx`, `OrgAnalyticsDashboard.tsx`?**
+- **Why does `next` connect `next` to `createClient`, `guest-use-cases.test.ts`, `app/page.tsx`, `BÁO CÁO KIỂM TOÁN KỸ THUẬT TOÀN DIỆN VỀ HIỆU NĂNG, PHI CHỨC NĂNG VÀ CHẤT LƯỢNG MÃ NGUỒN NỀN TẢNG NEXA AI`, `CreateLiveRoomWizardView.tsx`, `createClient`, `submissions/page.tsx`, `createAdminClient`, `classes/types.ts`, `live-room-analytics.test.ts`, `org-guard.ts`, `createAdminClient`, `learning-paths/page.tsx`, `feedback/route.ts`, `ai-insights/route.ts`, `vitest`, `ref_react`, `security.types.ts`, `ref_react`, `org-competency-analytics.service.ts`, `dependencies`, `AssessmentTakeContent.tsx`, `requireOrgPagePermission`, `package.json`, `authoring/page.tsx`, `org-analytics.types.ts`, `rubric.types.ts`, `competency.types.ts`, `AdminUIComponents.tsx`, `admin-preview-client.tsx`, `OrgSidebar.tsx`, `csv-helper.ts`, `admin/organizations/page.tsx`, `admin-baseline-and-content-workflow.test.ts`, `SkeletonCard`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `[groupId]/page.tsx`, `[id]/result/page.tsx`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `join-codes/route.ts`, `admin/analytics/page.tsx`, `live-room.ts`, `checkout/page.tsx`, `certificate-generator.service.ts`, `ref_node_fs`, `personal/grading/page.tsx`, `personal/live-room/page.tsx`, `OrgPlanClientView.tsx`, `excel-mcq-helper.ts`, `baseline-admin-client.tsx`, `OrgAnalyticsDashboard.tsx`?**
   _High betweenness centrality (0.119) - this node is a cross-community bridge._
 - **Are the 34 inferred relationships involving `createAdminClient()` (e.g. with `survey-export/route.test.ts` and `activate/route.test.ts`) actually correct?**
   _`createAdminClient()` has 34 INFERRED edges - model-reasoned connections that need verification._

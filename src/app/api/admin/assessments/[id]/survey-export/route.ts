@@ -55,35 +55,51 @@ export async function GET(
 
     const safeItems = items || [];
 
-    // 3. Lấy danh sách bài nộp của học viên
-    const { data: submissions } = await adminSupabase
+    // 3. Lấy danh sách bài nộp của học viên (sử dụng total_score và tương thích chuỗi truy vấn)
+    const { data: submissions, error: subError } = await adminSupabase
       .from('assessment_submissions')
-      .select(`
-        id,
-        user_id,
-        score,
-        percentage,
-        time_spent_seconds,
-        submitted_at,
-        profiles (
-          full_name,
-          email
-        )
-      `)
+      .select('id, user_id, total_score, percentage, time_spent_seconds, submitted_at, status')
       .eq('assessment_id', assessmentId)
       .eq('status', 'EVALUATED')
       .order('submitted_at', { ascending: false });
 
+    if (subError) {
+      console.error('[SURVEY_EXPORT_SUBMISSIONS_ERROR]', subError);
+    }
+
     const safeSubmissions = submissions || [];
     const submissionIds = safeSubmissions.map((s) => s.id);
+    const userIds = Array.from(new Set(safeSubmissions.map((s) => s.user_id).filter(Boolean)));
+
+    // Lấy thông tin hồ sơ của các thí sinh theo user_id độc lập để tránh lỗi quan hệ bảng
+    const profilesMap = new Map<string, { full_name?: string; email?: string }>();
+    if (userIds.length > 0) {
+      try {
+        const { data: profiles, error: profError } = await adminSupabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        if (!profError && profiles) {
+          profiles.forEach((p: any) => {
+            profilesMap.set(p.id, p);
+          });
+        }
+      } catch (profErr) {
+        console.warn('[SURVEY_EXPORT_PROFILES_WARN]', profErr);
+      }
+    }
 
     // 4. Lấy toàn bộ câu trả lời chi tiết
     let allAnswers: any[] = [];
     if (submissionIds.length > 0) {
-      const { data: answers } = await adminSupabase
+      const { data: answers, error: ansError } = await adminSupabase
         .from('submission_answers')
         .select('submission_id, item_id, selected_option_id, is_correct, score_awarded')
         .in('submission_id', submissionIds);
+      if (ansError) {
+        console.warn('[SURVEY_EXPORT_ANSWERS_WARN]', ansError);
+      }
       allAnswers = answers || [];
     }
 
@@ -100,8 +116,10 @@ export async function GET(
     });
 
     // 5. Thống kê theo từng học viên
-    const participants = safeSubmissions.map((sub, idx) => {
-      const profile = Array.isArray(sub.profiles) ? sub.profiles[0] : sub.profiles;
+    const participants = safeSubmissions.map((sub: any, idx: number) => {
+      const rawProfile = sub.profiles;
+      const joinedProfile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+      const profile = profilesMap.get(sub.user_id) || joinedProfile;
       const subAns = answersBySub[sub.id] || [];
       const ansByItemId = new Map(subAns.map((a) => [a.item_id, a]));
 
@@ -143,6 +161,22 @@ export async function GET(
         }
       });
 
+      const totalScorePercent = sub.percentage !== null && sub.percentage !== undefined
+        ? Math.round(Number(sub.percentage))
+        : (sub.total_score !== null && sub.total_score !== undefined
+            ? Math.round(Number(sub.total_score))
+            : (Object.values(domainScores).length > 0
+                ? Math.round(Object.values(domainScores).reduce((a, b) => a + b, 0) / Object.values(domainScores).length)
+                : 0));
+
+      const domainTitles: Record<string, string> = {
+        '01': 'M1: Thông tin và Dữ liệu số',
+        '02': 'M2: Giao tiếp và Hợp tác số',
+        '03': 'M3: Sáng tạo Nội dung số và AI',
+        '04': 'M4: An toàn và Bảo mật số',
+        '05': 'M5: Giải quyết Vấn đề số',
+      };
+
       return {
         stt: idx + 1,
         fullName: profile?.full_name || 'Học viên ẩn danh',
@@ -150,9 +184,9 @@ export async function GET(
         submittedAt: sub.submitted_at
           ? new Date(sub.submitted_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
           : 'N/A',
-        totalScorePercent: sub.percentage ?? Math.round(Number(sub.score || 0)),
+        totalScorePercent,
         domainScores,
-        weakestDomain,
+        weakestDomain: domainTitles[weakestDomain] || `Miền ${weakestDomain}`,
       };
     });
 

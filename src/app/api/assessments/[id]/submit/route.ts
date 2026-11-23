@@ -560,15 +560,20 @@ export async function POST(
         domainScores[code] = max > 0 ? Math.round((earned / max) * 100) : null;
       });
 
-      let weakestDomainCode = '01';
-      let lowestScore = 999;
-      domainCodes.forEach((code) => {
-        const score = domainScores[code];
-        if (score !== null && score < lowestScore) {
-          lowestScore = score;
-          weakestDomainCode = code;
-        }
-      });
+      const validScores = domainCodes
+        .map((code) => ({ code, score: domainScores[code] }))
+        .filter((item): item is { code: string; score: number } => item.score !== null);
+
+      const minScore = validScores.length > 0
+        ? Math.min(...validScores.map((item) => item.score))
+        : 0;
+
+      const tiedWeakestDomainCodes = validScores
+        .filter((item) => item.score === minScore)
+        .map((item) => item.code);
+
+      const weakestDomainCode = tiedWeakestDomainCodes[0] || '01';
+      const isAllPassed = validScores.length >= 5 && validScores.every((item) => item.score >= 70);
 
       const isBaseline = Boolean(
         assessment.is_system_baseline ||
@@ -627,6 +632,8 @@ export async function POST(
         executionTimeMs: `${executionTimeMs}ms`,
         domainScores,
         weakestDomainCode,
+        tiedWeakestDomainCodes,
+        isAllPassed,
         unlockedFreeDomain: weakestDomainCode,
         proctoringSummary,
         evaluations,
@@ -841,15 +848,20 @@ export async function POST(
       domainScores[code] = max > 0 ? Math.round((earned / max) * 100) : null;
     });
 
-    let weakestDomainCode = '01';
-    let lowestScore = 999;
-    domainCodes.forEach((code) => {
-      const score = domainScores[code];
-      if (score !== null && score < lowestScore) {
-        lowestScore = score;
-        weakestDomainCode = code;
-      }
-    });
+    const validScores = domainCodes
+      .map((code) => ({ code, score: domainScores[code] }))
+      .filter((item): item is { code: string; score: number } => item.score !== null);
+
+    const minScore = validScores.length > 0
+      ? Math.min(...validScores.map((item) => item.score))
+      : 0;
+
+    const tiedWeakestDomainCodes = validScores
+      .filter((item) => item.score === minScore)
+      .map((item) => item.code);
+
+    const weakestDomainCode = tiedWeakestDomainCodes[0] || '01';
+    const isAllPassed = validScores.length >= 5 && validScores.every((item) => item.score >= 70);
 
     const isBaseline = Boolean(
       assessment.is_system_baseline ||
@@ -1017,6 +1029,8 @@ export async function POST(
       executionTimeMs: `${executionTimeMs}ms`,
       domainScores,
       weakestDomainCode,
+      tiedWeakestDomainCodes,
+      isAllPassed,
       unlockedFreeDomain: weakestDomainCode,
       proctoringSummary,
       evaluations,

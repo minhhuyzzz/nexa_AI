@@ -19,6 +19,7 @@ import {
   Loader2,
   BookOpen,
 } from 'lucide-react';
+import { NexaLogo } from '@/components/brand/NexaLogo';
 import { CompetencyRadarChart, DomainScore } from '@/components/dashboard/personal/CompetencyRadarChart';
 
 interface QuestionOption {
@@ -65,6 +66,8 @@ interface SubmitResultData {
   percentage: number;
   domainScores: Record<string, number | null>;
   weakestDomainCode: string;
+  tiedWeakestDomainCodes?: string[];
+  isAllPassed?: boolean;
   unlockedFreeDomain: string;
   evaluations: QuestionEvaluation[];
   submissionDate: string;
@@ -79,10 +82,10 @@ interface BaselineDiagnosticModalProps {
 type ModalStep = 'INTRO' | 'EXAM' | 'ANALYZING' | 'RESULT';
 
 const DOMAIN_CATALOG = [
-  { code: '01', title: 'Thông tin & Dữ liệu số' },
-  { code: '02', title: 'Giao tiếp & Cộng tác số' },
-  { code: '03', title: 'Sáng tạo Nội dung số & AI' },
-  { code: '04', title: 'An toàn & Bảo mật số' },
+  { code: '01', title: 'Thông tin và Dữ liệu số' },
+  { code: '02', title: 'Giao tiếp và Hợp tác số' },
+  { code: '03', title: 'Sáng tạo Nội dung số và AI' },
+  { code: '04', title: 'An toàn và Bảo mật số' },
   { code: '05', title: 'Giải quyết Vấn đề số' },
 ];
 
@@ -117,12 +120,21 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
   const [chosenFreeDomain, setChosenFreeDomain] = useState<string>('01');
   const [showReviewAnswers, setShowReviewAnswers] = useState(false);
 
-  // Prevent double fetch
+  // Prevent double fetch & timer tracking
   const hasLoadedRef = useRef(false);
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
+  }, []);
 
   // Fetch baseline questions dynamically when modal opens
   useEffect(() => {
     if (!isOpen) {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       setStep('INTRO');
       setCurrentIndex(0);
       setSelectedAnswers({});
@@ -208,8 +220,30 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
     setIsSubmitting(true);
     setStep('ANALYZING');
     setAnalyzingStage(1);
-    setAnalyzingProgress(20);
+    setAnalyzingProgress(8);
     setAnalyzingMsg('AI đang phân tích câu trả lời và đối chiếu hồ sơ 5 miền năng lực số...');
+
+    const startTime = Date.now();
+    const minDurationMs = 3200;
+
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const calculated = Math.min(98, Math.round((elapsed / minDurationMs) * 100));
+
+      setAnalyzingProgress((prev) => (calculated > prev ? calculated : prev));
+
+      if (calculated >= 80) {
+        setAnalyzingStage(3);
+        setAnalyzingMsg('Kích hoạt quyền mở khóa lộ trình học tập miễn phí...');
+      } else if (calculated >= 45) {
+        setAnalyzingStage(2);
+        setAnalyzingMsg('Đang nhận diện khoảng trống năng lực và tối ưu hóa lộ trình...');
+      } else if (calculated >= 20) {
+        setAnalyzingStage(1);
+        setAnalyzingMsg('AI đang đối chiếu câu trả lời với tiêu chuẩn các miền năng lực số...');
+      }
+    }, 40);
 
     try {
       const payload = {
@@ -231,7 +265,20 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
         throw new Error(data.error || 'Lỗi khi gửi kết quả khảo sát');
       }
 
-      const unlockedDomain = data.unlockedFreeDomain || data.weakestDomainCode || '01';
+      // Tính toán danh sách miền hòa điểm và trạng thái đạt chuẩn
+      const validScores = DOMAIN_CATALOG.map((d) => ({
+        code: d.code,
+        score: data.domainScores?.[d.code] ?? 0,
+      }));
+      const minScore = validScores.length > 0 ? Math.min(...validScores.map((v) => v.score)) : 0;
+      const detectedTied = (data.tiedWeakestDomainCodes && data.tiedWeakestDomainCodes.length > 0)
+        ? data.tiedWeakestDomainCodes
+        : validScores.filter((v) => v.score === minScore).map((v) => v.code);
+      const isAllPassed = Boolean(
+        data.isAllPassed ?? (validScores.length >= 5 && validScores.every((v) => v.score >= 70))
+      );
+
+      const unlockedDomain = data.unlockedFreeDomain || detectedTied[0] || '01';
       setChosenFreeDomain(unlockedDomain);
 
       try {
@@ -247,7 +294,9 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
         totalQuestionsCount: data.totalQuestionsCount ?? (data.evaluations?.length || totalQuestions),
         percentage: data.percentage ?? 0,
         domainScores: data.domainScores || { '01': 50, '02': 50, '03': 50, '04': 50, '05': 50 },
-        weakestDomainCode: data.weakestDomainCode || '01',
+        weakestDomainCode: data.weakestDomainCode || detectedTied[0] || '01',
+        tiedWeakestDomainCodes: detectedTied,
+        isAllPassed,
         unlockedFreeDomain: unlockedDomain,
         evaluations: data.evaluations || [],
         submissionDate: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
@@ -255,36 +304,31 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
 
       setSubmitResult(resultData);
 
-      // Smooth progress & AI text transitions over 3.2s
-      setTimeout(() => {
-        setAnalyzingStage(2);
-        setAnalyzingProgress(65);
-        setAnalyzingMsg('Đang nhận diện khoảng trống năng lực & tối ưu hóa lộ trình...');
-      }, 1100);
+      const elapsed = Date.now() - startTime;
+      const remainingMs = Math.max(100, minDurationMs - elapsed);
 
       setTimeout(() => {
-        setAnalyzingStage(3);
-        setAnalyzingProgress(95);
-        setAnalyzingMsg('Kích hoạt quyền mở khóa lộ trình học tập miễn phí...');
-      }, 2100);
+        if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+        setAnalyzingProgress(100);
 
-      setTimeout(() => {
-        setStep('RESULT');
-        setIsSubmitting(false);
-
-        // Trigger unlock animation sequence
         setTimeout(() => {
-          setIsLockPopped(true);
-        }, 400);
+          setStep('RESULT');
+          setIsSubmitting(false);
 
-        if (onCompleted) {
-          onCompleted({
-            unlockedFreeDomain: unlockedDomain,
-            domainScores: resultData.domainScores,
-          });
-        }
-      }, 3100);
+          setTimeout(() => {
+            setIsLockPopped(true);
+          }, 350);
+
+          if (onCompleted) {
+            onCompleted({
+              unlockedFreeDomain: unlockedDomain,
+              domainScores: resultData.domainScores,
+            });
+          }
+        }, 300);
+      }, remainingMs);
     } catch (err: any) {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       console.error('Lỗi khi nộp bài khảo sát đầu vào:', err);
       alert(err.message || 'Đã có lỗi xảy ra khi nộp bài khảo sát.');
       setStep('EXAM');
@@ -302,17 +346,42 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
     if (!submitResult?.domainScores) return [];
     return DOMAIN_CATALOG.map((dom) => ({
       code: dom.code,
-      name: dom.title.split('&')[0].trim(),
+      name:
+        dom.code === '01'
+          ? 'Thông tin'
+          : dom.code === '02'
+          ? 'Giao tiếp'
+          : dom.code === '03'
+          ? 'Sáng tạo nội dung'
+          : dom.code === '04'
+          ? 'An toàn'
+          : 'Giải quyết vấn đề',
       score: submitResult.domainScores[dom.code] ?? 0,
       target: 70,
     }));
   }, [submitResult]);
 
-  const isPerfectScore = useMemo(() => {
+  const isAllPassed = useMemo(() => {
+    if (submitResult?.isAllPassed !== undefined) return submitResult.isAllPassed;
     if (!submitResult?.domainScores) return false;
     const scores = Object.values(submitResult.domainScores).filter((s) => s !== null) as number[];
-    return scores.length >= 5 && scores.every((s) => s >= 90);
+    return scores.length >= 5 && scores.every((s) => s >= 70);
   }, [submitResult]);
+
+  const tiedWeakestDomains = useMemo(() => {
+    if (submitResult?.tiedWeakestDomainCodes && submitResult.tiedWeakestDomainCodes.length > 0) {
+      return submitResult.tiedWeakestDomainCodes;
+    }
+    if (!submitResult?.domainScores) return ['01'];
+    const scores = DOMAIN_CATALOG.map((d) => ({
+      code: d.code,
+      score: submitResult.domainScores[d.code] ?? 0,
+    }));
+    const min = Math.min(...scores.map((s) => s.score));
+    return scores.filter((s) => s.score === min).map((s) => s.code);
+  }, [submitResult]);
+
+  const hasTiedWeakest = !isAllPassed && tiedWeakestDomains.length > 1;
 
   if (!isOpen) return null;
 
@@ -389,14 +458,14 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                       );
                     })}
 
-                    {/* Central AI Core */}
-                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 animate-pulse">
-                      <Sparkles className="w-7 h-7 text-white" />
+                    {/* Central Platform Logo Core */}
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
+                      <NexaLogo variant="white" size={28} showText={false} />
                     </div>
                   </div>
 
                   <p className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 mt-2 text-center">
-                    Khảo sát đa chiều 5 miền năng lực số &bull; Tự động hóa lộ trình cá nhân
+                    Khảo sát đa chiều 5 miền năng lực số • Tự động hóa lộ trình cá nhân
                   </p>
                 </div>
 
@@ -596,7 +665,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                 ) : analyzingStage === 2 ? (
                   <Compass className="w-8 h-8 animate-spin [animation-duration:3s]" strokeWidth={2} />
                 ) : (
-                  <Sparkles className="w-8 h-8 animate-pulse text-amber-300" strokeWidth={2} />
+                  <NexaLogo variant="white" size={32} showText={false} className="animate-pulse" />
                 )}
               </div>
             </div>
@@ -615,12 +684,22 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
               </p>
             </div>
 
-            {/* Thanh tiến trình phân tích mượt mà */}
-            <div className="w-56 h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-700 ease-out"
-                style={{ width: `${analyzingProgress}%` }}
-              />
+            {/* Thanh tiến trình phân tích mượt mà kiểu SaaS */}
+            <div className="w-72 sm:w-80 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Tiến trình phân tích AI</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                  {Math.round(analyzingProgress)}%
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden relative">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 rounded-full transition-all duration-75 ease-out relative overflow-hidden"
+                  style={{ width: `${analyzingProgress}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -639,7 +718,7 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                 HỒ SƠ KHẢO THÍ CHẨN ĐOÁN HOÀN TẤT
               </span>
               <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-                Bản Đồ Năng Lực Số 5 Miền Của Bạn
+                Bản đồ năng lực số của bạn
               </h2>
               <p className="text-xs text-slate-500 dark:text-neutral-400">
                 Nộp bài thành công vào lúc {submitResult.submissionDate}
@@ -702,8 +781,9 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
               </div>
             </div>
 
-            {/* HIỆU ỨNG MỞ Ổ KHÓA SINH ĐỘNG */}
-            {isPerfectScore ? (
+            {/* HIỆU ỨNG MỞ Ổ KHÓA SINH ĐỘNG — HỖ TRỢ ĐỦ 3 TRƯỜNG HỢP: ĐẠT CHUẨN TẤT CẢ, HÒA ĐIỂM YẾU NHẤT, HOẶC 1 MIỀN YẾU NHẤT */}
+            {isAllPassed ? (
+              /* Trường hợp 1: Đạt chuẩn tất cả các miền (>= 70%) */
               <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-gradient-to-br from-blue-50/70 to-indigo-50/40 dark:from-blue-950/30 dark:to-indigo-950/20 space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -711,10 +791,10 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   </div>
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      Xuất sắc! Bạn đã đạt chuẩn tối đa cả 5 miền năng lực số
+                      Xuất sắc! Bạn đã đạt chuẩn toàn bộ các miền năng lực số (≥70%)
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-neutral-300 leading-relaxed">
-                      Hệ thống không phát hiện khoảng trống nào. Bạn được trao quyền tự chọn 1 trong 5 miền dưới đây để <strong>MỞ KHÓA MIỄN PHÍ</strong> và bắt đầu lộ trình bồi dưỡng nâng cao:
+                      Hệ thống không phát hiện khoảng trống nào dưới chuẩn. Bạn được trao quyền tự chọn 1 trong 5 miền dưới đây để <strong>MỞ KHÓA MIỄN PHÍ</strong> và bắt đầu lộ trình bồi dưỡng nâng cao:
                     </p>
                   </div>
                 </div>
@@ -756,7 +836,84 @@ export function BaselineDiagnosticModal({ isOpen, onClose, onCompleted }: Baseli
                   })}
                 </div>
               </div>
+            ) : hasTiedWeakest ? (
+              /* Trường hợp 2: Hòa điểm yếu nhất (2, 3, 4 hoặc cả 5 miền cùng thấp nhất) */
+              <div className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/70 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2 flex-wrap">
+                      <span>Phát hiện {tiedWeakestDomains.length} miền có cùng khoảng trống năng lực</span>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">
+                        {submitResult.domainScores[tiedWeakestDomains[0]] ?? 0}%
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-neutral-300 leading-relaxed">
+                      {tiedWeakestDomains.length === 5
+                        ? 'Cả 5 miền năng lực đều đang ở vạch xuất phát. Hãy tự chọn 1 miền bạn muốn bắt đầu học trước để MỞ KHÓA MIỄN PHÍ:'
+                        : 'Các miền dưới đây có tỷ lệ cần bồi dưỡng tương đương nhau. Hãy bấm chọn 1 miền bạn muốn ưu tiên mở khóa miễn phí để bắt đầu học trước:'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
+                  {tiedWeakestDomains.map((code) => {
+                    const dom = DOMAIN_CATALOG.find((d) => d.code === code) || { code, title: `Miền ${code}` };
+                    const isSelected = chosenFreeDomain === code;
+                    const score = submitResult.domainScores[code] ?? 0;
+                    return (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => {
+                          setChosenFreeDomain(code);
+                          try {
+                            localStorage.setItem('nexa_unlocked_domain', code);
+                          } catch {}
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
+                          isSelected
+                            ? 'border-blue-600 bg-white dark:bg-[#111114] ring-2 ring-blue-500 shadow-xs'
+                            : 'border-slate-200/80 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/40 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-neutral-300">
+                            Miền {code} • {score}%
+                          </span>
+                          {isSelected ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600">
+                              <Check className="w-3 h-3" /> Đã chọn mở khóa
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 hover:text-slate-600">
+                              Chọn miền này
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 line-clamp-1">
+                          {dom.title}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="text-[11px] text-slate-600 dark:text-neutral-300 flex items-center gap-1.5 pt-1">
+                  <Unlock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>
+                    Miền được chọn:{' '}
+                    <strong className="text-emerald-700 dark:text-emerald-300 font-bold">
+                      [{DOMAIN_CATALOG.find((d) => d.code === chosenFreeDomain)?.title || `Miền ${chosenFreeDomain}`}]
+                    </strong>{' '}
+                    — Sẵn sàng vào học toàn bộ bài giảng và bài tập thực hành miễn phí.
+                  </span>
+                </div>
+              </div>
             ) : (
+              /* Trường hợp 3: Duy nhất 1 miền yếu nhất rõ rệt */
               <div className={`relative overflow-hidden p-5 rounded-2xl border transition-all duration-700 space-y-3 text-xs ${
                 isLockPopped
                   ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/30'

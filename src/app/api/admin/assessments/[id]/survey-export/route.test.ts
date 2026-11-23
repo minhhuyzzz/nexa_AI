@@ -118,6 +118,7 @@ describe('GET /api/admin/assessments/[id]/survey-export', () => {
                         id: 'sub-1',
                         user_id: 'user-1',
                         score: 1,
+                        total_score: 1,
                         percentage: 100,
                         time_spent_seconds: 120,
                         submitted_at: '2026-11-22T10:00:00Z',
@@ -127,6 +128,18 @@ describe('GET /api/admin/assessments/[id]/survey-export', () => {
                     error: null,
                   }),
                 }),
+              }),
+            }),
+          };
+        }
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              in: vi.fn().mockResolvedValue({
+                data: [
+                  { id: 'user-1', full_name: 'Nguyễn Văn A', email: 'a@test.com' },
+                ],
+                error: null,
               }),
             }),
           };

@@ -530,7 +530,7 @@ export function BaselineAdminClient({ assessment, domains, competencies, baselin
           d3: `${p.domainScores?.['03'] ?? 0}%`,
           d4: `${p.domainScores?.['04'] ?? 0}%`,
           d5: `${p.domainScores?.['05'] ?? 0}%`,
-          weakest: `Miền ${p.weakestDomain}`,
+          weakest: p.weakestDomain?.startsWith('M') ? p.weakestDomain : `Miền ${p.weakestDomain}`,
         });
       });
 
