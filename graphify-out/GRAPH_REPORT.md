@@ -1,7 +1,7 @@
 # Graph Report - nexa  (2026-11-23)
 
 ## Corpus Check
-- 1258 files · ~2,119,461 words
+- 1258 files · ~2,120,310 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 144 file(s) not represented in the graph (top: .css 128, (none) 7, .toml 4)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e3b0988c`
+- Built from commit: `a7890d17`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -2678,7 +2678,7 @@ Nodes (4): 1. Tinh gọn văn bản trang Quản trị Admin (`/admin/credential
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `next` connect `next` to `createClient`, `isSuperadminEmail`, `app/page.tsx`, `BÁO CÁO KIỂM TOÁN KỸ THUẬT TOÀN DIỆN VỀ HIỆU NĂNG, PHI CHỨC NĂNG VÀ CHẤT LƯỢNG MÃ NGUỒN NỀN TẢNG NEXA AI`, `CreateLiveRoomWizardView.tsx`, `createClient`, `submissions/page.tsx`, `createAdminClient`, `package.json`, `classes/types.ts`, `org-guard.ts`, `live-room-analytics.test.ts`, `learning-paths/page.tsx`, `learning-path/submit/route.ts`, `vitest`, `personal-phase4-authoring-and-live-rooms.test.ts`, `security.types.ts`, `admin/dashboard/page.tsx`, `ref_react`, `dependencies`, `baseline-admin-client.tsx`, `AssessmentTakeContent.tsx`, `authoring/page.tsx`, `rubric.types.ts`, `competency.types.ts`, `AdminUIComponents.tsx`, `NotificationsView.tsx`, `OrgSidebar.tsx`, `SkeletonCard`, `admin/organizations/page.tsx`, `2. KIỂM TOÁN CHI TIẾT THEO TỪNG TRANG & MODULE`, `AuthoringEditorTwoPane.tsx`, `personal-phase2-learning-and-credentials.test.ts`, `RubricService`, `leaderboard/page.tsx`, `@supabase/supabase-js`, `profile/page.tsx`, `join-codes/route.ts`, `[slug]/assessments/page.tsx`, `[id]/result/page.tsx`, `admin/analytics/page.tsx`, `live-room.ts`, `CertificateCanvas.tsx`, `ref_node_fs`, `[groupId]/page.tsx`, `admin-preview-client.tsx`, `excel-mcq-helper.ts`, `OrgPlanClientView.tsx`, `OrgAnalyticsDashboard.tsx`?**
-  _High betweenness centrality (0.115) - this node is a cross-community bridge._
+  _High betweenness centrality (0.119) - this node is a cross-community bridge._
 - **Are the 37 inferred relationships involving `createAdminClient()` (e.g. with `survey-export/route.test.ts` and `activate/route.test.ts`) actually correct?**
   _`createAdminClient()` has 37 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `SKILLS`, `RFC-4180` to the rest of the system?**

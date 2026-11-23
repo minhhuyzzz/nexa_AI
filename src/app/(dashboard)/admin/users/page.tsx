@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import {
   Users,
@@ -21,6 +21,7 @@ import {
   UserPlus,
   Copy,
   CreditCard,
+  CheckSquare,
 } from 'lucide-react';
 import {
   AdminKpiCard,
@@ -84,6 +85,17 @@ function UsersContent() {
   const [suspendReason, setSuspendReason] = useState('');
   const [suspendSubmitting, setSuspendSubmitting] = useState(false);
   const [suspendError, setSuspendError] = useState('');
+
+  // Pagination & Bulk Select State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isBulkSelectActive, setIsBulkSelectActive] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, tierFilter]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -296,6 +308,97 @@ function UsersContent() {
   const activeCount = users.filter((u) => !u.isSuspended).length;
   const suspendedCount = users.filter((u) => u.isSuspended).length;
 
+  const recordsPerPage = 10;
+  const totalPages = Math.ceil(Math.max(1, filteredUsers.length) / recordsPerPage);
+
+  // Tự động điều chỉnh trang nếu vượt quá tổng số trang sau khi lọc
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * recordsPerPage;
+    return filteredUsers.slice(start, start + recordsPerPage);
+  }, [filteredUsers, currentPage, recordsPerPage]);
+
+  // Bulk Actions
+  const handleBulkSuspend = async (suspend: boolean) => {
+    if (selectedUserIds.length === 0) return;
+    const actionLabel = suspend ? 'tạm khóa' : 'mở khóa';
+    if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} ${selectedUserIds.length} tài khoản đã chọn?`)) {
+      return;
+    }
+    setBulkActionLoading(true);
+    try {
+      const results = await Promise.all(
+        selectedUserIds.map((userId) =>
+          fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              action: suspend ? 'SUSPEND' : 'UNSUSPEND',
+              reason: suspend ? 'Tạm khóa hàng loạt từ ban quản trị' : undefined,
+            }),
+          })
+        )
+      );
+      const successfulCount = results.filter((r) => r.ok).length;
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (selectedUserIds.includes(u.id)) {
+            return {
+              ...u,
+              isSuspended: suspend,
+              suspendedReason: suspend ? 'Tạm khóa hàng loạt' : null,
+              suspendedAt: suspend ? new Date().toISOString() : null,
+            };
+          }
+          return u;
+        })
+      );
+      setActionMsg(`Đã ${actionLabel} thành công ${successfulCount}/${selectedUserIds.length} tài khoản.`);
+      setSelectedUserIds([]);
+      setTimeout(() => setActionMsg(''), 3000);
+    } catch {
+      alert(`Lỗi kết nối khi ${actionLabel} hàng loạt`);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkRevokeSession = async () => {
+    if (selectedUserIds.length === 0) return;
+    if (!confirm(`Bạn có chắc chắn muốn đăng xuất toàn bộ phiên của ${selectedUserIds.length} tài khoản đã chọn?`)) {
+      return;
+    }
+    setBulkActionLoading(true);
+    try {
+      const results = await Promise.all(
+        selectedUserIds.map((userId) =>
+          fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              action: 'REVOKE_SESSION',
+            }),
+          })
+        )
+      );
+      const successfulCount = results.filter((r) => r.ok).length;
+      setActionMsg(`Đã thu hồi phiên thành công ${successfulCount}/${selectedUserIds.length} tài khoản.`);
+      setSelectedUserIds([]);
+      setTimeout(() => setActionMsg(''), 3000);
+    } catch {
+      alert('Lỗi kết nối khi thu hồi phiên hàng loạt');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* 1. Header */}
@@ -391,6 +494,24 @@ function UsersContent() {
           </select>
 
           <button
+            type="button"
+            onClick={() => {
+              setIsBulkSelectActive((prev) => {
+                if (prev) setSelectedUserIds([]);
+                return !prev;
+              });
+            }}
+            className={`w-full sm:w-auto min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer border ${
+              isBulkSelectActive
+                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 ring-1 ring-blue-500'
+                : 'bg-white dark:bg-[#111114] text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <CheckSquare className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>{isBulkSelectActive ? 'Thoát chọn nhiều' : 'Chọn nhiều'}</span>
+          </button>
+
+          <button
             onClick={() => alert('Chức năng Mời người dùng vào nền tảng đã sẵn sàng.')}
             className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-xs inline-flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer"
           >
@@ -406,15 +527,97 @@ function UsersContent() {
         message="Chỉ quản lý tài khoản hệ thống; không xử lý thành viên lớp của Org/Personal tại đây."
       />
 
+      {/* 4.1 Thanh tác vụ hàng loạt khi bật Chọn nhiều */}
+      {isBulkSelectActive && (
+        <div className="p-3 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-blue-900 dark:text-blue-200">
+              Đã chọn <span className="font-mono font-bold">{selectedUserIds.length}</span> / {filteredUsers.length} tài khoản
+            </span>
+            {selectedUserIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedUserIds([])}
+                className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                Bỏ chọn tất cả
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={selectedUserIds.length === 0 || bulkActionLoading}
+              onClick={() => handleBulkSuspend(true)}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <UserX className="w-3.5 h-3.5" />
+              <span>Tạm khóa ({selectedUserIds.length})</span>
+            </button>
+            <button
+              type="button"
+              disabled={selectedUserIds.length === 0 || bulkActionLoading}
+              onClick={() => handleBulkSuspend(false)}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Mở khóa ({selectedUserIds.length})</span>
+            </button>
+            <button
+              type="button"
+              disabled={selectedUserIds.length === 0 || bulkActionLoading}
+              onClick={handleBulkRevokeSession}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Đăng xuất phiên ({selectedUserIds.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsBulkSelectActive(false);
+                setSelectedUserIds([]);
+              }}
+              className="px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-zinc-700 rounded-lg font-medium transition-colors cursor-pointer"
+            >
+              Thoát
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 5. User Table (Chuẩn Ảnh 2) */}
       <div className="bg-white dark:bg-[#111114] border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
               <tr className="bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 font-medium">
-                <th className="py-3 px-4 w-10">
-                  <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
-                </th>
+                {isBulkSelectActive && (
+                  <th className="py-3 px-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={
+                        paginatedUsers.length > 0 &&
+                        paginatedUsers.every((u) => selectedUserIds.includes(u.id))
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const newIds = Array.from(
+                            new Set([...selectedUserIds, ...paginatedUsers.map((u) => u.id)])
+                          );
+                          setSelectedUserIds(newIds);
+                        } else {
+                          setSelectedUserIds(
+                            selectedUserIds.filter(
+                              (id) => !paginatedUsers.some((u) => u.id === id)
+                            )
+                          );
+                        }
+                      }}
+                      className="rounded text-blue-600 focus:ring-blue-600 cursor-pointer"
+                    />
+                  </th>
+                )}
                 <th className="py-3 px-4">Người dùng</th>
                 <th className="py-3 px-4">Trạng thái</th>
                 <th className="py-3 px-4">Vai trò</th>
@@ -426,20 +629,39 @@ function UsersContent() {
             <tbody className="">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={isBulkSelectActive ? 7 : 6} className="py-12 text-center text-slate-400">
                     {loading ? 'Đang tải danh sách người dùng...' : 'Không tìm thấy người dùng phù hợp với bộ lọc.'}
                   </td>
                 </tr>
               ) : (
-                filteredUsers.slice(0, 10).map((u) => {
+                paginatedUsers.map((u) => {
                   const initials = getInitials(u.fullName || u.nickname, u.email);
                   const isMenuOpen = activeMenuId === u.id;
+                  const isSelected = selectedUserIds.includes(u.id);
 
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
-                      <td className="py-3 px-4">
-                        <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-600" />
-                      </td>
+                    <tr
+                      key={u.id}
+                      className={`hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors ${
+                        isSelected ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
+                      }`}
+                    >
+                      {isBulkSelectActive && (
+                        <td className="py-3 px-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedUserIds((prev) => [...prev, u.id]);
+                              } else {
+                                setSelectedUserIds((prev) => prev.filter((id) => id !== u.id));
+                              }
+                            }}
+                            className="rounded text-blue-600 focus:ring-blue-600 cursor-pointer"
+                          />
+                        </td>
+                      )}
 
                       {/* Người dùng: Avatar tròn + Tên + Email + ID */}
                       <td className="py-3 px-4">
@@ -613,10 +835,11 @@ function UsersContent() {
 
         <div className="p-4">
           <AdminPagination
-            currentPage={1}
-            totalPages={Math.ceil(Math.max(1, filteredUsers.length) / 10)}
+            currentPage={currentPage}
+            totalPages={totalPages}
             totalRecords={filteredUsers.length}
-            recordsPerPage={10}
+            recordsPerPage={recordsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
           />
         </div>
       </div>

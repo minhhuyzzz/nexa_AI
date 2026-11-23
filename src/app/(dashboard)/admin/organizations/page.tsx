@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Building2,
@@ -91,6 +91,7 @@ const renderAdminSkeletonRows = (colSpan = 7) => (
 
 export default function AdminOrganizationsPage() {
   const [activeTab, setActiveTab] = useState<'requests' | 'organizations' | 'renewals'>('requests');
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Inquiries State
   const [inquiries, setInquiries] = useState<BusinessInquiryTarget[]>([]);
@@ -464,6 +465,44 @@ export default function AdminOrganizationsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // Phân trang
+  const recordsPerPage = 8;
+  const currentTotalRecords =
+    activeTab === 'requests'
+      ? filteredInquiries.length
+      : activeTab === 'organizations'
+      ? filteredOrgs.length
+      : renewals.length;
+
+  const totalPages = Math.ceil(Math.max(1, currentTotalRecords) / recordsPerPage);
+
+  // Reset trang khi đổi tab hoặc thay đổi tìm kiếm / bộ lọc
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, inquirySearch, inquiryStatusFilter, orgSearch, orgStatusFilter]);
+
+  // Tự động điều chỉnh trang nếu vượt quá tổng số trang sau khi lọc
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedInquiries = useMemo(() => {
+    const start = (currentPage - 1) * recordsPerPage;
+    return filteredInquiries.slice(start, start + recordsPerPage);
+  }, [filteredInquiries, currentPage, recordsPerPage]);
+
+  const paginatedOrgs = useMemo(() => {
+    const start = (currentPage - 1) * recordsPerPage;
+    return filteredOrgs.slice(start, start + recordsPerPage);
+  }, [filteredOrgs, currentPage, recordsPerPage]);
+
+  const paginatedRenewals = useMemo(() => {
+    const start = (currentPage - 1) * recordsPerPage;
+    return renewals.slice(start, start + recordsPerPage);
+  }, [renewals, currentPage, recordsPerPage]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* 1. Header (Chuẩn Ảnh 4) */}
@@ -735,7 +774,7 @@ export default function AdminOrganizationsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredInquiries.slice(0, 8).map((inq) => {
+                      paginatedInquiries.map((inq) => {
                         const rawStatus = (inq as any).status || 'NEW';
                         const isActivated = ['ACTIVATED', 'APPROVED'].includes(rawStatus);
                         const isInProgress = ['IN_PROGRESS', 'CONTACTED', 'PROPOSAL_SENT'].includes(rawStatus);
@@ -825,7 +864,7 @@ export default function AdminOrganizationsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredOrgs.slice(0, 8).map((org) => {
+                      paginatedOrgs.map((org) => {
                         const isActive = org.status === 'ACTIVE';
                         const isMenuOpen = activeOrgMenuId === org.id;
 
@@ -971,7 +1010,7 @@ export default function AdminOrganizationsPage() {
                         </td>
                       </tr>
                     ) : (
-                      renewals.slice(0, 8).map((r) => {
+                      paginatedRenewals.map((r) => {
                         return (
                           <tr key={r.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors">
                             <td className="py-3 px-4">
@@ -1024,25 +1063,11 @@ export default function AdminOrganizationsPage() {
 
             <div className="p-4">
               <AdminPagination
-                currentPage={1}
-                totalPages={Math.ceil(
-                Math.max(
-                  1,
-                  activeTab === 'requests'
-                    ? filteredInquiries.length
-                    : activeTab === 'organizations'
-                    ? filteredOrgs.length
-                    : renewals.length
-                ) / 8
-              )}
-                totalRecords={
-                activeTab === 'requests'
-                  ? filteredInquiries.length
-                  : activeTab === 'organizations'
-                  ? filteredOrgs.length
-                  : renewals.length
-              }
-                recordsPerPage={8}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalRecords={currentTotalRecords}
+                recordsPerPage={recordsPerPage}
+                onPageChange={(p) => setCurrentPage(p)}
               />
             </div>
           </div>
