@@ -241,11 +241,11 @@ export default function PricingPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
       <PublicHeader activePath="/pricing" />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-14 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-16 w-full">
         {/* Title Header */}
         <div className="text-center max-w-3xl mx-auto mb-10">
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900">
-            Bảng Giá Dịch Vụ Khảo Thí và Bồi Dưỡng
+            Bảng Giá Dịch Vụ
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
             Chọn gói dịch vụ phù hợp với mục tiêu nâng cao năng lực cá nhân hoặc nhu cầu tổ chức thi tập trung của nhà trường.

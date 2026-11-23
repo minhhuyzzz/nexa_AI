@@ -154,82 +154,72 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div>
-            <label htmlFor="register-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-              Mật khẩu <span className="text-rose-600">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="register-password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 6 ký tự"
-                className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
-                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" strokeWidth={1.75} />
-                ) : (
-                  <Eye className="w-4 h-4" strokeWidth={1.75} />
-                )}
-              </button>
-            </div>
+        <div>
+          <label htmlFor="register-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+            Mật khẩu <span className="text-rose-600">*</span>
+          </label>
+          <div className="relative">
+            <input
+              id="register-password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Tối thiểu 6 ký tự"
+              className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
+              title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" strokeWidth={1.75} />
+              ) : (
+                <Eye className="w-4 h-4" strokeWidth={1.75} />
+              )}
+            </button>
           </div>
-
-          <div>
-            <label htmlFor="register-confirm-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-              Xác nhận lại mật khẩu <span className="text-rose-600">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="register-confirm-password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                required
-                minLength={6}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu"
-                className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
-                title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="w-4 h-4" strokeWidth={1.75} />
-                ) : (
-                  <Eye className="w-4 h-4" strokeWidth={1.75} />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-slate-400 dark:text-neutral-500 -mt-1 sm:col-span-2">
+          <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1">
             Mật khẩu từ 6 ký tự (kết hợp chữ thường và số).
           </p>
         </div>
 
-        <p className="text-[11px] sm:text-xs text-center text-slate-500 dark:text-neutral-400 pt-1 leading-relaxed">
-          Bằng việc đăng ký, bạn đồng ý với{' '}
-          <span className="text-neutral-800 dark:text-neutral-200 font-semibold">Điều khoản dịch vụ</span>{' '}
-          và{' '}
-          <span className="text-neutral-800 dark:text-neutral-200 font-semibold">Chính sách bảo mật dữ liệu</span>.
-        </p>
+        <div>
+          <label htmlFor="register-confirm-password" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+            Xác nhận lại mật khẩu <span className="text-rose-600">*</span>
+          </label>
+          <div className="relative">
+            <input
+              id="register-confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              required
+              minLength={6}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Nhập lại mật khẩu"
+              className="w-full px-4 py-2.5 sm:py-3 pr-11 text-sm border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111114] text-neutral-900 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 focus:outline-none p-1 rounded-lg transition-colors cursor-pointer"
+              title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="w-4 h-4" strokeWidth={1.75} />
+              ) : (
+                <Eye className="w-4 h-4" strokeWidth={1.75} />
+              )}
+            </button>
+          </div>
+        </div>
 
-        <div className="pt-1">
+        <div>
           <button
             type="submit"
             disabled={loading}
@@ -239,6 +229,27 @@ export default function RegisterPage() {
             <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
           </button>
         </div>
+
+        <p className="text-[11px] sm:text-xs text-center text-slate-500 dark:text-neutral-400 pt-1 leading-relaxed">
+          Bằng việc đăng ký, bạn đồng ý với{' '}
+          <Link
+            href="/policies/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-neutral-800 dark:text-neutral-200 font-semibold hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            Điều khoản dịch vụ
+          </Link>{' '}
+          và{' '}
+          <Link
+            href="/policies/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-neutral-800 dark:text-neutral-200 font-semibold hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            Chính sách bảo mật dữ liệu
+          </Link>.
+        </p>
       </form>
 
       {/* Google OAuth Button */}
