@@ -6,15 +6,16 @@ import {
   CheckCircle2,
   AlertTriangle,
   Download,
-  ExternalLink,
-  FileText,
-  Clock,
-  Award,
+  ArrowLeft,
+  Search,
   Hash,
 } from 'lucide-react';
+import { NexaLogo } from '@/components/brand/NexaLogo';
+import { CertificateCanvas } from '@/components/credentials/CertificateCanvas';
 
 export const metadata: Metadata = {
-  title: 'Tra cứu chứng nhận số',
+  title: 'Xác thực chứng nhận số — NEXA AI',
+  description: 'Trung tâm thẩm tra và đối soát tính toàn vẹn chứng chỉ năng lực số do NEXA AI phát hành.',
   robots: { index: false, follow: false },
 };
 
@@ -41,28 +42,50 @@ export default async function VerifyCredentialKioskPage({
 
   if (!credential) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-md border border-slate-200 p-8 shadow-xs text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
+      <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-xl w-full mx-auto flex items-center justify-between pb-6">
+          <Link href="/" className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <NexaLogo size={28} />
+          </Link>
+          <Link
+            href="/verify"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 font-medium transition-colors"
+          >
+            <Search className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>Tra cứu mã khác</span>
+          </Link>
+        </div>
+
+        <div className="max-w-md w-full mx-auto bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200/90 dark:border-zinc-800/90 p-8 sm:p-10 shadow-sm text-center space-y-6">
+          <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-6 h-6" strokeWidth={1.75} />
           </div>
-          <div>
-            <h1 className="text-base font-bold text-slate-900">
-              Chứng chỉ Không Tồn tại hoặc Chưa Được Cấp
+          <div className="space-y-2">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Chứng chỉ không tồn tại hoặc chưa cấp
             </h1>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Mã chứng nhận <span className="font-semibold text-slate-800">{credentialId}</span> không tìm thấy trên Cơ sở Dữ liệu Khảo thí NEXA. Vui lòng quét lại mã QR trên chứng chỉ PDF gốc.
+            <p className="text-xs text-slate-500 dark:text-neutral-400 leading-relaxed">
+              Mã chứng nhận <span className="font-semibold text-neutral-900 dark:text-neutral-200 font-mono">{credentialId}</span> không tìm thấy trên hệ thống khảo thí của NEXA AI. Vui lòng kiểm tra lại mã hoặc quét lại mã QR trên văn bằng gốc.
             </p>
           </div>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/verify"
+              className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <Search className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>Tra cứu lại</span>
+            </Link>
             <Link
               href="/"
-              className="px-4 py-2 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800 transition-colors inline-block"
+              className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-medium transition-colors inline-flex items-center justify-center"
             >
-              Về Trang chủ NEXA
+              Về trang chủ
             </Link>
           </div>
         </div>
+
+        <div />
       </div>
     );
   }
@@ -70,104 +93,102 @@ export default async function VerifyCredentialKioskPage({
   const isRevoked = credential.is_revoked;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl w-full mx-auto space-y-6">
-        {/* Kiosk Institution Header */}
-        <div className="text-center space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-sky-50 border border-sky-200 text-sky-800 text-[11px] font-semibold uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5 text-sky-600" strokeWidth={1.75} />
-            CỔNG ĐỐI SOÁT CHỨNG CHỈ SỐ NEXA
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight pt-1">
-            Trung Tâm Thẩm Tra Tính Toàn Vẹn Chứng Chỉ Số
-          </h1>
-          <p className="text-xs text-slate-500 max-w-xl mx-auto">
-            Hệ thống đối soát trực tiếp mã chứng chỉ và chữ ký xác thực điện tử SHA-256 kép.
-          </p>
+    <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">
+      {/* Top Brand Bar */}
+      <div className="max-w-3xl w-full mx-auto flex items-center justify-between pb-6">
+        <Link href="/" className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <NexaLogo size={28} />
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/verify"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 font-medium transition-colors"
+          >
+            <Search className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>Tra cứu mã khác</span>
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 font-medium transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>Trang chủ</span>
+          </Link>
         </div>
+      </div>
 
+      <div className="max-w-3xl w-full mx-auto space-y-6">
         {/* Verification Status Card */}
-        <div className="p-6 sm:p-8 rounded-md bg-white border border-slate-200 shadow-xs space-y-6">
+        <div className="p-6 sm:p-8 rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800/90 shadow-sm space-y-6">
           {/* Status Badge Strip */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
             <div className="flex items-center gap-3">
               <span
                 className={`w-3 h-3 rounded-full ${
-                  isRevoked ? 'bg-rose-600' : 'bg-emerald-600'
+                  isRevoked ? 'bg-red-600' : 'bg-emerald-600'
                 }`}
               />
               <div>
                 <div
                   className={`text-xs font-bold tracking-wider uppercase ${
-                    isRevoked ? 'text-rose-700' : 'text-emerald-700'
+                    isRevoked ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'
                   }`}
                 >
-                  {isRevoked ? 'CHỨNG CHỈ ĐÃ BỊ THU HỒI' : 'XÁC THỰC HỢP LỆ (VERIFIED AUTHENTIC)'}
+                  {isRevoked ? 'CHỨNG CHỈ ĐÃ BỊ THU HỒI' : 'XÁC THỰC HỢP LỆ — CHỨNG NHẬN CHÍNH THỨC'}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-500 dark:text-neutral-400">
                   {isRevoked
-                    ? `Lý do thu hồi: ${credential.revoked_reason || 'Vi phạm quy chế'}`
-                    : 'Chứng chỉ gốc phát hành bởi Hội đồng Khảo thí NEXA'}
+                    ? `Lý do: ${credential.revoked_reason || 'Vi phạm quy chế khảo thí'}`
+                    : 'Chứng nhận năng lực số phát hành bởi NEXA AI'}
                 </div>
               </div>
             </div>
 
-            <div className="text-right">
-              <div className="text-[11px] text-slate-400">SỐ HIỆU CHỨNG CHỈ</div>
-              <div className="text-base font-bold text-slate-900">
+            <div className="sm:text-right">
+              <div className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">ID CHỨNG DANH</div>
+              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100 font-mono">
                 {credential.credential_code}
               </div>
             </div>
           </div>
 
-          {/* Credential Data Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-            <div>
-              <span className="text-slate-400 text-[11px] block mb-1">
+          {/* Visual Certificate Canvas */}
+          <div className="overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
+            <div className="min-w-[620px] sm:min-w-0">
+              <CertificateCanvas
+                candidateName={credential.candidate_name}
+                credentialCode={credential.credential_code}
+                issuedAt={credential.issued_at}
+                isSample={false}
+              />
+            </div>
+          </div>
+
+          {/* Credential Data Grid (KHÔNG ĐIỂM SỐ, KHÔNG CẤP ĐỘ) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
+            <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 rounded-xl space-y-1">
+              <span className="text-slate-400 dark:text-neutral-500 text-[11px] block font-medium">
                 HỌC VIÊN ĐƯỢC CHỨNG NHẬN
               </span>
-              <span className="text-base font-bold text-slate-900 block">
+              <span className="text-base font-bold text-neutral-900 dark:text-neutral-100 block">
                 {credential.candidate_name}
               </span>
             </div>
 
-            <div>
-              <span className="text-slate-400 text-[11px] block mb-1">
-                KỲ KHẢO THÍ ĐÁNH GIÁ NĂNG LỰC
+            <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 rounded-xl space-y-1">
+              <span className="text-slate-400 dark:text-neutral-500 text-[11px] block font-medium">
+                KỲ ĐÁNH GIÁ NĂNG LỰC SỐ
               </span>
-              <span className="font-semibold text-slate-800 block leading-snug">
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-snug">
                 {credential.assessment_title}
               </span>
             </div>
 
-            <div>
-              <span className="text-slate-400 text-[11px] block mb-1">
-                ĐIỂM SỐ ĐẠT ĐƯỢC
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-sky-600">
-                  {credential.score_percentage}%
-                </span>
-                <span className="text-slate-500">
-                  ({credential.total_score} / {credential.max_score} đ)
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-slate-400 text-[11px] block mb-1">
-                CẤP ĐỘ NĂNG LỰC SỐ
-              </span>
-              <span className="font-bold text-slate-900 text-sm px-2 py-0.5 rounded bg-slate-100 border border-slate-200 inline-block">
-                {credential.competency_level}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-slate-400 text-[11px] block mb-1">
+            <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 rounded-xl space-y-1">
+              <span className="text-slate-400 dark:text-neutral-500 text-[11px] block font-medium">
                 NGÀY CẤP CHỨNG CHỈ
               </span>
-              <span className="text-slate-700">
+              <span className="text-neutral-800 dark:text-neutral-200 font-medium">
                 {new Date(credential.issued_at).toLocaleDateString('vi-VN', {
                   day: '2-digit',
                   month: '2-digit',
@@ -176,78 +197,83 @@ export default async function VerifyCredentialKioskPage({
               </span>
             </div>
 
-            <div>
-              <span className="text-slate-400 text-[11px] block mb-1">
-                KHUNG THAM CHIẾU TIÊU CHUẨN
+            <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 rounded-xl space-y-1">
+              <span className="text-slate-400 dark:text-neutral-500 text-[11px] block font-medium">
+                TÌNH TRẠNG HIỆU LỰC
               </span>
-              <span className="text-slate-700">5 Miền Năng Lực Số Chuẩn Hóa và NĐ 13/2023/NĐ-CP</span>
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className={`w-2 h-2 rounded-full ${isRevoked ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                <span className={`font-semibold ${isRevoked ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                  {isRevoked ? 'Đã thu hồi / Vô hiệu hóa' : 'Hợp lệ & Sẵn sàng xác thực'}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Dual SHA-256 Cryptographic Proof Box */}
-          <div className="p-4 rounded-md bg-slate-50 border border-slate-200 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-              <Hash className="w-4 h-4 text-sky-600" strokeWidth={1.75} />
-              Chữ Ký Điện Tử và Đối Soát Băm SHA-256 Kép (Tamper-Proof)
+          <div className="p-5 rounded-xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              <Hash className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+              <span>Chữ ký số & Đối soát mã băm SHA-256 kép (Tamper-Proof)</span>
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400 leading-relaxed">
               Mã băm được tính toán độc lập tại thời điểm phát hành. Bất kỳ sự sửa đổi nào trên nội dung hoặc tệp PDF đều làm thay đổi giá trị băm này.
             </p>
 
             <div className="space-y-2 text-[11px]">
               <div>
-                <span className="text-slate-500 block mb-0.5">
-                  1. Mã băm Nội dung (Content Metadata SHA-256):
+                <span className="text-slate-500 dark:text-neutral-400 block mb-1">
+                  1. Mã băm nội dung (Content Metadata SHA-256):
                 </span>
-                <div className="p-2 rounded bg-white border border-slate-200 text-slate-800 break-all select-all">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-neutral-800 dark:text-neutral-200 font-mono text-[10px] break-all select-all">
                   {credential.content_sha256}
                 </div>
               </div>
 
               {credential.pdf_sha256 && (
                 <div>
-                  <span className="text-slate-500 block mb-0.5">
-                    2. Mã băm Tệp PDF Toàn vẹn (PDF Binary Stream SHA-256):
+                  <span className="text-slate-500 dark:text-neutral-400 block mb-1">
+                    2. Mã băm tệp PDF (Binary Stream SHA-256):
                   </span>
-                  <div className="p-2 rounded bg-white border border-slate-200 text-slate-800 break-all select-all">
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-neutral-800 dark:text-neutral-200 font-mono text-[10px] break-all select-all">
                     {credential.pdf_sha256}
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="text-[11px] text-emerald-700 flex items-center gap-1.5 pt-1">
+            <div className="text-[11px] text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 pt-1">
               <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>Chữ ký số hợp lệ và nguyên vẹn trên sổ lưu trữ NEXA Ledger.</span>
+              <span>Chữ ký điện tử nguyên vẹn và khớp hoàn toàn trên hệ thống NEXA AI.</span>
             </div>
           </div>
 
           {/* Action Row */}
-          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <a
               href={`/api/credentials/${credential.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-2xs"
             >
               <Download className="w-4 h-4" strokeWidth={1.75} />
-              Tải Tệp PDF Vector Gốc ({credential.credential_code}.pdf)
+              <span>Tải bản PDF gốc ({credential.credential_code}.pdf)</span>
             </a>
 
             <Link
-              href="/framework"
-              className="px-4 py-2 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              href="/verify"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-              Xem Khung 5 Miền Năng Lực Số
+              <Search className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+              <span>Tra cứu chứng chỉ khác</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Independent Kiosk Footer */}
-      <div className="text-center text-[11px] text-slate-400 mt-8">
-        HỆ THỐNG ĐỐI SOÁT CHỨNG CHỈ SỐ NEXA &bull; BẢO ĐẢM TÍNH TOÀN VẸN DỮ LIỆU
+      {/* Independent Footer */}
+      <div className="text-center text-[11px] text-slate-400 dark:text-neutral-500 mt-8">
+        HỆ THỐNG ĐỐI SOÁT CHỨNG CHỈ SỐ NEXA AI &bull; BẢO ĐẢM TÍNH TOÀN VẸN DỮ LIỆU
       </div>
     </div>
   );

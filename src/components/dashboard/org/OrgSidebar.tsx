@@ -294,7 +294,7 @@ export function OrgSidebar({ orgSlug, orgName, userRole = 'ORG_ADMIN' }: OrgSide
             {navGroups.map((group, groupIdx) => (
               <div key={groupIdx} className="space-y-1">
                 {!isPrimaryCollapsed && group.label ? (
-                  <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
+                  <div className="px-3 pt-2.5 pb-1 text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-widest select-none">
                     {group.label}
                   </div>
                 ) : (

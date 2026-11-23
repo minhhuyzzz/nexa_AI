@@ -117,7 +117,7 @@ export function PersonalSidebar() {
     return (
       <div className="space-y-1">
         {!collapsed ? (
-          <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
+          <div className="px-3 pt-2.5 pb-1 text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-widest select-none">
             {title}
           </div>
         ) : (

@@ -240,7 +240,7 @@ export function PublicFooter() {
                 </li>
                 <li>
                   <Link
-                    href="/policies/security#dual-hash"
+                    href="/verify"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-white transition-colors"

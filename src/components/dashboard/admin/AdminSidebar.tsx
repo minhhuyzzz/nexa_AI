@@ -24,6 +24,7 @@ import {
   Target,
   GraduationCap,
   Shield,
+  Award,
   LucideIcon,
   X,
 } from 'lucide-react';
@@ -69,6 +70,7 @@ const adminNavSections: NavSection[] = [
       { name: 'Ngân hàng đề chuẩn', href: '/admin/content', icon: BookOpenCheck, exact: false },
       { name: 'Lộ trình học tập', href: '/admin/learning-paths', icon: GraduationCap, exact: false },
       { name: 'Phân tích năng lực số', href: '/admin/analytics', icon: BarChart3, exact: false },
+      { name: 'Chứng chỉ số', href: '/admin/credentials', icon: Award, exact: false },
     ],
   },
   {
@@ -176,12 +178,12 @@ export function AdminSidebar() {
         {/* Navigation Sections */}
         <nav
           onScroll={() => setHoveredTooltip(null)}
-          className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 pb-8"
+          className="flex-1 overflow-y-auto px-2.5 py-3 space-y-5 pb-8"
         >
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-1">
               {!isCollapsed ? (
-                <div className="px-3 pt-1 pb-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-widest select-none">
                   {section.label}
                 </div>
               ) : (

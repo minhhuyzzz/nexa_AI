@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireOrgPagePermission } from '@/lib/auth/org-guard';
+import { CampaignPublishButton } from '@/features/organizations/components/CampaignPublishButton';
 import {
   ChevronLeft,
   Calendar,
@@ -41,6 +42,7 @@ export default async function OrgCampaignDetailPage({
       passing_score,
       class_ids,
       assessor_ids,
+      security_settings,
       assessments (
         id,
         title,
@@ -150,6 +152,10 @@ export default async function OrgCampaignDetailPage({
     (s) => s.status === 'EVALUATED' && Number(s.total_score) >= Number(campaign.passing_score)
   ).length;
 
+  const campSecurity = (campaign.security_settings as Record<string, any>) || {};
+  const isResultsPublished = Boolean(campSecurity.results_published);
+  const resultsPublishedAt = campSecurity.results_published_at || null;
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb Navigation */}
@@ -194,7 +200,16 @@ export default async function OrgCampaignDetailPage({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <CampaignPublishButton
+              orgSlug={slug}
+              orgId={org.id}
+              campaignId={campaign.id}
+              initialIsPublished={isResultsPublished}
+              initialPublishedAt={resultsPublishedAt}
+              gradedCount={gradedCount}
+              totalSubmissions={totalSubmissions}
+            />
             <Link
               href={`/org/${slug}/grading?campaignId=${campaign.id}`}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shadow-2xs transition-colors shrink-0"
