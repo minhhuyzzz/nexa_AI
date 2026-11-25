@@ -180,6 +180,7 @@ Hệ thống tài liệu hoàn chỉnh của dự án được tổ chức chi t
 - [docs/04_PRICING_PLANS_AND_ENTITLEMENTS.md](docs/04_PRICING_PLANS_AND_ENTITLEMENTS.md): Bảng giá cá nhân, giải pháp trường học, hạn mức AI và thanh toán VietQR.
 - [docs/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md](docs/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md): Kiến trúc an ninh dữ liệu, phòng thủ chống gian lận thi cử và xác thực chứng chỉ số.
 - [docs/06_WORKSPACE_RBAC_AND_ROLES_SPEC.md](docs/06_WORKSPACE_RBAC_AND_ROLES_SPEC.md): Quy chuẩn phân quyền vai trò và điều hướng 3 không gian làm việc.
+- [docs/07_DATABASE_ENTITY_RELATIONSHIP_SPEC.md](docs/07_DATABASE_ENTITY_RELATIONSHIP_SPEC.md): Sơ đồ quan hệ thực thể (ERD) toàn diện 65 bảng cơ sở dữ liệu và 101 mối liên kết.
 
 ## 7. BẢO MẬT & ĐÓNG GÓP
 

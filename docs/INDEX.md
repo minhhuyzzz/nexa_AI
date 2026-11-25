@@ -19,7 +19,7 @@ Hệ thống được thiết kế theo triết lý bất biến: **Ba không gi
 
 ## 2. BẢN ĐỒ BỘ TÀI LIỆU QUY CHUẨN HỆ THỐNG
 
-Bộ tài liệu được chuẩn hóa thành 6 cẩm nang chuyên sâu, được biên soạn bằng ngôn ngữ nghiệp vụ trong sáng, dễ hiểu, trực quan, hoàn toàn không chứa các đoạn mã nguồn phức tạp:
+Bộ tài liệu được chuẩn hóa thành 7 cẩm nang chuyên sâu, được biên soạn bằng ngôn ngữ nghiệp vụ trong sáng, dễ hiểu, trực quan, hoàn toàn không chứa các đoạn mã nguồn phức tạp:
 
 ```mermaid
 graph TD
@@ -29,6 +29,7 @@ graph TD
     Index --> M4["Module 4: Bảng giá Dịch vụ & Các Gói cước"]
     Index --> M5["Module 5: An ninh, Bảo mật & Xác thực Chứng chỉ"]
     Index --> M6["Module 6: Phân quyền Vai trò & Không gian Làm việc"]
+    Index --> M7["Module 7: Sơ đồ Thực thể Cơ sở Dữ liệu Toàn nền tảng"]
 
     M1 --- M1_note["Bảng màu Light/Dark, typography, nguyên tắc thẩm mỹ tinh gọn"]
     M2 --- M2_note["5 luồng cốt lõi: Khảo sát đầu vào, Thi trực tiếp, Khảo thí lớp học, Đóng góp, Cấp bằng"]
@@ -36,6 +37,7 @@ graph TD
     M4 --- M4_note["Bảng giá cá nhân, gói trường học, hạn mức AI và thanh toán VietQR quét mã"]
     M5 --- M5_note["Chống gian lận thi cử, mã băm kép bảo vệ chứng chỉ, cổng tra cứu công khai 24/7"]
     M6 --- M6_note["Một tài khoản, 3 không gian, chuẩn hóa 4 vai trò Tổ chức & 2 vai trò Quản trị Sàn"]
+    M7 --- M7_note["Sơ đồ ERD 65 bảng dữ liệu thực tế, 101 mối quan hệ liên kết toàn diện"]
 ```
 
 ## 3. CHI TIẾT TỪNG MODULE TÀI LIỆU
@@ -87,8 +89,17 @@ graph TD
   - Danh mục chuẩn hóa vai trò Quản trị Sàn: Quản trị viên Cấp cao (`SUPER_ADMIN`), Quản trị viên Vận hành (`ADMIN`).
   - Nguyên tắc an toàn: Không leo thang đặc quyền, cách ly dữ liệu cá nhân và trường học.
 
+### Module 07: Sơ đồ Thực thể Cơ sở Dữ liệu Toàn nền tảng (ERD)
+- Tệp tin: [docs/07_DATABASE_ENTITY_RELATIONSHIP_SPEC.md](file:///c:/nexa/docs/07_DATABASE_ENTITY_RELATIONSHIP_SPEC.md)
+- Nội dung tóm lược:
+  - Sơ đồ quan hệ thực thể (ERD) hoàn chỉnh 65 bảng dữ liệu thực tế từ 59 tệp migration.
+  - 101 mối liên kết khóa chính (PK) và khóa ngoại (FK) giữa các thực thể.
+  - Phân loại trực quan theo 6 phân hệ cốt lõi: Người dùng & Ví điểm, Tổ chức & Lớp học, Khung năng lực & Đề thi, Lượt làm bài & Live Room, Trí tuệ nhân tạo & Kiểm toán, Gói cước & Thanh toán.
+  - Hướng dẫn và mã Mermaid chuẩn dán trực tiếp vào Mermaid Live Editor.
+
 ## 4. HƯỚNG DẪN TRA CỨU NHANH CHO CÁC BÊN LIÊN QUAN
 
+- **Dành cho Kiến trúc sư Hệ thống & Kỹ sư Dữ liệu:** Bắt đầu từ [Module 07: Sơ đồ Thực thể Cơ sở Dữ liệu](file:///c:/nexa/docs/07_DATABASE_ENTITY_RELATIONSHIP_SPEC.md) để nắm bắt toàn diện 65 bảng dữ liệu và các mối quan hệ liên kết thực thể, sau đó đối chiếu với [Module 05: An ninh & Bảo mật](file:///c:/nexa/docs/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md).
 - **Dành cho Ban Giám hiệu & Giám đốc Đào tạo:** Bắt đầu từ [Module 06: Phân quyền Vai trò](file:///c:/nexa/docs/06_WORKSPACE_RBAC_AND_ROLES_SPEC.md) và [Module 02: Luồng Nghiệp vụ](file:///c:/nexa/docs/02_BUSINESS_FLOWS_AND_PROCESSES.md) để nắm bắt cách vận hành kỳ thi lớp học, sau đó xem [Module 04: Bảng giá](file:///c:/nexa/docs/04_PRICING_PLANS_AND_ENTITLEMENTS.md) để lựa chọn quy mô gói giải pháp phù hợp.
 - **Dành cho Học viên & Sinh viên:** Xem [Module 03: Khung Năng lực Số](file:///c:/nexa/docs/03_COMPETENCY_FRAMEWORK_AND_ASSESSMENT_SPEC.md) để hiểu cách đọc biểu đồ Radar và cách tích lũy năng lực số bền vững; tham khảo [Module 04: Gói Cá nhân](file:///c:/nexa/docs/04_PRICING_PLANS_AND_ENTITLEMENTS.md) để đăng ký 30 ngày trải nghiệm Pro miễn phí.
 - **Dành cho Nhà tuyển dụng & Chuyên viên Nhân sự:** Xem [Module 05: Xác thực Chứng chỉ](file:///c:/nexa/docs/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md) để hiểu cơ chế tra cứu tính thật/giả của văn bằng ứng viên nộp qua mã QR.
